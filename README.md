@@ -244,11 +244,8 @@ Replace soccer ball with puck? (yes/no) [yes]:
 Replace golf ball with puck? (yes/no) [yes]:
 ```
 These replace the special balls in soccer/golf minigames with regular pucks.
-<<<<<<< HEAD
 :NOTE TO USE THE HOCKEY AND SOCCER ARENAS AND TEAMS YOU HAVE TO IMPORT THE GOLFERS OR HOCKEY FC. it will always be ice with custom teams. only ball is changed with these settings 
 =======
-:NOTE TO USE THE HOCKEY AND SOCCER ARENAS AND TEAMS YOU HAVE TO IMPORT THE GOLFERS OR HOCKEY FC. it will use ice by default otherwise. 
->>>>>>> 02458332aef72daabd9a895d921cb6d83473f905
 ---
 
 **SCREEN 6 — Team Count Summary**
