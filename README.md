@@ -946,4 +946,7 @@ Requires .NET 6 SDK and BepInEx 6 IL2CPP references.
 
 ---
 
+https://ko-fi.com/yeastmans 
+
+
 **Tape to Tape** by Excellent Rectangle | Built with BepInEx and HarmonyX | MIT License
