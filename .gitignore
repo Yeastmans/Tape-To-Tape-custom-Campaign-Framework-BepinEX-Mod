@@ -38,3 +38,4 @@ BACKUPS/
 
 # Assemblies dump (too large for git)
 assembilies/
+CHANGELOG.md

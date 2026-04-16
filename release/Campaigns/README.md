@@ -2,7 +2,7 @@
 
 A modding framework for **Tape to Tape** (the hockey roguelike by Excellent Rectangle) that lets you build fully custom campaigns by editing plain text config files or using included python based campaign creator. Design your own teams, players, stats, appearances, talents, abilities, relics, and campaign structure. No coding required.
 
-> **EARLY RELEASE** — This mod is mostly untested and will probably have quirks, bugs, and rough edges. Some fields may not work exactly as described. If something breaks, try simplifying your config (use imports instead of manual setup). Report issues and feedback on this github page or message me on Discord @yeastmann so things can be fixed.
+> **EARLY RELEASE** — This mod is mostly untested and will probably have quirks, bugs, and rough edges. Some fields may not work exactly as described. If something breaks, try simplifying your config (use imports instead of manual setup). Report issues and feedback on this github page or message me on Discord @yeastmann so things can be fixed. This was coded with the help of an LLM so SOME THINGS MAY NOT WORK AS INTENDED. I will be updating this often so if something is broken for you check back here for new versions!.
 
 ---
 
@@ -51,8 +51,8 @@ A modding framework for **Tape to Tape** (the hockey roguelike by Excellent Rect
 ## Quick Start
 
 **Easiest way: USE THE CAMPAIGN CREATOR.** It walks you through every step. No text editing needed.
-- **Windows:** Double-click `Create Campaign.bat` in the `Campaigns` folder
-- **Mac/Linux:** Open a terminal in the `Campaigns` folder and run `python3 create_campaign.py` 
+- **Windows:** Double-click `Create Campaign.bat` in the campaign creator folder
+- **Mac/Linux:** Open a terminal in the campaign creator folder and run `python3 create_campaign.py` 
 
 **Manual path:** Copy an existing campaign, rename it, edit it.
 
@@ -76,11 +76,15 @@ BepInEx/plugins/
   Campaigns/
     active.txt                         Which campaign to play
     defaults.txt                       Fallback values for missing/broken fields
-    create_campaign.py                 Campaign builder script (Python)
-    Create Campaign.bat                Windows launcher (double-click to run)
-    VALID_VALUES.txt                   Every valid value for every field
+    CAMPAIGN CREATOR.../               Campaign builder tool + value reference
+        create_campaign.py             Interactive campaign builder (Python)
+        Create Campaign.bat            Windows launcher (double-click to run)
+        VALID_VALUES.txt               Every valid value for every field
     Example Campaign/                  33-team NHL-style campaign
         campaign.txt                   Teams and campaign structure
+        save.txt                       Progress (auto-generated)
+    Random Campaign/                   Fully randomized chaos campaign
+    Nightmare Mode/                    Brutal difficulty campaign
     Blank Campaign/                    Every field shown blank
     Blank Import Teams/                Import-only quick setup
     Blank Import Players/              Import individual players
@@ -107,15 +111,15 @@ To check if Python is installed, open a terminal and type `python3 --version` or
 The script is in the campaign creator folder inside `Campaigns/`.
 
 **Windows:**
-1. Navigate to `BepInEx/plugins/Campaigns/`
+1. Navigate to `BepInEx/plugins/Campaigns/` and open the campaign creator folder
 2. Double-click `Create Campaign.bat`
 3. A terminal window opens and the creator starts
 
 **Mac / Linux:**
 1. Open a terminal
-2. Navigate to the Campaigns folder:
+2. Navigate to the campaign creator folder:
    ```
-   cd "/path/to/Tape to Tape/BepInEx/plugins/Campaigns"
+   cd "/path/to/Tape to Tape/BepInEx/plugins/Campaigns/CAMPAIGN CREATOR AND DOCUMENTATION VERY IMPORTANT"
    ```
 3. Run the script:
    ```
@@ -140,7 +144,7 @@ When you run the creator, here's exactly what happens:
 
 | Method | What You Do | Best For |
 |--------|------------|----------|
-| **1. Import** | Pick an in-game team name OR a custom team you've created in the team creator, set stat scale, add relics/talents | Quick setup, realistic teams |
+| **1. Import** | Pick an in-game team name, set stat scale, add relics/talents | Quick setup, realistic teams |
 | **2. Manual** | Set everything: name, city, colors, uniform, every player stat | Full creative control |
 | **3. Mirror Match** | Clones the player's own team as the opponent | Fun boss fights |
 | **4. Random** | Random team each time you play | Chaos, replayability |
@@ -240,7 +244,7 @@ Replace soccer ball with puck? (yes/no) [yes]:
 Replace golf ball with puck? (yes/no) [yes]:
 ```
 These replace the special balls in soccer/golf minigames with regular pucks.
-:NOTE TO USE THE HOCKEY AND SOCCER ARENAS AND TEAMS YOU HAVE TO IMPORT THE GOLFERS OR HOCKEY FC. it will
+:NOTE TO USE THE HOCKEY AND SOCCER ARENAS AND TEAMS YOU HAVE TO IMPORT THE GOLFERS OR HOCKEY FC. it will always be ice with custom teams. only ball is changed with these settings 
 ---
 
 **SCREEN 6 — Team Count Summary**
@@ -269,9 +273,9 @@ Pick 1-4 [1]:
 ```
 Team name to import:
 ```
-Type a team name. Works with in-game teams AND custom teams you've made in the team creator — just type the name exactly as it appears. Open `VALID_VALUES.txt` Section 17 for all in-game team names. Examples: `Vancouver`, `Chicago`, `Colorado`, `Toronto`
+Type a team name. Open `VALID_VALUES.txt` Section 17 for all valid names. Examples: `Vancouver`, `Chicago`, `Colorado`, `Toronto`
 ```
-Display name [Vancouver]:
+Display name [Vancouver]:  (change imported teams name)
 Stat Scale (1.0=normal) [1.0]:
 Random talents for every player (0=none) [0]:
 Relics (comma-separated, Enter=none):
@@ -326,8 +330,9 @@ Pick what each equipment piece looks like:
 Body:
   1. Standard (colorable - takes RGB)
   2. Tycoons (business suit - fixed look)
-  3. Princess (armored - fixed look)
-  ...
+  3. Princess (armored - fixed look) ect
+  See `VALID_VALUES.txt
+  ... 
 Pick number [1]:
 ```
 For body, helmet, and stick, you pick a skin from a numbered list. See `VALID_VALUES.txt` Sections 1-4 for all options.
@@ -932,8 +937,8 @@ The recipient puts it in `BepInEx/plugins/Campaigns/` and edits `active.txt`.
 Source code is in the `src/` folder. Most users should download the release instead.
 
 ```bash
-dotnet build src/CustomCampaignFramework/CustomCampaignFramework.csproj
-cp src/CustomCampaignFramework/bin/Debug/net6.0/CustomCampaignFramework.dll "path/to/BepInEx/plugins/"
+dotnet build src/EndlessMode/EndlessMode.csproj
+cp src/EndlessMode/bin/Debug/net6.0/CustomCampaignFramework.dll "path/to/BepInEx/plugins/"
 ```
 
 Requires .NET 6 SDK and BepInEx 6 IL2CPP references.
