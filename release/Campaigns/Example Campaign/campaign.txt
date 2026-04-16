@@ -4,7 +4,7 @@
 # See REFERENCE.md for all valid options
 
 --- Campaign Settings ---
-Act Sequence            = 2, 1, 1, 2, 1, 2, 2, 2, 3
+Act Sequence            = 1, 1, 2, 2, 1, 2, 2, 2, 3
 Replace Challenges      = yes
 Replace Soccer Ball     = yes
 Replace Golf Ball       = yes
