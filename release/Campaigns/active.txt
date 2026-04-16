@@ -1,8 +1,0 @@
-# Set which campaign to play. Change the name to switch campaigns.
-# Use "default" to disable the mod and play the base game.
-# NOTE: CASE SENSATIVE! 
-# Examples:
-#   Active Campaign          = Example Campaign
-#   Active Campaign          = default
-#
-Active Campaign          = Example Campaign

@@ -40,9 +40,37 @@ public class Plugin : BasePlugin
     internal static bool SeparateFilesWritten = false;
 
     // ===== CONFIG =====
-    private static readonly string CampaignsRoot = Path.Combine(BepInEx.Paths.PluginPath, "Campaigns");
-    private static readonly string ActivePath = Path.Combine(BepInEx.Paths.PluginPath, "Campaigns", "active.txt");
-    private static readonly string DefaultsPath = Path.Combine(BepInEx.Paths.PluginPath, "Campaigns", "defaults.txt");
+    // New layout (v2.1+):
+    //   BepInEx/plugins/CustomCampaignFramework.dll   ← this DLL, sibling to the content folder
+    //   BepInEx/plugins/Custom Campaigns Mod/         ← everything else (GUI + data)
+    //       active.txt, defaults.txt, library/, campaigns/<CampaignName>/...
+    //
+    // Legacy layout (v1.x–v2.0) used BepInEx/plugins/Campaigns/<CampaignName>/ at root
+    // with active.txt/defaults.txt at the same level. We fall back to that if the new
+    // folder doesn't exist, so existing installs keep working until they migrate.
+    private static string PickModContentRoot()
+    {
+        string pluginsDir = BepInEx.Paths.PluginPath;
+        string newRoot = Path.Combine(pluginsDir, "Custom Campaigns Mod");
+        if (Directory.Exists(newRoot)) return newRoot;
+        string legacyRoot = Path.Combine(pluginsDir, "Campaigns");
+        if (Directory.Exists(legacyRoot)) return legacyRoot;
+        // Neither exists — default to new layout (will be created on first save)
+        return newRoot;
+    }
+    internal static readonly string ModContentRoot = PickModContentRoot();
+    // In the new layout, campaigns live in a 'campaigns/' subfolder. In the legacy
+    // layout, campaign folders were at ModContentRoot directly — try the new
+    // subfolder first, fall back to ModContentRoot.
+    private static string PickCampaignsRoot()
+    {
+        string sub = Path.Combine(ModContentRoot, "campaigns");
+        if (Directory.Exists(sub)) return sub;
+        return ModContentRoot; // legacy: campaigns at root level
+    }
+    private static readonly string CampaignsRoot = PickCampaignsRoot();
+    private static readonly string ActivePath = Path.Combine(ModContentRoot, "active.txt");
+    private static readonly string DefaultsPath = Path.Combine(ModContentRoot, "defaults.txt");
 
     // Default fallback values (loaded from defaults.txt)
     internal static TeamConfig DefaultTeam = new TeamConfig();
@@ -52,9 +80,17 @@ public class Plugin : BasePlugin
     private static string ModFolder;
     private static string ConfigPath;
     private static string SavePath;
+    private static string PlayerTeamsPath;
     internal static string ActiveCampaign = "NHL Season";
 
     internal static bool IsDefaultMode = false; // true = no mod behavior, base game only
+
+    // Player team editor — configs keyed by lowercase prefix ("basic", "defense", "speed", "trio")
+    internal static Dictionary<string, TeamConfig> PlayerTeamConfigs = new Dictionary<string, TeamConfig>(StringComparer.OrdinalIgnoreCase);
+    // Draft pool player configs keyed by lowercase full name ("stu stumpl", "freddy kovalski", etc.)
+    internal static Dictionary<string, PlayerConfig> DraftPoolConfigs = new Dictionary<string, PlayerConfig>(StringComparer.OrdinalIgnoreCase);
+    internal static bool DraftPoolApplied = false;
+    internal static bool UsePlayerTeams = false; // toggle from campaign settings
 
     internal static void ResolveCampaignPaths()
     {
@@ -89,6 +125,7 @@ public class Plugin : BasePlugin
         ModFolder = Path.Combine(CampaignsRoot, ActiveCampaign);
         ConfigPath = Path.Combine(ModFolder, "campaign.txt");
         SavePath = Path.Combine(ModFolder, "save.txt");
+        PlayerTeamsPath = Path.Combine(ModFolder, "player_teams.txt");
 
         if (!Directory.Exists(ModFolder))
             Directory.CreateDirectory(ModFolder);
@@ -200,7 +237,8 @@ public class Plugin : BasePlugin
     internal static int TotalMaps => ActSequence.Length;
     internal static bool ReplaceChallenges = true;
     internal static List<int> ReplaceChallengesActs = null; // null = all acts, list = only these acts
-    internal static bool DumpData = false; // Debug only — generates reference dump files
+    internal static HashSet<int> ReplaceChallengesMaps = null; // null = use acts logic; set = 0-indexed map positions
+    internal static bool DumpData = true; // generates reference dump files
     internal static bool ReplaceSoccerBall = true;
     internal static bool ReplaceGolfBall = true;
 
@@ -305,95 +343,16 @@ public class Plugin : BasePlugin
             if (!Directory.Exists(ModFolder))
                 Directory.CreateDirectory(ModFolder);
 
-            if (!File.Exists(ConfigPath))
+            // Multi-folder format only. Campaign settings live in campaign.txt,
+            // teams live in the teams/ subfolder.
+            if (File.Exists(ConfigPath))
             {
-                Log.LogInfo("[Config] No config.txt found, using defaults");
-                return;
-            }
-
-            var lines = File.ReadAllLines(ConfigPath);
-            string currentSection = "";
-            TeamConfig currentTeam = null;
-            PlayerConfig currentPlayer = null;
-            bool inRelics = false;
-
-            for (int i = 0; i < lines.Length; i++)
-            {
-                string raw = lines[i];
-                string line = raw.Replace("\t", " ").Trim();
-
-                // Skip empty, whitespace-only, and decoration
-                if (string.IsNullOrEmpty(line) || string.IsNullOrWhiteSpace(line)
-                    || line.StartsWith("====") || line.StartsWith("####"))
-                    continue;
-
-                // New team block: ## TEAM N — ... ##
-                if (line.StartsWith("##") && line.Contains("TEAM "))
-                {
-                    currentTeam = new TeamConfig();
-                    ConfigTeams.Add(currentTeam);
-                    currentPlayer = null;
-                    currentSection = "";
-                    inRelics = false;
-                    continue;
-                }
-
-                // Skip comments (after team detection)
-                if (line.StartsWith("#"))
-                    continue;
-
-                // Section header: --- Something ---
-                if (line.StartsWith("---") && line.EndsWith("---"))
-                {
-                    currentSection = line.Trim('-', ' ').Trim().ToLower();
-                    currentPlayer = null;
-                    inRelics = false;
-
-                    if (currentSection == "campaign settings") continue;
-                    if (currentSection == "team relics") { inRelics = true; continue; }
-                    if (currentSection == "team colors" || currentSection == "team uniform") continue;
-
-                    // Player sections
-                    if (currentTeam != null)
-                    {
-                        if (currentSection == "goalie") { currentPlayer = currentTeam.Goalie; continue; }
-                        if (currentSection == "left wing") { currentPlayer = currentTeam.LW; continue; }
-                        if (currentSection == "right wing") { currentPlayer = currentTeam.RW; continue; }
-                        if (currentSection == "center") { currentPlayer = currentTeam.C; continue; }
-                        if (currentSection == "left defense") { currentPlayer = currentTeam.LD; continue; }
-                        if (currentSection == "right defense") { currentPlayer = currentTeam.RD; continue; }
-                        if (currentSection == "line 2 left wing") { currentPlayer = currentTeam.L2_LW; continue; }
-                        if (currentSection == "line 2 right wing") { currentPlayer = currentTeam.L2_RW; continue; }
-                        if (currentSection == "line 2 center") { currentPlayer = currentTeam.L2_C; continue; }
-                        if (currentSection == "line 2 left defense") { currentPlayer = currentTeam.L2_LD; continue; }
-                        if (currentSection == "line 2 right defense") { currentPlayer = currentTeam.L2_RD; continue; }
-                    }
-                    continue;
-                }
-
-                // Skip — team detection is handled above via ## TEAM markers
-
-                // Relic lines (no = sign, just the name)
-                if (inRelics && !line.Contains("="))
-                {
-                    currentTeam?.Relics.Add(line);
-                    continue;
-                }
-
-                // Key = Value parsing
-                int eqIdx = line.IndexOf('=');
-                if (eqIdx < 0) continue;
-                string key = line.Substring(0, eqIdx).Trim().ToLower();
-                string val = line.Substring(eqIdx + 1).Trim();
-
-                // Campaign settings
-                if (currentTeam == null)
+                ParseKvFile(ConfigPath, (key, val) =>
                 {
                     if (key == "act sequence")
                     {
-                        var parts = val.Split(',');
                         var seq = new List<int>();
-                        foreach (var p in parts)
+                        foreach (var p in val.Split(','))
                             if (int.TryParse(p.Trim(), out int v)) seq.Add(v);
                         if (seq.Count > 0 && seq[seq.Count - 1] == 3)
                         {
@@ -406,308 +365,424 @@ public class Plugin : BasePlugin
                         string lv = val.ToLower().Trim();
                         if (lv == "yes" || lv == "true")
                         {
-                            ReplaceChallenges = true;
-                            ReplaceChallengesActs = null; // all acts
+                            ReplaceChallenges = true; ReplaceChallengesActs = null; ReplaceChallengesMaps = null;
                         }
                         else if (lv == "no" || lv == "false")
                         {
-                            ReplaceChallenges = false;
+                            ReplaceChallenges = false; ReplaceChallengesActs = null; ReplaceChallengesMaps = null;
+                        }
+                        else if (lv.StartsWith("maps:"))
+                        {
+                            // Per-map mode: "maps:1,3,5" — 1-indexed map positions
+                            ReplaceChallenges = true;
                             ReplaceChallengesActs = null;
+                            ReplaceChallengesMaps = new HashSet<int>();
+                            foreach (var p in lv.Substring(5).Split(','))
+                                if (int.TryParse(p.Trim(), out int idx) && idx > 0)
+                                    ReplaceChallengesMaps.Add(idx - 1); // store 0-indexed
+                            Log.LogInfo($"[Config] Replace Challenges per-map: [{string.Join(", ", ReplaceChallengesMaps)}] (0-indexed)");
                         }
                         else
                         {
-                            // Per-act list: "1, 2" means only replace in acts 1 and 2
+                            // Legacy per-act list: "1,2"
                             ReplaceChallenges = true;
+                            ReplaceChallengesMaps = null;
                             ReplaceChallengesActs = new List<int>();
                             foreach (var p in val.Split(','))
                                 if (int.TryParse(p.Trim(), out int a)) ReplaceChallengesActs.Add(a);
-                            Log.LogInfo($"[Config] Replace Challenges in acts: [{string.Join(", ", ReplaceChallengesActs)}]");
-                        }
-                        Log.LogInfo($"[Config] Replace Challenges: {ReplaceChallenges}" + (ReplaceChallengesActs != null ? $" (acts: {string.Join(",", ReplaceChallengesActs)})" : ""));
-                    }
-                    else if (key == "replace soccer ball")
-                    {
-                        ReplaceSoccerBall = val.ToLower() == "yes" || val.ToLower() == "true";
-                        Log.LogInfo($"[Config] Replace Soccer Ball: {ReplaceSoccerBall}");
-                    }
-                    else if (key == "replace golf ball")
-                    {
-                        ReplaceGolfBall = val.ToLower() == "yes" || val.ToLower() == "true";
-                        Log.LogInfo($"[Config] Replace Golf Ball: {ReplaceGolfBall}");
-                    }
-                    continue;
-                }
-
-                // Team-level fields
-                if (currentPlayer == null && !inRelics)
-                {
-                    if (key == "team name") currentTeam.Name = val;
-                    else if (key == "city") currentTeam.City = val;
-                    else if (key == "logo from") currentTeam.LogoFrom = val;
-                    else if (key == "import team") currentTeam.ImportTeam = val;
-                    else if (key == "abbreviation") currentTeam.Abbreviation = val;
-                    else if (key == "stat scale") currentTeam.StatScale = ParseRandomFloat(val);
-                    // Home Colors
-                    else if (key == "jersey primary") currentTeam.JerseyPrimary = ParseRandomColor(val);
-                    else if (key == "jersey secondary") currentTeam.JerseySecondary = ParseRandomColor(val);
-                    else if (key == "jersey accent") currentTeam.JerseyAccent = ParseRandomColor(val);
-                    // Away Colors
-                    else if (key == "away primary") currentTeam.AwayPrimary = ParseRandomColor(val);
-                    else if (key == "away secondary") currentTeam.AwaySecondary = ParseRandomColor(val);
-                    else if (key == "away accent") currentTeam.AwayAccent = ParseRandomColor(val);
-                    // Number Colors
-                    else if (key == "number color home") currentTeam.NumberColorHome = ParseRandomColor(val);
-                    else if (key == "number color away") currentTeam.NumberColorAway = ParseRandomColor(val);
-                    // Transition Colors
-                    else if (key == "transition primary") currentTeam.TransitionPrimary = ParseRandomColor(val);
-                    else if (key == "transition secondary") currentTeam.TransitionSecondary = ParseRandomColor(val);
-                    else if (key == "transition tertiary") currentTeam.TransitionTertiary = ParseRandomColor(val);
-                    // Uniform — accepts skin names OR RGB values
-                    // If RGB is given, auto-sets skin to colorable and stores the color
-                    else if (key == "body") { if (TryParseUniformRGB(val, "body", ref currentTeam.Uniform.Body, ref currentTeam.JerseyPrimary)) {} }
-                    else if (key == "body away") { if (TryParseUniformRGB(val, "body", ref currentTeam.Uniform.BodyAway, ref currentTeam.AwayPrimary)) {} }
-                    else if (key == "bicep") { if (TryParseUniformRGB(val, "bicep", ref currentTeam.Uniform.Bicep, ref currentTeam.TeamBicepColor)) {} }
-                    else if (key == "bicep away") currentTeam.Uniform.BicepAway = Plugin.ResolveSkin(val, "bicep");
-                    else if (key == "gloves") { if (TryParseUniformRGB(val, "gloves", ref currentTeam.Uniform.Gloves, ref currentTeam.TeamGlovesColor)) {} }
-                    else if (key == "gloves away") currentTeam.Uniform.GlovesAway = Plugin.ResolveSkin(val, "gloves");
-                    else if (key == "pants") { if (TryParseUniformRGB(val, "pants", ref currentTeam.Uniform.Pants, ref currentTeam.TeamPantsColor)) {} }
-                    else if (key == "pants away") currentTeam.Uniform.PantsAway = Plugin.ResolveSkin(val, "pants");
-                    else if (key == "skates") { if (TryParseUniformRGB(val, "skates", ref currentTeam.Uniform.Skates, ref currentTeam.TeamSkatesColor)) {} }
-                    else if (key == "skates away") currentTeam.Uniform.SkatesAway = Plugin.ResolveSkin(val, "skates");
-                    else if (key == "helmet") { if (TryParseUniformRGB(val, "helmet", ref currentTeam.Uniform.Helmet, ref currentTeam.TeamHelmetColor)) {} }
-                    else if (key == "helmet away") currentTeam.Uniform.HelmetAway = Plugin.ResolveSkin(val, "helmet");
-                    else if (key == "stick") { if (TryParseUniformRGB(val, "stick", ref currentTeam.Uniform.Stick, ref currentTeam.TeamStickColor)) {} }
-                    // Team-level equipment colors (defaults for all players)
-                    else if (key == "gloves color") currentTeam.TeamGlovesColor = ParseRandomColor(val);
-                    else if (key == "gloves secondary color" || key == "gloves color 2") currentTeam.TeamGlovesSecondary = ParseRandomColor(val);
-                    else if (key == "gloves tertiary color" || key == "gloves color 3") currentTeam.TeamGlovesTertiary = ParseRandomColor(val);
-                    else if (key == "helmet color") currentTeam.TeamHelmetColor = ParseRandomColor(val);
-                    else if (key == "helmet secondary color" || key == "helmet color 2") currentTeam.TeamHelmetSecondary = ParseRandomColor(val);
-                    else if (key == "helmet tertiary color" || key == "helmet color 3") currentTeam.TeamHelmetTertiary = ParseRandomColor(val);
-                    else if (key == "pants color") currentTeam.TeamPantsColor = ParseRandomColor(val);
-                    else if (key == "pants secondary color" || key == "pants color 2") currentTeam.TeamPantsSecondary = ParseRandomColor(val);
-                    else if (key == "pants tertiary color" || key == "pants color 3") currentTeam.TeamPantsTertiary = ParseRandomColor(val);
-                    else if (key == "skates color") currentTeam.TeamSkatesColor = ParseRandomColor(val);
-                    else if (key == "blade color") currentTeam.TeamBladeColor = ParseRandomColor(val);
-                    else if (key == "laces color") currentTeam.TeamLacesColor = ParseRandomColor(val);
-                    else if (key == "bicep color") currentTeam.TeamBicepColor = ParseRandomColor(val);
-                    else if (key == "socks color") currentTeam.TeamSocksColor = ParseRandomColor(val);
-                    else if (key == "socks secondary color" || key == "socks color 2") currentTeam.TeamSocksSecondary = ParseRandomColor(val);
-                    else if (key == "socks tertiary color" || key == "socks color 3") currentTeam.TeamSocksTertiary = ParseRandomColor(val);
-                    else if (key == "stick color") currentTeam.TeamStickColor = ParseRandomColor(val);
-                    else if (key == "number color") currentTeam.TeamNumberColor = ParseRandomColor(val);
-                    else if (key == "number secondary color" || key == "number color 2") currentTeam.TeamNumberSecondary = ParseRandomColor(val);
-                    // Gameplay
-                    else if (key == "bench size") currentTeam.BenchSize = ParseRandomInt(val);
-                    else if (key == "bench head") currentTeam.BenchHead = val;
-                    else if (key == "team random talents") currentTeam.TeamRandomTalents = ParseRandomInt(val);
-                    else if (key == "team random pool")
-                    {
-                        string trpLower = val.Trim().ToLower();
-                        if (trpLower == "all" || trpLower == "whole pool" || trpLower == "full pool")
-                        {
-                            currentTeam.TeamRandomPoolAll = true;
-                        }
-                        else
-                        {
-                            currentTeam.TeamRandomPool = new List<string>();
-                            foreach (var t in val.Split(','))
-                            { string trimmed = t.Trim(); if (trimmed.Length > 0) currentTeam.TeamRandomPool.Add(trimmed); }
                         }
                     }
-                    continue;
-                }
-
-                // Player fields (works for skaters and goalie)
-                if (currentPlayer != null)
-                {
-                    if (key == "name") currentPlayer.Name = val;
-                    else if (key == "import player") currentPlayer.ImportPlayer = val;
-                    else if (key == "number") currentPlayer.Number = ParseRandomInt(val);
-                    else if (key == "face") currentPlayer.Face = val;
-                    else if (key == "left handed")
-                    {
-                        string lh = val.ToLower().Trim();
-                        if (lh == "random") currentPlayer.Lefty = ConfigRng.Next(2) == 1;
-                        else currentPlayer.Lefty = lh == "yes" || lh == "true";
-                    }
-                    else if (key == "skin color")
-                    {
-                        string sc = val.ToLower().Trim();
-                        if (sc == "random") currentPlayer.Black = ConfigRng.Next(2) == 1;
-                        else currentPlayer.Black = sc == "dark";
-                    }
-                    else if (key == "size")
-                    {
-                        if (val.Trim().Equals("random", StringComparison.OrdinalIgnoreCase))
-                        {
-                            string[] sizes = { "ExtraSmall", "Small", "Medium", "Big", "ExtraBig" };
-                            currentPlayer.Size = sizes[ConfigRng.Next(sizes.Length)];
-                        }
-                        else currentPlayer.Size = val;
-                    }
-                    else if (key == "speed") currentPlayer.Speed = ParseRandomInt(val);
-                    else if (key == "shot power") currentPlayer.ShotPower = ParseRandomInt(val);
-                    else if (key == "accuracy") currentPlayer.Accuracy = ParseRandomInt(val);
-                    else if (key == "checking") currentPlayer.Checking = ParseRandomInt(val);
-                    else if (key == "ability") currentPlayer.Ability = val;
-                    else if (key == "talents" || key == "goalie talents")
-                    {
-                        currentPlayer.Talents = new List<string>();
-                        foreach (var t in val.Split(','))
-                        {
-                            string trimmed = t.Trim();
-                            if (trimmed.Length > 0) currentPlayer.Talents.Add(trimmed);
-                        }
-                    }
-                    else if (key == "random talents") currentPlayer.RandomTalentCount = ParseRandomInt(val);
-                    else if (key == "random pool")
-                    {
-                        string rpLower = val.Trim().ToLower();
-                        if (rpLower == "all" || rpLower == "whole pool" || rpLower == "full pool")
-                        {
-                            currentPlayer.RandomTalentPoolAll = true;
-                        }
-                        else
-                        {
-                            currentPlayer.RandomTalentPool = new List<string>();
-                            foreach (var t in val.Split(','))
-                            { string trimmed = t.Trim(); if (trimmed.Length > 0) currentPlayer.RandomTalentPool.Add(trimmed); }
-                        }
-                    }
-                    // Goalie stats
-                    else if (key == "skill") currentPlayer.Skill = ParseRandomInt(val);
-                    else if (key == "catching") currentPlayer.Catching = ParseRandomInt(val);
-                    else if (key == "glove") currentPlayer.Glove = ParseRandomInt(val);
-                    else if (key == "blocker") currentPlayer.Blocker = ParseRandomInt(val);
-                    else if (key == "five hole") currentPlayer.FiveHole = ParseRandomInt(val);
-                    else if (key == "stand speed" || key == "standing speed") currentPlayer.StandSpeed = ParseRandomInt(val);
-                    else if (key == "butterfly speed") currentPlayer.ButterflySpeed = ParseRandomInt(val);
-                    else if (key == "control") currentPlayer.Control = ParseRandomInt(val);
-                    else if (key == "recovery") currentPlayer.Recovery = ParseRandomInt(val);
-                    else if (key == "pass power") currentPlayer.PassPower = ParseRandomInt(val);
-                    else if (key == "pokecheck" || key == "poke check") currentPlayer.Pokecheck = ParseRandomInt(val);
-                    else if (key == "depth") currentPlayer.Depth = ParseRandomInt(val);
-                    else if (key == "pass read") currentPlayer.PassRead = ParseRandomFloat(val);
-                    // Player appearance extras
-                    else if (key == "size offset") currentPlayer.SizeOffset = ParseRandomFloat(val);
-                    else if (key == "glasses") currentPlayer.Glasses = val;
-                    // Per-player uniform overrides
-                    else if (key == "stick") currentPlayer.StickOverride = Plugin.ResolveSkin(val, "stick");
-                    else if (key == "helmet") currentPlayer.HelmetOverride = Plugin.ResolveSkin(val, "helmet");
-                    else if (key == "helmet away") currentPlayer.HelmetAwayOverride = Plugin.ResolveSkin(val, "helmet");
-                    else if (key == "body") currentPlayer.BodyOverride = Plugin.ResolveSkin(val, "body");
-                    else if (key == "body away") currentPlayer.BodyAwayOverride = Plugin.ResolveSkin(val, "body");
-                    else if (key == "bicep") currentPlayer.BicepOverride = Plugin.ResolveSkin(val, "bicep");
-                    else if (key == "bicep away") currentPlayer.BicepAwayOverride = Plugin.ResolveSkin(val, "bicep");
-                    else if (key == "gloves" && currentPlayer != null) currentPlayer.GlovesOverride = Plugin.ResolveSkin(val, "gloves");
-                    else if (key == "gloves away") currentPlayer.GlovesAwayOverride = Plugin.ResolveSkin(val, "gloves");
-                    else if (key == "pants" && currentPlayer != null) currentPlayer.PantsOverride = Plugin.ResolveSkin(val, "pants");
-                    else if (key == "pants away") currentPlayer.PantsAwayOverride = Plugin.ResolveSkin(val, "pants");
-                    else if (key == "skates" && currentPlayer != null) currentPlayer.SkatesOverride = Plugin.ResolveSkin(val, "skates");
-                    else if (key == "skates away") currentPlayer.SkatesAwayOverride = Plugin.ResolveSkin(val, "skates");
-                    // Per-player color overrides
-                    else if (key == "jersey color") currentPlayer.JerseyColor = ParseRandomColor(val);
-                    else if (key == "jersey secondary color") currentPlayer.JerseySecondaryColor = ParseRandomColor(val);
-                    else if (key == "jersey accent color") currentPlayer.JerseyAccentColor = ParseRandomColor(val);
-                    else if (key == "gloves color") currentPlayer.GlovesColor = ParseRandomColor(val);
-                    else if (key == "gloves secondary color" || key == "gloves color 2") currentPlayer.GlovesSecondaryColor = ParseRandomColor(val);
-                    else if (key == "gloves tertiary color" || key == "gloves color 3") currentPlayer.GlovesTertiaryColor = ParseRandomColor(val);
-                    else if (key == "helmet color") currentPlayer.HelmetColor = ParseRandomColor(val);
-                    else if (key == "helmet secondary color" || key == "helmet color 2") currentPlayer.HelmetSecondaryColor = ParseRandomColor(val);
-                    else if (key == "helmet tertiary color" || key == "helmet color 3") currentPlayer.HelmetTertiaryColor = ParseRandomColor(val);
-                    else if (key == "pants color") currentPlayer.PantsColor = ParseRandomColor(val);
-                    else if (key == "pants secondary color" || key == "pants color 2") currentPlayer.PantsSecondaryColor = ParseRandomColor(val);
-                    else if (key == "pants tertiary color" || key == "pants color 3") currentPlayer.PantsTertiaryColor = ParseRandomColor(val);
-                    else if (key == "skates color") currentPlayer.SkatesColor = ParseRandomColor(val);
-                    else if (key == "blade color") currentPlayer.BladeColor = ParseRandomColor(val);
-                    else if (key == "laces color") currentPlayer.LacesColor = ParseRandomColor(val);
-                    else if (key == "bicep color") currentPlayer.BicepColor = ParseRandomColor(val);
-                    else if (key == "number color") currentPlayer.NumberColor = ParseRandomColor(val);
-                    else if (key == "number secondary color" || key == "number color 2") currentPlayer.NumberSecondaryColor = ParseRandomColor(val);
-                    else if (key == "socks color") currentPlayer.SocksColor = ParseRandomColor(val);
-                    else if (key == "socks secondary color" || key == "socks color 2") currentPlayer.SocksSecondaryColor = ParseRandomColor(val);
-                    else if (key == "socks tertiary color" || key == "socks color 3") currentPlayer.SocksTertiaryColor = ParseRandomColor(val);
-                    // Goalie-specific skins
-                    else if (key == "skin") currentPlayer.GoalieSkin = val;
-                    else if (key == "skin away") currentPlayer.GoalieSkinAway = val;
-                    else if (key == "glove skin") currentPlayer.GoalieGloveSkin = val;
-                    else if (key == "glove away") currentPlayer.GoalieGloveAway = val;
-                    else if (key == "blocker skin") currentPlayer.GoalieBlockerSkin = val;
-                    else if (key == "blocker away") currentPlayer.GoalieBlockerAway = val;
-                    else if (key == "pads skin") currentPlayer.GoaliePadsSkin = val;
-                    else if (key == "pads away") currentPlayer.GoaliePadsAway = val;
-                    else if (key == "stick skin") currentPlayer.GoalieStickSkin = val;
-                    else if (key == "stick away") currentPlayer.GoalieStickAway = val;
-                    else if (key == "helmet skin") currentPlayer.GoalieHelmetSkin = val;
-                    else if (key == "logo skin") currentPlayer.GoalieLogoSkin = val;
-                }
+                    else if (key == "replace soccer ball") ReplaceSoccerBall = val.ToLower() == "yes" || val.ToLower() == "true";
+                    else if (key == "replace golf ball") ReplaceGolfBall = val.ToLower() == "yes" || val.ToLower() == "true";
+                    else if (key == "use player teams" || key == "custom player teams") UsePlayerTeams = val.ToLower() == "yes" || val.ToLower() == "true";
+                    else if (key == "dump data") DumpData = val.ToLower() == "yes" || val.ToLower() == "true";
+                });
             }
-
-            Log.LogInfo($"[Config] Loaded {ConfigTeams.Count} teams from config.txt");
-            int totalGames = 0;
-            foreach (int a in ActSequence)
-                totalGames += a == 1 ? (ReplaceChallenges ? 5 : 4) : 3;
-            Log.LogInfo($"[Config] Campaign: {TotalMaps} maps, ~{totalGames} games, {ConfigTeams.Count} teams configured");
-
-            for (int i = 0; i < ConfigTeams.Count; i++)
+            else
             {
-                var t = ConfigTeams[i];
-                string boss = "";
-                // Check if this game is a boss
-                int gameCount = 0;
-                for (int m = 0; m < ActSequence.Length; m++)
-                {
-                    int gamesInMap = ActSequence[m] == 1 ? (ReplaceChallenges ? 5 : 4) : 3;
-                    gameCount += gamesInMap;
-                    if (i == gameCount - 1) { boss = " [BOSS]"; break; }
-                    if (i < gameCount) break;
-                }
-
-                // Calculate average OVR for manual teams
-                string ovr = "";
-                if (!t.IsImport)
-                {
-                    var players = new[] { t.LW, t.RW, t.C, t.LD, t.RD };
-                    int totalStats = 0; int count = 0;
-                    foreach (var p in players)
-                    {
-                        if (p != null && !string.IsNullOrEmpty(p.Name))
-                        {
-                            totalStats += (p.Speed + p.ShotPower + p.Accuracy + p.Checking) / 4;
-                            count++;
-                        }
-                    }
-                    if (count > 0) ovr = $" ~{totalStats / count} OVR";
-                }
-
-                if (!string.IsNullOrEmpty(t.ImportTeam))
-                    Log.LogInfo($"  Game {i + 1}: IMPORT '{t.ImportTeam}'{boss}");
-                else
-                    Log.LogInfo($"  Game {i + 1}: '{t.Name}' ({t.City}){ovr}{boss}");
-
-                // Validate team
-                if (!t.IsImport && string.IsNullOrEmpty(t.Name))
-                    Log.LogWarning($"  [WARN] Game {i + 1}: Missing Team Name!");
-                if (!t.IsImport)
-                {
-                    ValidatePlayerConfig(i + 1, "LW", t.LW);
-                    ValidatePlayerConfig(i + 1, "RW", t.RW);
-                    ValidatePlayerConfig(i + 1, "C", t.C);
-                    ValidatePlayerConfig(i + 1, "LD", t.LD);
-                    ValidatePlayerConfig(i + 1, "RD", t.RD);
-                    ValidatePlayerConfig(i + 1, "G", t.Goalie);
-                }
+                Log.LogInfo("[Config] No campaign.txt found — using defaults");
             }
 
-            if (ConfigTeams.Count < totalGames)
-                Log.LogWarning($"[Config] Only {ConfigTeams.Count} teams but ~{totalGames} games — remaining will use hardcoded fallback");
+            LoadCampaignFolders();
         }
         catch (Exception ex)
         {
             Log.LogError($"[Config] Failed to load config: {ex.Message}\n{ex.StackTrace}");
         }
     }
+
+    // Legacy single-file loader removed — only multi-folder format is supported now.
+    // The methods below parse individual files in the folder structure.
+
+
+    // ===== MULTI-FOLDER CAMPAIGN LOADER =====
+    // Applies a single key=value pair to a TeamConfig. Used by both LoadConfig (inline)
+    // and the multi-folder loader (per-file).
+    internal static void ApplyTeamField(TeamConfig team, string key, string val)
+    {
+        if (team == null) return;
+        if (key == "team name") team.Name = val;
+        else if (key == "city") team.City = val;
+        else if (key == "logo from") team.LogoFrom = val;
+        else if (key == "import team") team.ImportTeam = val;
+        else if (key == "abbreviation") team.Abbreviation = val;
+        else if (key == "stat scale") team.StatScale = ParseRandomFloat(val);
+        // Home Colors
+        else if (key == "jersey primary") team.JerseyPrimary = ParseRandomColor(val);
+        else if (key == "jersey secondary") team.JerseySecondary = ParseRandomColor(val);
+        else if (key == "jersey accent") team.JerseyAccent = ParseRandomColor(val);
+        else if (key == "away primary") team.AwayPrimary = ParseRandomColor(val);
+        else if (key == "away secondary") team.AwaySecondary = ParseRandomColor(val);
+        else if (key == "away accent") team.AwayAccent = ParseRandomColor(val);
+        else if (key == "number color home") team.NumberColorHome = ParseRandomColor(val);
+        else if (key == "number color away") team.NumberColorAway = ParseRandomColor(val);
+        else if (key == "transition primary") team.TransitionPrimary = ParseRandomColor(val);
+        else if (key == "transition secondary") team.TransitionSecondary = ParseRandomColor(val);
+        else if (key == "transition tertiary") team.TransitionTertiary = ParseRandomColor(val);
+        // Uniform skins (may also take RGB)
+        else if (key == "body") TryParseUniformRGB(val, "body", ref team.Uniform.Body, ref team.JerseyPrimary);
+        else if (key == "body away") TryParseUniformRGB(val, "body", ref team.Uniform.BodyAway, ref team.AwayPrimary);
+        else if (key == "bicep") TryParseUniformRGB(val, "bicep", ref team.Uniform.Bicep, ref team.TeamBicepColor);
+        else if (key == "bicep away") team.Uniform.BicepAway = ResolveSkin(val, "bicep");
+        else if (key == "gloves") TryParseUniformRGB(val, "gloves", ref team.Uniform.Gloves, ref team.TeamGlovesColor);
+        else if (key == "gloves away") team.Uniform.GlovesAway = ResolveSkin(val, "gloves");
+        else if (key == "pants") TryParseUniformRGB(val, "pants", ref team.Uniform.Pants, ref team.TeamPantsColor);
+        else if (key == "pants away") team.Uniform.PantsAway = ResolveSkin(val, "pants");
+        else if (key == "skates") TryParseUniformRGB(val, "skates", ref team.Uniform.Skates, ref team.TeamSkatesColor);
+        else if (key == "skates away") team.Uniform.SkatesAway = ResolveSkin(val, "skates");
+        else if (key == "helmet") TryParseUniformRGB(val, "helmet", ref team.Uniform.Helmet, ref team.TeamHelmetColor);
+        else if (key == "helmet away") team.Uniform.HelmetAway = ResolveSkin(val, "helmet");
+        else if (key == "stick") TryParseUniformRGB(val, "stick", ref team.Uniform.Stick, ref team.TeamStickColor);
+        // Team equipment colors
+        else if (key == "gloves color") team.TeamGlovesColor = ParseRandomColor(val);
+        else if (key == "gloves secondary color" || key == "gloves color 2") team.TeamGlovesSecondary = ParseRandomColor(val);
+        else if (key == "gloves tertiary color" || key == "gloves color 3") team.TeamGlovesTertiary = ParseRandomColor(val);
+        else if (key == "helmet color") team.TeamHelmetColor = ParseRandomColor(val);
+        else if (key == "helmet secondary color" || key == "helmet color 2") team.TeamHelmetSecondary = ParseRandomColor(val);
+        else if (key == "helmet tertiary color" || key == "helmet color 3") team.TeamHelmetTertiary = ParseRandomColor(val);
+        else if (key == "pants color") team.TeamPantsColor = ParseRandomColor(val);
+        else if (key == "pants secondary color" || key == "pants color 2") team.TeamPantsSecondary = ParseRandomColor(val);
+        else if (key == "pants tertiary color" || key == "pants color 3") team.TeamPantsTertiary = ParseRandomColor(val);
+        else if (key == "skates color") team.TeamSkatesColor = ParseRandomColor(val);
+        else if (key == "blade color") team.TeamBladeColor = ParseRandomColor(val);
+        else if (key == "laces color") team.TeamLacesColor = ParseRandomColor(val);
+        else if (key == "bicep color") team.TeamBicepColor = ParseRandomColor(val);
+        else if (key == "socks color") team.TeamSocksColor = ParseRandomColor(val);
+        else if (key == "socks secondary color" || key == "socks color 2") team.TeamSocksSecondary = ParseRandomColor(val);
+        else if (key == "socks tertiary color" || key == "socks color 3") team.TeamSocksTertiary = ParseRandomColor(val);
+        else if (key == "stick color") team.TeamStickColor = ParseRandomColor(val);
+        else if (key == "number color") team.TeamNumberColor = ParseRandomColor(val);
+        else if (key == "number secondary color" || key == "number color 2") team.TeamNumberSecondary = ParseRandomColor(val);
+        // Gameplay
+        else if (key == "bench size") team.BenchSize = ParseRandomInt(val);
+        else if (key == "bench head") team.BenchHead = val;
+        else if (key == "team relics" || key == "relics")
+        {
+            team.Relics = new List<string>();
+            foreach (var r in val.Split(','))
+            { string t = r.Trim(); if (t.Length > 0) team.Relics.Add(t); }
+        }
+        else if (key == "team random talents") team.TeamRandomTalents = ParseRandomInt(val);
+        else if (key == "team random pool")
+        {
+            string trp = val.Trim().ToLower();
+            if (trp == "all" || trp == "whole pool" || trp == "full pool")
+                team.TeamRandomPoolAll = true;
+            else
+            {
+                team.TeamRandomPool = new List<string>();
+                foreach (var t in val.Split(','))
+                { string tr = t.Trim(); if (tr.Length > 0) team.TeamRandomPool.Add(tr); }
+            }
+        }
+    }
+
+    internal static void ApplyPlayerField(PlayerConfig p, string key, string val)
+    {
+        if (p == null) return;
+        if (key == "name") p.Name = val;
+        else if (key == "import player") p.ImportPlayer = val;
+        else if (key == "number") p.Number = ParseRandomInt(val);
+        else if (key == "face") p.Face = val;
+        else if (key == "left handed")
+        {
+            string lh = val.ToLower().Trim();
+            if (lh == "random") p.Lefty = ConfigRng.Next(2) == 1;
+            else p.Lefty = lh == "yes" || lh == "true";
+        }
+        else if (key == "skin color")
+        {
+            string sc = val.ToLower().Trim();
+            if (sc == "random") p.Black = ConfigRng.Next(2) == 1;
+            else p.Black = sc == "dark";
+        }
+        else if (key == "size")
+        {
+            if (val.Trim().Equals("random", StringComparison.OrdinalIgnoreCase))
+            {
+                string[] sizes = { "ExtraSmall", "Small", "Medium", "Big", "ExtraBig" };
+                p.Size = sizes[ConfigRng.Next(sizes.Length)];
+            }
+            else p.Size = val;
+        }
+        else if (key == "speed") p.Speed = ParseRandomInt(val);
+        else if (key == "shot power") p.ShotPower = ParseRandomInt(val);
+        else if (key == "accuracy") p.Accuracy = ParseRandomInt(val);
+        else if (key == "checking") p.Checking = ParseRandomInt(val);
+        else if (key == "ability") p.Ability = val;
+        else if (key == "talents" || key == "goalie talents")
+        {
+            p.Talents = new List<string>();
+            foreach (var t in val.Split(','))
+            { string tr = t.Trim(); if (tr.Length > 0) p.Talents.Add(tr); }
+        }
+        else if (key == "random talents") p.RandomTalentCount = ParseRandomInt(val);
+        else if (key == "random pool")
+        {
+            string rp = val.Trim().ToLower();
+            if (rp == "all" || rp == "whole pool" || rp == "full pool") p.RandomTalentPoolAll = true;
+            else
+            {
+                p.RandomTalentPool = new List<string>();
+                foreach (var t in val.Split(','))
+                { string tr = t.Trim(); if (tr.Length > 0) p.RandomTalentPool.Add(tr); }
+            }
+        }
+        // Goalie stats
+        else if (key == "skill") p.Skill = ParseRandomInt(val);
+        else if (key == "catching") p.Catching = ParseRandomInt(val);
+        else if (key == "glove") p.Glove = ParseRandomInt(val);
+        else if (key == "blocker") p.Blocker = ParseRandomInt(val);
+        else if (key == "five hole") p.FiveHole = ParseRandomInt(val);
+        else if (key == "stand speed" || key == "standing speed") p.StandSpeed = ParseRandomInt(val);
+        else if (key == "butterfly speed") p.ButterflySpeed = ParseRandomInt(val);
+        else if (key == "control") p.Control = ParseRandomInt(val);
+        else if (key == "recovery") p.Recovery = ParseRandomInt(val);
+        else if (key == "pass power") p.PassPower = ParseRandomInt(val);
+        else if (key == "pokecheck" || key == "poke check") p.Pokecheck = ParseRandomInt(val);
+        else if (key == "depth") p.Depth = ParseRandomInt(val);
+        else if (key == "pass read") p.PassRead = ParseRandomFloat(val);
+        // Appearance
+        else if (key == "size offset") p.SizeOffset = ParseRandomFloat(val);
+        else if (key == "glasses") p.Glasses = val;
+        // Per-player uniform overrides
+        else if (key == "stick") p.StickOverride = ResolveSkin(val, "stick");
+        else if (key == "helmet") p.HelmetOverride = ResolveSkin(val, "helmet");
+        else if (key == "helmet away") p.HelmetAwayOverride = ResolveSkin(val, "helmet");
+        else if (key == "body") p.BodyOverride = ResolveSkin(val, "body");
+        else if (key == "body away") p.BodyAwayOverride = ResolveSkin(val, "body");
+        else if (key == "bicep") p.BicepOverride = ResolveSkin(val, "bicep");
+        else if (key == "bicep away") p.BicepAwayOverride = ResolveSkin(val, "bicep");
+        else if (key == "gloves") p.GlovesOverride = ResolveSkin(val, "gloves");
+        else if (key == "gloves away") p.GlovesAwayOverride = ResolveSkin(val, "gloves");
+        else if (key == "pants") p.PantsOverride = ResolveSkin(val, "pants");
+        else if (key == "pants away") p.PantsAwayOverride = ResolveSkin(val, "pants");
+        else if (key == "skates") p.SkatesOverride = ResolveSkin(val, "skates");
+        else if (key == "skates away") p.SkatesAwayOverride = ResolveSkin(val, "skates");
+        // Per-player color overrides
+        else if (key == "jersey color") p.JerseyColor = ParseRandomColor(val);
+        else if (key == "jersey secondary color") p.JerseySecondaryColor = ParseRandomColor(val);
+        else if (key == "jersey accent color") p.JerseyAccentColor = ParseRandomColor(val);
+        else if (key == "gloves color") p.GlovesColor = ParseRandomColor(val);
+        else if (key == "gloves secondary color" || key == "gloves color 2") p.GlovesSecondaryColor = ParseRandomColor(val);
+        else if (key == "gloves tertiary color" || key == "gloves color 3") p.GlovesTertiaryColor = ParseRandomColor(val);
+        else if (key == "helmet color") p.HelmetColor = ParseRandomColor(val);
+        else if (key == "helmet secondary color" || key == "helmet color 2") p.HelmetSecondaryColor = ParseRandomColor(val);
+        else if (key == "helmet tertiary color" || key == "helmet color 3") p.HelmetTertiaryColor = ParseRandomColor(val);
+        else if (key == "pants color") p.PantsColor = ParseRandomColor(val);
+        else if (key == "pants secondary color" || key == "pants color 2") p.PantsSecondaryColor = ParseRandomColor(val);
+        else if (key == "pants tertiary color" || key == "pants color 3") p.PantsTertiaryColor = ParseRandomColor(val);
+        else if (key == "skates color") p.SkatesColor = ParseRandomColor(val);
+        else if (key == "blade color") p.BladeColor = ParseRandomColor(val);
+        else if (key == "laces color") p.LacesColor = ParseRandomColor(val);
+        else if (key == "bicep color") p.BicepColor = ParseRandomColor(val);
+        else if (key == "number color") p.NumberColor = ParseRandomColor(val);
+        else if (key == "number secondary color" || key == "number color 2") p.NumberSecondaryColor = ParseRandomColor(val);
+        else if (key == "socks color") p.SocksColor = ParseRandomColor(val);
+        else if (key == "socks secondary color" || key == "socks color 2") p.SocksSecondaryColor = ParseRandomColor(val);
+        else if (key == "socks tertiary color" || key == "socks color 3") p.SocksTertiaryColor = ParseRandomColor(val);
+        // Goalie-specific skins
+        else if (key == "skin") p.GoalieSkin = val;
+        else if (key == "skin away") p.GoalieSkinAway = val;
+        else if (key == "glove skin") p.GoalieGloveSkin = val;
+        else if (key == "glove away") p.GoalieGloveAway = val;
+        else if (key == "blocker skin") p.GoalieBlockerSkin = val;
+        else if (key == "blocker away") p.GoalieBlockerAway = val;
+        else if (key == "pads skin") p.GoaliePadsSkin = val;
+        else if (key == "pads away") p.GoaliePadsAway = val;
+        else if (key == "stick skin") p.GoalieStickSkin = val;
+        else if (key == "stick away") p.GoalieStickAway = val;
+        else if (key == "helmet skin") p.GoalieHelmetSkin = val;
+        else if (key == "logo skin") p.GoalieLogoSkin = val;
+    }
+
+    // Parses a file as key=value pairs, applying each pair via the provided callback
+    private static void ParseKvFile(string path, Action<string, string> apply)
+    {
+        if (!File.Exists(path)) return;
+        foreach (var raw in File.ReadAllLines(path))
+        {
+            string line = raw.Replace("\t", " ").Trim();
+            if (string.IsNullOrEmpty(line) || line.StartsWith("#") || line.StartsWith("====")) continue;
+            int eqIdx = line.IndexOf('=');
+            if (eqIdx < 0) continue;
+            string key = line.Substring(0, eqIdx).Trim().ToLower();
+            string val = line.Substring(eqIdx + 1).Trim();
+            if (string.IsNullOrEmpty(val)) continue;
+            apply(key, val);
+        }
+    }
+
+    private static void LoadTeamFile(string path, TeamConfig team)
+    {
+        ParseKvFile(path, (k, v) => ApplyTeamField(team, k, v));
+    }
+
+    private static void LoadPlayerFile(string path, PlayerConfig player)
+    {
+        ParseKvFile(path, (k, v) => ApplyPlayerField(player, k, v));
+    }
+
+    private static void LoadPlayersFolder(string playersDir, TeamConfig team)
+    {
+        if (!Directory.Exists(playersDir)) return;
+
+        // Map a position name (case-insensitive) to the matching PlayerConfig slot
+        PlayerConfig SlotFor(string pos)
+        {
+            if (string.IsNullOrEmpty(pos)) return null;
+            string p = pos.Trim().ToLower();
+            if (p == "goalie") return team.Goalie;
+            if (p == "left wing") return team.LW;
+            if (p == "right wing") return team.RW;
+            if (p == "center") return team.C;
+            if (p == "left defense") return team.LD;
+            if (p == "right defense") return team.RD;
+            if (p == "line 2 left wing") return team.L2_LW;
+            if (p == "line 2 right wing") return team.L2_RW;
+            if (p == "line 2 center") return team.L2_C;
+            if (p == "line 2 left defense") return team.L2_LD;
+            if (p == "line 2 right defense") return team.L2_RD;
+            return null;
+        }
+
+        // New format: any "*.txt" — position is determined by:
+        //   1) "Position - Name.txt" filename prefix (preferred)
+        //   2) "Position = X" key=value field inside the file
+        //   3) Plain "Position.txt" filename (legacy)
+        foreach (var file in Directory.GetFiles(playersDir, "*.txt"))
+        {
+            string filename = Path.GetFileNameWithoutExtension(file);
+            string position = null;
+            // 1) Prefix split on " - "
+            int dashIdx = filename.IndexOf(" - ");
+            if (dashIdx > 0)
+                position = filename.Substring(0, dashIdx).Trim();
+            else
+                position = filename.Trim();
+            var slot = SlotFor(position);
+            // 2) Fall back to inside-file Position field
+            if (slot == null)
+            {
+                string posFromInside = null;
+                ParseKvFile(file, (k, v) => { if (k == "position" && posFromInside == null) posFromInside = v; });
+                if (posFromInside != null) slot = SlotFor(posFromInside);
+            }
+            if (slot != null)
+                LoadPlayerFile(file, slot);
+            else
+                Log.LogWarning($"[Campaign] Could not determine position for player file: {Path.GetFileName(file)}");
+        }
+    }
+
+    internal static void LoadCampaignFolders()
+    {
+        string teamsDir = Path.Combine(ModFolder, "teams");
+        if (!Directory.Exists(teamsDir))
+        {
+            Log.LogInfo("[Campaign] No teams/ folder — using single-file campaign.txt");
+            return;
+        }
+        Log.LogInfo("[Campaign] Loading multi-folder format from teams/");
+
+        // Sort team folders alphabetically (numeric prefix gives play order)
+        var teamDirs = Directory.GetDirectories(teamsDir);
+        Array.Sort(teamDirs, StringComparer.OrdinalIgnoreCase);
+
+        ConfigTeams = new List<TeamConfig>();
+        foreach (var teamDir in teamDirs)
+        {
+            var tc = new TeamConfig();
+            LoadTeamFile(Path.Combine(teamDir, "team.txt"), tc);
+            LoadPlayersFolder(Path.Combine(teamDir, "players"), tc);
+            ConfigTeams.Add(tc);
+            string name = !string.IsNullOrEmpty(tc.ImportTeam) ? $"IMPORT '{tc.ImportTeam}'" : $"'{tc.Name}'";
+            Log.LogInfo($"  Loaded team: {Path.GetFileName(teamDir)} → {name}");
+        }
+        Log.LogInfo($"[Campaign] Multi-folder: {ConfigTeams.Count} teams loaded");
+    }
+
+    internal static void LoadPlayerTeamsFolders()
+    {
+        string rootDir = Path.Combine(ModFolder, "player_teams");
+        if (!Directory.Exists(rootDir)) return;
+        Log.LogInfo("[PlayerTeam] Loading multi-folder format from player_teams/");
+
+        // Expected subfolders: Defense, Speedy, Basic, Trios, draft_pool
+        foreach (var subDir in Directory.GetDirectories(rootDir))
+        {
+            string folderName = Path.GetFileName(subDir);
+            string lower = folderName.ToLower();
+
+            if (lower == "draft_pool" || lower == "draft pool")
+            {
+                // Each file in draft_pool/ is a player, filename = key
+                foreach (var file in Directory.GetFiles(subDir, "*.txt"))
+                {
+                    string playerName = Path.GetFileNameWithoutExtension(file);
+                    var pc = new PlayerConfig();
+                    LoadPlayerFile(file, pc);
+                    DraftPoolConfigs[playerName.ToLower()] = pc;
+                    Log.LogInfo($"  Draft pool: '{playerName}' loaded");
+                }
+                continue;
+            }
+
+            // Team folder: Defense/Speedy/Basic/Trios
+            string teamKey = null;
+            if (lower.StartsWith("defense")) teamKey = "defense";
+            else if (lower.StartsWith("speed")) teamKey = "speed";
+            else if (lower.StartsWith("basic")) teamKey = "basic";
+            else if (lower.StartsWith("trio")) teamKey = "trio";
+            else teamKey = lower;
+
+            var tc = new TeamConfig();
+            LoadTeamFile(Path.Combine(subDir, "team.txt"), tc);
+            LoadPlayersFolder(Path.Combine(subDir, "players"), tc);
+            PlayerTeamConfigs[teamKey] = tc;
+            Log.LogInfo($"  Player team: '{teamKey}' loaded from {folderName}");
+        }
+        Log.LogInfo($"[PlayerTeam] Multi-folder: {PlayerTeamConfigs.Count} teams, {DraftPoolConfigs.Count} draft pool players");
+    }
+
+    // ===== PLAYER TEAM EDITOR =====
+    internal static void LoadPlayerTeams()
+    {
+        if (IsDefaultMode) return;
+        if (!UsePlayerTeams)
+        {
+            Log.LogInfo("[PlayerTeam] Use Player Teams = no — skipping");
+            return;
+        }
+        // Multi-folder format only: looks for player_teams/ directory
+        if (Directory.Exists(Path.Combine(ModFolder, "player_teams")))
+        {
+            LoadPlayerTeamsFolders();
+            return;
+        }
+        Log.LogInfo("[PlayerTeam] No player_teams/ folder — player teams unchanged");
+    }
+
 
     private static void ValidatePlayerConfig(int gameNum, string pos, PlayerConfig pc)
     {
@@ -774,7 +849,21 @@ public class Plugin : BasePlugin
         if (lower == "figure skaters") return "Body/Figure_Skaters/Figure_Skaters";
         if (lower == "referee") return "Body/Alumni/Ref_Alumni";
 
-        // Bicep skins (legacy explicit names still work)
+        // Bicep skins (fixed options with slot context)
+        if (slotHint == "bicep" || slotHint == "bicep away")
+        {
+            if (lower == "crusaders") return "Body_Bicep/Crusaders";
+            if (lower == "crusaders prince" || lower == "crusaders_prince") return "Body_Bicep/Crusaders_Prince";
+            if (lower == "figure skaters" || lower == "figure_skaters") return "Body_Bicep/Figure_Skaters";
+            if (lower == "golfers") return "Body_Bicep/Golfers";
+            if (lower == "hockey fc" || lower == "hockey_fc") return "Body_Bicep/Hockey_FC";
+            if (lower == "mountaineers black" || lower == "mountaineers_black") return "Body_Bicep/Mountaineers_Black";
+            if (lower == "mountaineers white" || lower == "mountaineers_white") return "Body_Bicep/Mountaineers_White";
+            if (lower == "princess") return "Body_Bicep/Princess";
+            if (lower == "prisoners") return "Body_Bicep/Prisoners";
+            if (lower == "referees" || lower == "referee") return "Body_Bicep/Referees";
+            if (lower == "tycoons") return "Body_Bicep/Tycoons";
+        }
         if (lower == "standard bicep") return "Body_Bicep/Customization/Customization_colors";
 
         // Glove skins
@@ -784,9 +873,10 @@ public class Plugin : BasePlugin
         if (lower == "standard pants") return "Body_Pants/Customization/Customization_colors";
 
         // Skate skins
-        if (lower == "black skates") return "Body_Skates/Black_Skates";
         if (lower == "standard skates" || lower == "colored skates")
             return "Body_Skates/Customization/Customization_colors";
+        if (lower == "black skates" || lower == "black_skates")
+            return "Body_Skates/Black_Skates";
 
         // Helmet skins
         if (lower == "team colors" || lower == "colored" || lower == "standard helmet")
@@ -811,8 +901,7 @@ public class Plugin : BasePlugin
         }
         if (lower == "random skates")
         {
-            string[] skates = { "Body_Skates/Black_Skates", "Body_Skates/Customization/Customization_colors" };
-            return skates[new System.Random().Next(skates.Length)];
+            return "Body_Skates/Customization/Customization_colors";
         }
 
         // Stick skins
@@ -871,6 +960,94 @@ public class Plugin : BasePlugin
         }
 
         // Already a path — return as-is
+        return val.Trim();
+    }
+
+    /// <summary>
+    /// Resolve goalie-specific skin names (helmet/body/glove/blocker/pads/stick).
+    /// Goalies have different skin paths than skaters.
+    /// slot: "helmet" (the mask), "body", "glove", "blocker", "pads", "stick"
+    /// </summary>
+    internal static string ResolveGoalieSkin(string val, string slot)
+    {
+        if (string.IsNullOrEmpty(val)) return val;
+        string lower = val.Trim().ToLower().Replace("_", " ");
+        // Already a full path — return as-is
+        if (val.Contains("/")) return val.Trim();
+
+        // Standard / team colors
+        if (lower == "standard" || lower == "team colors" || lower == "default" || lower == "colored")
+        {
+            if (slot == "helmet") return "Helmet/Helmet_Customization_colors";
+            if (slot == "body") return "Body/Customization_colors";
+            if (slot == "glove") return "Body_Glove/Customization/Customization_colors";
+            if (slot == "blocker") return "Body_Blocker/Customization/Customization_colors";
+            if (slot == "pads") return "Body_Pads/Customization/Customization_colors";
+            if (slot == "stick") return "Body_Stick/Customization/Customization_colors";
+        }
+
+        if (slot == "helmet")
+        {
+            // 16 goalie masks
+            if (lower == "canadians") return "Helmet/Helmet_Canadians";
+            if (lower == "cheese") return "Helmet/Helmet_Cheese";
+            if (lower == "cultists") return "Helmet/Helmet_Cultists";
+            if (lower == "disco") return "Helmet/Helmet_Disco";
+            if (lower == "figure skaters") return "Helmet/Helmet_Figure_Skaters";
+            if (lower == "golfers") return "Helmet/Helmet_Golfers";
+            if (lower == "hockey fc" || lower == "hockeyfc") return "Helmet/Helmet_HockeyFC";
+            if (lower == "knights") return "Helmet/Helmet_Knights";
+            if (lower == "meatballs") return "Helmet/Helmet_Meatballs";
+            if (lower == "mountaineers") return "Helmet/Helmet_Mountaineers";
+            if (lower == "princess") return "Helmet/Helmet_Princess";
+            if (lower == "prisoners") return "Helmet/Helmet_Prisoners";
+            if (lower == "referees" || lower == "referee") return "Helmet/Helmet_Referees";
+            if (lower == "toronto") return "Helmet/Helmet_Toronto";
+            if (lower == "tycoons") return "Helmet/Helmet_Tycoons";
+        }
+        if (slot == "body")
+        {
+            if (lower == "figure skaters") return "Body/Figure_Skaters";
+            if (lower == "golfers") return "Body/Golfers";
+            if (lower == "hockey fc" || lower == "hockeyfc") return "Body/HockeyFC";
+            if (lower == "knights") return "Body/Knights";
+            if (lower == "mountaineers") return "Body/Mountaineers";
+            if (lower == "princess") return "Body/Princess";
+            if (lower == "prisoners") return "Body/Prisoners";
+            if (lower == "referees" || lower == "referee") return "Body/Referees";
+            if (lower == "tycoons") return "Body/Tycoons";
+        }
+        if (slot == "glove")
+        {
+            if (lower == "brown") return "Body_Glove/Brown";
+            if (lower == "figure skaters") return "Body_Glove/Figure_Skaters";
+            if (lower == "golfers") return "Body_Glove/Golfers";
+            if (lower == "hockey fc" || lower == "hockeyfc") return "Body_Glove/Hockey_FC";
+            if (lower == "knights") return "Body_Glove/Knights";
+            if (lower == "tycoons") return "Body_Glove/Tycoons";
+        }
+        if (slot == "blocker")
+        {
+            if (lower == "brown") return "Body_Blocker/Brown";
+            if (lower == "figure skaters") return "Body_Blocker/Figure_Skaters";
+            if (lower == "golfers") return "Body_Blocker/Golfers";
+            if (lower == "knights") return "Body_Blocker/Knights";
+            if (lower == "tycoons") return "Body_Blocker/Tycoons";
+        }
+        if (slot == "pads")
+        {
+            if (lower == "brown") return "Body_Pads/Brown";
+            if (lower == "figure skaters") return "Body_Pads/Figure_Skaters";
+            if (lower == "hockey fc" || lower == "hockeyfc") return "Body_Pads/Hockey_FC";
+            if (lower == "tycoons") return "Body_Pads/Tycoons";
+        }
+        if (slot == "stick")
+        {
+            if (lower == "figure skaters") return "Body_Stick/Figure_Skaters";
+            if (lower == "tycoons") return "Body_Stick/Tycoons";
+        }
+
+        // Already a name without a slash — return as-is, maybe it's a full name like "Helmet_Knights"
         return val.Trim();
     }
 
@@ -1003,6 +1180,7 @@ public class Plugin : BasePlugin
         ResolveCampaignPaths();
         LoadDefaults();
         LoadConfig();
+        LoadPlayerTeams();
         LoadProgress();
         if (GamesPlayed > 0)
             LogNextGame();
@@ -1147,8 +1325,17 @@ public static class PatchMatchGameEnd
                     Plugin.Log.LogInfo("[Campaign] Challenge match won — not counting (replaceChallenges=false)");
                     return;
                 }
-                // Per-act: if current act not in the replace list, don't count
-                if (Plugin.ReplaceChallengesActs != null)
+                // Per-map override (new format: maps:1,3,5)
+                if (Plugin.ReplaceChallengesMaps != null)
+                {
+                    if (!Plugin.ReplaceChallengesMaps.Contains(Plugin.ActsCompleted))
+                    {
+                        Plugin.Log.LogInfo($"[Campaign] Challenge match won — not counting (map {Plugin.ActsCompleted} not in per-map replace list)");
+                        return;
+                    }
+                }
+                // Legacy per-act list
+                else if (Plugin.ReplaceChallengesActs != null)
                 {
                     int currentAct = Plugin.ActForMap;
                     bool actMatch = false;
@@ -1492,8 +1679,17 @@ public static class PatchCreateMapNode
         if (node?.layerNodeType == null) return;
         if (node.layerNodeType.nodeType == NodeType.Challenge)
         {
-            // Per-act filtering: if ReplaceChallengesActs is set, only replace in those acts
-            if (Plugin.ReplaceChallengesActs != null)
+            // Per-map override (new format: maps:1,3,5)
+            if (Plugin.ReplaceChallengesMaps != null)
+            {
+                if (!Plugin.ReplaceChallengesMaps.Contains(Plugin.ActsCompleted))
+                {
+                    Plugin.Log.LogInfo($"[MapGen] Challenge node kept (map {Plugin.ActsCompleted} not in per-map replace list)");
+                    return;
+                }
+            }
+            // Legacy per-act filtering
+            else if (Plugin.ReplaceChallengesActs != null)
             {
                 int currentAct = Plugin.ActForMap;
                 bool actMatch = false;
@@ -1612,9 +1808,40 @@ public static class PatchBossLaunchMatch
         // Check aliases first
         if (TalentAliases.TryGetValue(name, out string aliased))
             name = aliased;
+
+        // 1) Strict match on internal asset name ("Always Catch Pucks")
         for (int i = 0; i < CachedTalentRepo.talents.Count; i++)
             if (CachedTalentRepo.talents[i]?.name == name)
                 return CachedTalentRepo.talents[i];
+
+        // 2) Case-insensitive match on internal name
+        for (int i = 0; i < CachedTalentRepo.talents.Count; i++)
+        {
+            var t = CachedTalentRepo.talents[i];
+            if (t != null && t.name != null &&
+                t.name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                return t;
+        }
+
+        // 3) Match on localized display name ("Infinimitt", "Coach's Favorite")
+        for (int i = 0; i < CachedTalentRepo.talents.Count; i++)
+        {
+            var t = CachedTalentRepo.talents[i];
+            if (t == null) continue;
+            try
+            {
+                string key = t.powerupName;
+                if (!string.IsNullOrEmpty(key))
+                {
+                    string display = LocalizationManager.GetTranslation(key, true, 0, true, false, null, null, true);
+                    if (!string.IsNullOrEmpty(display) &&
+                        display.Equals(name, StringComparison.OrdinalIgnoreCase))
+                        return t;
+                }
+            }
+            catch {}
+        }
+
         return null;
     }
 
@@ -1626,7 +1853,25 @@ public static class PatchBossLaunchMatch
             AllRelicCache = UnityEngine.Resources.FindObjectsOfTypeAll<Rogue.Relic>();
         if (AllRelicCache == null) return null;
 
-        // Try relicName (localization key) contains
+        // 1) Try localized display name ("Steel Mitts", "Bench Bonus")
+        foreach (var r in AllRelicCache)
+        {
+            if (r == null || r.level != level) continue;
+            try
+            {
+                string key = r.relicName;
+                if (!string.IsNullOrEmpty(key))
+                {
+                    string display = LocalizationManager.GetTranslation(key, true, 0, true, false, null, null, true);
+                    if (!string.IsNullOrEmpty(display) &&
+                        display.Equals(nameContains, StringComparison.OrdinalIgnoreCase))
+                        return r;
+                }
+            }
+            catch {}
+        }
+
+        // 2) Try relicName (localization key) contains
         foreach (var r in AllRelicCache)
         {
             if (r == null) continue;
@@ -2627,6 +2872,12 @@ public static class PatchBossLaunchMatch
 
                 if (f.colorSchemes != null)
                 {
+                    // NOTE: Previously this cloned f.colorSchemes to isolate per-player colors,
+                    // but testing showed that broke application entirely — the game renderer
+                    // didn't read the cloned instance, so overrides didn't reach the mesh.
+                    // The shared-ref write IS what the game reads; bleed across the team was
+                    // not observed in practice (likely because every player on the team shares
+                    // team colors anyway, so "bleed" == "expected behavior" for unset fields).
                     SetSchemeColor(f.colorSchemes.jerseyScheme, pc.JerseyColor, pc.JerseySecondaryColor, pc.JerseyAccentColor);
                     SetSchemeColor(f.colorSchemes.glovesScheme, pc.GlovesColor, pc.GlovesSecondaryColor, pc.GlovesTertiaryColor);
                     SetSchemeColor(f.colorSchemes.helmetScheme, pc.HelmetColor, pc.HelmetSecondaryColor, pc.HelmetTertiaryColor);
@@ -2636,6 +2887,7 @@ public static class PatchBossLaunchMatch
                     SetSchemeColor(f.colorSchemes.numberScheme, pc.NumberColor, pc.NumberSecondaryColor, null);
                     if (pc.BicepColor != null)
                         f.colorSchemes.jerseyScheme.secondaryColor = new Color(pc.BicepColor[0]/255f, pc.BicepColor[1]/255f, pc.BicepColor[2]/255f);
+                    Plugin.Log.LogInfo($"[Color] Applied per-player overrides to {f.firstName} {f.lastName}");
                 }
             }
 
@@ -2648,7 +2900,43 @@ public static class PatchBossLaunchMatch
         }
     }
 
-    private static void ApplyTeamEquipmentColors(ForwardData f, TeamConfig cfg)
+    internal static void ApplyGoalieColorOverrides(GoaltenderData g, PlayerConfig pc)
+    {
+        if (g == null || pc == null) return;
+
+        bool hasAny = pc.JerseyColor != null || pc.JerseySecondaryColor != null ||
+            pc.JerseyAccentColor != null || pc.GlovesColor != null || pc.GlovesSecondaryColor != null ||
+            pc.GlovesTertiaryColor != null || pc.HelmetColor != null || pc.HelmetSecondaryColor != null ||
+            pc.HelmetTertiaryColor != null || pc.PantsColor != null || pc.PantsSecondaryColor != null ||
+            pc.PantsTertiaryColor != null || pc.SkatesColor != null || pc.BladeColor != null ||
+            pc.LacesColor != null || pc.BicepColor != null || pc.SocksColor != null ||
+            pc.SocksSecondaryColor != null || pc.SocksTertiaryColor != null ||
+            pc.NumberColor != null || pc.NumberSecondaryColor != null;
+        if (!hasAny) return;
+
+        try
+        {
+            // GoaltenderData has a colorSchemes field like ForwardData
+            if (g.colorSchemes != null)
+            {
+                SetSchemeColor(g.colorSchemes.jerseyScheme, pc.JerseyColor, pc.JerseySecondaryColor, pc.JerseyAccentColor);
+                SetSchemeColor(g.colorSchemes.glovesScheme, pc.GlovesColor, pc.GlovesSecondaryColor, pc.GlovesTertiaryColor);
+                SetSchemeColor(g.colorSchemes.helmetScheme, pc.HelmetColor, pc.HelmetSecondaryColor, pc.HelmetTertiaryColor);
+                SetSchemeColor(g.colorSchemes.pantsScheme, pc.PantsColor, pc.PantsSecondaryColor, pc.PantsTertiaryColor);
+                SetSchemeColor(g.colorSchemes.skatesScheme, pc.SkatesColor, pc.BladeColor, pc.LacesColor);
+                SetSchemeColor(g.colorSchemes.socksScheme, pc.SocksColor, pc.SocksSecondaryColor, pc.SocksTertiaryColor);
+                SetSchemeColor(g.colorSchemes.numberScheme, pc.NumberColor, pc.NumberSecondaryColor, null);
+                Plugin.Log.LogInfo($"[Color] Applied goalie color overrides to '{g.firstName} {g.lastName}'");
+            }
+
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.LogWarning($"[Color] Goalie color override error: {ex.Message}");
+        }
+    }
+
+    internal static void ApplyTeamEquipmentColors(ForwardData f, TeamConfig cfg)
     {
         if (f == null || cfg == null) return;
         try
@@ -2869,7 +3157,7 @@ public static class PatchBossLaunchMatch
         }
     }
 
-    private static void ApplyGoalieConfig(GoaltenderData g, PlayerConfig pc)
+    internal static void ApplyGoalieConfig(GoaltenderData g, PlayerConfig pc)
     {
         if (g == null || pc == null) return;
 
@@ -2899,21 +3187,22 @@ public static class PatchBossLaunchMatch
             g.depth = pc.Depth;
             g.passReadSkill = pc.PassRead;
 
-            // Face
-            if (!string.IsNullOrEmpty(pc.Face)) g.headSkin = pc.Face;
+            // Face — resolve through ResolveSkin like skaters do
+            if (!string.IsNullOrEmpty(pc.Face))
+                g.headSkin = Plugin.ResolveSkin(pc.Face);
 
-            // Goalie-specific skins
-            if (!string.IsNullOrEmpty(pc.GoalieSkin)) try { g.skin = pc.GoalieSkin; } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieSkinAway)) try { g.awaySkin = pc.GoalieSkinAway; } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieGloveSkin)) try { g.gloveSkin = pc.GoalieGloveSkin; } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieGloveAway)) try { g.awayGloveSkin = pc.GoalieGloveAway; } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieBlockerSkin)) try { g.blockerSkin = pc.GoalieBlockerSkin; } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieBlockerAway)) try { g.awayBlockerSkin = pc.GoalieBlockerAway; } catch {}
-            if (!string.IsNullOrEmpty(pc.GoaliePadsSkin)) try { g.padsSkin = pc.GoaliePadsSkin; } catch {}
-            if (!string.IsNullOrEmpty(pc.GoaliePadsAway)) try { g.awayPadsSkin = pc.GoaliePadsAway; } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieStickSkin)) try { g.stickSkin = pc.GoalieStickSkin; } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieStickAway)) try { g.awayStickSkin = pc.GoalieStickAway; } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieHelmetSkin)) try { g.helmetSkin = pc.GoalieHelmetSkin; } catch {}
+            // Goalie-specific skins (all resolved through ResolveGoalieSkin for friendly names)
+            if (!string.IsNullOrEmpty(pc.GoalieSkin)) try { g.skin = Plugin.ResolveGoalieSkin(pc.GoalieSkin, "body"); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoalieSkinAway)) try { g.awaySkin = Plugin.ResolveGoalieSkin(pc.GoalieSkinAway, "body"); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoalieGloveSkin)) try { g.gloveSkin = Plugin.ResolveGoalieSkin(pc.GoalieGloveSkin, "glove"); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoalieGloveAway)) try { g.awayGloveSkin = Plugin.ResolveGoalieSkin(pc.GoalieGloveAway, "glove"); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoalieBlockerSkin)) try { g.blockerSkin = Plugin.ResolveGoalieSkin(pc.GoalieBlockerSkin, "blocker"); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoalieBlockerAway)) try { g.awayBlockerSkin = Plugin.ResolveGoalieSkin(pc.GoalieBlockerAway, "blocker"); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoaliePadsSkin)) try { g.padsSkin = Plugin.ResolveGoalieSkin(pc.GoaliePadsSkin, "pads"); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoaliePadsAway)) try { g.awayPadsSkin = Plugin.ResolveGoalieSkin(pc.GoaliePadsAway, "pads"); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoalieStickSkin)) try { g.stickSkin = Plugin.ResolveGoalieSkin(pc.GoalieStickSkin, "stick"); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoalieStickAway)) try { g.awayStickSkin = Plugin.ResolveGoalieSkin(pc.GoalieStickAway, "stick"); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoalieHelmetSkin)) try { g.helmetSkin = Plugin.ResolveGoalieSkin(pc.GoalieHelmetSkin, "helmet"); } catch {}
             if (!string.IsNullOrEmpty(pc.GoalieLogoSkin)) try { g.logoSkin = pc.GoalieLogoSkin; } catch {}
 
             // Fallback defaults for goalie from defaults.txt
@@ -2925,13 +3214,20 @@ public static class PatchBossLaunchMatch
                 g.firstName = np[0];
                 g.lastName = np.Length > 1 ? np[1] : "";
             }
-            if (string.IsNullOrEmpty(g.headSkin) && !string.IsNullOrEmpty(dg.Face))
-                g.headSkin = Plugin.ResolveSkin(dg.Face);
+            // Always ensure goalie has a valid face — use defaults.txt or hardcoded fallback
+            if (string.IsNullOrWhiteSpace(g.headSkin))
+            {
+                g.headSkin = !string.IsNullOrEmpty(dg.Face) ? Plugin.ResolveSkin(dg.Face) : "Faces/Custom/Helmet_Face";
+                Plugin.Log.LogInfo($"[Config] Goalie '{g.firstName}' had no face — set to '{g.headSkin}'");
+            }
 
             // Talents
             if (pc.Talents != null)
                 foreach (var t in pc.Talents)
                     if (!string.IsNullOrEmpty(t)) GiveGoalieTalent(g, t);
+
+            // Per-goalie color overrides (override team colors on specific equipment)
+            ApplyGoalieColorOverrides(g, pc);
         }
         catch (Exception ex)
         {
@@ -2972,7 +3268,7 @@ public static class PatchBossLaunchMatch
                 if (src.powerups[i] != null) dst.powerups.Add(src.powerups[i]);
     }
 
-    private static void CopyGoalieData(GoaltenderData src, GoaltenderData dst)
+    internal static void CopyGoalieData(GoaltenderData src, GoaltenderData dst)
     {
         // Name and stats
         dst.firstName = src.firstName; dst.lastName = src.lastName;
@@ -3019,7 +3315,7 @@ public static class PatchBossLaunchMatch
         return null;
     }
 
-    private static GoaltenderData FindGoalieByName(string name)
+    internal static GoaltenderData FindGoalieByName(string name)
     {
         if (string.IsNullOrEmpty(name)) return null;
         // Random goalie
@@ -5505,8 +5801,18 @@ public static class LogRepositories
             Plugin.ReposLogged = true;
         }
 
+        // Always auto-dump team+player list for the GUI tool (not gated by DumpData).
+        // Written to ModContentRoot so the GUI's "Import Game Team" picker can read it.
+        try
+        {
+            AutoDumpNameLists();
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Name list dump failed: {ex.Message}"); }
+
         if (!Plugin.DumpData) return;
-        Plugin.Log.LogInfo("[Dump] Generating data dumps (set 'Dump Data = no' in config to skip)...");
+        if (Plugin.SeparateFilesWritten) return; // only dump once
+        Plugin.SeparateFilesWritten = true;
+        Plugin.Log.LogInfo("[Dump] Generating data dumps...");
 
         var sb = new StringBuilder();
         sb.AppendLine("=== TAPE TO TAPE - GAME DATA DUMP ===");
@@ -5756,6 +6062,68 @@ public static class LogRepositories
                 }
             }
 
+            // Now collect goalie-specific skins
+            var goalieHeadSkins = new HashSet<string>();
+            var goalieBodySkins = new HashSet<string>();
+            var goalieHelmetSkins = new HashSet<string>();
+            var goalieGloveSkins = new HashSet<string>();
+            var goalieBlockerSkins = new HashSet<string>();
+            var goaliePadsSkins = new HashSet<string>();
+            var goalieStickSkins = new HashSet<string>();
+
+            var allGoalies = UnityEngine.Resources.FindObjectsOfTypeAll<GoaltenderData>();
+            if (allGoalies != null)
+            {
+                // Helper: pull a private list<string> via reflection
+                void AddList(object obj, string fieldName, HashSet<string> target)
+                {
+                    try
+                    {
+                        var field = obj.GetType().GetField(fieldName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                        if (field != null)
+                        {
+                            var list = field.GetValue(obj) as Il2CppSystem.Collections.Generic.List<string>;
+                            if (list != null)
+                                for (int i = 0; i < list.Count; i++)
+                                    if (!string.IsNullOrEmpty(list[i])) target.Add(list[i]);
+                        }
+                    } catch {}
+                }
+
+                foreach (var g in allGoalies)
+                {
+                    if (g == null) continue;
+                    // Public fields
+                    if (!string.IsNullOrEmpty(g.headSkin)) goalieHeadSkins.Add(g.headSkin);
+                    try { if (!string.IsNullOrEmpty(g.skin)) goalieBodySkins.Add(g.skin); } catch {}
+                    try { if (!string.IsNullOrEmpty(g.awaySkin)) goalieBodySkins.Add(g.awaySkin); } catch {}
+                    try { if (!string.IsNullOrEmpty(g.helmetSkin)) goalieHelmetSkins.Add(g.helmetSkin); } catch {}
+                    try { if (!string.IsNullOrEmpty(g.gloveSkin)) goalieGloveSkins.Add(g.gloveSkin); } catch {}
+                    try { if (!string.IsNullOrEmpty(g.awayGloveSkin)) goalieGloveSkins.Add(g.awayGloveSkin); } catch {}
+                    try { if (!string.IsNullOrEmpty(g.blockerSkin)) goalieBlockerSkins.Add(g.blockerSkin); } catch {}
+                    try { if (!string.IsNullOrEmpty(g.awayBlockerSkin)) goalieBlockerSkins.Add(g.awayBlockerSkin); } catch {}
+                    try { if (!string.IsNullOrEmpty(g.padsSkin)) goaliePadsSkins.Add(g.padsSkin); } catch {}
+                    try { if (!string.IsNullOrEmpty(g.awayPadsSkin)) goaliePadsSkins.Add(g.awayPadsSkin); } catch {}
+                    try { if (!string.IsNullOrEmpty(g.stickSkin)) goalieStickSkins.Add(g.stickSkin); } catch {}
+                    try { if (!string.IsNullOrEmpty(g.awayStickSkin)) goalieStickSkins.Add(g.awayStickSkin); } catch {}
+                    // Private pools (all possible options for this goalie)
+                    AddList(g, "_headSkins", goalieHeadSkins);
+                    AddList(g, "_bodySkins", goalieBodySkins);
+                    AddList(g, "_awayBodySkins", goalieBodySkins);
+                    AddList(g, "_helmetSkins", goalieHelmetSkins);
+                    AddList(g, "_gloveSkins", goalieGloveSkins);
+                    AddList(g, "_awayGloveSkins", goalieGloveSkins);
+                    AddList(g, "_blockerSkins", goalieBlockerSkins);
+                    AddList(g, "_awayBlockerSkins", goalieBlockerSkins);
+                    AddList(g, "_padsSkins", goaliePadsSkins);
+                    AddList(g, "_awayPadsSkins", goaliePadsSkins);
+                    AddList(g, "_stickSkins", goalieStickSkins);
+                    AddList(g, "_awayStickSkins", goalieStickSkins);
+                }
+            }
+
+            sbSkins.AppendLine("=== SKATER SKINS ===");
+            sbSkins.AppendLine();
             sbSkins.AppendLine($"--- HEAD SKINS ({headSkins.Count}) ---");
             foreach (var s in headSkins) sbSkins.AppendLine($"  {s}");
             sbSkins.AppendLine();
@@ -5775,8 +6143,32 @@ public static class LogRepositories
                 sbSkins.AppendLine();
             }
 
+            sbSkins.AppendLine("=== GOALIE SKINS ===");
+            sbSkins.AppendLine();
+            sbSkins.AppendLine($"--- GOALIE HEAD/FACE SKINS ({goalieHeadSkins.Count}) ---");
+            foreach (var s in goalieHeadSkins) sbSkins.AppendLine($"  {s}");
+            sbSkins.AppendLine();
+            sbSkins.AppendLine($"--- GOALIE BODY SKINS ({goalieBodySkins.Count}) ---");
+            foreach (var s in goalieBodySkins) sbSkins.AppendLine($"  {s}");
+            sbSkins.AppendLine();
+            sbSkins.AppendLine($"--- GOALIE HELMET SKINS ({goalieHelmetSkins.Count}) ---");
+            foreach (var s in goalieHelmetSkins) sbSkins.AppendLine($"  {s}");
+            sbSkins.AppendLine();
+            sbSkins.AppendLine($"--- GOALIE GLOVE SKINS ({goalieGloveSkins.Count}) ---");
+            foreach (var s in goalieGloveSkins) sbSkins.AppendLine($"  {s}");
+            sbSkins.AppendLine();
+            sbSkins.AppendLine($"--- GOALIE BLOCKER SKINS ({goalieBlockerSkins.Count}) ---");
+            foreach (var s in goalieBlockerSkins) sbSkins.AppendLine($"  {s}");
+            sbSkins.AppendLine();
+            sbSkins.AppendLine($"--- GOALIE PADS SKINS ({goaliePadsSkins.Count}) ---");
+            foreach (var s in goaliePadsSkins) sbSkins.AppendLine($"  {s}");
+            sbSkins.AppendLine();
+            sbSkins.AppendLine($"--- GOALIE STICK SKINS ({goalieStickSkins.Count}) ---");
+            foreach (var s in goalieStickSkins) sbSkins.AppendLine($"  {s}");
+            sbSkins.AppendLine();
+
             File.WriteAllText(Path.Combine(basePath, "ALL_SKIN_OPTIONS.txt"), sbSkins.ToString());
-            Plugin.Log.LogInfo("[Dump] Skin options dumped to ALL_SKIN_OPTIONS.txt");
+            Plugin.Log.LogInfo($"[Dump] Skin options dumped to ALL_SKIN_OPTIONS.txt (goalie heads: {goalieHeadSkins.Count})");
         }
         catch (Exception ex) { Plugin.Log.LogError($"[Dump] Skin options dump failed: {ex}"); }
 
@@ -5862,6 +6254,143 @@ public static class LogRepositories
             Plugin.Log.LogInfo("[Dump] Available teams dumped to ALL_AVAILABLE_TEAMS.txt");
         }
         catch (Exception ex) { Plugin.Log.LogError($"[Dump] Custom teams dump failed: {ex}"); }
+
+        // === 4. DUMP ALL FORWARDS AND GOALIES IN MEMORY (includes draft pool) ===
+        try
+        {
+            var sbPlayers = new StringBuilder();
+            sbPlayers.AppendLine("=== ALL PLAYERS IN MEMORY ===");
+            sbPlayers.AppendLine($"Generated: {DateTime.Now}");
+            sbPlayers.AppendLine("Includes draft pool players, bench players, and all team rosters.");
+            sbPlayers.AppendLine();
+
+            var allFwds = UnityEngine.Resources.FindObjectsOfTypeAll<ForwardData>();
+            if (allFwds != null)
+            {
+                sbPlayers.AppendLine($"========== ALL FORWARDS ({allFwds.Length}) ==========");
+                foreach (var f in allFwds)
+                {
+                    if (f == null) continue;
+                    sbPlayers.AppendLine($"--- {f.firstName} {f.lastName} ---");
+                    sbPlayers.AppendLine($"  speed: {f.speed}, shotPower: {f.shotPower}, shotAccuracy: {f.shotAccuracy}, checking: {f.checking}");
+                    sbPlayers.AppendLine($"  size: {f.skaterSize}, sizeOffset: {f.sizeOffsetPercentage}");
+                    sbPlayers.AppendLine($"  isLefty: {f.isLefty}, isBlack: {f.isBlack}, number: {f.number}");
+                    sbPlayers.AppendLine($"  headSkin: \"{f.headSkin ?? ""}\"");
+                    sbPlayers.AppendLine($"  bodySkin: \"{f.bodySkin ?? ""}\"");
+                    sbPlayers.AppendLine($"  bodyAwaySkin: \"{f.bodyAwaySkin ?? ""}\"");
+                    sbPlayers.AppendLine($"  helmetSkin: \"{f.helmetSkin ?? ""}\"");
+                    sbPlayers.AppendLine($"  helmetAwaySkin: \"{f.helmetAwaySkin ?? ""}\"");
+                    sbPlayers.AppendLine($"  bicepSkin: \"{f.bicepSkin ?? ""}\"");
+                    sbPlayers.AppendLine($"  gloveSkin: \"{f.gloveSkin ?? ""}\"");
+                    sbPlayers.AppendLine($"  pantsSkin: \"{f.pantsSkin ?? ""}\"");
+                    sbPlayers.AppendLine($"  skateSkin: \"{f.skateSkin ?? ""}\"");
+                    sbPlayers.AppendLine($"  stickSkin: \"{f.stickSkin ?? ""}\"");
+                    sbPlayers.AppendLine($"  numberSkin: \"{f.numberSkin ?? ""}\"");
+                    sbPlayers.AppendLine($"  logoSkin: \"{f.logoSkin ?? ""}\"");
+                    sbPlayers.AppendLine($"  glassesSkin: \"{f.glassesSkin ?? ""}\"");
+                    if (f.ability != null)
+                        sbPlayers.AppendLine($"  ability: \"{f.ability.name}\"");
+                    if (f.powerups != null && f.powerups.Count > 0)
+                    {
+                        sbPlayers.Append("  talents: [");
+                        for (int j = 0; j < f.powerups.Count; j++)
+                        {
+                            if (j > 0) sbPlayers.Append(", ");
+                            sbPlayers.Append($"\"{f.powerups[j]?.name ?? "null"}\"");
+                        }
+                        sbPlayers.AppendLine("]");
+                    }
+                    sbPlayers.AppendLine();
+                }
+            }
+
+            var allGoalies = UnityEngine.Resources.FindObjectsOfTypeAll<GoaltenderData>();
+            if (allGoalies != null)
+            {
+                sbPlayers.AppendLine($"========== ALL GOALIES ({allGoalies.Length}) ==========");
+                foreach (var g in allGoalies)
+                {
+                    if (g == null) continue;
+                    sbPlayers.AppendLine($"--- {g.firstName} {g.lastName} ---");
+                    sbPlayers.AppendLine($"  skill: {g.skill}, catching: {g.catchingSkill}, glove: {g.gloveSkill}, blocker: {g.blockerSkill}");
+                    sbPlayers.AppendLine($"  fiveHole: {g.fiveHoleSkill}, standSpd: {g.standingSpeed}, buttSpd: {g.butterflySpeed}");
+                    sbPlayers.AppendLine($"  control: {g.controlSkill}, recovery: {g.recoverySkill}, passPower: {g.passPower}");
+                    sbPlayers.AppendLine($"  shotPower: {g.shotPower}, pokecheck: {g.pokecheckSkill}, depth: {g.depth}, passRead: {g.passReadSkill}");
+                    sbPlayers.AppendLine($"  headSkin: \"{g.headSkin ?? ""}\"");
+                    try { sbPlayers.AppendLine($"  skin: \"{g.skin ?? ""}\""); } catch {}
+                    try { sbPlayers.AppendLine($"  awaySkin: \"{g.awaySkin ?? ""}\""); } catch {}
+                    try { sbPlayers.AppendLine($"  gloveSkin: \"{g.gloveSkin ?? ""}\""); } catch {}
+                    try { sbPlayers.AppendLine($"  blockerSkin: \"{g.blockerSkin ?? ""}\""); } catch {}
+                    try { sbPlayers.AppendLine($"  padsSkin: \"{g.padsSkin ?? ""}\""); } catch {}
+                    try { sbPlayers.AppendLine($"  stickSkin: \"{g.stickSkin ?? ""}\""); } catch {}
+                    try { sbPlayers.AppendLine($"  helmetSkin: \"{g.helmetSkin ?? ""}\""); } catch {}
+                    try { sbPlayers.AppendLine($"  logoSkin: \"{g.logoSkin ?? ""}\""); } catch {}
+                    if (g.powerups != null && g.powerups.Count > 0)
+                    {
+                        sbPlayers.Append("  talents: [");
+                        for (int j = 0; j < g.powerups.Count; j++)
+                        {
+                            if (j > 0) sbPlayers.Append(", ");
+                            sbPlayers.Append($"\"{g.powerups[j]?.name ?? "null"}\"");
+                        }
+                        sbPlayers.AppendLine("]");
+                    }
+                    sbPlayers.AppendLine();
+                }
+            }
+
+            File.WriteAllText(Path.Combine(basePath, "ALL_PLAYERS.txt"), sbPlayers.ToString());
+            Plugin.Log.LogInfo($"[Dump] All players dumped to ALL_PLAYERS.txt ({allFwds?.Length ?? 0} forwards, {allGoalies?.Length ?? 0} goalies)");
+        }
+        catch (Exception ex) { Plugin.Log.LogError($"[Dump] All players dump failed: {ex}"); }
+    }
+
+    private static bool _guiListsDumped = false;
+    private static void AutoDumpNameLists()
+    {
+        if (_guiListsDumped) return;
+        _guiListsDumped = true;
+
+        string root = Plugin.ModContentRoot;
+        if (string.IsNullOrEmpty(root) || !Directory.Exists(root)) return;
+
+        // Dump team names (one per line)
+        try
+        {
+            var allTeams = UnityEngine.Resources.FindObjectsOfTypeAll<TeamData>();
+            if (allTeams != null && allTeams.Length > 0)
+            {
+                var names = new List<string>();
+                foreach (var t in allTeams)
+                    if (t != null && !string.IsNullOrEmpty(t.teamName))
+                        names.Add(t.teamName);
+                names.Sort();
+                File.WriteAllLines(Path.Combine(root, "_game_team_names.txt"), names.ToArray());
+                Plugin.Log.LogInfo($"[Dump] Team name list: {names.Count} teams → _game_team_names.txt");
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Team names failed: {ex.Message}"); }
+
+        // Dump player names (one per line, "FirstName LastName")
+        try
+        {
+            var allPlayers = UnityEngine.Resources.FindObjectsOfTypeAll<ForwardData>();
+            var allGoalies = UnityEngine.Resources.FindObjectsOfTypeAll<GoaltenderData>();
+            var names = new HashSet<string>();
+            if (allPlayers != null)
+                foreach (var p in allPlayers)
+                    if (p != null && !string.IsNullOrEmpty(p.firstName))
+                        names.Add($"{p.firstName} {p.lastName}".Trim());
+            if (allGoalies != null)
+                foreach (var g in allGoalies)
+                    if (g != null && !string.IsNullOrEmpty(g.firstName))
+                        names.Add($"{g.firstName} {g.lastName}".Trim());
+            var sorted = new List<string>(names);
+            sorted.Sort();
+            File.WriteAllLines(Path.Combine(root, "_game_player_names.txt"), sorted.ToArray());
+            Plugin.Log.LogInfo($"[Dump] Player name list: {sorted.Count} players → _game_player_names.txt");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Player names failed: {ex.Message}"); }
     }
 
     private static void DumpTeamFull(StringBuilder sb, TeamData t)
@@ -5938,6 +6467,14 @@ public static class LogRepositories
             sb.AppendLine($"    control: {g.controlSkill}, recovery: {g.recoverySkill}, passPower: {g.passPower}");
             sb.AppendLine($"    shotPower: {g.shotPower}, pokecheck: {g.pokecheckSkill}, depth: {g.depth}, passRead: {g.passReadSkill}");
             sb.AppendLine($"    headSkin: \"{g.headSkin ?? ""}\"");
+            try { sb.AppendLine($"    skin: \"{g.skin ?? ""}\""); } catch {}
+            try { sb.AppendLine($"    awaySkin: \"{g.awaySkin ?? ""}\""); } catch {}
+            try { sb.AppendLine($"    gloveSkin: \"{g.gloveSkin ?? ""}\""); } catch {}
+            try { sb.AppendLine($"    blockerSkin: \"{g.blockerSkin ?? ""}\""); } catch {}
+            try { sb.AppendLine($"    padsSkin: \"{g.padsSkin ?? ""}\""); } catch {}
+            try { sb.AppendLine($"    stickSkin: \"{g.stickSkin ?? ""}\""); } catch {}
+            try { sb.AppendLine($"    helmetSkin: \"{g.helmetSkin ?? ""}\""); } catch {}
+            try { sb.AppendLine($"    logoSkin: \"{g.logoSkin ?? ""}\""); } catch {}
             if (g.powerups != null && g.powerups.Count > 0)
             {
                 sb.Append("    talents: [");
@@ -6252,6 +6789,306 @@ public static class DebugTeamBoost
             g.pokecheckSkill += 200; g.depth += 200; g.passPower += 200; g.shotPower += 200;
         }
         Plugin.Log.LogInfo($"[DEBUG] Boosted '{name}' +200");
+    }
+}
+
+// ============================================================
+// Player Team Editor — apply player_teams.txt to player teams
+// ============================================================
+[HarmonyPatch(typeof(Team), nameof(Team.Initialize))]
+public static class PatchPlayerTeamInit
+{
+    private static readonly string[] PlayerPrefixes = { "Basic", "Defense", "Speed", "Trio" };
+    private static readonly HashSet<IntPtr> AppliedTeamPtrs = new();
+
+    [HarmonyPostfix]
+    public static void Postfix(Team __instance, TeamData teamData)
+    {
+        if (Plugin.IsDefaultMode) return;
+
+        // Apply draft pool modifications on first Team.Initialize call
+        if (!Plugin.DraftPoolApplied && Plugin.DraftPoolConfigs.Count > 0)
+        {
+            Plugin.DraftPoolApplied = true;
+            ApplyDraftPool();
+        }
+
+        // Check if this is a player team
+        if (teamData == null) return;
+        if (Plugin.PlayerTeamConfigs.Count == 0) return;
+        string name = teamData.teamName?.Trim() ?? "";
+        string matchedKey = null;
+        foreach (var p in PlayerPrefixes)
+        {
+            if (name.StartsWith(p, StringComparison.OrdinalIgnoreCase))
+            {
+                matchedKey = p.ToLower();
+                break;
+            }
+        }
+        if (matchedKey == null) return;
+
+        if (!Plugin.PlayerTeamConfigs.ContainsKey(matchedKey)) return;
+        if (AppliedTeamPtrs.Contains(teamData.Pointer)) return;
+        AppliedTeamPtrs.Add(teamData.Pointer);
+
+        var cfg = Plugin.PlayerTeamConfigs[matchedKey];
+        Plugin.Log.LogInfo($"[PlayerTeam] Applying config for '{matchedKey}' to team '{name}'");
+        ApplyPlayerTeamConfig(teamData, cfg, __instance);
+    }
+
+    private static void ApplyPlayerTeamConfig(TeamData team, TeamConfig cfg, Team instance)
+    {
+        // Logo from another team
+        if (!string.IsNullOrEmpty(cfg.LogoFrom))
+        {
+            var logoTeam = PatchBossLaunchMatch.FindTeamByName(cfg.LogoFrom);
+            if (logoTeam != null && logoTeam != team)
+            {
+                team.logo = logoTeam.logo;
+                team.alternateBigLogo = logoTeam.alternateBigLogo;
+                if (logoTeam.nickname != null) team.nickname = logoTeam.nickname;
+                Plugin.Log.LogInfo($"[PlayerTeam] Applied logo from '{cfg.LogoFrom}'");
+            }
+        }
+
+        // Team name, city, abbreviation
+        if (!string.IsNullOrEmpty(cfg.Name)) team.teamName = cfg.Name;
+        if (!string.IsNullOrEmpty(cfg.City)) team.city = cfg.City;
+        if (!string.IsNullOrEmpty(cfg.Abbreviation)) team.nickname = cfg.Abbreviation;
+
+        // Home jersey colors
+        if (cfg.JerseyPrimary != null || cfg.JerseySecondary != null || cfg.JerseyAccent != null)
+        {
+            var p = cfg.JerseyPrimary != null ? new Color(cfg.JerseyPrimary[0]/255f, cfg.JerseyPrimary[1]/255f, cfg.JerseyPrimary[2]/255f) : team.primaryColorPlayer;
+            var s = cfg.JerseySecondary != null ? new Color(cfg.JerseySecondary[0]/255f, cfg.JerseySecondary[1]/255f, cfg.JerseySecondary[2]/255f) : team.secondaryColorPlayer;
+            var a = cfg.JerseyAccent != null ? new Color(cfg.JerseyAccent[0]/255f, cfg.JerseyAccent[1]/255f, cfg.JerseyAccent[2]/255f) : Color.white;
+            PatchBossLaunchMatch.SetColors(team.homeColors, p, s, a);
+            team.primaryColorPlayer = p;
+            team.secondaryColorPlayer = s;
+        }
+
+        // Away colors
+        if (cfg.AwayPrimary != null || cfg.AwaySecondary != null || cfg.AwayAccent != null)
+        {
+            var ap = cfg.AwayPrimary != null ? new Color(cfg.AwayPrimary[0]/255f, cfg.AwayPrimary[1]/255f, cfg.AwayPrimary[2]/255f) : Color.white;
+            var as2 = cfg.AwaySecondary != null ? new Color(cfg.AwaySecondary[0]/255f, cfg.AwaySecondary[1]/255f, cfg.AwaySecondary[2]/255f) : team.primaryColorPlayer;
+            var aa = cfg.AwayAccent != null ? new Color(cfg.AwayAccent[0]/255f, cfg.AwayAccent[1]/255f, cfg.AwayAccent[2]/255f) : Color.white;
+            PatchBossLaunchMatch.SetColors(team.awayColors, ap, as2, aa);
+        }
+
+        // Number colors
+        if (cfg.NumberColorHome != null)
+            try { team.jerseyHomeNumberColor = new Color(cfg.NumberColorHome[0]/255f, cfg.NumberColorHome[1]/255f, cfg.NumberColorHome[2]/255f); } catch {}
+        if (cfg.NumberColorAway != null)
+            try { team.jerseyAwayNumberColor = new Color(cfg.NumberColorAway[0]/255f, cfg.NumberColorAway[1]/255f, cfg.NumberColorAway[2]/255f); } catch {}
+
+        // Transition colors
+        if (cfg.TransitionPrimary != null)
+            try { team.primaryColorTransition = new Color(cfg.TransitionPrimary[0]/255f, cfg.TransitionPrimary[1]/255f, cfg.TransitionPrimary[2]/255f); } catch {}
+        if (cfg.TransitionSecondary != null)
+            try { team.secondaryColorTransition = new Color(cfg.TransitionSecondary[0]/255f, cfg.TransitionSecondary[1]/255f, cfg.TransitionSecondary[2]/255f); } catch {}
+        if (cfg.TransitionTertiary != null)
+            try { team.tertiaryColorTransition = new Color(cfg.TransitionTertiary[0]/255f, cfg.TransitionTertiary[1]/255f, cfg.TransitionTertiary[2]/255f); } catch {}
+
+        // Bench
+        if (cfg.BenchSize >= 0) team.benchSize = cfg.BenchSize;
+        if (!string.IsNullOrEmpty(cfg.BenchHead)) try { team.vanillaBenchPlayerHead = cfg.BenchHead; } catch {}
+
+        // Apply uniform skins and equipment colors to existing forwards
+        var fwds = team.forwards;
+        if (fwds != null)
+        {
+            for (int i = 0; i < fwds.Count; i++)
+            {
+                if (fwds[i] == null) continue;
+                // Apply team uniform skins (body, gloves, pants, etc.)
+                ApplyUniformToForward(fwds[i], cfg.Uniform);
+                // Apply team equipment colors
+                PatchBossLaunchMatch.ApplyTeamEquipmentColors(fwds[i], cfg);
+            }
+        }
+
+        // Apply goalie config
+        if (team.goalie != null && cfg.Goalie != null && !string.IsNullOrEmpty(cfg.Goalie.Name))
+        {
+            if (!string.IsNullOrEmpty(cfg.Goalie.ImportPlayer))
+            {
+                var srcGoalie = PatchBossLaunchMatch.FindGoalieByName(cfg.Goalie.ImportPlayer);
+                if (srcGoalie != null)
+                {
+                    PatchBossLaunchMatch.CopyGoalieData(srcGoalie, team.goalie);
+                    Plugin.Log.LogInfo($"[PlayerTeam] Imported goalie '{srcGoalie.firstName} {srcGoalie.lastName}'");
+                }
+            }
+            PatchBossLaunchMatch.ApplyGoalieConfig(team.goalie, cfg.Goalie);
+        }
+
+        // Apply relics (additive — adds starting relics)
+        if (cfg.Relics.Count > 0)
+        {
+            foreach (var r in cfg.Relics)
+                PatchBossLaunchMatch.GiveRelic(team, r);
+            Plugin.Log.LogInfo($"[PlayerTeam] Added {cfg.Relics.Count} starting relics");
+        }
+
+        Plugin.Log.LogInfo($"[PlayerTeam] Applied team config for '{team.teamName}'");
+    }
+
+    private static void ApplyUniformToForward(ForwardData f, UniformConfig uniform)
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(uniform.Body)) f.bodySkin = uniform.Body;
+            if (!string.IsNullOrEmpty(uniform.BodyAway)) f.bodyAwaySkin = uniform.BodyAway;
+            if (!string.IsNullOrEmpty(uniform.Helmet)) f.helmetSkin = uniform.Helmet;
+            if (!string.IsNullOrEmpty(uniform.HelmetAway)) f.helmetAwaySkin = uniform.HelmetAway;
+            if (!string.IsNullOrEmpty(uniform.Gloves)) f.gloveSkin = uniform.Gloves;
+            if (!string.IsNullOrEmpty(uniform.GlovesAway)) f.gloveAwaySkin = uniform.GlovesAway;
+            if (!string.IsNullOrEmpty(uniform.Pants)) f.pantsSkin = uniform.Pants;
+            if (!string.IsNullOrEmpty(uniform.PantsAway)) f.pantsAwaySkin = uniform.PantsAway;
+            if (!string.IsNullOrEmpty(uniform.Skates)) f.skateSkin = uniform.Skates;
+            if (!string.IsNullOrEmpty(uniform.SkatesAway)) f.skateAwaySkin = uniform.SkatesAway;
+            if (!string.IsNullOrEmpty(uniform.Bicep)) f.bicepSkin = uniform.Bicep;
+            if (!string.IsNullOrEmpty(uniform.BicepAway)) f.bicepAwaySkin = uniform.BicepAway;
+            if (!string.IsNullOrEmpty(uniform.Stick)) f.stickSkin = uniform.Stick;
+        }
+        catch (Exception ex) { Plugin.Log.LogError($"[PlayerTeam] Uniform apply error: {ex.Message}"); }
+    }
+
+    private static void ApplyDraftPool()
+    {
+        Plugin.Log.LogInfo($"[PlayerTeam] Applying draft pool modifications ({Plugin.DraftPoolConfigs.Count} players)...");
+        var allFwds = UnityEngine.Resources.FindObjectsOfTypeAll<ForwardData>();
+        if (allFwds == null || allFwds.Length == 0)
+        {
+            Plugin.Log.LogWarning("[PlayerTeam] No ForwardData objects found in memory");
+            return;
+        }
+
+        int applied = 0;
+        foreach (var f in allFwds)
+        {
+            if (f == null) continue;
+            string fullName = $"{f.firstName} {f.lastName}".Trim().ToLower();
+            // Also try last name only for flexibility
+            string lastName = (f.lastName ?? "").Trim().ToLower();
+
+            PlayerConfig pc = null;
+            foreach (var kvp in Plugin.DraftPoolConfigs)
+            {
+                if (kvp.Key == fullName || kvp.Key == lastName)
+                {
+                    pc = kvp.Value;
+                    break;
+                }
+            }
+            if (pc == null) continue;
+
+            Plugin.Log.LogInfo($"[PlayerTeam] Modifying draft player '{f.firstName} {f.lastName}'");
+
+            // Apply name
+            if (!string.IsNullOrEmpty(pc.Name))
+            {
+                var parts = pc.Name.Split(' ');
+                f.firstName = parts[0];
+                f.lastName = parts.Length > 1 ? string.Join(" ", parts, 1, parts.Length - 1) : "";
+            }
+
+            // Apply stats (only if non-default, i.e. not 50)
+            if (pc.Speed != 50) f.speed = pc.Speed;
+            if (pc.ShotPower != 50) f.shotPower = pc.ShotPower;
+            if (pc.Accuracy != 50) f.shotAccuracy = pc.Accuracy;
+            if (pc.Checking != 50) f.checking = pc.Checking;
+
+            // Apply size
+            if (!string.IsNullOrEmpty(pc.Size) && pc.Size != "Medium")
+            {
+                try
+                {
+                    if (pc.Size.Equals("ExtraSmall", StringComparison.OrdinalIgnoreCase)) f.skaterSize = Data.SkaterSize.ExtraSmall;
+                    else if (pc.Size.Equals("Small", StringComparison.OrdinalIgnoreCase)) f.skaterSize = Data.SkaterSize.Small;
+                    else if (pc.Size.Equals("Medium", StringComparison.OrdinalIgnoreCase)) f.skaterSize = Data.SkaterSize.Medium;
+                    else if (pc.Size.Equals("Big", StringComparison.OrdinalIgnoreCase)) f.skaterSize = Data.SkaterSize.Big;
+                    else if (pc.Size.Equals("ExtraBig", StringComparison.OrdinalIgnoreCase)) f.skaterSize = Data.SkaterSize.ExtraBig;
+                    else if (pc.Size.Equals("ExtraExtraBig", StringComparison.OrdinalIgnoreCase)) f.skaterSize = Data.SkaterSize.ExtraExtraBig;
+                }
+                catch {}
+            }
+
+            // Apply face
+            if (!string.IsNullOrEmpty(pc.Face))
+            {
+                string resolved = Plugin.ResolveSkin(pc.Face, "face");
+                if (resolved != "RANDOM_FACE")
+                    f.headSkin = resolved;
+            }
+
+            // Apply handedness and skin color
+            if (pc.Lefty) f.isLefty = true;
+            if (pc.Black) f.isBlack = true;
+
+            // Apply number
+            if (pc.Number != 88) f.number = pc.Number;
+
+            // Apply ability
+            if (!string.IsNullOrEmpty(pc.Ability))
+            {
+                try
+                {
+                    PatchBossLaunchMatch.EnsureRepos();
+                    var abilityRepos = UnityEngine.Resources.FindObjectsOfTypeAll<Rogue.Powerups.Repository.AbilityRepository>();
+                    if (abilityRepos != null && abilityRepos.Length > 0)
+                    {
+                        var repo = abilityRepos[0];
+                        if (repo.abilities != null)
+                        {
+                            for (int ai = 0; ai < repo.abilities.Count; ai++)
+                            {
+                                var ab = repo.abilities[ai];
+                                if (ab != null && ab.name.Equals(pc.Ability, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    f.ability = ab;
+                                    Plugin.Log.LogInfo($"[PlayerTeam]   Set ability: {ab.name}");
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex) { Plugin.Log.LogError($"[PlayerTeam] Ability error: {ex.Message}"); }
+            }
+
+            // Apply talents
+            if (pc.Talents.Count > 0)
+            {
+                f.powerups = new Il2CppSystem.Collections.Generic.List<Rogue.Talent>();
+                foreach (var talentName in pc.Talents)
+                    PatchBossLaunchMatch.GiveTalentToPlayer(f, talentName);
+            }
+
+            // Apply per-player uniform overrides
+            if (pc.StickOverride != null) f.stickSkin = pc.StickOverride;
+            if (pc.HelmetOverride != null) f.helmetSkin = pc.HelmetOverride;
+            if (pc.BodyOverride != null) f.bodySkin = pc.BodyOverride;
+            if (pc.BodyAwayOverride != null) f.bodyAwaySkin = pc.BodyAwayOverride;
+            if (pc.GlovesOverride != null) f.gloveSkin = pc.GlovesOverride;
+            if (pc.PantsOverride != null) f.pantsSkin = pc.PantsOverride;
+            if (pc.SkatesOverride != null) f.skateSkin = pc.SkatesOverride;
+            if (pc.BicepOverride != null) f.bicepSkin = pc.BicepOverride;
+
+            // Apply per-player color overrides
+            PatchBossLaunchMatch.ApplyPlayerColorOverrides(f, pc);
+
+            // Apply glasses
+            if (!string.IsNullOrEmpty(pc.Glasses))
+                try { f.glassesSkin = pc.Glasses; } catch {}
+
+            applied++;
+            Plugin.Log.LogInfo($"[PlayerTeam] Modified '{f.firstName} {f.lastName}' — SPD={f.speed} PWR={f.shotPower} ACC={f.shotAccuracy} CHK={f.checking}");
+        }
+
+        Plugin.Log.LogInfo($"[PlayerTeam] Draft pool: {applied}/{Plugin.DraftPoolConfigs.Count} players modified");
     }
 }
 
