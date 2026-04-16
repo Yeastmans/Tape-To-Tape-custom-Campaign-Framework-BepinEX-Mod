@@ -1,0 +1,871 @@
+========================================
+     VALID VALUES — QUICK REFERENCE
+========================================
+Reference for the Campaign Creator.
+Each section lists every accepted value.
+
+
+========================================
+  Section 1 — BODY / JERSEY
+========================================
+What the player's torso looks like.
+Pick a skin OR write an RGB color (e.g. 0,51,160) to use the
+default jersey with that color.
+
+standard            Default jersey — set color with Jersey Primary / Jersey Color
+tycoons             Business suit — has its own look, ignores color
+princess            Knight armor — has its own look, ignores color
+golfers             Polo shirt — has its own look, ignores color
+prisoners           Jumpsuit — has its own look, ignores color
+mountaineers        Mountain gear — has its own look, ignores color
+hockey fc           Soccer jersey — has its own look, ignores color
+figure skaters      Figure skater outfit — has its own look, ignores color
+referee             Referee stripes — has its own look, ignores color
+random body         Picks a random skin each game
+R,G,B               Write a color directly (e.g. Body = 0,51,160)
+                    This auto-uses the default jersey with that color
+
+
+========================================
+  Section 2 — HELMET
+========================================
+team colors         Default helmet — set color with Helmet Color fields
+cage                Wire face cage — has its own look, ignores color
+random helmet       Picks a random skin each game
+R,G,B               Write a color directly (e.g. Helmet = 200,0,0)
+
+
+========================================
+  Section 3 — STICK
+========================================
+black               Black stick
+gold                Gold stick
+red                 Red stick
+purple              Purple stick
+teal                Blue-green stick
+red gold            Red and gold stick
+sword               Sword instead of stick
+golf                Golf club instead of stick
+team stick          Default stick — set color with Stick Color
+random stick        Picks a random skin each game
+R,G,B               Write a color directly (e.g. Stick = 50,50,50)
+
+
+========================================
+  Section 4 — SKATES
+========================================
+Has 3 color channels: Skates Color (body), Blade Color, Laces Color.
+
+standard            Default skates — set 3 colors below
+random skates       Picks random colors for all 3 channels
+R,G,B               Write a color directly (e.g. Skates = 0,0,0)
+
+
+========================================
+  Section 5 — GLOVES / PANTS / BICEP
+========================================
+These always use the default model. Just set the color.
+Write RGB directly (e.g. Gloves = 0,51,160) or use the
+color fields (Gloves Color, Pants Color, Bicep Color).
+
+No skin options — only color matters.
+
+
+========================================
+  Section 6 — PLAYER SIZES
+========================================
+ExtraSmall
+Small
+Medium
+Big
+ExtraBig
+ExtraExtraBig
+random
+
+
+========================================
+  Section 7 — ALL FACES
+========================================
+Gedeon
+Helmet_Face
+Haggis
+Nasher
+Jerky
+Wiener
+Crockett
+Angus_Chad
+Lancelov_Helmless
+Prince
+Lancelov
+Oioioi
+Knudribble
+Zidanejad
+Bench_Bench
+Captain
+Jelly
+Bench_Brewster
+Mathieu
+OHenry
+Bench_Kirby
+Jelly_Evil
+Brie
+Cultist
+Kilmore
+Tycoons_Lady
+Amber
+Spark
+Rory_Evil
+Tycoons_Elite
+Mental
+Joan
+Referee_Old
+Golfer_Lady
+Angus
+Red_Knight_Helmetless
+Bench_Buttface
+Tycoons_Small
+Bench_Kovalski
+Bench_Stumple_Helmet
+Dalton
+Tycoons_Large
+Chicos
+Krupp
+Chickensneeze
+Onepunch
+Grohl
+Rory
+Clementine
+Dord
+Wurst
+Chapstick
+Rochefort
+Ma
+Angus_Pixel
+Golfer_Ramirez
+Icekicks
+Averell
+Joe
+Bench_Buttface_Angus
+Figure_Skater_Vanilla
+Golfer_Elite
+Golfer_Whacker
+Golfer_Gillman
+FigureSkatersmall
+FigureSkaterbig
+Gratz
+Dord_Evil
+Torte
+Boni
+Bench_Stumple
+Furter
+Pianist
+Louder
+Popping
+Ronaldo
+Messier
+Maroondona
+Backham
+Ehrhoffaldo
+Poule
+Angus_Speed
+Angus_Trio
+Angus_Bald
+Bench_Buttface_Rambo
+random                  Random each game
+
+
+========================================
+  Section 8 — COLORS (RGB)
+========================================
+Format: R,G,B (three numbers 0-255)
+
+255,0,0             Red
+0,255,0             Green
+0,0,255             Blue
+255,255,0           Yellow
+255,255,255         White
+0,0,0               Black
+128,128,128         Grey
+255,165,0           Orange
+128,0,128           Purple
+0,255,255           Cyan
+255,192,203         Pink
+
+Special values:
+random              Fully random color
+random(min,max)     Random per channel
+(blank)             Uses team/default color
+
+
+========================================
+  Section 9 — TEAM COLOR FIELDS
+========================================
+Jersey:     Jersey Primary, Jersey Secondary, Jersey Accent
+Away:       Away Primary, Away Secondary, Away Accent
+Helmet:     Helmet Color, Helmet Secondary Color, Helmet Tertiary Color
+Gloves:     Gloves Color, Gloves Secondary Color, Gloves Tertiary Color
+Pants:      Pants Color, Pants Secondary Color, Pants Tertiary Color
+Skates:     Skates Color, Blade Color, Laces Color
+Socks:      Socks Color, Socks Secondary Color, Socks Tertiary Color
+Numbers:    Number Color, Number Secondary Color
+Other:      Bicep Color, Stick Color, Transition Primary/Secondary/Tertiary
+
+
+========================================
+  Section 10 — PLAYER COLOR FIELDS
+========================================
+Jersey:     Jersey Color, Jersey Secondary Color, Jersey Accent Color
+Helmet:     Helmet Color, Helmet Secondary Color, Helmet Tertiary Color
+Gloves:     Gloves Color, Gloves Secondary Color, Gloves Tertiary Color
+Pants:      Pants Color, Pants Secondary Color, Pants Tertiary Color
+Skates:     Skates Color, Blade Color, Laces Color
+Socks:      Socks Color, Socks Secondary Color, Socks Tertiary Color
+Numbers:    Number Color, Number Secondary Color
+Other:      Bicep Color
+
+
+========================================
+  Section 11 — SKATER STATS
+========================================
+Speed               0-999
+Shot Power          0-999
+Accuracy            0-999
+Checking            0-999
+
+All accept: number, random(min,max)
+Base game range: ~30-80. Above 100 = superhuman.
+
+
+========================================
+  Section 12 — GOALIE STATS
+========================================
+Skill               -100 to 999     Overall modifier
+Catching            0-999           Catching ability
+Glove               0-999           Glove-side saves
+Blocker             0-999           Blocker-side saves
+Five Hole           0-999           Five hole coverage
+Standing Speed      0-999           Movement while standing
+Butterfly Speed     0-999           Movement in butterfly
+Control             0-999           Rebound control
+Recovery            0-999           Recovery speed
+Pass Power          0-999           Pass strength
+Shot Power          0-999           Shot strength
+Poke Check          0-999           Poke check skill
+Depth               0-999           Positioning depth
+Pass Read           0.0-1.0         Pass anticipation
+
+
+========================================
+  Section 13 — ALL ABILITIES
+========================================
+Dash
+Dash LVL2
+jump
+Jump LVL2
+toedrag
+toedraglvl2
+spinorama
+defenseTeleport
+fakeshot
+Head Smasher
+Head Smasher LVL2
+Headshot Redirect
+Headshot Redirect LVL2
+yoyo
+YoYo LVL2
+yoyoShot
+megaLob
+explodingPuck
+fakePuck
+fakePuck LVL2
+Dragon Shout
+Dragon Shout LVL2
+Grappling Hook
+Grappling Hook LVL2
+Yeet
+Yeet LVL2
+throwingStick
+throwingStick LVL2
+megaPokecheck
+StickThief
+probe
+gravityWell
+gravityWell LVL2
+Gas
+Gas LVL2
+Disco Dance
+Disco Dance LVL2
+kazoo
+Kazoo LVL2
+tornado
+wet_towel
+magneto
+Magneto LVL2
+deke
+immunity
+immunity LVL2
+Slowmo
+Slowmo LVL2
+enrageAbility
+zap
+Polymorphic Ability
+
+
+========================================
+  Section 14 — ALL SKATER TALENTS
+========================================
+Level 2: add (Level 2), e.g. "Charge Shot (Level 2)"
+
+--- Stat & Overall ---
+Always Rewarded
+Balanced Talent
+Bedrock
+Bee Sting
+Benchwarmer
+Built Different
+Cannon Arm
+coldTalent
+Cripple Talent
+Double Bench Talent
+Even Steven
+Fire Cracker
+Fragile Talent
+Growing Anger
+Growing Anger LVL2
+Growth Spurt
+Heavy Helmet
+hotTalent
+Iron Helmet
+Kettle
+Krill
+Liquidation
+Middle Management
+Mold Powerup
+Momentum
+Momentum LVL2
+Monkeys Paw
+Paper Jet
+Propeller Helmet
+Railgun
+Rocket Skates
+Sado Maso
+Shell Fish
+Short Contract
+Split Personality
+Steady Eddie
+Sword
+Target Practice
+Target Practice LVL2
+Temporary Contract
+Top Gear
+Trenchcoat
+Unstable Chaos
+Armor
+Talent_ForwardStatBonus_Acc
+Talent_ForwardStatBonus_Chk
+Talent_ForwardStatBonus_Ovr
+Talent_ForwardStatBonus_Spd
+Talent_ForwardStatBonus_Spwr
+Blue Marker Talent
+Green Marker Talent
+Red Marker Talent
+Butt Bench Talent
+Butt Boost Talent
+Butt Reward Talent
+Power Up Retention Talent
+Random Skill
+
+--- Speed & Movement ---
+Backward Turbo
+Blue Line Boost
+Board Bumper
+Divine Passes
+Heavy Puck
+Puck Hunter
+Puck Rocket
+Puckless Rocket
+Supernova Talent
+Tail Wind
+Toupie
+Zoomer
+Spring Board
+
+--- Shooting ---
+Backdraft
+Bouncy McBounce
+Changeup
+Charge Shot
+Crit Boost
+Critical Chaos
+Curve Ball
+Deadzone
+Enrage On Shot
+Escalating Crit
+Fast Rebound
+Flat puck
+Fury Stick
+Game Winner Bonus
+Glass Cannon
+Goal Crit Accumulator
+Hidden Ace
+Live Wire
+Mega Deflect
+Padlock
+Ping King
+Point Sniper
+Puck Puncher
+Quick Draw
+Rebound Magnet
+Shart Slap
+ShartSlap
+Slap Shart
+slapShart
+Slapshot Slowmo
+Sledgehammer
+The Howitzer
+Trick Shot
+Twig Tax
+Wild Shot
+Wind Down
+Wind up
+Windup
+X-Ray Shot
+XRay Shot
+spasm
+slugger
+
+--- Passing ---
+Express Delivery
+Flawless Feeder
+ImperviousOnPass
+Impervious On Pass
+Pass Back
+Pass Puncher
+Passing Domino
+Playmaker
+Power Transfer
+Sonic Pass
+Speed Transfer
+
+--- Checking & Combat ---
+Anchor
+Avenge Me!
+berserk
+Bonecrusher
+BoneCrusher
+Chexplosion
+En Garde!
+Enraged
+Explosion On Landing
+Hit Streak
+Homewrecker
+marauder
+Offensive Bodycheck
+Onepunch
+Original Glove
+Original Skate
+Original Stick
+Poke Rage
+Porcelain Hammer
+Sonic Interception
+Sonic Slap
+Spiked Armor
+The Wall
+Tong
+
+--- Defensive Behavior ---
+Ball Chaser
+Cherry Picker
+Defensive Deflect
+Human Shield
+Lightning Rod
+magnetInterception
+Puck Repellent
+Redirector
+Safety First
+Velcro
+
+--- Goal & Scoring ---
+Assisted By Playmaker
+Goal Based Stat Change
+Hat Trick
+Inflated Ego
+Pressure Cooker
+Pressure Coooker
+Scrambled
+Silent Hero
+Slingshot
+Try Hard
+
+--- Misc ---
+alzheimer
+diarrhea
+dribbler
+evolution
+Feed
+Froggified
+noStick
+Triple Twig
+Greater Cooldown
+
+--- AI Behaviors ---
+Angus Final Squad Curse
+cultistPowerC
+cultistPowerLD
+cultistPowerLW
+cultistPowerRD
+cultistPowerRW
+defenseTeleport
+figureCheck
+karlsonBehavior
+knightAI
+loseHelmetLancelov
+nohit
+princeAI
+tornadoAI
+wetTowelAIPowerup
+xRayGoalie
+
+
+========================================
+  Section 15 — ALL GOALIE TALENTS
+========================================
+Always Catch Pucks
+Cracked Mask
+Cracked Mask (Level 2)
+Crease Clearer
+Goalie Assist
+Goalie Dance
+Goalie Enrage First30Sec
+Goalie Enrage Last30Sec
+Goalie Enraged On Breakaway
+Goalie Enraged On Goal
+Goalie Enraged On Shot
+Goalie Fart
+Goalie Headshot
+Goalie Pass Proepl
+Goalie Pass Rebound
+Goalie Speed Talent
+Goalie Throw Stick
+Mega Rebound
+Musical Nets
+Musical Nets (Level 2)
+Shutout
+
+
+========================================
+  Section 16 — ALL RELICS
+========================================
+Level 2: add :2, e.g. "bolt:2"
+
+--- Stat ---
+Fossilized Star
+Holiest Grenade
+Corn dog-stic
+Rubberband
+Retro Rocket
+Blue Cone
+Fast Shoulder
+Cushioned
+Bubble Wrap
+
+--- Boss / Major ---
+Black Coffee
+Crash Test Dummy
+Ink Bottle
+Companion Puck
+Blood Bonus
+briberee
+Buzzer Beater
+Buzzer Beater Timer
+Double Bench Bonus
+Double reward
+Dry Noodle
+Enrage Bonus
+Remarkable Rock
+Quantum Sextant
+needle
+The Original Puck
+Gain Random Ability Relic
+Random Talent Bench Bonus
+Random Upgrade
+Relic Freezer
+The Squeezer
+Slap Stick Relic
+Sorest Loser
+Stick Breaking Knockout Relic
+Tied Homie
+Wet Noodle
+Last Minute
+
+--- Standard ---
+Bolt Relic
+Fragile
+Briefcase
+Indecisive
+Invisible Thread
+Blue Banana
+Merciless Timer
+Merciless
+Broken Alarm
+Stopwatch
+Cripple
+Metallic Fury
+Self Defense
+Slap Chot 4000
+Greater Cooldown
+Polarized Glasses
+Egg Timer
+Express Delivery
+Lost Fungus
+Odd Fungus
+odd_fungus_reverse
+Lucky Molar
+Shrink Serum
+Greasy Stick
+Hot Cake
+Laser Pointer
+Coach Coupon
+Aromatic Electrolyte Timer
+Oaky Electrolyte
+Oaky Electrolyte Timer
+Sparkly Electrolyte Timer
+Aromatic Electrolyte
+Sparky Electrolyte
+Critical Relic
+Halo
+Whisk
+Lifeless Branch
+Tribal Mask
+Voodo Doll
+Wasabi Paste
+Yips
+Triple Threat
+Gurney
+Critical One Timer Relic
+Violent Plushie
+Revenge
+Shrimp Basket
+Shrimp Cocktail
+Fat Shrimp
+Oven Mitts
+Hot & Cold
+Macrocephalia
+Spike Armor Relic
+Breakaway Boost Relic
+Raged Critical
+Rare Berry
+Helmetless
+Can of Worms
+Weighted Die
+Training Whistle
+Toothpick
+Gigantism
+Glass Stick
+Double Incision
+Egg Shell Hands
+Fusilli
+Golf Club
+Green Marker
+Red Marker
+Mortar And Pestle
+Nut Job
+Stat Reward Relic
+Stethoscope
+Dentist Drill
+Short Stick
+Whistle of time
+Whistle Of Time Timer
+Protection
+Pizzaghetti
+Silky Mitts
+Rage Switch
+Referee Rumble
+Short Fuse
+Backdraft Relic
+Rigged Faceoff
+
+--- Critical Shot ---
+Both Team Crit
+Critical Mass
+Defense Crit
+Small Player Crit
+Crit Shot Knockout
+Crit Shot Enrage
+Crit Shot Frog
+Crit Shot Double Goal
+
+--- Frog ---
+Frog On Ability
+Frog On Faceoff
+Frog On Goal
+Frog On Hit Ref
+
+--- Fart ---
+Fart Knockout
+Fart Immunity
+Fart Ovr
+Bean Diet
+
+--- Enrage ---
+Enraged Ovr
+Enraged Injury Relic
+
+--- Injury ---
+Hard Boiled Egg
+Fragile Speed Bonus Relic
+
+--- Referee ---
+Playable Referee
+Second Referee
+Ref Block Shot
+Ref Hands Relic
+Banana Faceoff
+
+--- Special ---
+Brick Wall
+Gerry Boulet
+Bench Bonus
+Speedy Meta Relic
+Zebra Hoof
+Participation Trophy
+RefereeBriefcase
+Empty Briefcase
+Handcuffs
+
+--- Curse ---
+Annoying Ad
+Frog Golden Helmet Relic
+NoStickSoccerRelic
+Injury Curse
+Bench Curse
+Mini Net Curse
+Fragile Curse
+No Reward Curse
+Overall Curse Relic
+Speed Curse Relic
+Shot Power Curse Relic
+Accuracy Curse Relic
+Speedrun Curse
+Trio Curse
+Forward Frog Curse
+Frozen Relic
+Ice Slapshot
+Cultist Relic Freezer
+
+--- Meta / RPG ---
+Pizza
+Speed (meta)
+MegaRedirect
+Shot OVR
+Home run
+goons
+Machine Gun
+Tenner
+Tipster
+
+--- Cosmetic ---
+soccerNet
+soccerField
+soccerWall
+golfFairway
+DanceFloorRelic
+High Flyer
+Hot Potato
+
+
+========================================
+  Section 17 — ALL TEAM NAMES
+========================================
+For Import Team, Logo From fields.
+
+--- League Teams ---
+Anaheim
+Boston
+Buffalo
+Calgary
+Carolina
+Chicago
+Colorado
+Columbus
+Dallas
+Detroit
+Edmonton
+Florida
+Long Island
+Los Angeles
+Minnesota
+Montreal
+Nashville
+New Jersey
+New York
+Ottawa
+Philadelphia
+Pittsburgh
+San Jose
+Seattle
+St-Louis
+Tampa Bay
+Toronto
+Utah
+Vancouver
+Vegas
+Washington
+Winnipeg
+
+--- Campaign Teams ---
+Calaveras
+Greasy Lettuce
+Top Cheese
+Meatballs
+The Officials
+Crusaders
+Princess
+Cup Cultists
+Mountaineers
+Disco
+Golfers
+Hockey FC
+Shooting Stars
+Team Canada
+Tycoons
+Prisoners
+Spartans
+
+--- Special ---
+PLAYER              Clones your own team (mirror match)
+random              Random team each launch
+
+
+========================================
+  Section 18 — CAMPAIGN SETTINGS
+========================================
+Act Sequence            Numbers, must end with 3 (e.g. 1,2,3)
+Replace Challenges      yes / no / 1,2 (per-act)
+Replace Soccer Ball     yes / no
+Replace Golf Ball       yes / no
+
+
+========================================
+  Section 19 — TEAM IDENTITY FIELDS
+========================================
+Team Name               Any text
+City                    Any text
+Abbreviation            3 letters
+Logo From               Team name / random
+Import Team             Team name / PLAYER / random
+Stat Scale              0.1-3.0
+
+
+========================================
+  Section 20 — PLAYER IDENTITY FIELDS
+========================================
+Name                    First Last
+Number                  1-99 / random(1,99)
+Import Player           Player name / random
+Left Handed             yes / no / random
+Skin Color              light / dark / random
+Size                    See Section 6
+Face                    See Section 7
+Size Offset             0.9-1.1
+Glasses                 Glasses skin name

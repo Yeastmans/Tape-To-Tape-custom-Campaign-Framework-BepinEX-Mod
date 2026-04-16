@@ -1,0 +1,6038 @@
+========================================
+         NHL MOD CONFIGURATION
+========================================
+# See REFERENCE.md for all valid options
+
+--- Campaign Settings ---
+Act Sequence            = 2, 1, 1, 2, 1, 2, 2, 2, 3
+Replace Challenges      = yes
+Replace Soccer Ball     = yes
+Replace Golf Ball       = yes
+
+
+########################################
+##                                    ##
+##   TEAM 1 — Vancouver               ##
+##                                    ##
+########################################
+
+Team Name               = Vancouver
+City                    = Vancouver
+Abbreviation            = VAN
+Logo From               = Vancouver
+
+--- Team Colors ---
+Jersey Primary          = 0, 51, 160
+Jersey Secondary        = 4, 28, 44
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 4, 28, 44
+Helmet Color            = 0, 51, 160
+Pants Color             = 4, 28, 44
+Skates Color            = 4, 28, 44
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 4, 28, 44
+Socks Color             = 0, 51, 160
+Transition Primary      = 0, 51, 160
+Transition Secondary    = 4, 28, 44
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+sorest_loser
+weak_shots
+
+--- Goalie ---
+Name                    = Kelvin Lankinnen
+Face                    =
+Skill                   = 26
+Catching                = 30
+Glove                   = 28
+Blocker                 = 26
+Five Hole               = 25
+Standing Speed          = 41
+Butterfly Speed         = 38
+Control                 = 26
+Recovery                = 28
+Pass Power              = 32
+Shot Power              = 28
+Poke Check              = 24
+Depth                   = 35
+Pass Read               = 0.34f
+Goalie Talents          = Goalie Enraged On Goal
+
+--- Left Wing ---
+Name                    = Ellias Peterson
+Number                  = 40
+Face                    = Wiener
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 60
+Shot Power              = 61
+Accuracy                = 67
+Checking                = 31
+Talents                 = Human Shield, Quick Draw, Flawless Feeder
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 51, 160
+Gloves Color            = 4, 28, 44
+Helmet Color            = 0, 51, 160
+Pants Color             = 4, 28, 44
+Skates Color            = 4, 28, 44
+
+--- Right Wing ---
+Name                    = Brok Bowser
+Number                  = 6
+Face                    = Haggis
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 49
+Shot Power              = 59
+Accuracy                = 61
+Checking                = 25
+Talents                 = Point Sniper
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 51, 160
+Gloves Color            = 4, 28, 44
+Helmet Color            = 0, 51, 160
+Pants Color             = 4, 28, 44
+Skates Color            = 4, 28, 44
+
+--- Center ---
+Name                    = Marko Rossini
+Number                  = 23
+Face                    = Crockett
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 65
+Shot Power              = 56
+Accuracy                = 59
+Checking                = 35
+Talents                 = Speed Transfer
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 51, 160
+Gloves Color            = 4, 28, 44
+Helmet Color            = 0, 51, 160
+Pants Color             = 4, 28, 44
+Skates Color            = 4, 28, 44
+
+--- Left Defense ---
+Name                    = Zeevi Buimann
+Number                  = 4
+Face                    = Nasher
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 56
+Shot Power              = 44
+Accuracy                = 48
+Checking                = 35
+Talents                 = Blue Line Boost
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 51, 160
+Gloves Color            = 4, 28, 44
+Helmet Color            = 0, 51, 160
+Pants Color             = 4, 28, 44
+Skates Color            = 4, 28, 44
+
+--- Right Defense ---
+Name                    = Fillip Hroneck
+Number                  = 17
+Face                    = Jerky
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 50
+Shot Power              = 46
+Accuracy                = 51
+Checking                = 41
+Talents                 = Point Sniper
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 51, 160
+Gloves Color            = 4, 28, 44
+Helmet Color            = 0, 51, 160
+Pants Color             = 4, 28, 44
+Skates Color            = 4, 28, 44
+
+
+########################################
+##                                    ##
+##   TEAM 2 — Chicago                      ##
+##                                    ##
+########################################
+
+Team Name               = Chicago
+City                    = Chicago
+Abbreviation            = CHI
+Logo From               = Chicago
+
+--- Team Colors ---
+Jersey Primary          = 207, 10, 44
+Jersey Secondary        = 0, 0, 0
+Jersey Accent           = 255, 209, 0
+
+Gloves Color            = 0, 0, 0
+Helmet Color            = 207, 10, 44
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 209, 0
+Bicep Color             = 0, 0, 0
+Socks Color             = 207, 10, 44
+Transition Primary      = 207, 10, 44
+Transition Secondary    = 0, 0, 0
+Transition Tertiary     = 255, 209, 0
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+sorest_loser
+fossilized_star
+nutjob
+double_incision
+blood_bonus
+
+--- Goalie ---
+Name                    = Spenser Knightly
+Face                    = Captain
+Skill                   = 38
+Catching                = 40
+Glove                   = 41
+Blocker                 = 38
+Five Hole               = 37
+Standing Speed          = 30
+Butterfly Speed         = 30
+Control                 = 26
+Recovery                = 27
+Pass Power              = 24
+Shot Power              = 22
+Poke Check              = 22
+Depth                   = 26
+Pass Read               = 0.26f
+Goalie Talents          = Goalie Pass Rebound, Goalie Pass Propel
+
+--- Left Wing ---
+Name                    = Tylen Bertuzzy
+Number                  = 59
+Face                    = Poule
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 57
+Shot Power              = 59
+Accuracy                = 58
+Checking                = 56
+Talents                 = Sado Maso, Enraged, Scrambled, Quick Draw (Level 2), Curve Ball (Level 2)
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 207, 10, 44
+Gloves Color            = 0, 0, 0
+Helmet Color            = 207, 10, 44
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Right Wing ---
+Name                    = Konnor Bedaard
+Number                  = 86
+Face                    = Gratz
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 58
+Shot Power              = 56
+Accuracy                = 59
+Checking                = 45
+Talents                 = Sado Maso, Express Delivery (Level 2), Flawless Feeder (Level 2)
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 207, 10, 44
+Gloves Color            = 0, 0, 0
+Helmet Color            = 207, 10, 44
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Center ---
+Name                    = Teuvi Teravainan
+Number                  = 98
+Face                    = Angus
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 60
+Shot Power              = 60
+Accuracy                = 62
+Checking                = 41
+Talents                 = Sado Maso, Trick Shot (Level 2), Crit Boost, Curve Ball (Level 2), Puck Rocket, Blue Line Boost (Level 2), Cherry Picker, Anchor, XRay Shot (Level 2)
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 207, 10, 44
+Gloves Color            = 0, 0, 0
+Helmet Color            = 207, 10, 44
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Left Defense ---
+Name                    = Errik Vlasik
+Number                  = 8
+Face                    = Rory
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 59
+Shot Power              = 57
+Accuracy                = 56
+Checking                = 54
+Talents                 = Sado Maso, Blue Line Boost (Level 2), Charge Shot, knightAI, magnetInterception
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 207, 10, 44
+Gloves Color            = 0, 0, 0
+Helmet Color            = 207, 10, 44
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Right Defense ---
+Name                    = Sethi Jonnes
+Number                  = 43
+Face                    = Grohl
+Left Handed             = no
+Skin Color              = light
+Size                    = ExtraExtraBig
+Speed                   = 59
+Shot Power              = 54
+Accuracy                = 52
+Checking                = 59
+Talents                 = Sado Maso, berserk, Spiked Armor, Chexplosion, Built Different
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 207, 10, 44
+Gloves Color            = 0, 0, 0
+Helmet Color            = 207, 10, 44
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+
+########################################
+##                                    ##
+##   TEAM 3 — New York                  ##
+##                                    ##
+########################################
+
+Team Name               = New York
+City                    = New York
+Abbreviation            = NYR
+Logo From               = New York
+
+--- Team Colors ---
+Jersey Primary          = 0, 56, 168
+Jersey Secondary        = 206, 17, 38
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 206, 17, 38
+Helmet Color            = 0, 56, 168
+Pants Color             = 206, 17, 38
+Skates Color            = 206, 17, 38
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 206, 17, 38
+Socks Color             = 0, 56, 168
+Transition Primary      = 0, 56, 168
+Transition Secondary    = 206, 17, 38
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+hot_cake
+false_goal_on_post
+
+--- Goalie ---
+Name                    = Igori Shesterken
+Face                    = Prince
+Skill                   = 36
+Catching                = 37
+Glove                   = 38
+Blocker                 = 35
+Five Hole               = 35
+Standing Speed          = 28
+Butterfly Speed         = 27
+Control                 = 36
+Recovery                = 37
+Pass Power              = 30
+Shot Power              = 27
+Poke Check              = 29
+Depth                   = 32
+Pass Read               = 0.35f
+Goalie Talents          = Goalie Dance
+
+--- Left Wing ---
+Name                    = Alexei Lafrenierre
+Number                  = 13
+Face                    = Lancelov
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 69
+Shot Power              = 65
+Accuracy                = 66
+Checking                = 52
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 56, 168
+Gloves Color            = 206, 17, 38
+Helmet Color            = 0, 56, 168
+Pants Color             = 206, 17, 38
+Skates Color            = 206, 17, 38
+
+--- Right Wing ---
+Name                    = Mikka Zibanejid
+Number                  = 93
+Face                    = Lancelov_Helmless
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 59
+Shot Power              = 69
+Accuracy                = 68
+Checking                = 56
+Talents                 = Charge Shot (Level 2)
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 56, 168
+Gloves Color            = 206, 17, 38
+Helmet Color            = 0, 56, 168
+Pants Color             = 206, 17, 38
+Skates Color            = 206, 17, 38
+
+--- Center ---
+Name                    = Artemy Panarinn
+Number                  = 9
+Face                    = Red_Knight_Helmetless
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 60
+Shot Power              = 66
+Accuracy                = 65
+Checking                = 59
+Talents                 = Scrambled
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 56, 168
+Gloves Color            = 206, 17, 38
+Helmet Color            = 0, 56, 168
+Pants Color             = 206, 17, 38
+Skates Color            = 206, 17, 38
+
+--- Left Defense ---
+Name                    = K'Andrei Millard
+Number                  = 23
+Face                    = Bench_Kovalski
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 68
+Shot Power              = 63
+Accuracy                = 68
+Checking                = 43
+Talents                 = Power Transfer, ImperviousOnPass
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 56, 168
+Gloves Color            = 206, 17, 38
+Helmet Color            = 0, 56, 168
+Pants Color             = 206, 17, 38
+Skates Color            = 206, 17, 38
+
+--- Right Defense ---
+Name                    = Adaam Foxx
+Number                  = 55
+Face                    = Bench_Brewster
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 60
+Shot Power              = 58
+Accuracy                = 58
+Checking                = 62
+Talents                 = Spring Board
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 56, 168
+Gloves Color            = 206, 17, 38
+Helmet Color            = 0, 56, 168
+Pants Color             = 206, 17, 38
+Skates Color            = 206, 17, 38
+
+
+########################################
+##                                    ##
+##   TEAM 4 — Calgary                           ##
+##                                    ##
+########################################
+
+Team Name               = Calgary
+City                    = Calgary
+Abbreviation            = CGY
+Logo From               = Calgary
+
+--- Team Colors ---
+Jersey Primary          = 200, 16, 46
+Jersey Secondary        = 241, 190, 72
+Jersey Accent           = 0, 0, 0
+
+Gloves Color            = 241, 190, 72
+Helmet Color            = 200, 16, 46
+Pants Color             = 241, 190, 72
+Skates Color            = 241, 190, 72
+Blade Color             = 200, 200, 200
+Laces Color             = 0, 0, 0
+Bicep Color             = 241, 190, 72
+Socks Color             = 200, 16, 46
+Transition Primary      = 200, 16, 46
+Transition Secondary    = 241, 190, 72
+Transition Tertiary     = 0, 0, 0
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+bolt
+hot_cold
+
+--- Goalie ---
+Name                    = Dustyn Wolfe
+Face                    = Dalton
+Skill                   = 35
+Catching                = 38
+Glove                   = 39
+Blocker                 = 34
+Five Hole               = 33
+Standing Speed          = 38
+Butterfly Speed         = 37
+Control                 = 37
+Recovery                = 38
+Pass Power              = 31
+Shot Power              = 29
+Poke Check              = 30
+Depth                   = 35
+Pass Read               = 0.39f
+Goalie Talents          = Goalie Enrage Last30Sec
+
+--- Left Wing ---
+Name                    = Jonathon Huberdou
+Number                  = 10
+Face                    = Ma
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 74
+Shot Power              = 69
+Accuracy                = 78
+Checking                = 46
+Talents                 = Cherry Picker, Mega Deflect (Level 2), slugger, Redirector
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 200, 16, 46
+Gloves Color            = 241, 190, 72
+Helmet Color            = 200, 16, 46
+Pants Color             = 241, 190, 72
+Skates Color            = 241, 190, 72
+
+--- Right Wing ---
+Name                    = Nazim Kadrii
+Number                  = 76
+Face                    = Averell
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 78
+Shot Power              = 67
+Accuracy                = 66
+Checking                = 66
+Talents                 = Cherry Picker, Mega Deflect (Level 2), slugger, Redirector
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 200, 16, 46
+Gloves Color            = 241, 190, 72
+Helmet Color            = 200, 16, 46
+Pants Color             = 241, 190, 72
+Skates Color            = 241, 190, 72
+
+--- Center ---
+Name                    = Mikkel Backlundt
+Number                  = 91
+Face                    = Joe
+Left Handed             = no
+Skin Color              = dark
+Size                    = Medium
+Speed                   = 72
+Shot Power              = 74
+Accuracy                = 72
+Checking                = 62
+Talents                 = Flawless Feeder (Level 2), Supernova Talent
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 200, 16, 46
+Gloves Color            = 241, 190, 72
+Helmet Color            = 200, 16, 46
+Pants Color             = 241, 190, 72
+Skates Color            = 241, 190, 72
+
+--- Left Defense ---
+Name                    = MacKenzi Weegard
+Number                  = 4
+Face                    = Bench_Stumple
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 67
+Shot Power              = 67
+Accuracy                = 66
+Checking                = 64
+Talents                 = Point Sniper
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 200, 16, 46
+Gloves Color            = 241, 190, 72
+Helmet Color            = 200, 16, 46
+Pants Color             = 241, 190, 72
+Skates Color            = 241, 190, 72
+
+--- Right Defense ---
+Name                    = Rasmus Andersenn
+Number                  = 52
+Face                    = Bench_Bench
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 67
+Shot Power              = 66
+Accuracy                = 66
+Checking                = 62
+Talents                 = Point Sniper
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 200, 16, 46
+Gloves Color            = 241, 190, 72
+Helmet Color            = 200, 16, 46
+Pants Color             = 241, 190, 72
+Skates Color            = 241, 190, 72
+
+
+########################################
+##                                    ##
+##   TEAM 5 — Toronto                      ##
+##   *** MAP 1 BOSS ***              ##
+##                                    ##
+########################################
+
+Team Name               = Toronto
+City                    = Toronto
+Abbreviation            = TOR
+Logo From               = Toronto
+
+--- Team Colors ---
+Jersey Primary          = 0, 32, 91
+Jersey Secondary        = 255, 255, 255
+Jersey Accent           = 0, 32, 91
+
+Gloves Color            = 255, 255, 255
+Helmet Color            = 0, 32, 91
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+Blade Color             = 200, 200, 200
+Laces Color             = 0, 32, 91
+Bicep Color             = 255, 255, 255
+Socks Color             = 0, 32, 91
+Transition Primary      = 0, 32, 91
+Transition Secondary    = 255, 255, 255
+Transition Tertiary     = 0, 32, 91
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+both_team_crit
+laser_pointer
+
+--- Goalie ---
+Name                    = Josef Wolle
+Face                    = Mathieu
+Skill                   = 39
+Catching                = 40
+Glove                   = 42
+Blocker                 = 38
+Five Hole               = 38
+Standing Speed          = 35
+Butterfly Speed         = 34
+Control                 = 39
+Recovery                = 40
+Pass Power              = 33
+Shot Power              = 31
+Poke Check              = 31
+Depth                   = 36
+Pass Read               = 0.37f
+Goalie Talents          = Goalie Assist
+
+--- Left Wing ---
+Name                    = Austen Mattingly
+Number                  = 23
+Face                    = Jelly
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 68
+Shot Power              = 77
+Accuracy                = 77
+Checking                = 71
+Talents                 = Enraged
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 32, 91
+Gloves Color            = 255, 255, 255
+Helmet Color            = 0, 32, 91
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+
+--- Right Wing ---
+Name                    = Willem Nylanderr
+Number                  = 88
+Face                    = Kilmore
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 82
+Shot Power              = 78
+Accuracy                = 80
+Checking                = 53
+Talents                 = Speed Transfer, Curve Ball
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 32, 91
+Gloves Color            = 255, 255, 255
+Helmet Color            = 0, 32, 91
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+
+--- Center ---
+Name                    = Mich Marnerr
+Number                  = 34
+Face                    = Spark
+Left Handed             = no
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 70
+Shot Power              = 92
+Accuracy                = 90
+Checking                = 68
+Talents                 = Crit Boost, Charge Shot (Level 2), X-Ray Shot
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 32, 91
+Gloves Color            = 255, 255, 255
+Helmet Color            = 0, 32, 91
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+
+--- Left Defense ---
+Name                    = Morgann Rielley
+Number                  = 44
+Face                    = Dord
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 77
+Shot Power              = 73
+Accuracy                = 73
+Checking                = 61
+Talents                 = Blue Line Boost
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 32, 91
+Gloves Color            = 255, 255, 255
+Helmet Color            = 0, 32, 91
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+
+--- Right Defense ---
+Name                    = Johan Tavaress
+Number                  = 22
+Face                    = Popping
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 70
+Shot Power              = 68
+Accuracy                = 68
+Checking                = 70
+Talents                 = Spiked Armor
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 32, 91
+Gloves Color            = 255, 255, 255
+Helmet Color            = 0, 32, 91
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+
+
+########################################
+##                                    ##
+##   TEAM 6 — Seattle                         ##
+##                                    ##
+########################################
+
+Team Name               = Seattle
+City                    = Seattle
+Abbreviation            = SEA
+Logo From               = Seattle
+
+--- Team Colors ---
+Jersey Primary          = 0, 22, 40
+Jersey Secondary        = 153, 217, 217
+Jersey Accent           = 53, 84, 100
+
+Gloves Color            = 153, 217, 217
+Helmet Color            = 0, 22, 40
+Pants Color             = 153, 217, 217
+Skates Color            = 153, 217, 217
+Blade Color             = 200, 200, 200
+Laces Color             = 53, 84, 100
+Bicep Color             = 153, 217, 217
+Socks Color             = 0, 22, 40
+Transition Primary      = 0, 22, 40
+Transition Secondary    = 153, 217, 217
+Transition Tertiary     = 53, 84, 100
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+briefcase
+rigged_faceoff
+
+--- Goalie ---
+Name                    = Joei Daccorde
+Face                    =
+Skill                   = 39
+Catching                = 41
+Glove                   = 43
+Blocker                 = 39
+Five Hole               = 37
+Standing Speed          = 39
+Butterfly Speed         = 37
+Control                 = 40
+Recovery                = 43
+Pass Power              = 36
+Shot Power              = 34
+Poke Check              = 34
+Depth                   = 40
+Pass Read               = 0.50f
+Goalie Talents          = Goalie Enraged On Shot
+
+--- Left Wing ---
+Name                    = Jordann Eberly
+Number                  = 7
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 84
+Shot Power              = 84
+Accuracy                = 90
+Checking                = 48
+Talents                 = Charge Shot, Puck Rocket
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 22, 40
+Gloves Color            = 153, 217, 217
+Helmet Color            = 0, 22, 40
+Pants Color             = 153, 217, 217
+Skates Color            = 153, 217, 217
+
+--- Right Wing ---
+Name                    = Jarred McCanne
+Number                  = 10
+Face                    = Wiener
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 90
+Shot Power              = 80
+Accuracy                = 84
+Checking                = 60
+Talents                 = Flawless Feeder
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 22, 40
+Gloves Color            = 153, 217, 217
+Helmet Color            = 0, 22, 40
+Pants Color             = 153, 217, 217
+Skates Color            = 153, 217, 217
+
+--- Center ---
+Name                    = Mattie Benniers
+Number                  = 19
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 86
+Shot Power              = 90
+Accuracy                = 86
+Checking                = 60
+Talents                 = Point Sniper
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 22, 40
+Gloves Color            = 153, 217, 217
+Helmet Color            = 0, 22, 40
+Pants Color             = 153, 217, 217
+Skates Color            = 153, 217, 217
+
+--- Left Defense ---
+Name                    = Vinne Dunne
+Number                  = 29
+Face                    = Bench_Bench
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 86
+Shot Power              = 80
+Accuracy                = 80
+Checking                = 69
+Talents                 = En Garde!
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 22, 40
+Gloves Color            = 153, 217, 217
+Helmet Color            = 0, 22, 40
+Pants Color             = 153, 217, 217
+Skates Color            = 153, 217, 217
+
+--- Right Defense ---
+Name                    = Brandyn Montoire
+Number                  = 62
+Face                    = Wiener
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 90
+Shot Power              = 84
+Accuracy                = 84
+Checking                = 66
+Talents                 = Defensive Deflect
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 22, 40
+Gloves Color            = 153, 217, 217
+Helmet Color            = 0, 22, 40
+Pants Color             = 153, 217, 217
+Skates Color            = 153, 217, 217
+
+
+########################################
+##                                    ##
+##   TEAM 7 — Florida                       ##
+##                                    ##
+########################################
+
+Team Name               = Florida
+City                    = Florida
+Abbreviation            = FLA
+Logo From               = Florida
+
+--- Team Colors ---
+Jersey Primary          = 4, 30, 66
+Jersey Secondary        = 200, 16, 46
+Jersey Accent           = 185, 151, 91
+
+Gloves Color            = 200, 16, 46
+Helmet Color            = 4, 30, 66
+Pants Color             = 200, 16, 46
+Skates Color            = 200, 16, 46
+Blade Color             = 200, 200, 200
+Laces Color             = 185, 151, 91
+Bicep Color             = 200, 16, 46
+Socks Color             = 4, 30, 66
+Transition Primary      = 4, 30, 66
+Transition Secondary    = 200, 16, 46
+Transition Tertiary     = 185, 151, 91
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+sorest_loser
+revenge
+
+--- Goalie ---
+Name                    = Sergej Bobrovskiy
+Face                    =
+Skill                   = 39
+Catching                = 41
+Glove                   = 43
+Blocker                 = 39
+Five Hole               = 37
+Standing Speed          = 54
+Butterfly Speed         = 50
+Control                 = 41
+Recovery                = 41
+Pass Power              = 33
+Shot Power              = 31
+Poke Check              = 29
+Depth                   = 39
+Pass Read               = 0.34f
+Goalie Talents          = Always Catch Pucks
+
+--- Left Wing ---
+Name                    = Aleksandr Barkovv
+Number                  = 9
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 87
+Shot Power              = 99
+Accuracy                = 90
+Checking                = 97
+Talents                 = Pressure Cooker
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 4, 30, 66
+Gloves Color            = 200, 16, 46
+Helmet Color            = 4, 30, 66
+Pants Color             = 200, 16, 46
+Skates Color            = 200, 16, 46
+
+--- Right Wing ---
+Name                    = Samuel Reinhardt
+Number                  = 13
+Face                    = Wiener
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 86
+Shot Power              = 94
+Accuracy                = 101
+Checking                = 47
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 4, 30, 66
+Gloves Color            = 200, 16, 46
+Helmet Color            = 4, 30, 66
+Pants Color             = 200, 16, 46
+Skates Color            = 200, 16, 46
+
+--- Center ---
+Name                    = Matthias Tkachek
+Number                  = 16
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 90
+Shot Power              = 93
+Accuracy                = 97
+Checking                = 99
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 4, 30, 66
+Gloves Color            = 200, 16, 46
+Helmet Color            = 4, 30, 66
+Pants Color             = 200, 16, 46
+Skates Color            = 200, 16, 46
+
+--- Left Defense ---
+Name                    = Aaren Ekblaad
+Number                  = 42
+Face                    = Bench_Bench
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 86
+Shot Power              = 71
+Accuracy                = 77
+Checking                = 65
+Talents                 =
+Ability                 = throwingStick
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 4, 30, 66
+Gloves Color            = 200, 16, 46
+Helmet Color            = 4, 30, 66
+Pants Color             = 200, 16, 46
+Skates Color            = 200, 16, 46
+
+--- Right Defense ---
+Name                    = Gustov Forslingg
+Number                  = 5
+Face                    = Haggis
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 67
+Shot Power              = 86
+Accuracy                = 77
+Checking                = 89
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 4, 30, 66
+Gloves Color            = 200, 16, 46
+Helmet Color            = 4, 30, 66
+Pants Color             = 200, 16, 46
+Skates Color            = 200, 16, 46
+
+
+########################################
+##                                    ##
+##   TEAM 8 — Winnipeg                     ##
+##                                    ##
+########################################
+
+Team Name               = Winnipeg
+City                    = Winnipeg
+Abbreviation            = WPG
+Logo From               = Winnipeg
+
+--- Team Colors ---
+Jersey Primary          = 4, 30, 66
+Jersey Secondary        = 0, 76, 151
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 0, 76, 151
+Helmet Color            = 4, 30, 66
+Pants Color             = 0, 76, 151
+Skates Color            = 0, 76, 151
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 0, 76, 151
+Socks Color             = 4, 30, 66
+Transition Primary      = 4, 30, 66
+Transition Secondary    = 0, 76, 151
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+stopwatch
+rare_berry
+
+--- Goalie ---
+Name                    = Konnor Hellebuyke
+Face                    =
+Skill                   = 45
+Catching                = 46
+Glove                   = 47
+Blocker                 = 43
+Five Hole               = 42
+Standing Speed          = 41
+Butterfly Speed         = 39
+Control                 = 45
+Recovery                = 46
+Pass Power              = 38
+Shot Power              = 35
+Poke Check              = 37
+Depth                   = 41
+Pass Read               = 0.53f
+Goalie Talents          = Always Catch Pucks, Goalie Headshot, Goalie Throw Stick, Goalie Enraged On Shot
+
+--- Left Wing ---
+Name                    = Kyl Connors
+Number                  = 81
+Face                    = Bench_Bench
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 110
+Shot Power              = 104
+Accuracy                = 101
+Checking                = 62
+Talents                 = tornadoAI
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 4, 30, 66
+Gloves Color            = 0, 76, 151
+Helmet Color            = 4, 30, 66
+Pants Color             = 0, 76, 151
+Skates Color            = 0, 76, 151
+
+--- Right Wing ---
+Name                    = Markk Scheifelle
+Number                  = 55
+Face                    = Bench_Bench
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 90
+Shot Power              = 104
+Accuracy                = 99
+Checking                = 79
+Talents                 = tornadoAI
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 4, 30, 66
+Gloves Color            = 0, 76, 151
+Helmet Color            = 4, 30, 66
+Pants Color             = 0, 76, 151
+Skates Color            = 0, 76, 151
+
+--- Center ---
+Name                    = Nikolai Ehlerss
+Number                  = 27
+Face                    = Wiener
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 115
+Shot Power              = 95
+Accuracy                = 99
+Checking                = 51
+Talents                 = Built Different, Trick Shot (Level 2)
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 4, 30, 66
+Gloves Color            = 0, 76, 151
+Helmet Color            = 4, 30, 66
+Pants Color             = 0, 76, 151
+Skates Color            = 0, 76, 151
+
+--- Left Defense ---
+Name                    = Joshy Morrissee
+Number                  = 44
+Face                    = Spark
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 95
+Shot Power              = 92
+Accuracy                = 90
+Checking                = 80
+Talents                 = Heavy Helmet, Armor, knightAI
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 4, 30, 66
+Gloves Color            = 0, 76, 151
+Helmet Color            = 4, 30, 66
+Pants Color             = 0, 76, 151
+Skates Color            = 0, 76, 151
+
+--- Right Defense ---
+Name                    = Neale Piionk
+Number                  = 4
+Face                    = cage
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 92
+Shot Power              = 87
+Accuracy                = 87
+Checking                = 80
+Talents                 = Built Different, Defensive Deflect (Level 2)
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 4, 30, 66
+Gloves Color            = 0, 76, 151
+Helmet Color            = 4, 30, 66
+Pants Color             = 0, 76, 151
+Skates Color            = 0, 76, 151
+
+
+########################################
+##                                    ##
+##   TEAM 9 — St-Louis                   ##
+##                                    ##
+########################################
+
+Team Name               = St-Louis
+City                    = St. Louis
+Abbreviation            = STL
+Logo From               = St-Louis
+
+--- Team Colors ---
+Jersey Primary          = 0, 47, 135
+Jersey Secondary        = 252, 181, 20
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 47, 135
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 252, 181, 20
+Socks Color             = 0, 47, 135
+Transition Primary      = 0, 47, 135
+Transition Secondary    = 252, 181, 20
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+buzzer_beater
+
+--- Goalie ---
+Name                    = Jordyn Binningten
+Face                    =
+Skill                   = 40
+Catching                = 44
+Glove                   = 42
+Blocker                 = 40
+Five Hole               = 38
+Standing Speed          = 55
+Butterfly Speed         = 50
+Control                 = 42
+Recovery                = 44
+Pass Power              = 46
+Shot Power              = 44
+Poke Check              = 38
+Depth                   = 50
+Pass Read               = 0.31f
+Goalie Talents          = Goalie Pass Propel
+
+--- Left Wing ---
+Name                    = Roberrt Thomass
+Number                  = 25
+Face                    = Bench_Bench
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 131
+Shot Power              = 120
+Accuracy                = 117
+Checking                = 71
+Talents                 = princeAI, Charge Shot (Level 2), XRay Shot (Level 2), Sword (Level 2), Deadzone
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 47, 135
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 47, 135
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+
+--- Right Wing ---
+Name                    = Jordann Kyroux
+Number                  = 89
+Face                    = Haggis
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 88
+Shot Power              = 99
+Accuracy                = 106
+Checking                = 66
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 47, 135
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 47, 135
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+
+--- Center ---
+Name                    = Pavell Buchnevitch
+Number                  = 18
+Face                    = Bench_Bench
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 93
+Shot Power              = 88
+Accuracy                = 110
+Checking                = 48
+Talents                 = slugger, Tong
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 47, 135
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 47, 135
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+
+--- Left Defense ---
+Name                    = Colten Paraykow
+Number                  = 86
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 99
+Shot Power              = 92
+Accuracy                = 93
+Checking                = 92
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 47, 135
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 47, 135
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+
+--- Right Defense ---
+Name                    = Justinn Fawlk
+Number                  = 55
+Face                    = Wiener
+Left Handed             = no
+Skin Color              = light
+Size                    = ExtraExtraBig
+Speed                   = 52
+Shot Power              = 123
+Accuracy                = 106
+Checking                = 133
+Talents                 = BoneCrusher (Level 2), Defensive Deflect (Level 2)
+Ability                 = wet_towel
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 47, 135
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 47, 135
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+
+
+########################################
+##                                    ##
+##   TEAM 10 — San Jose                    ##
+##   *** MAP 2 BOSS ***              ##
+##                                    ##
+########################################
+
+Team Name               = San Jose
+City                    = San Jose
+Abbreviation            = SJS
+Logo From               = San Jose
+
+--- Team Colors ---
+Jersey Primary          = 0, 109, 117
+Jersey Secondary        = 0, 0, 0
+Jersey Accent           = 234, 114, 0
+
+Gloves Color            = 0, 0, 0
+Helmet Color            = 0, 109, 117
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+Blade Color             = 200, 200, 200
+Laces Color             = 234, 114, 0
+Bicep Color             = 0, 0, 0
+Socks Color             = 0, 109, 117
+Transition Primary      = 0, 109, 117
+Transition Secondary    = 0, 0, 0
+Transition Tertiary     = 234, 114, 0
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+invisible_thread
+whistle_of_time
+
+--- Goalie ---
+Name                    = MacKenzi Blackwoode
+Face                    =
+Skill                   = 45
+Catching                = 49
+Glove                   = 47
+Blocker                 = 43
+Five Hole               = 40
+Standing Speed          = 55
+Butterfly Speed         = 53
+Control                 = 47
+Recovery                = 49
+Pass Power              = 40
+Shot Power              = 36
+Poke Check              = 39
+Depth                   = 45
+Pass Read               = 0.40f
+Goalie Talents          = Goalie Speed Talent
+
+--- Left Wing ---
+Name                    = Willem Eklundt
+Number                  = 72
+Face                    = Bench_Bench
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 117
+Shot Power              = 100
+Accuracy                = 109
+Checking                = 59
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 109, 117
+Gloves Color            = 0, 0, 0
+Helmet Color            = 0, 109, 117
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Right Wing ---
+Name                    = Mikkel Granlundt
+Number                  = 73
+Face                    = Bench_Bench
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 103
+Shot Power              = 111
+Accuracy                = 115
+Checking                = 76
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 109, 117
+Gloves Color            = 0, 0, 0
+Helmet Color            = 0, 109, 117
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Center ---
+Name                    = Tomass Hertle
+Number                  = 71
+Face                    = Wiener
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 132
+Shot Power              = 126
+Accuracy                = 130
+Checking                = 76
+Talents                 = Blue Line Boost, Curve Ball, Puck Rocket, tornadoAI, slugger
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 109, 117
+Gloves Color            = 0, 0, 0
+Helmet Color            = 0, 109, 117
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Left Defense ---
+Name                    = Marius Ferrarro
+Number                  = 7
+Face                    = Spark
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 94
+Shot Power              = 94
+Accuracy                = 92
+Checking                = 111
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 109, 117
+Gloves Color            = 0, 0, 0
+Helmet Color            = 0, 109, 117
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Right Defense ---
+Name                    = Jaake Wallman
+Number                  = 38
+Face                    = Wiener
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 103
+Shot Power              = 92
+Accuracy                = 88
+Checking                = 117
+Talents                 = Tong (Level 2), magnetInterception, Velcro, knightAI
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 109, 117
+Gloves Color            = 0, 0, 0
+Helmet Color            = 0, 109, 117
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+
+########################################
+##                                    ##
+##   TEAM 11 — Nashville                 ##
+##                                    ##
+########################################
+
+Team Name               = Nashville
+City                    = Nashville
+Abbreviation            = NSH
+Logo From               = Nashville
+
+--- Team Colors ---
+Jersey Primary          = 255, 184, 28
+Jersey Secondary        = 4, 30, 66
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 4, 30, 66
+Helmet Color            = 255, 184, 28
+Pants Color             = 4, 30, 66
+Skates Color            = 4, 30, 66
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 4, 30, 66
+Socks Color             = 255, 184, 28
+Transition Primary      = 255, 184, 28
+Transition Secondary    = 4, 30, 66
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+wasabi_paste
+dentist_drill
+revenge
+
+--- Goalie ---
+Name                    = Juusei Saross
+Face                    =
+Skill                   = 52
+Catching                = 54
+Glove                   = 55
+Blocker                 = 51
+Five Hole               = 51
+Standing Speed          = 41
+Butterfly Speed         = 39
+Control                 = 52
+Recovery                = 54
+Pass Power              = 41
+Shot Power              = 38
+Poke Check              = 41
+Depth                   = 44
+Pass Read               = 0.63f
+Goalie Talents          = Always Catch Pucks, Goalie Throw Stick
+
+--- Left Wing ---
+Name                    = Fillip Forsbergg
+Number                  = 81
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 111
+Shot Power              = 113
+Accuracy                = 117
+Checking                = 83
+Talents                 = Puck Rocket, tornadoAI, Fragile Talent, Sado Maso
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 255, 184, 28
+Gloves Color            = 4, 30, 66
+Helmet Color            = 255, 184, 28
+Pants Color             = 4, 30, 66
+Skates Color            = 4, 30, 66
+
+--- Right Wing ---
+Name                    = Stevan Stamkoss
+Number                  = 91
+Face                    = Mathieu
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 107
+Shot Power              = 124
+Accuracy                = 124
+Checking                = 91
+Talents                 = Fury Stick, Pass Back, karlsonBehavior
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 255, 184, 28
+Gloves Color            = 4, 30, 66
+Helmet Color            = 255, 184, 28
+Pants Color             = 4, 30, 66
+Skates Color            = 4, 30, 66
+
+--- Center ---
+Name                    = Ryann O'Reilley
+Number                  = 90
+Face                    = Wiener
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 99
+Shot Power              = 111
+Accuracy                = 111
+Checking                = 108
+Talents                 = Tong (Level 2), En Garde!
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 255, 184, 28
+Gloves Color            = 4, 30, 66
+Helmet Color            = 255, 184, 28
+Pants Color             = 4, 30, 66
+Skates Color            = 4, 30, 66
+
+--- Left Defense ---
+Name                    = Romann Jossi
+Number                  = 59
+Face                    = Kilmore
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 114
+Shot Power              = 113
+Accuracy                = 114
+Checking                = 96
+Talents                 = Homewrecker, Ball Chaser
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 255, 184, 28
+Gloves Color            = 4, 30, 66
+Helmet Color            = 255, 184, 28
+Pants Color             = 4, 30, 66
+Skates Color            = 4, 30, 66
+
+--- Right Defense ---
+Name                    = Alexandr Carriere
+Number                  = 76
+Face                    = Mathieu
+Left Handed             = no
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 96
+Shot Power              = 109
+Accuracy                = 108
+Checking                = 111
+Talents                 = Onepunch, knightAI
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 255, 184, 28
+Gloves Color            = 4, 30, 66
+Helmet Color            = 255, 184, 28
+Pants Color             = 4, 30, 66
+Skates Color            = 4, 30, 66
+
+
+########################################
+##                                    ##
+##   TEAM 12 — New Jersey              ##
+##                                    ##
+########################################
+
+Team Name               = New Jersey
+City                    = New Jersey
+Abbreviation            = NJD
+Logo From               = New Jersey
+
+--- Team Colors ---
+Jersey Primary          = 206, 17, 38
+Jersey Secondary        = 0, 0, 0
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 0, 0, 0
+Helmet Color            = 206, 17, 38
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 0, 0, 0
+Socks Color             = 206, 17, 38
+Transition Primary      = 206, 17, 38
+Transition Secondary    = 0, 0, 0
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+odd_fungus
+hot_cake
+
+--- Goalie ---
+Name                    = Jakub Markstromm
+Face                    =
+Skill                   = 52
+Catching                = 54
+Glove                   = 56
+Blocker                 = 50
+Five Hole               = 49
+Standing Speed          = 49
+Butterfly Speed         = 47
+Control                 = 52
+Recovery                = 54
+Pass Power              = 44
+Shot Power              = 40
+Poke Check              = 40
+Depth                   = 47
+Pass Read               = 0.50f
+Goalie Talents          =
+
+--- Left Wing ---
+Name                    = Jak Hughess
+Number                  = 86
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 139
+Shot Power              = 119
+Accuracy                = 133
+Checking                = 69
+Talents                 = Puck Rocket, tornadoAI, Hidden Ace
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 206, 17, 38
+Gloves Color            = 0, 0, 0
+Helmet Color            = 206, 17, 38
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Right Wing ---
+Name                    = Jessper Bratte
+Number                  = 13
+Face                    = Bench_Bench
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 123
+Shot Power              = 119
+Accuracy                = 123
+Checking                = 98
+Talents                 = Built Different, En Garde!, Crit Boost
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 206, 17, 38
+Gloves Color            = 0, 0, 0
+Helmet Color            = 206, 17, 38
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Center ---
+Name                    = Niko Hischierr
+Number                  = 63
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 133
+Shot Power              = 113
+Accuracy                = 123
+Checking                = 66
+Talents                 = Express Delivery, Trick Shot
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 206, 17, 38
+Gloves Color            = 0, 0, 0
+Helmet Color            = 206, 17, 38
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Left Defense ---
+Name                    = Douglass Hamiltone
+Number                  = 7
+Face                    = Bench_Kirby
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraExtraBig
+Speed                   = 106
+Shot Power              = 129
+Accuracy                = 123
+Checking                = 105
+Talents                 = The Howitzer, Sword
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 206, 17, 38
+Gloves Color            = 0, 0, 0
+Helmet Color            = 206, 17, 38
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Right Defense ---
+Name                    = Jonass Siegenthaller
+Number                  = 43
+Face                    = Mathieu
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 126
+Shot Power              = 116
+Accuracy                = 116
+Checking                = 99
+Talents                 = Board Bumper, Blue Line Boost, tornadoAI, Charge Shot
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 206, 17, 38
+Gloves Color            = 0, 0, 0
+Helmet Color            = 206, 17, 38
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+
+########################################
+##                                    ##
+##   TEAM 13 — Los Angeles            ##
+##   *** MAP 3 BOSS ***              ##
+##                                    ##
+########################################
+
+Team Name               = Los Angeles
+City                    = Los Angeles
+Abbreviation            = LAK
+Logo From               = Los Angeles
+
+--- Team Colors ---
+Jersey Primary          = 17, 17, 17
+Jersey Secondary        = 162, 170, 173
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 162, 170, 173
+Helmet Color            = 17, 17, 17
+Pants Color             = 162, 170, 173
+Skates Color            = 162, 170, 173
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 162, 170, 173
+Socks Color             = 17, 17, 17
+Transition Primary      = 17, 17, 17
+Transition Secondary    = 162, 170, 173
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+briefcase:2
+stopwatch
+ice_slapshot
+relic_freezer
+oaky_timer
+
+--- Goalie ---
+Name                    = Darcey Kuemperr
+Face                    =
+Skill                   = 64
+Catching                = 65
+Glove                   = 67
+Blocker                 = 62
+Five Hole               = 62
+Standing Speed          = 46
+Butterfly Speed         = 45
+Control                 = 44
+Recovery                = 45
+Pass Power              = 38
+Shot Power              = 36
+Poke Check              = 36
+Depth                   = 41
+Pass Read               = 0.45f
+Goalie Talents          = Always Catch Pucks, Goalie Speed Talent, Goalie Headshot, Goalie Pass Rebound, Goalie Pass Propel, Goalie Dance
+
+--- Left Wing ---
+Name                    = Adriaan Kemppe
+Number                  = 10
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 135
+Shot Power              = 125
+Accuracy                = 133
+Checking                = 84
+Talents                 = Flawless Feeder (Level 2), Power Transfer, Puck Rocket
+Ability                 = jump
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 17, 17, 17
+Gloves Color            = 162, 170, 173
+Helmet Color            = 17, 17, 17
+Pants Color             = 162, 170, 173
+Skates Color            = 162, 170, 173
+
+--- Right Wing ---
+Name                    = Anzei Kopitarr
+Number                  = 55
+Face                    = Haggis
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 123
+Shot Power              = 127
+Accuracy                = 125
+Checking                = 118
+Talents                 = Onepunch, Scrambled, Charge Shot (Level 2), marauder, Ball Chaser
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 17, 17, 17
+Gloves Color            = 162, 170, 173
+Helmet Color            = 17, 17, 17
+Pants Color             = 162, 170, 173
+Skates Color            = 162, 170, 173
+
+--- Center ---
+Name                    = Quinten Byfieldd
+Number                  = 11
+Face                    = Wiener
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 109
+Shot Power              = 123
+Accuracy                = 123
+Checking                = 117
+Talents                 = Tong (Level 2), En Garde!, ImperviousOnPass, Hidden Ace
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 17, 17, 17
+Gloves Color            = 162, 170, 173
+Helmet Color            = 17, 17, 17
+Pants Color             = 162, 170, 173
+Skates Color            = 162, 170, 173
+
+--- Left Defense ---
+Name                    = Dreww Doughtey
+Number                  = 8
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 115
+Shot Power              = 121
+Accuracy                = 121
+Checking                = 121
+Talents                 = Homewrecker, Human Shield, Velcro, Enraged, Feed, Enrage On Shot, Poke Rage
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 17, 17, 17
+Gloves Color            = 162, 170, 173
+Helmet Color            = 17, 17, 17
+Pants Color             = 162, 170, 173
+Skates Color            = 162, 170, 173
+
+--- Right Defense ---
+Name                    = Mikal Andersone
+Number                  = 72
+Face                    = Spark
+Left Handed             = no
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 123
+Shot Power              = 121
+Accuracy                = 121
+Checking                = 111
+Talents                 = Homewrecker, Human Shield, Velcro, Triple Twig
+Ability                 = throwingStick
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 17, 17, 17
+Gloves Color            = 162, 170, 173
+Helmet Color            = 17, 17, 17
+Pants Color             = 162, 170, 173
+Skates Color            = 162, 170, 173
+
+
+########################################
+##                                    ##
+##   TEAM 14 — Anaheim                    ##
+##                                    ##
+########################################
+
+Team Name               = Anaheim
+City                    = Anaheim
+Abbreviation            = ANA
+Logo From               = Anaheim
+
+--- Team Colors ---
+Jersey Primary          = 252, 76, 2
+Jersey Secondary        = 0, 0, 0
+Jersey Accent           = 182, 154, 96
+
+Gloves Color            = 0, 0, 0
+Helmet Color            = 252, 76, 2
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+Blade Color             = 200, 200, 200
+Laces Color             = 182, 154, 96
+Bicep Color             = 0, 0, 0
+Socks Color             = 252, 76, 2
+Transition Primary      = 252, 76, 2
+Transition Secondary    = 0, 0, 0
+Transition Tertiary     = 182, 154, 96
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+egg_timer
+fragile
+
+--- Goalie ---
+Name                    = Johnn Gibsonn
+Face                    =
+Skill                   = 58
+Catching                = 60
+Glove                   = 61
+Blocker                 = 56
+Five Hole               = 55
+Standing Speed          = 45
+Butterfly Speed         = 44
+Control                 = 58
+Recovery                = 60
+Pass Power              = 47
+Shot Power              = 43
+Poke Check              = 44
+Depth                   = 49
+Pass Read               = 0.65f
+Goalie Talents          = Goalie Fart
+
+--- Left Wing ---
+Name                    = Troi Terrey
+Number                  = 36
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 126
+Shot Power              = 136
+Accuracy                = 133
+Checking                = 117
+Talents                 = Feed, Avenge Me! (Level 2), Porcelain Hammer, Scrambled, Poke Rage
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 252, 76, 2
+Gloves Color            = 0, 0, 0
+Helmet Color            = 252, 76, 2
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Right Wing ---
+Name                    = Masone McTavvish
+Number                  = 10
+Face                    = cage
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 130
+Shot Power              = 130
+Accuracy                = 133
+Checking                = 106
+Talents                 = Mega Deflect (Level 2), Redirector
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 252, 76, 2
+Gloves Color            = 0, 0, 0
+Helmet Color            = 252, 76, 2
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Center ---
+Name                    = Leeo Carlssonn
+Number                  = 56
+Face                    = Wiener
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 136
+Shot Power              = 140
+Accuracy                = 142
+Checking                = 110
+Talents                 = Fury Stick, Anchor, Musical Nets, ImperviousOnPass, Ping King
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 252, 76, 2
+Gloves Color            = 0, 0, 0
+Helmet Color            = 252, 76, 2
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Left Defense ---
+Name                    = Pavell Mintyukove
+Number                  = 7
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 110
+Shot Power              = 119
+Accuracy                = 115
+Checking                = 142
+Talents                 = Onepunch, Chexplosion, marauder, Homewrecker, Heavy Helmet
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 252, 76, 2
+Gloves Color            = 0, 0, 0
+Helmet Color            = 252, 76, 2
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Right Defense ---
+Name                    = Olenn Zellwegger
+Number                  = 46
+Face                    = Haggis
+Left Handed             = no
+Skin Color              = light
+Size                    = Small
+Speed                   = 140
+Shot Power              = 123
+Accuracy                = 129
+Checking                = 92
+Talents                 = Board Bumper, Puckless Rocket
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 252, 76, 2
+Gloves Color            = 0, 0, 0
+Helmet Color            = 252, 76, 2
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+
+########################################
+##                                    ##
+##   TEAM 15 — Utah                             ##
+##                                    ##
+########################################
+
+Team Name               = Utah
+City                    = Utah
+Abbreviation            = UTA
+Logo From               = Utah
+
+--- Team Colors ---
+Jersey Primary          = 0, 42, 92
+Jersey Secondary        = 105, 179, 231
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 105, 179, 231
+Helmet Color            = 0, 42, 92
+Pants Color             = 105, 179, 231
+Skates Color            = 105, 179, 231
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 105, 179, 231
+Socks Color             = 0, 42, 92
+Transition Primary      = 0, 42, 92
+Transition Secondary    = 105, 179, 231
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+false_goal_on_post
+nutjob
+
+--- Goalie ---
+Name                    = Karell Vejmelkka
+Face                    =
+Skill                   = 60
+Catching                = 61
+Glove                   = 63
+Blocker                 = 58
+Five Hole               = 57
+Standing Speed          = 49
+Butterfly Speed         = 47
+Control                 = 60
+Recovery                = 61
+Pass Power              = 47
+Shot Power              = 43
+Poke Check              = 44
+Depth                   = 50
+Pass Read               = 0.55f
+Goalie Talents          = Goalie Enraged On Goal
+
+--- Left Wing ---
+Name                    = Clayten Kellerr
+Number                  = 53
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 134
+Shot Power              = 131
+Accuracy                = 129
+Checking                = 124
+Talents                 = Scrambled, Puck Rocket, Charge Shot
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 42, 92
+Gloves Color            = 105, 179, 231
+Helmet Color            = 0, 42, 92
+Pants Color             = 105, 179, 231
+Skates Color            = 105, 179, 231
+
+--- Right Wing ---
+Name                    = Nikk Schmaltze
+Number                  = 11
+Face                    = Bench_Bench
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 141
+Shot Power              = 151
+Accuracy                = 153
+Checking                = 104
+Talents                 = Ping King, Blue Line Boost, X-Ray Shot
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 42, 92
+Gloves Color            = 105, 179, 231
+Helmet Color            = 0, 42, 92
+Pants Color             = 105, 179, 231
+Skates Color            = 105, 179, 231
+
+--- Center ---
+Name                    = Barret Haytonne
+Number                  = 92
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 148
+Shot Power              = 146
+Accuracy                = 148
+Checking                = 109
+Talents                 = Changeup, Puck Rocket, Trick Shot
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 42, 92
+Gloves Color            = 105, 179, 231
+Helmet Color            = 0, 42, 92
+Pants Color             = 105, 179, 231
+Skates Color            = 105, 179, 231
+
+--- Left Defense ---
+Name                    = Juusso Valimakki
+Number                  = 28
+Face                    = Spark
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 119
+Shot Power              = 124
+Accuracy                = 121
+Checking                = 146
+Talents                 = Safety First, Anchor, Board Bumper
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 42, 92
+Gloves Color            = 105, 179, 231
+Helmet Color            = 0, 42, 92
+Pants Color             = 105, 179, 231
+Skates Color            = 105, 179, 231
+
+--- Right Defense ---
+Name                    = Mikhaill Sergacheve
+Number                  = 62
+Face                    = Wiener
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 126
+Shot Power              = 121
+Accuracy                = 121
+Checking                = 131
+Talents                 = Pass Puncher, Supernova Talent
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 42, 92
+Gloves Color            = 105, 179, 231
+Helmet Color            = 0, 42, 92
+Pants Color             = 105, 179, 231
+Skates Color            = 105, 179, 231
+
+
+########################################
+##                                    ##
+##   TEAM 16 — Long Island            ##
+##   *** MAP 4 BOSS ***              ##
+##                                    ##
+########################################
+
+Team Name               = Long Island
+City                    = New York
+Abbreviation            = NYI
+Logo From               = Long Island
+
+--- Team Colors ---
+Jersey Primary          = 0, 83, 155
+Jersey Secondary        = 244, 125, 48
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 244, 125, 48
+Helmet Color            = 0, 83, 155
+Pants Color             = 244, 125, 48
+Skates Color            = 244, 125, 48
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 244, 125, 48
+Socks Color             = 0, 83, 155
+Transition Primary      = 0, 83, 155
+Transition Secondary    = 244, 125, 48
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+self_defense
+
+--- Goalie ---
+Name                    = Illya Sorokinn
+Face                    =
+Skill                   = 57
+Catching                = 62
+Glove                   = 63
+Blocker                 = 56
+Five Hole               = 54
+Standing Speed          = 56
+Butterfly Speed         = 54
+Control                 = 60
+Recovery                = 62
+Pass Power              = 48
+Shot Power              = 44
+Poke Check              = 51
+Depth                   = 57
+Pass Read               = 0.36f
+Goalie Talents          = Crease Clearer
+
+--- Left Wing ---
+Name                    = Andres Leee
+Number                  = 27
+Face                    = Bench_Bench
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 108
+Shot Power              = 147
+Accuracy                = 139
+Checking                = 153
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 83, 155
+Gloves Color            = 244, 125, 48
+Helmet Color            = 0, 83, 155
+Pants Color             = 244, 125, 48
+Skates Color            = 244, 125, 48
+
+--- Right Wing ---
+Name                    = Boo Horvatt
+Number                  = 14
+Face                    = Haggis
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 143
+Shot Power              = 156
+Accuracy                = 147
+Checking                = 128
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 83, 155
+Gloves Color            = 244, 125, 48
+Helmet Color            = 0, 83, 155
+Pants Color             = 244, 125, 48
+Skates Color            = 244, 125, 48
+
+--- Center ---
+Name                    = Mattheu Barzell
+Number                  = 13
+Face                    = Bench_Bench
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 173
+Shot Power              = 139
+Accuracy                = 156
+Checking                = 91
+Talents                 = Velcro, En Garde!, Crit Boost
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 83, 155
+Gloves Color            = 244, 125, 48
+Helmet Color            = 0, 83, 155
+Pants Color             = 244, 125, 48
+Skates Color            = 244, 125, 48
+
+--- Left Defense ---
+Name                    = Adaam Peleck
+Number                  = 3
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 128
+Shot Power              = 119
+Accuracy                = 119
+Checking                = 139
+Talents                 = Sonic Interception, Spiked Armor
+Ability                 = Headshot Redirect
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 83, 155
+Gloves Color            = 244, 125, 48
+Helmet Color            = 0, 83, 155
+Pants Color             = 244, 125, 48
+Skates Color            = 244, 125, 48
+
+--- Right Defense ---
+Name                    = Matthias Schaeferr
+Number                  = 5
+Face                    = Bench_Bench
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 160
+Shot Power              = 139
+Accuracy                = 139
+Checking                = 120
+Talents                 = Flawless Feeder
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 83, 155
+Gloves Color            = 244, 125, 48
+Helmet Color            = 0, 83, 155
+Pants Color             = 244, 125, 48
+Skates Color            = 244, 125, 48
+
+
+########################################
+##                                    ##
+##   TEAM 17 — Edmonton                 ##
+##                                    ##
+########################################
+
+Team Name               = Edmonton
+City                    = Edmonton
+Abbreviation            = EDM
+Logo From               = Edmonton
+
+--- Team Colors ---
+Jersey Primary          = 4, 30, 66
+Jersey Secondary        = 252, 76, 2
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 252, 76, 2
+Helmet Color            = 4, 30, 66
+Pants Color             = 252, 76, 2
+Skates Color            = 252, 76, 2
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 252, 76, 2
+Socks Color             = 4, 30, 66
+Transition Primary      = 4, 30, 66
+Transition Secondary    = 252, 76, 2
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+tied_homie
+
+--- Goalie ---
+Name                    = Stuard Skinnerr
+Face                    =
+Skill                   = 58
+Catching                = 62
+Glove                   = 58
+Blocker                 = 55
+Five Hole               = 52
+Standing Speed          = 81
+Butterfly Speed         = 75
+Control                 = 57
+Recovery                = 65
+Pass Power              = 44
+Shot Power              = 41
+Poke Check              = 38
+Depth                   = 54
+Pass Read               = 0.43f
+Goalie Talents          =
+
+--- Left Wing ---
+Name                    = Konnor MacDonald
+Number                  = 29
+Face                    = Wiener
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 140
+Shot Power              = 157
+Accuracy                = 153
+Checking                = 115
+Talents                 = Quick Draw
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 4, 30, 66
+Gloves Color            = 252, 76, 2
+Helmet Color            = 4, 30, 66
+Pants Color             = 252, 76, 2
+Skates Color            = 252, 76, 2
+
+--- Right Wing ---
+Name                    = Leoni Draisaitel
+Number                  = 18
+Face                    = cage
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 147
+Shot Power              = 147
+Accuracy                = 143
+Checking                = 122
+Talents                 = Cherry Picker
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 4, 30, 66
+Gloves Color            = 252, 76, 2
+Helmet Color            = 4, 30, 66
+Pants Color             = 252, 76, 2
+Skates Color            = 252, 76, 2
+
+--- Center ---
+Name                    = Zaach Hymand
+Number                  = 97
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 191
+Shot Power              = 170
+Accuracy                = 183
+Checking                = 110
+Talents                 = Flawless Feeder, Quick Draw, Blue Line Boost (Level 2), XRay Shot (Level 2)
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 4, 30, 66
+Gloves Color            = 252, 76, 2
+Helmet Color            = 4, 30, 66
+Pants Color             = 252, 76, 2
+Skates Color            = 252, 76, 2
+
+--- Left Defense ---
+Name                    = Evann Boucharde
+Number                  = 14
+Face                    = Wiener
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 123
+Shot Power              = 140
+Accuracy                = 136
+Checking                = 157
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 4, 30, 66
+Gloves Color            = 252, 76, 2
+Helmet Color            = 4, 30, 66
+Pants Color             = 252, 76, 2
+Skates Color            = 252, 76, 2
+
+--- Right Defense ---
+Name                    = Darnelle Nursey
+Number                  = 2
+Face                    = Bench_Bench
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 136
+Shot Power              = 144
+Accuracy                = 144
+Checking                = 98
+Talents                 = Point Sniper (Level 2), The Howitzer
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 4, 30, 66
+Gloves Color            = 252, 76, 2
+Helmet Color            = 4, 30, 66
+Pants Color             = 252, 76, 2
+Skates Color            = 252, 76, 2
+
+
+########################################
+##                                    ##
+##   TEAM 18 — Columbus                 ##
+##                                    ##
+########################################
+
+Team Name               = Columbus
+City                    = Columbus
+Abbreviation            = CBJ
+Logo From               = Columbus
+
+--- Team Colors ---
+Jersey Primary          = 0, 38, 84
+Jersey Secondary        = 206, 17, 38
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 206, 17, 38
+Helmet Color            = 0, 38, 84
+Pants Color             = 206, 17, 38
+Skates Color            = 206, 17, 38
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 206, 17, 38
+Socks Color             = 0, 38, 84
+Transition Primary      = 0, 38, 84
+Transition Secondary    = 206, 17, 38
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+bolt
+
+--- Goalie ---
+Name                    = Elviss Merzlikens
+Face                    =
+Skill                   = 62
+Catching                = 65
+Glove                   = 66
+Blocker                 = 60
+Five Hole               = 58
+Standing Speed          = 62
+Butterfly Speed         = 60
+Control                 = 62
+Recovery                = 65
+Pass Power              = 54
+Shot Power              = 50
+Poke Check              = 50
+Depth                   = 58
+Pass Read               = 0.45f
+Goalie Talents          = Goalie Speed Talent
+
+--- Left Wing ---
+Name                    = Kirilll Marchenkov
+Number                  = 86
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 157
+Shot Power              = 164
+Accuracy                = 161
+Checking                = 123
+Talents                 = Blue Line Boost
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 38, 84
+Gloves Color            = 206, 17, 38
+Helmet Color            = 0, 38, 84
+Pants Color             = 206, 17, 38
+Skates Color            = 206, 17, 38
+
+--- Right Wing ---
+Name                    = Dmitrii Voronkove
+Number                  = 29
+Face                    = Bench_Bench
+Left Handed             = no
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 121
+Shot Power              = 207
+Accuracy                = 188
+Checking                = 99
+Talents                 = Crit Boost, Escalating Crit, Point Sniper (Level 2), Glass Cannon, Charge Shot (Level 2)
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 38, 84
+Gloves Color            = 206, 17, 38
+Helmet Color            = 0, 38, 84
+Pants Color             = 206, 17, 38
+Skates Color            = 206, 17, 38
+
+--- Center ---
+Name                    = Seann Monahann
+Number                  = 11
+Face                    = Wiener
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 172
+Shot Power              = 156
+Accuracy                = 161
+Checking                = 129
+Talents                 = Puck Rocket
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 38, 84
+Gloves Color            = 206, 17, 38
+Helmet Color            = 0, 38, 84
+Pants Color             = 206, 17, 38
+Skates Color            = 206, 17, 38
+
+--- Left Defense ---
+Name                    = Zaach Werensky
+Number                  = 8
+Face                    = Mathieu
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 161
+Shot Power              = 161
+Accuracy                = 156
+Checking                = 112
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 38, 84
+Gloves Color            = 206, 17, 38
+Helmet Color            = 0, 38, 84
+Pants Color             = 206, 17, 38
+Skates Color            = 206, 17, 38
+
+--- Right Defense ---
+Name                    = Jaake Christianson
+Number                  = 45
+Face                    = Wiener
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 146
+Shot Power              = 131
+Accuracy                = 137
+Checking                = 130
+Talents                 = Board Bumper
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 38, 84
+Gloves Color            = 206, 17, 38
+Helmet Color            = 0, 38, 84
+Pants Color             = 206, 17, 38
+Skates Color            = 206, 17, 38
+
+
+########################################
+##                                    ##
+##   TEAM 19 — Detroit                   ##
+##                                    ##
+########################################
+
+Team Name               = Detroit
+City                    = Detroit
+Abbreviation            = DET
+Logo From               = Detroit
+
+--- Team Colors ---
+Jersey Primary          = 206, 17, 38
+Jersey Secondary        = 255, 255, 255
+Jersey Accent           = 0, 0, 0
+
+Gloves Color            = 255, 255, 255
+Helmet Color            = 206, 17, 38
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+Blade Color             = 200, 200, 200
+Laces Color             = 0, 0, 0
+Bicep Color             = 255, 255, 255
+Socks Color             = 206, 17, 38
+Transition Primary      = 206, 17, 38
+Transition Secondary    = 255, 255, 255
+Transition Tertiary     = 0, 0, 0
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+gurney
+
+--- Goalie ---
+Name                    = Villee Hussoe
+Face                    =
+Skill                   = 61
+Catching                = 65
+Glove                   = 68
+Blocker                 = 61
+Five Hole               = 59
+Standing Speed          = 64
+Butterfly Speed         = 61
+Control                 = 64
+Recovery                = 68
+Pass Power              = 57
+Shot Power              = 53
+Poke Check              = 53
+Depth                   = 64
+Pass Read               = 0.46f
+Goalie Talents          = Goalie Pass Propel
+
+--- Left Wing ---
+Name                    = Lukas Raymondd
+Number                  = 12
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraSmall
+Speed                   = 183
+Shot Power              = 174
+Accuracy                = 187
+Checking                = 66
+Talents                 = Crit Boost, Deadzone
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 206, 17, 38
+Gloves Color            = 255, 255, 255
+Helmet Color            = 206, 17, 38
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+
+--- Right Wing ---
+Name                    = Dylann Larkinn
+Number                  = 71
+Face                    = Bench_Bench
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 177
+Shot Power              = 168
+Accuracy                = 168
+Checking                = 128
+Talents                 = Speed Transfer
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 206, 17, 38
+Gloves Color            = 255, 255, 255
+Helmet Color            = 206, 17, 38
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+
+--- Center ---
+Name                    = Patrik Kanee
+Number                  = 23
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 183
+Shot Power              = 159
+Accuracy                = 174
+Checking                = 95
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 206, 17, 38
+Gloves Color            = 255, 255, 255
+Helmet Color            = 206, 17, 38
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+
+--- Left Defense ---
+Name                    = Morits Seiderr
+Number                  = 53
+Face                    = Mathieu
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 149
+Shot Power              = 159
+Accuracy                = 155
+Checking                = 159
+Talents                 = Onepunch, Spiked Armor
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 206, 17, 38
+Gloves Color            = 255, 255, 255
+Helmet Color            = 206, 17, 38
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+
+--- Right Defense ---
+Name                    = Benn Chiarott
+Number                  = 3
+Face                    = Haggis
+Left Handed             = no
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 154
+Shot Power              = 155
+Accuracy                = 150
+Checking                = 150
+Talents                 = Supernova Talent
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 206, 17, 38
+Gloves Color            = 255, 255, 255
+Helmet Color            = 206, 17, 38
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+
+
+########################################
+##                                    ##
+##   TEAM 20 — Vegas                         ##
+##                                    ##
+########################################
+
+Team Name               = Vegas
+City                    = Las Vegas
+Abbreviation            = VGK
+Logo From               = Vegas
+
+--- Team Colors ---
+Jersey Primary          = 51, 63, 72
+Jersey Secondary        = 185, 151, 91
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 185, 151, 91
+Helmet Color            = 51, 63, 72
+Pants Color             = 185, 151, 91
+Skates Color            = 185, 151, 91
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 185, 151, 91
+Socks Color             = 51, 63, 72
+Transition Primary      = 51, 63, 72
+Transition Secondary    = 185, 151, 91
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+blue_banana
+
+--- Goalie ---
+Name                    = Adinn Hilll
+Face                    =
+Skill                   = 60
+Catching                = 63
+Glove                   = 59
+Blocker                 = 62
+Five Hole               = 56
+Standing Speed          = 89
+Butterfly Speed         = 82
+Control                 = 60
+Recovery                = 66
+Pass Power              = 56
+Shot Power              = 53
+Poke Check              = 46
+Depth                   = 66
+Pass Read               = 0.34f
+Goalie Talents          = Goalie Pass Rebound
+
+--- Left Wing ---
+Name                    = Jak Eichell
+Number                  = 61
+Face                    = Wiener
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 115
+Shot Power              = 138
+Accuracy                = 149
+Checking                = 183
+Talents                 = BoneCrusher (Level 2), Built Different
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 51, 63, 72
+Gloves Color            = 185, 151, 91
+Helmet Color            = 51, 63, 72
+Pants Color             = 185, 151, 91
+Skates Color            = 185, 151, 91
+
+--- Right Wing ---
+Name                    = Markk Stoone
+Number                  = 16
+Face                    = Haggis
+Left Handed             = no
+Skin Color              = light
+Size                    = Small
+Speed                   = 217
+Shot Power              = 166
+Accuracy                = 228
+Checking                = 48
+Talents                 = Flawless Feeder, Blue Line Boost
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 51, 63, 72
+Gloves Color            = 185, 151, 91
+Helmet Color            = 51, 63, 72
+Pants Color             = 185, 151, 91
+Skates Color            = 185, 151, 91
+
+--- Center ---
+Name                    = Ivann Barbasheve
+Number                  = 9
+Face                    = Bench_Bench
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 206
+Shot Power              = 206
+Accuracy                = 211
+Checking                = 124
+Talents                 = Trick Shot, Rebound Magnet
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 51, 63, 72
+Gloves Color            = 185, 151, 91
+Helmet Color            = 51, 63, 72
+Pants Color             = 185, 151, 91
+Skates Color            = 185, 151, 91
+
+--- Left Defense ---
+Name                    = Alexi Pietrangello
+Number                  = 27
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 166
+Shot Power              = 172
+Accuracy                = 178
+Checking                = 132
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 51, 63, 72
+Gloves Color            = 185, 151, 91
+Helmet Color            = 51, 63, 72
+Pants Color             = 185, 151, 91
+Skates Color            = 185, 151, 91
+
+--- Right Defense ---
+Name                    = Sheaa Theodoree
+Number                  = 3
+Face                    = Wiener
+Left Handed             = no
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 136
+Shot Power              = 149
+Accuracy                = 144
+Checking                = 138
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 51, 63, 72
+Gloves Color            = 185, 151, 91
+Helmet Color            = 51, 63, 72
+Pants Color             = 185, 151, 91
+Skates Color            = 185, 151, 91
+
+
+########################################
+##                                    ##
+##   TEAM 21 — Washington                ##
+##   *** MAP 5 BOSS ***              ##
+##                                    ##
+########################################
+
+Team Name               = Washington
+City                    = Washington
+Abbreviation            = WSH
+Logo From               = Washington
+
+--- Team Colors ---
+Jersey Primary          = 200, 16, 46
+Jersey Secondary        = 4, 30, 66
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 4, 30, 66
+Helmet Color            = 200, 16, 46
+Pants Color             = 4, 30, 66
+Skates Color            = 4, 30, 66
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 4, 30, 66
+Socks Color             = 200, 16, 46
+Transition Primary      = 200, 16, 46
+Transition Secondary    = 4, 30, 66
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+cushioned:2
+bubble_wrap
+frog_on_faceoff
+
+--- Goalie ---
+Name                    = Logann Thompsone
+Face                    =
+Skill                   = 82
+Catching                = 84
+Glove                   = 84
+Blocker                 = 81
+Five Hole               = 81
+Standing Speed          = 58
+Butterfly Speed         = 57
+Control                 = 57
+Recovery                = 58
+Pass Power              = 48
+Shot Power              = 43
+Poke Check              = 44
+Depth                   = 52
+Pass Read               = 0.46f
+Goalie Talents          = Always Catch Pucks, Goalie Enraged On Shot, Goalie Headshot, Goalie Throw Stick
+
+--- Left Wing ---
+Name                    = Alexi Ovechko
+Number                  = 8
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 155
+Shot Power              = 205
+Accuracy                = 200
+Checking                = 166
+Talents                 = The Howitzer, Charge Shot (Level 2), Sonic Slap (Level 2), Deadzone, Quick Draw (Level 2), Hidden Ace, Avenge Me! (Level 2), Bouncy McBounce, Rebound Magnet (Level 2), Fast Rebound
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 200, 16, 46
+Gloves Color            = 4, 30, 66
+Helmet Color            = 200, 16, 46
+Pants Color             = 4, 30, 66
+Skates Color            = 4, 30, 66
+
+--- Right Wing ---
+Name                    = Tomm Wilsone
+Number                  = 43
+Face                    = Spark
+Left Handed             = no
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 158
+Shot Power              = 172
+Accuracy                = 164
+Checking                = 181
+Talents                 = Onepunch, marauder, Enraged, Porcelain Hammer, Explosion On Landing
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 200, 16, 46
+Gloves Color            = 4, 30, 66
+Helmet Color            = 200, 16, 46
+Pants Color             = 4, 30, 66
+Skates Color            = 4, 30, 66
+
+--- Center ---
+Name                    = Dylann Strohme
+Number                  = 17
+Face                    = Bench_Bench
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 155
+Shot Power              = 169
+Accuracy                = 166
+Checking                = 149
+Talents                 = Flawless Feeder (Level 2), Power Transfer
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 200, 16, 46
+Gloves Color            = 4, 30, 66
+Helmet Color            = 200, 16, 46
+Pants Color             = 4, 30, 66
+Skates Color            = 4, 30, 66
+
+--- Left Defense ---
+Name                    = Jakobi Chychrunn
+Number                  = 6
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 158
+Shot Power              = 172
+Accuracy                = 166
+Checking                = 160
+Talents                 = Point Sniper (Level 2), Slapshot Slowmo
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 200, 16, 46
+Gloves Color            = 4, 30, 66
+Helmet Color            = 200, 16, 46
+Pants Color             = 4, 30, 66
+Skates Color            = 4, 30, 66
+
+--- Right Defense ---
+Name                    = Mattheu Roye
+Number                  = 3
+Face                    = cage
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 158
+Shot Power              = 155
+Accuracy                = 155
+Checking                = 158
+Talents                 = Human Shield, Defensive Deflect (Level 2)
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 200, 16, 46
+Gloves Color            = 4, 30, 66
+Helmet Color            = 200, 16, 46
+Pants Color             = 4, 30, 66
+Skates Color            = 4, 30, 66
+
+
+########################################
+##                                    ##
+##   TEAM 22 — Ottawa                      ##
+##                                    ##
+########################################
+
+Team Name               = Ottawa
+City                    = Ottawa
+Abbreviation            = OTT
+Logo From               = Ottawa
+
+--- Team Colors ---
+Jersey Primary          = 0, 0, 0
+Jersey Secondary        = 200, 16, 46
+Jersey Accent           = 185, 151, 91
+
+Gloves Color            = 200, 16, 46
+Helmet Color            = 0, 0, 0
+Pants Color             = 200, 16, 46
+Skates Color            = 200, 16, 46
+Blade Color             = 200, 200, 200
+Laces Color             = 185, 151, 91
+Bicep Color             = 200, 16, 46
+Socks Color             = 0, 0, 0
+Transition Primary      = 0, 0, 0
+Transition Secondary    = 200, 16, 46
+Transition Tertiary     = 185, 151, 91
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+macrocephalia
+sorest_loser
+
+--- Goalie ---
+Name                    = Antoln Forsberge
+Face                    =
+Skill                   = 71
+Catching                = 74
+Glove                   = 76
+Blocker                 = 69
+Five Hole               = 69
+Standing Speed          = 61
+Butterfly Speed         = 59
+Control                 = 71
+Recovery                = 74
+Pass Power              = 61
+Shot Power              = 57
+Poke Check              = 57
+Depth                   = 65
+Pass Read               = 0.46f
+Goalie Talents          = Goalie Fart
+
+--- Left Wing ---
+Name                    = Bradey Tkachekk
+Number                  = 7
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 152
+Shot Power              = 187
+Accuracy                = 180
+Checking                = 191
+Talents                 = Enraged, Feed, marauder, Porcelain Hammer, Explosion On Landing
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 0, 0
+Gloves Color            = 200, 16, 46
+Helmet Color            = 0, 0, 0
+Pants Color             = 200, 16, 46
+Skates Color            = 200, 16, 46
+
+--- Right Wing ---
+Name                    = Timm Stutzell
+Number                  = 19
+Face                    = Wiener
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 180
+Shot Power              = 180
+Accuracy                = 184
+Checking                = 132
+Talents                 = Escalating Crit, Glass Cannon, Twig Tax
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 0, 0
+Gloves Color            = 200, 16, 46
+Helmet Color            = 0, 0, 0
+Pants Color             = 200, 16, 46
+Skates Color            = 200, 16, 46
+
+--- Center ---
+Name                    = Joshy Norriss
+Number                  = 18
+Face                    = Bench_Bench
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 195
+Shot Power              = 184
+Accuracy                = 187
+Checking                = 132
+Talents                 = Backward Turbo, Propeller Helmet
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 0, 0
+Gloves Color            = 200, 16, 46
+Helmet Color            = 0, 0, 0
+Pants Color             = 200, 16, 46
+Skates Color            = 200, 16, 46
+
+--- Left Defense ---
+Name                    = Thomass Chabott
+Number                  = 72
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 171
+Shot Power              = 175
+Accuracy                = 175
+Checking                = 160
+Talents                 = Point Sniper
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 0, 0
+Gloves Color            = 200, 16, 46
+Helmet Color            = 0, 0, 0
+Pants Color             = 200, 16, 46
+Skates Color            = 200, 16, 46
+
+--- Right Defense ---
+Name                    = Jaake Sandersone
+Number                  = 85
+Face                    = Wiener
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 171
+Shot Power              = 171
+Accuracy                = 171
+Checking                = 163
+Talents                 = Tong
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 0, 0
+Gloves Color            = 200, 16, 46
+Helmet Color            = 0, 0, 0
+Pants Color             = 200, 16, 46
+Skates Color            = 200, 16, 46
+
+
+########################################
+##                                    ##
+##   TEAM 23 — Philadelphia           ##
+##                                    ##
+########################################
+
+Team Name               = Philadelphia
+City                    = Philadelphia
+Abbreviation            = PHI
+Logo From               = Philadelphia
+
+--- Team Colors ---
+Jersey Primary          = 247, 73, 2
+Jersey Secondary        = 0, 0, 0
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 0, 0, 0
+Helmet Color            = 247, 73, 2
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 0, 0, 0
+Socks Color             = 247, 73, 2
+Transition Primary      = 247, 73, 2
+Transition Secondary    = 0, 0, 0
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+enrage_bonus
+
+--- Goalie ---
+Name                    = Samuell Erssone
+Face                    =
+Skill                   = 68
+Catching                = 74
+Glove                   = 74
+Blocker                 = 65
+Five Hole               = 62
+Standing Speed          = 77
+Butterfly Speed         = 74
+Control                 = 71
+Recovery                = 71
+Pass Power              = 62
+Shot Power              = 56
+Poke Check              = 59
+Depth                   = 68
+Pass Read               = 0.38f
+Goalie Talents          = Goalie Enraged On Shot
+
+--- Left Wing ---
+Name                    = Traviss Koneckey
+Number                  = 11
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 209
+Shot Power              = 196
+Accuracy                = 201
+Checking                = 122
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 247, 73, 2
+Gloves Color            = 0, 0, 0
+Helmet Color            = 247, 73, 2
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Right Wing ---
+Name                    = Matvei Michkove
+Number                  = 39
+Face                    = Haggis
+Left Handed             = no
+Skin Color              = light
+Size                    = ExtraSmall
+Speed                   = 219
+Shot Power              = 206
+Accuracy                = 219
+Checking                = 69
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 247, 73, 2
+Gloves Color            = 0, 0, 0
+Helmet Color            = 247, 73, 2
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Center ---
+Name                    = Seann Couturrier
+Number                  = 14
+Face                    = Kilmore
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 163
+Shot Power              = 186
+Accuracy                = 186
+Checking                = 186
+Talents                 = Quick Draw
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 247, 73, 2
+Gloves Color            = 0, 0, 0
+Helmet Color            = 247, 73, 2
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Left Defense ---
+Name                    = Traviss Sanheimm
+Number                  = 6
+Face                    = Wiener
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 181
+Shot Power              = 181
+Accuracy                = 173
+Checking                = 173
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 247, 73, 2
+Gloves Color            = 0, 0, 0
+Helmet Color            = 247, 73, 2
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Right Defense ---
+Name                    = Camm Yorke
+Number                  = 45
+Face                    = Wiener
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 191
+Shot Power              = 173
+Accuracy                = 173
+Checking                = 148
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 247, 73, 2
+Gloves Color            = 0, 0, 0
+Helmet Color            = 247, 73, 2
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+
+########################################
+##                                    ##
+##   TEAM 24 — Pittsburgh                ##
+##   *** MAP 6 BOSS ***              ##
+##                                    ##
+########################################
+
+Team Name               = Pittsburgh
+City                    = Pittsburgh
+Abbreviation            = PIT
+Logo From               = Pittsburgh
+
+--- Team Colors ---
+Jersey Primary          = 0, 0, 0
+Jersey Secondary        = 252, 181, 20
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 0, 0
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 252, 181, 20
+Socks Color             = 0, 0, 0
+Transition Primary      = 0, 0, 0
+Transition Secondary    = 252, 181, 20
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+pitiless
+oven_mitts
+silky_mitts
+reverse_odd_fungus
+
+--- Goalie ---
+Name                    = Tristann Jarrye
+Face                    =
+Skill                   = 77
+Catching                = 79
+Glove                   = 81
+Blocker                 = 75
+Five Hole               = 73
+Standing Speed          = 61
+Butterfly Speed         = 59
+Control                 = 77
+Recovery                = 79
+Pass Power              = 63
+Shot Power              = 58
+Poke Check              = 59
+Depth                   = 67
+Pass Read               = 0.48f
+Goalie Talents          = Always Catch Pucks, Goalie Headshot
+
+--- Left Wing ---
+Name                    = Sidny Crosbey
+Number                  = 71
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 156
+Shot Power              = 207
+Accuracy                = 204
+Checking                = 171
+Talents                 = Enraged
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 0, 0
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 0, 0
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+
+--- Right Wing ---
+Name                    = Evgenii Malkinn
+Number                  = 67
+Face                    = Wiener
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 181
+Shot Power              = 187
+Accuracy                = 187
+Checking                = 167
+Talents                 = Speed Transfer
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 0, 0
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 0, 0
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+
+--- Center ---
+Name                    = Rikard Rakelle
+Number                  = 87
+Face                    = Jerky
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 190
+Shot Power              = 211
+Accuracy                = 214
+Checking                = 167
+Talents                 = Flawless Feeder (Level 2), Power Transfer, Hidden Ace
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 0, 0
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 0, 0
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+
+--- Left Defense ---
+Name                    = Kriss Letangg
+Number                  = 65
+Face                    = Wiener
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 191
+Shot Power              = 187
+Accuracy                = 194
+Checking                = 152
+Talents                 = Blue Line Boost (Level 2), Slapshot Slowmo, Charge Shot, cultistPowerLD
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 0, 0
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 0, 0
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+
+--- Right Defense ---
+Name                    = Markus Pettersone
+Number                  = 58
+Face                    = Wiener
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 177
+Shot Power              = 181
+Accuracy                = 181
+Checking                = 167
+Talents                 = Spring Board
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 0, 0
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 0, 0
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+
+
+########################################
+##                                    ##
+##   TEAM 25 — Boston                       ##
+##                                    ##
+########################################
+
+Team Name               = Boston
+City                    = Boston
+Abbreviation            = BOS
+Logo From               = Boston
+
+--- Team Colors ---
+Jersey Primary          = 252, 181, 20
+Jersey Secondary        = 0, 0, 0
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 0, 0, 0
+Helmet Color            = 252, 181, 20
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 0, 0, 0
+Socks Color             = 252, 181, 20
+Transition Primary      = 252, 181, 20
+Transition Secondary    = 0, 0, 0
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+dry_noodle
+slap_stick_relic
+
+--- Goalie ---
+Name                    = Jeremi Swaymane
+Face                    =
+Skill                   = 71
+Catching                = 78
+Glove                   = 81
+Blocker                 = 68
+Five Hole               = 65
+Standing Speed          = 81
+Butterfly Speed         = 78
+Control                 = 74
+Recovery                = 78
+Pass Power              = 65
+Shot Power              = 59
+Poke Check              = 62
+Depth                   = 71
+Pass Read               = 0.44f
+Goalie Talents          = Goalie Enrage First30Sec
+
+--- Left Wing ---
+Name                    = Davyd Pastrnakk
+Number                  = 39
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 177
+Shot Power              = 202
+Accuracy                = 197
+Checking                = 182
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 252, 181, 20
+Gloves Color            = 0, 0, 0
+Helmet Color            = 252, 181, 20
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Right Wing ---
+Name                    = Bradd Marchande
+Number                  = 88
+Face                    = Haggis
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 211
+Shot Power              = 234
+Accuracy                = 230
+Checking                = 126
+Talents                 = Point Sniper (Level 2), Sonic Slap, X-Ray Shot, Sword
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 252, 181, 20
+Gloves Color            = 0, 0, 0
+Helmet Color            = 252, 181, 20
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Center ---
+Name                    = Pavell Zachha
+Number                  = 28
+Face                    = Wiener
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 185
+Shot Power              = 179
+Accuracy                = 191
+Checking                = 163
+Talents                 = Blue Line Boost (Level 2)
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 252, 181, 20
+Gloves Color            = 0, 0, 0
+Helmet Color            = 252, 181, 20
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Left Defense ---
+Name                    = Charley McAvoye
+Number                  = 27
+Face                    = Mathieu
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 186
+Shot Power              = 185
+Accuracy                = 179
+Checking                = 179
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 252, 181, 20
+Gloves Color            = 0, 0, 0
+Helmet Color            = 252, 181, 20
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Right Defense ---
+Name                    = Hampuss Lindholme
+Number                  = 73
+Face                    = Haggis
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 191
+Shot Power              = 197
+Accuracy                = 191
+Checking                = 202
+Talents                 = Enraged
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 252, 181, 20
+Gloves Color            = 0, 0, 0
+Helmet Color            = 252, 181, 20
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+
+########################################
+##                                    ##
+##   TEAM 26 — Minnesota                 ##
+##                                    ##
+########################################
+
+Team Name               = Minnesota
+City                    = Minnesota
+Abbreviation            = MIN
+Logo From               = Minnesota
+
+--- Team Colors ---
+Jersey Primary          = 2, 73, 48
+Jersey Secondary        = 175, 35, 36
+Jersey Accent           = 239, 196, 67
+
+Gloves Color            = 175, 35, 36
+Helmet Color            = 2, 73, 48
+Pants Color             = 175, 35, 36
+Skates Color            = 175, 35, 36
+Blade Color             = 200, 200, 200
+Laces Color             = 239, 196, 67
+Bicep Color             = 175, 35, 36
+Socks Color             = 2, 73, 48
+Transition Primary      = 2, 73, 48
+Transition Secondary    = 175, 35, 36
+Transition Tertiary     = 239, 196, 67
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+corn_dog
+frog_on_ability
+
+--- Goalie ---
+Name                    = Fillip Gustavssonn
+Face                    =
+Skill                   = 81
+Catching                = 84
+Glove                   = 86
+Blocker                 = 79
+Five Hole               = 79
+Standing Speed          = 70
+Butterfly Speed         = 68
+Control                 = 81
+Recovery                = 81
+Pass Power              = 62
+Shot Power              = 55
+Poke Check              = 58
+Depth                   = 65
+Pass Read               = 0.42f
+Goalie Talents          = Goalie Enraged On Breakaway
+
+--- Left Wing ---
+Name                    = Kirilll Kaprizove
+Number                  = 97
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 238
+Shot Power              = 229
+Accuracy                = 233
+Checking                = 126
+Talents                 = Trick Shot (Level 2), Puck Rocket, tornadoAI
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 2, 73, 48
+Gloves Color            = 175, 35, 36
+Helmet Color            = 2, 73, 48
+Pants Color             = 175, 35, 36
+Skates Color            = 175, 35, 36
+
+--- Right Wing ---
+Name                    = Mattheu Boldey
+Number                  = 36
+Face                    = Wiener
+Left Handed             = no
+Skin Color              = light
+Size                    = ExtraSmall
+Speed                   = 210
+Shot Power              = 197
+Accuracy                = 220
+Checking                = 84
+Talents                 = Express Delivery, Sonic Pass
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 2, 73, 48
+Gloves Color            = 175, 35, 36
+Helmet Color            = 2, 73, 48
+Pants Color             = 175, 35, 36
+Skates Color            = 175, 35, 36
+
+--- Center ---
+Name                    = Joell Erikssonn
+Number                  = 14
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 197
+Shot Power              = 206
+Accuracy                = 201
+Checking                = 192
+Talents                 = Enraged
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 2, 73, 48
+Gloves Color            = 175, 35, 36
+Helmet Color            = 2, 73, 48
+Pants Color             = 175, 35, 36
+Skates Color            = 175, 35, 36
+
+--- Left Defense ---
+Name                    = Jarred Spurgeone
+Number                  = 43
+Face                    = Mathieu
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 244
+Shot Power              = 201
+Accuracy                = 215
+Checking                = 117
+Talents                 = Board Bumper, Blue Line Boost (Level 2)
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 2, 73, 48
+Gloves Color            = 175, 35, 36
+Helmet Color            = 2, 73, 48
+Pants Color             = 175, 35, 36
+Skates Color            = 175, 35, 36
+
+--- Right Defense ---
+Name                    = Brokk Faberr
+Number                  = 7
+Face                    = Haggis
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 210
+Shot Power              = 201
+Accuracy                = 201
+Checking                = 183
+Talents                 = Human Shield, Defensive Deflect
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 2, 73, 48
+Gloves Color            = 175, 35, 36
+Helmet Color            = 2, 73, 48
+Pants Color             = 175, 35, 36
+Skates Color            = 175, 35, 36
+
+
+########################################
+##                                    ##
+##   TEAM 27 — Montreal                    ##
+##   *** MAP 7 BOSS ***              ##
+##                                    ##
+########################################
+
+Team Name               = Montreal
+City                    = Montreal
+Abbreviation            = MTL
+Logo From               = Montreal
+
+--- Team Colors ---
+Jersey Primary          = 175, 30, 45
+Jersey Secondary        = 25, 33, 104
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 25, 33, 104
+Helmet Color            = 175, 30, 45
+Pants Color             = 25, 33, 104
+Skates Color            = 25, 33, 104
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 25, 33, 104
+Socks Color             = 175, 30, 45
+Transition Primary      = 175, 30, 45
+Transition Secondary    = 25, 33, 104
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+critical_one_timer_relic:2
+bolt:2
+
+--- Goalie ---
+Name                    = Samuell Montembaulte
+Face                    =
+Skill                   = 75
+Catching                = 81
+Glove                   = 84
+Blocker                 = 71
+Five Hole               = 68
+Standing Speed          = 84
+Butterfly Speed         = 81
+Control                 = 78
+Recovery                = 81
+Pass Power              = 68
+Shot Power              = 62
+Poke Check              = 65
+Depth                   = 75
+Pass Read               = 0.33f
+Goalie Talents          = Goalie Speed Talent
+
+--- Left Wing ---
+Name                    = Kole Caufieldd
+Number                  = 20
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 209
+Shot Power              = 223
+Accuracy                = 211
+Checking                = 193
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 175, 30, 45
+Gloves Color            = 25, 33, 104
+Helmet Color            = 175, 30, 45
+Pants Color             = 25, 33, 104
+Skates Color            = 25, 33, 104
+
+--- Right Wing ---
+Name                    = Nikk Suzukii
+Number                  = 22
+Face                    = cage
+Left Handed             = no
+Skin Color              = light
+Size                    = ExtraSmall
+Speed                   = 254
+Shot Power              = 228
+Accuracy                = 241
+Checking                = 69
+Talents                 = Sonic Slap (Level 2), Crit Boost, Point Sniper (Level 2), Pressure Coooker (Level 2), Sword (Level 2)
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 175, 30, 45
+Gloves Color            = 25, 33, 104
+Helmet Color            = 175, 30, 45
+Pants Color             = 25, 33, 104
+Skates Color            = 25, 33, 104
+
+--- Center ---
+Name                    = Jurai Slafkovskiy
+Number                  = 14
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 238
+Shot Power              = 198
+Accuracy                = 216
+Checking                = 142
+Talents                 = Puckless Rocket (Level 2)
+Ability                 = Grappling Hook Mountaineer
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 175, 30, 45
+Gloves Color            = 25, 33, 104
+Helmet Color            = 175, 30, 45
+Pants Color             = 25, 33, 104
+Skates Color            = 25, 33, 104
+
+--- Left Defense ---
+Name                    = Mikal Mathesone
+Number                  = 48
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 262
+Shot Power              = 193
+Accuracy                = 206
+Checking                = 114
+Talents                 = Blue Line Boost (Level 2)
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 175, 30, 45
+Gloves Color            = 25, 33, 104
+Helmet Color            = 175, 30, 45
+Pants Color             = 25, 33, 104
+Skates Color            = 25, 33, 104
+
+--- Right Defense ---
+Name                    = Kaiden Guhlee
+Number                  = 45
+Face                    = Haggis
+Left Handed             = no
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 216
+Shot Power              = 211
+Accuracy                = 211
+Checking                = 182
+Talents                 = Onepunch, Human Shield
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 175, 30, 45
+Gloves Color            = 25, 33, 104
+Helmet Color            = 175, 30, 45
+Pants Color             = 25, 33, 104
+Skates Color            = 25, 33, 104
+
+
+########################################
+##                                    ##
+##   TEAM 28 — Tampa Bay                   ##
+##                                    ##
+########################################
+
+Team Name               = Tampa Bay
+City                    = Tampa Bay
+Abbreviation            = TBL
+Logo From               = Tampa Bay
+
+--- Team Colors ---
+Jersey Primary          = 0, 40, 104
+Jersey Secondary        = 255, 255, 255
+Jersey Accent           = 0, 0, 0
+
+Gloves Color            = 255, 255, 255
+Helmet Color            = 0, 40, 104
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+Blade Color             = 200, 200, 200
+Laces Color             = 0, 0, 0
+Bicep Color             = 255, 255, 255
+Socks Color             = 0, 40, 104
+Transition Primary      = 0, 40, 104
+Transition Secondary    = 255, 255, 255
+Transition Tertiary     = 0, 0, 0
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+last_minute
+breakaway_boost
+
+--- Goalie ---
+Name                    = Andrej Vasilevskiiy
+Face                    =
+Skill                   = 82
+Catching                = 84
+Glove                   = 87
+Blocker                 = 80
+Five Hole               = 77
+Standing Speed          = 74
+Butterfly Speed         = 72
+Control                 = 82
+Recovery                = 84
+Pass Power              = 71
+Shot Power              = 64
+Poke Check              = 66
+Depth                   = 75
+Pass Read               = 0.43f
+Goalie Talents          = Always Catch Pucks, Goalie Pass Propel
+
+--- Left Wing ---
+Name                    = Nikolas Kucherev
+Number                  = 86
+Face                    = Wiener
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 235
+Shot Power              = 243
+Accuracy                = 261
+Checking                = 119
+Talents                 = Trick Shot (Level 2), XRay Shot (Level 2), Flawless Feeder
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 40, 104
+Gloves Color            = 255, 255, 255
+Helmet Color            = 0, 40, 104
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+
+--- Right Wing ---
+Name                    = Braydon Pointe
+Number                  = 38
+Face                    = Haggis
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 250
+Shot Power              = 204
+Accuracy                = 204
+Checking                = 165
+Talents                 = Speed Transfer
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 40, 104
+Gloves Color            = 255, 255, 255
+Helmet Color            = 0, 40, 104
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+
+--- Center ---
+Name                    = Brandyn Hagell
+Number                  = 21
+Face                    = Bench_Bench
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 243
+Shot Power              = 230
+Accuracy                = 235
+Checking                = 131
+Talents                 = Crit Boost
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 40, 104
+Gloves Color            = 255, 255, 255
+Helmet Color            = 0, 40, 104
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+
+--- Left Defense ---
+Name                    = Vikter Hedmann
+Number                  = 77
+Face                    = Spark
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraExtraBig
+Speed                   = 173
+Shot Power              = 230
+Accuracy                = 224
+Checking                = 212
+Talents                 = Armor, knightAI
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 40, 104
+Gloves Color            = 255, 255, 255
+Helmet Color            = 0, 40, 104
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+
+--- Right Defense ---
+Name                    = Ryann MacDonagh
+Number                  = 81
+Face                    = Spark
+Left Handed             = no
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 171
+Shot Power              = 193
+Accuracy                = 186
+Checking                = 224
+Talents                 = Spiked Armor, cultistPowerRD
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 40, 104
+Gloves Color            = 255, 255, 255
+Helmet Color            = 0, 40, 104
+Pants Color             = 255, 255, 255
+Skates Color            = 255, 255, 255
+
+
+########################################
+##                                    ##
+##   TEAM 29 — Buffalo                      ##
+##                                    ##
+########################################
+
+Team Name               = Buffalo
+City                    = Buffalo
+Abbreviation            = BUF
+Logo From               = Buffalo
+
+--- Team Colors ---
+Jersey Primary          = 0, 38, 84
+Jersey Secondary        = 252, 181, 20
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 38, 84
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 252, 181, 20
+Socks Color             = 0, 38, 84
+Transition Primary      = 0, 38, 84
+Transition Secondary    = 252, 181, 20
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+stick_breaking_knockout_relic
+crash_test_dummy
+
+--- Goalie ---
+Name                    = Ukko-Pekka Luukkonene
+Face                    =
+Skill                   = 78
+Catching                = 83
+Glove                   = 88
+Blocker                 = 78
+Five Hole               = 74
+Standing Speed          = 114
+Butterfly Speed         = 104
+Control                 = 76
+Recovery                = 78
+Pass Power              = 64
+Shot Power              = 54
+Poke Check              = 45
+Depth                   = 74
+Pass Read               = 0.30f
+Goalie Talents          =
+
+--- Left Wing ---
+Name                    = Tagge Thompsone
+Number                  = 19
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 231
+Shot Power              = 198
+Accuracy                = 211
+Checking                = 134
+Talents                 = Enraged
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 38, 84
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 38, 84
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+
+--- Right Wing ---
+Name                    = Alexi Tuchh
+Number                  = 89
+Face                    = Wiener
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 218
+Shot Power              = 231
+Accuracy                = 224
+Checking                = 198
+Talents                 = Bonecrusher
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 38, 84
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 38, 84
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+
+--- Center ---
+Name                    = Dylann Cozense
+Number                  = 72
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 198
+Shot Power              = 257
+Accuracy                = 251
+Checking                = 185
+Talents                 = Bouncy McBounce, Fast Rebound
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 38, 84
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 38, 84
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+
+--- Left Defense ---
+Name                    = Rasmuss Dahlinn
+Number                  = 25
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 205
+Shot Power              = 218
+Accuracy                = 211
+Checking                = 192
+Talents                 = Heavy Helmet
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 38, 84
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 38, 84
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+
+--- Right Defense ---
+Name                    = Owenn Powerr
+Number                  = 26
+Face                    = cage
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 244
+Shot Power              = 231
+Accuracy                = 237
+Checking                = 178
+Talents                 = Board Bumper, Armor, Chexplosion
+Ability                 = Grappling Hook Mountaineer
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 38, 84
+Gloves Color            = 252, 181, 20
+Helmet Color            = 0, 38, 84
+Pants Color             = 252, 181, 20
+Skates Color            = 252, 181, 20
+
+
+########################################
+##                                    ##
+##   TEAM 30 — Dallas                        ##
+##   *** MAP 8 BOSS ***              ##
+##                                    ##
+########################################
+
+Team Name               = Dallas
+City                    = Dallas
+Abbreviation            = DAL
+Logo From               = Dallas
+
+--- Team Colors ---
+Jersey Primary          = 0, 104, 71
+Jersey Secondary        = 17, 17, 17
+Jersey Accent           = 143, 143, 143
+
+Gloves Color            = 17, 17, 17
+Helmet Color            = 0, 104, 71
+Pants Color             = 17, 17, 17
+Skates Color            = 17, 17, 17
+Blade Color             = 200, 200, 200
+Laces Color             = 143, 143, 143
+Bicep Color             = 17, 17, 17
+Socks Color             = 0, 104, 71
+Transition Primary      = 0, 104, 71
+Transition Secondary    = 17, 17, 17
+Transition Tertiary     = 143, 143, 143
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+voodoodoll:2
+lucky_molar
+tribal_mask_v2
+slapchot4000
+
+--- Goalie ---
+Name                    = Jaake Oettingerr
+Face                    =
+Skill                   = 87
+Catching                = 90
+Glove                   = 92
+Blocker                 = 85
+Five Hole               = 85
+Standing Speed          = 73
+Butterfly Speed         = 70
+Control                 = 87
+Recovery                = 90
+Pass Power              = 70
+Shot Power              = 63
+Poke Check              = 68
+Depth                   = 78
+Pass Read               = 0.36f
+Goalie Talents          = Goalie Enrage Last30Sec, Always Catch Pucks, Goalie Speed Talent
+
+--- Left Wing ---
+Name                    = Jasonne Robertsone
+Number                  = 21
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 214
+Shot Power              = 242
+Accuracy                = 237
+Checking                = 200
+Talents                 = Wild Shot, Bouncy McBounce
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 104, 71
+Gloves Color            = 17, 17, 17
+Helmet Color            = 0, 104, 71
+Pants Color             = 17, 17, 17
+Skates Color            = 17, 17, 17
+
+--- Right Wing ---
+Name                    = Roope Hintze
+Number                  = 91
+Face                    = Wiener
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 226
+Shot Power              = 226
+Accuracy                = 230
+Checking                = 180
+Talents                 =
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 104, 71
+Gloves Color            = 17, 17, 17
+Helmet Color            = 0, 104, 71
+Pants Color             = 17, 17, 17
+Skates Color            = 17, 17, 17
+
+--- Center ---
+Name                    = Tylerr Seguinn
+Number                  = 96
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Big
+Speed                   = 212
+Shot Power              = 250
+Accuracy                = 245
+Checking                = 200
+Talents                 = Sword (Level 2), Sonic Slap
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 104, 71
+Gloves Color            = 17, 17, 17
+Helmet Color            = 0, 104, 71
+Pants Color             = 17, 17, 17
+Skates Color            = 17, 17, 17
+
+--- Left Defense ---
+Name                    = Mirro Heiskanenn
+Number                  = 4
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 240
+Shot Power              = 217
+Accuracy                = 226
+Checking                = 184
+Talents                 = Puckless Rocket
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 104, 71
+Gloves Color            = 17, 17, 17
+Helmet Color            = 0, 104, 71
+Pants Color             = 17, 17, 17
+Skates Color            = 17, 17, 17
+
+--- Right Defense ---
+Name                    = Thomass Harleyy
+Number                  = 55
+Face                    = Bench_Bench
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 207
+Shot Power              = 212
+Accuracy                = 212
+Checking                = 207
+Talents                 = Defensive Deflect
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 0, 104, 71
+Gloves Color            = 17, 17, 17
+Helmet Color            = 0, 104, 71
+Pants Color             = 17, 17, 17
+Skates Color            = 17, 17, 17
+
+
+########################################
+##                                    ##
+##   TEAM 31 — Carolina               ##
+##                                    ##
+########################################
+
+Team Name               = Carolina
+City                    = Carolina
+Abbreviation            = CAR
+Logo From               = Carolina
+
+--- Team Colors ---
+Jersey Primary          = 206, 17, 38
+Jersey Secondary        = 0, 0, 0
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 0, 0, 0
+Helmet Color            = 206, 17, 38
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 0, 0, 0
+Socks Color             = 206, 17, 38
+Transition Primary      = 206, 17, 38
+Transition Secondary    = 0, 0, 0
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+shrink_serum_opponent
+express_delivery
+relic_freezer
+toothpick:2
+
+--- Goalie ---
+Name                    = Frederic Andersenn
+Face                    =
+Skill                   = 91
+Catching                = 93
+Glove                   = 95
+Blocker                 = 89
+Five Hole               = 87
+Standing Speed          = 69
+Butterfly Speed         = 68
+Control                 = 91
+Recovery                = 93
+Pass Power              = 74
+Shot Power              = 68
+Poke Check              = 69
+Depth                   = 78
+Pass Read               = 0.53f
+Goalie Talents          = Goalie Enraged On Goal, Goalie Headshot
+
+--- Left Wing ---
+Name                    = Sebastien Ahoe
+Number                  = 20
+Face                    = Bench_Kirby
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 250
+Shot Power              = 232
+Accuracy                = 238
+Checking                = 169
+Talents                 = Mega Deflect (Level 2), Redirector, Blue Line Boost (Level 2), Puck Rocket
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 206, 17, 38
+Gloves Color            = 0, 0, 0
+Helmet Color            = 206, 17, 38
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Right Wing ---
+Name                    = Andrej Svechnikove
+Number                  = 24
+Face                    = cage
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 238
+Shot Power              = 235
+Accuracy                = 243
+Checking                = 176
+Talents                 = Charge Shot, X-Ray Shot, Puckless Rocket
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 206, 17, 38
+Gloves Color            = 0, 0, 0
+Helmet Color            = 206, 17, 38
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Center ---
+Name                    = Martinn Necass
+Number                  = 20
+Face                    = Haggis
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Speed                   = 243
+Shot Power              = 250
+Accuracy                = 254
+Checking                = 195
+Talents                 = Trick Shot, Board Bumper, Supernova Talent
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 206, 17, 38
+Gloves Color            = 0, 0, 0
+Helmet Color            = 206, 17, 38
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Left Defense ---
+Name                    = Brendt Burnss
+Number                  = 79
+Face                    = Wiener
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 203
+Shot Power              = 224
+Accuracy                = 220
+Checking                = 238
+Talents                 = Onepunch, knightAI, Heavy Helmet, Porcelain Hammer, Built Different, Point Sniper (Level 2), Puck Rocket
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 206, 17, 38
+Gloves Color            = 0, 0, 0
+Helmet Color            = 206, 17, 38
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+--- Right Defense ---
+Name                    = Jakkob Slavine
+Number                  = 74
+Face                    = Lancelov
+Left Handed             = no
+Skin Color              = light
+Size                    = Big
+Speed                   = 220
+Shot Power              = 217
+Accuracy                = 213
+Checking                = 227
+Talents                 = Sonic Pass, Blue Line Boost
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 206, 17, 38
+Gloves Color            = 0, 0, 0
+Helmet Color            = 206, 17, 38
+Pants Color             = 0, 0, 0
+Skates Color            = 0, 0, 0
+
+
+########################################
+##                                    ##
+##   TEAM 32 — Colorado                 ##
+##                                    ##
+########################################
+
+Team Name               = Colorado
+City                    = Colorado
+Abbreviation            = COL
+Logo From               = Colorado
+
+--- Team Colors ---
+Jersey Primary          = 111, 38, 61
+Jersey Secondary        = 35, 97, 146
+Jersey Accent           = 255, 255, 255
+
+Gloves Color            = 35, 97, 146
+Helmet Color            = 111, 38, 61
+Pants Color             = 35, 97, 146
+Skates Color            = 35, 97, 146
+Blade Color             = 200, 200, 200
+Laces Color             = 255, 255, 255
+Bicep Color             = 35, 97, 146
+Socks Color             = 111, 38, 61
+Transition Primary      = 111, 38, 61
+Transition Secondary    = 35, 97, 146
+Transition Tertiary     = 255, 255, 255
+--- Team Uniform ---
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Helmet                  = team colors
+Helmet Away             = team colors
+Stick                   = black
+
+--- Team Relics ---
+crit_shot_knockout
+critical_mass
+voodoodoll:2
+briefcase:2
+shrink_serum_opponent
+crit_shot_frog
+double_incision:2
+cushioned:2
+bubble_wrap:2
+greater_cooldown
+
+--- Goalie ---
+Name                    = MacKenzi Blackwoode
+Face                    =
+Skill                   = 100
+Catching                = 102
+Glove                   = 103
+Blocker                 = 99
+Five Hole               = 97
+Standing Speed          = 63
+Butterfly Speed         = 61
+Control                 = 100
+Recovery                = 102
+Pass Power              = 67
+Shot Power              = 58
+Poke Check              = 60
+Depth                   = 67
+Pass Read               = 0.71f
+Goalie Talents          = Always Catch Pucks, Crease Clearer, Goalie Headshot, Goalie Throw Stick, Goalie Enraged On Shot, Goalie Pass Propel, Goalie Speed Talent, Goalie Dance
+
+--- Left Wing ---
+Name                    = Gabriell Landeskoge
+Number                  = 92
+Face                    = Bench_Bench
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 215
+Shot Power              = 225
+Accuracy                = 221
+Checking                = 225
+Talents                 = Built Different, Onepunch, Chexplosion, marauder, Homewrecker, Enraged, Avenge Me! (Level 2), Spiked Armor
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 111, 38, 61
+Gloves Color            = 35, 97, 146
+Helmet Color            = 111, 38, 61
+Pants Color             = 35, 97, 146
+Skates Color            = 35, 97, 146
+
+--- Right Wing ---
+Name                    = Martinn Necasse
+Number                  = 88
+Face                    = Bench_Bench
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 225
+Shot Power              = 223
+Accuracy                = 227
+Checking                = 200
+Talents                 = Trick Shot (Level 2), Curve Ball (Level 2), Crit Boost, Escalating Crit, Puck Rocket, tornadoAI, Cherry Picker
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 111, 38, 61
+Gloves Color            = 35, 97, 146
+Helmet Color            = 111, 38, 61
+Pants Color             = 35, 97, 146
+Skates Color            = 35, 97, 146
+
+--- Center ---
+Name                    = Nathaniel MacKinley
+Number                  = 29
+Face                    = Wiener
+Left Handed             = yes
+Skin Color              = light
+Size                    = Medium
+Speed                   = 265
+Shot Power              = 256
+Accuracy                = 261
+Checking                = 240
+Talents                 = Built Different, Hidden Ace, Flawless Feeder (Level 2), Power Transfer, XRay Shot (Level 2), Charge Shot (Level 2), Bouncy McBounce, Rebound Magnet (Level 2), Fast Rebound, Anchor
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 111, 38, 61
+Gloves Color            = 35, 97, 146
+Helmet Color            = 111, 38, 61
+Pants Color             = 35, 97, 146
+Skates Color            = 35, 97, 146
+
+--- Left Defense ---
+Name                    = Devynn Toewss
+Number                  = 7
+Face                    = cage
+Left Handed             = yes
+Skin Color              = light
+Size                    = ExtraBig
+Speed                   = 219
+Shot Power              = 217
+Accuracy                = 217
+Checking                = 215
+Talents                 = Built Different, Human Shield, Velcro, Defensive Deflect (Level 2), knightAI, Sonic Interception, En Garde!, Triple Twig, Fury Stick (Level 2), Porcelain Hammer, Onepunch
+Ability                 = throwingStick
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 111, 38, 61
+Gloves Color            = 35, 97, 146
+Helmet Color            = 111, 38, 61
+Pants Color             = 35, 97, 146
+Skates Color            = 35, 97, 146
+
+--- Right Defense ---
+Name                    = Kale Makarro
+Number                  = 8
+Face                    = Bench_Bench
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Speed                   = 245
+Shot Power              = 241
+Accuracy                = 243
+Checking                = 223
+Talents                 = Blue Line Boost (Level 2), Point Sniper (Level 2), Slapshot Slowmo, Sonic Slap (Level 2), Board Bumper, Puckless Rocket, princeAI, Sword (Level 2), Triple Twig, Fury Stick (Level 2), Porcelain Hammer, Explosion On Landing
+Ability                 = throwingStick
+Stick                   = black
+Helmet                  = team colors
+Body                    = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Skates                  = standard
+Jersey Color            = 111, 38, 61
+Gloves Color            = 35, 97, 146
+Helmet Color            = 111, 38, 61
+Pants Color             = 35, 97, 146
+Skates Color            = 35, 97, 146
+
+
+########################################
+##                                    ##
+##   TEAM 33 — Mirror Match          ##
+##   *** FINAL BOSS ***              ##
+##                                    ##
+########################################
+
+# PLAYER = clones your current team with away colors (mirror match!)
+Import Team             = PLAYER
+Team Name               = Mirror Match
