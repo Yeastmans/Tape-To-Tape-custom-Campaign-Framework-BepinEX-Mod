@@ -64,7 +64,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.2"
+APP_VERSION = "2.1.3"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -329,6 +329,90 @@ def _prompt_update(root, local, remote, installer_url=None):
             root.after(0, _err)
 
     _t.Thread(target=_do, daemon=True).start()
+
+# ============================================================
+#   DIRTY TRACKING (unsaved-changes warning)
+# ============================================================
+class DirtyTracker:
+    """Per-tab dirty-flag manager. Editors create one, hook its mark_dirty
+    to their inputs, call mark_clean() after loading and after saving, and
+    expose save_fn so the close handler can offer to save before closing.
+
+    save_fn should return True on successful save (so the tab can close),
+    False/None if save failed (tab stays open)."""
+    __slots__ = ("dirty", "save_fn", "title")
+    def __init__(self, title="tab"):
+        self.dirty = False
+        self.save_fn = None
+        self.title = title
+
+    def mark_dirty(self, *_):
+        self.dirty = True
+
+    def mark_clean(self, *_):
+        self.dirty = False
+
+    def is_dirty(self):
+        return self.dirty
+
+
+def attach_dirty_tracking(frame, tracker):
+    """Walk frame's descendants and wire common inputs to tracker.mark_dirty.
+    Call this AFTER the form is built and initial values loaded. Then call
+    tracker.mark_clean() once to reset any writes the loader triggered."""
+    if frame is None or tracker is None: return
+    def visit(w):
+        try: cls = w.winfo_class()
+        except Exception: return
+        try:
+            if cls in ("TEntry", "Entry", "TCombobox", "Spinbox", "TSpinbox"):
+                w.bind("<KeyRelease>", tracker.mark_dirty, add="+")
+                w.bind("<<ComboboxSelected>>", tracker.mark_dirty, add="+")
+                w.bind("<FocusOut>", tracker.mark_dirty, add="+")
+                w.bind("<<Paste>>", tracker.mark_dirty, add="+")
+            elif cls in ("Text",):
+                try: w.edit_modified(False)
+                except Exception: pass
+                def _on_mod(e, widget=w, tr=tracker):
+                    tr.mark_dirty()
+                    try: widget.edit_modified(False)
+                    except Exception: pass
+                w.bind("<<Modified>>", _on_mod, add="+")
+            elif cls in ("TCheckbutton", "Checkbutton",
+                         "TRadiobutton", "Radiobutton",
+                         "TScale", "Scale"):
+                w.bind("<ButtonRelease-1>", tracker.mark_dirty, add="+")
+                w.bind("<space>", tracker.mark_dirty, add="+")
+        except Exception: pass
+        for c in w.winfo_children():
+            visit(c)
+    visit(frame)
+
+
+def confirm_tab_close(master, tab):
+    """Return True if tab is safe to close (user said yes/no, or clean).
+    Return False if user cancelled. If there's a dirty tracker + save_fn
+    and the user picks Yes, calls save_fn; abort close if save fails."""
+    tracker = getattr(tab, "_dirty_tracker", None)
+    if not tracker or not tracker.is_dirty():
+        return True
+    title = tracker.title or "this tab"
+    ans = messagebox.askyesnocancel(
+        "Unsaved changes",
+        f"'{title}' has unsaved changes.\n\nSave before closing?",
+        parent=master)
+    if ans is None: return False
+    if not ans: return True  # discard
+    if not tracker.save_fn:
+        return True
+    try:
+        ok = tracker.save_fn()
+    except Exception as e:
+        messagebox.showerror("Save failed",
+                              f"Could not save:\n{e}", parent=master)
+        return False
+    return bool(ok) if ok is not None else True
+
 
 try:
     from _game_data import (ALL_TALENTS, ALL_RELICS, TALENTS, RELICS,
@@ -3516,6 +3600,37 @@ class _EditorHost:
                 self._toplevel.destroy()
         except Exception: pass
 
+    def attach_tracker(self, title, save_fn=None):
+        """Create a DirtyTracker for this editor and mount it on the tab
+        widget (or Toplevel) so the close handlers can find it. Returns
+        the tracker so the caller can wire save_fn / mark_clean."""
+        tracker = DirtyTracker(title=title)
+        if save_fn is not None:
+            tracker.save_fn = save_fn
+        target = self._outer if self._tab else self._toplevel
+        try: target._dirty_tracker = tracker
+        except Exception: pass
+        if not self._tab:
+            # Toplevel: intercept window close to check dirty state.
+            def _on_close():
+                if not confirm_tab_close(self._toplevel, self._toplevel): return
+                try: self._toplevel.destroy()
+                except Exception: pass
+            try: self._toplevel.protocol("WM_DELETE_WINDOW", _on_close)
+            except Exception: pass
+        return tracker
+
+    def finalize_tracking(self, tracker):
+        """Call AFTER the form is built and initial values are loaded.
+        Walks widgets to attach mark_dirty bindings, then resets dirty=False."""
+        target = self._outer if self._tab else self._toplevel
+        try:
+            attach_dirty_tracking(target, tracker)
+            # Give tk a tick to process any pending trace callbacks from the
+            # initial load, then reset the flag.
+            target.after(50, tracker.mark_clean)
+        except Exception: pass
+
 
 # ============================================================
 #   WINDOW OPENERS
@@ -4240,6 +4355,7 @@ def open_player_editor(path=None, is_goalie=None, on_save=None,
 
     host = _EditorHost(title, size="950x780")
     win = host.container  # parent for all children; could be Toplevel or Frame
+    tracker = host.attach_tracker(title)
 
     ed = PlayerEditor(win, is_goalie=is_goalie, team_colors=team_colors, is_draft_pool=is_draft_pool)
     ed.pack(fill="both", expand=True)
@@ -4375,8 +4491,10 @@ def open_player_editor(path=None, is_goalie=None, on_save=None,
         if written_team:
             msg += f"\n\nAlso copied into team slot:\n{written_team}"
         messagebox.showinfo("Saved", msg)
+        tracker.mark_clean()
         if on_save: on_save()
         host.destroy()
+        return True
 
     def reveal():
         # Show the current file on disk. If unsaved, show the library folder instead.
@@ -4390,6 +4508,9 @@ def open_player_editor(path=None, is_goalie=None, on_save=None,
                width=18).pack(side="right", padx=5)
     ttk.Button(btns, text="Cancel", command=host.destroy, width=14).pack(side="right")
 
+    tracker.save_fn = save
+    host.finalize_tracking(tracker)
+
 
 def open_team_editor(team_dir=None, on_save=None):
     """Open team editor — team fields + player list with edit buttons."""
@@ -4402,6 +4523,8 @@ def open_team_editor(team_dir=None, on_save=None):
     # initial sash position is set after the window lays out so left gets ~65%.
     paned = ttk.PanedWindow(win, orient="horizontal")
     paned.pack(fill="both", expand=True)
+
+    tracker = host.attach_tracker(title)
 
     left = ttk.Frame(paned)
     ed = TeamEditor(left)
@@ -4809,7 +4932,9 @@ def open_team_editor(team_dir=None, on_save=None):
                 f"Base game team — saved to your library copy instead:\n{team_dir}")
         refresh_players()
         messagebox.showinfo("Saved", f"Team saved to:\n{team_dir}")
+        tracker.mark_clean()
         if on_save: on_save()
+        return True
 
     def rename_team():
         nonlocal team_dir
@@ -4875,12 +5000,16 @@ def open_team_editor(team_dir=None, on_save=None):
         ed.load_dir(team_dir)
         refresh_players()
 
+    tracker.save_fn = save
+    host.finalize_tracking(tracker)
+
 
 def open_campaign_editor(campaign_dir=None, on_save=None):
     """Open campaign editor — settings + team list."""
     title = "Campaign Editor" + (f" — {os.path.basename(campaign_dir)}" if campaign_dir else "")
     host = _EditorHost(title, size="750x700")
     win = host.container
+    tracker = host.attach_tracker(title)
 
     ed = CampaignEditor(win)
     ed.pack(fill="both", expand=True, padx=10, pady=10)
@@ -4905,7 +5034,9 @@ def open_campaign_editor(campaign_dir=None, on_save=None):
             campaign_dir = os.path.join(CAMPAIGNS_DIR, name)
         ed.save_dir(campaign_dir)
         messagebox.showinfo("Saved", f"Campaign saved to {campaign_dir}")
+        tracker.mark_clean()
         if on_save: on_save()
+        return True
 
     def rename_campaign():
         nonlocal campaign_dir
@@ -4963,6 +5094,9 @@ def open_campaign_editor(campaign_dir=None, on_save=None):
     ttk.Button(btns, text="Rename", command=rename_campaign, width=10).pack(side="right", padx=5)
     ttk.Button(btns, text="Open Folder", command=reveal, width=12).pack(side="right", padx=5)
     ttk.Button(btns, text="Close", command=host.destroy, width=14).pack(side="right")
+
+    tracker.save_fn = save
+    host.finalize_tracking(tracker)
 
 
 def open_reward_pools_editor(campaign_dir):
@@ -5678,6 +5812,23 @@ class MainMenu(tk.Tk):
         except Exception: pass
 
     def _on_app_close(self):
+        # Check every open tab for unsaved changes; let user abort close.
+        try:
+            dirty_titles = []
+            for tab_id in self.notebook.tabs():
+                tab = self.notebook.nametowidget(tab_id)
+                tracker = getattr(tab, "_dirty_tracker", None)
+                if tracker and tracker.is_dirty():
+                    dirty_titles.append(tracker.title or "(untitled)")
+            if dirty_titles:
+                summary = "\n  - ".join(dirty_titles)
+                ans = messagebox.askyesnocancel(
+                    "Unsaved changes",
+                    f"The following tabs have unsaved changes:\n\n  - {summary}\n\n"
+                    f"Quit anyway?")
+                # Yes = discard + quit; No/Cancel = stay open
+                if ans is None or ans is False: return
+        except Exception: pass
         try: self.quit()
         except Exception: pass
         try: self.destroy()
@@ -6138,6 +6289,7 @@ class MainMenu(tk.Tk):
             idx = self.notebook.index(f"@{event.x},{event.y}")
             if idx == 0: return  # Home — don't close
             tab = self.notebook.nametowidget(self.notebook.tabs()[idx])
+            if not confirm_tab_close(self, tab): return
             self.notebook.forget(idx)
             tab.destroy()
         except Exception: pass
@@ -6175,6 +6327,8 @@ class MainMenu(tk.Tk):
 
             if event.x >= right_edge - 22:
                 tab = self.notebook.nametowidget(tab_id)
+                if not confirm_tab_close(self, tab):
+                    return "break"
                 self.notebook.forget(idx)
                 tab.destroy()
                 return "break"  # suppress the native tab-select on close
@@ -6188,6 +6342,7 @@ class MainMenu(tk.Tk):
             idx = self.notebook.index(cur)
             if idx == 0: return  # Home — don't close
             tab = self.notebook.nametowidget(cur)
+            if not confirm_tab_close(self, tab): return
             self.notebook.forget(cur)
             tab.destroy()
         except Exception: pass
