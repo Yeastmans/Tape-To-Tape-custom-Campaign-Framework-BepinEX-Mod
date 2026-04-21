@@ -1,0 +1,14 @@
+Name                    = Mark Bench
+Number                  = 85
+Face                    = Bench_Bench
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Size Offset             = 0.9788
+Speed                   = 48
+Shot Power              = 26
+Accuracy                = 25
+Checking                = 45
+Ability                 =
+Talents                 =
+Stick                   = red

@@ -1,0 +1,26 @@
+# Player Team: Trios
+Team Name               = Trio
+City                    = Tri City
+Abbreviation            = TRI
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Helmet                  = team colors
+Stick                   = black
+Jersey Primary          = 120, 20, 80
+Jersey Secondary        = 60, 10, 40
+Jersey Accent           = 255, 220, 180
+Away Primary            = 255, 255, 255
+Away Secondary          = 120, 20, 80
+Away Accent             = 255, 220, 180
+Helmet Color            = 120, 20, 80
+Gloves Color            = 60, 10, 40
+Pants Color             = 60, 10, 40
+Socks Color             = 120, 20, 80
+Bicep Color             = 60, 10, 40
+Number Color Home       = 255, 255, 255
+Number Color Away       = 120, 20, 80
+Team Random Talents     = 0
+Team Relics             = Rubberband, Merciless, Stopwatch

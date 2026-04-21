@@ -23,7 +23,7 @@ using Rogue.BenchSnapshots;
 
 namespace EndlessMode;
 
-[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.0.0")]
+[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.0")]
 public class Plugin : BasePlugin
 {
     internal static new ManualLogSource Log;
@@ -33,6 +33,10 @@ public class Plugin : BasePlugin
     internal static bool DebugSkipEnabled = false;
 
     internal static bool BossJustBeaten = false;
+    // Set when CampaignState.LoadRunData fires (Continue Run path). Used to
+    // suppress the PatchNewRunStart save wipe when the game's StartMenu.StartNewRun
+    // coroutine fires during the Continue flow (not just New Run).
+    internal static float LastLoadRunDataTime = -9999f;
     internal static int DebugRealAct = -1;
     internal static bool DebugActForced = false;
     internal static bool TeamsLogged = false;
@@ -87,10 +91,61 @@ public class Plugin : BasePlugin
 
     // Player team editor — configs keyed by lowercase prefix ("basic", "defense", "speed", "trio")
     internal static Dictionary<string, TeamConfig> PlayerTeamConfigs = new Dictionary<string, TeamConfig>(StringComparer.OrdinalIgnoreCase);
+    // Squad id ("Custom_<key>") -> (displayName, description) — consulted by the
+    // get_LocalizedSquadName/Desc patches so custom squads show our strings
+    // instead of "???" (localization falls back to key when no entry exists).
+    internal static Dictionary<string, (string name, string desc)> CustomSquadText
+        = new Dictionary<string, (string, string)>(StringComparer.Ordinal);
     // Draft pool player configs keyed by lowercase full name ("stu stumpl", "freddy kovalski", etc.)
     internal static Dictionary<string, PlayerConfig> DraftPoolConfigs = new Dictionary<string, PlayerConfig>(StringComparer.OrdinalIgnoreCase);
     internal static bool DraftPoolApplied = false;
+    // Free-agent node cap per run. Long campaigns otherwise accumulate more
+    // free agents than the roster has slots for and crash the game on
+    // 5th+ FA signing. When the cap is reached, further FanNumber1 nodes
+    // get substituted with GeneralManager (team-upgrade) nodes.
+    internal const int MaxFreeAgentNodes = 0;  // TEMP: 0 = replace ALL FA nodes with TeamTraining (testing)
+    internal static int FreeAgentNodesPlaced = 0;
+    // Track which ForwardData instances we've already applied draft-pool
+    // config to. Using pointers so re-apply is skipped for the same instance
+    // but NEWLY-loaded free agents get picked up on subsequent Team.Initialize
+    // calls (they load lazily when the draft UI opens).
+    internal static HashSet<IntPtr> AppliedDraftPtrs = new HashSet<IntPtr>();
     internal static bool UsePlayerTeams = false; // toggle from campaign settings
+    internal static bool _pendingAutoDump = false;
+    internal static List<string> ConfigTeamDirs = new List<string>(); // parallel to ConfigTeams — folder path per team
+
+    // Runtime-grown set of face skin names registered as helmetless. Keeps
+    // duplicate work out of the HeadsWithoutHelmets array replacement path.
+    internal static HashSet<string> HelmetlessFaces = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    /// Extend the game's ForwardDataExtensions.HeadsWithoutHelmets array to
+    /// include `faceSkin`, so the renderer skips the helmet for any forward
+    /// that uses that face. Reflection-only (no Harmony patch) — safe against
+    /// uninitialized IL2CPP owners, which crashed the previous approach.
+    internal static void RegisterFaceAsHelmetless(string faceSkin)
+    {
+        if (string.IsNullOrEmpty(faceSkin)) return;
+        if (HelmetlessFaces.Contains(faceSkin)) return;
+        try
+        {
+            var t = typeof(Tape2Tape.Customization.UI.ForwardDataExtensions);
+            var prop = t.GetProperty("HeadsWithoutHelmets", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            if (prop == null)
+            {
+                Log.LogWarning($"[NoHelmet] HeadsWithoutHelmets property not found — '{faceSkin}' not registered");
+                return;
+            }
+            var current = prop.GetValue(null) as Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStringArray;
+            int oldLen = current?.Length ?? 0;
+            var replacement = new Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStringArray(oldLen + 1);
+            for (int i = 0; i < oldLen; i++) replacement[i] = current[i];
+            replacement[oldLen] = faceSkin;
+            prop.SetValue(null, replacement);
+            HelmetlessFaces.Add(faceSkin);
+            Log.LogInfo($"[NoHelmet] Registered '{faceSkin}' as helmetless (HeadsWithoutHelmets: {oldLen} -> {oldLen + 1})");
+        }
+        catch (Exception ex) { Log.LogWarning($"[NoHelmet] RegisterFaceAsHelmetless('{faceSkin}'): {ex.Message}"); }
+    }
 
     internal static void ResolveCampaignPaths()
     {
@@ -241,6 +296,12 @@ public class Plugin : BasePlugin
     internal static bool DumpData = true; // generates reference dump files
     internal static bool ReplaceSoccerBall = true;
     internal static bool ReplaceGolfBall = true;
+
+    // Reward-pool filters (populated from campaigns/<name>/reward_pools.txt).
+    // IDs held here are filtered OUT of the game's random-reward picks at
+    // runtime via Harmony postfixes on RelicRepository / TalentRepository.
+    internal static HashSet<string> ExcludedRewardRelicIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    internal static HashSet<string> ExcludedRewardTalentIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     // Shared RNG for random() values — seeded once per config load
     internal static System.Random ConfigRng = new System.Random();
@@ -403,6 +464,40 @@ public class Plugin : BasePlugin
                 Log.LogInfo("[Config] No campaign.txt found — using defaults");
             }
 
+            // Reward-pool filters — campaigns/<name>/reward_pools.txt.
+            // Format: "Excluded Relics = id1, id2, id3" (comma-separated ids,
+            // matching the ids in _reward_relics.txt). Same for talents.
+            ExcludedRewardRelicIds.Clear();
+            ExcludedRewardTalentIds.Clear();
+            try
+            {
+                string rewardPoolsPath = Path.Combine(ModFolder, "reward_pools.txt");
+                if (File.Exists(rewardPoolsPath))
+                {
+                    ParseKvFile(rewardPoolsPath, (key, val) =>
+                    {
+                        if (key == "excluded relics" || key == "excluded relic")
+                        {
+                            foreach (var p in val.Split(','))
+                            {
+                                var id = p.Trim();
+                                if (id.Length > 0) ExcludedRewardRelicIds.Add(id);
+                            }
+                        }
+                        else if (key == "excluded talents" || key == "excluded talent")
+                        {
+                            foreach (var p in val.Split(','))
+                            {
+                                var id = p.Trim();
+                                if (id.Length > 0) ExcludedRewardTalentIds.Add(id);
+                            }
+                        }
+                    });
+                    Log.LogInfo($"[Config] reward_pools.txt loaded — {ExcludedRewardRelicIds.Count} relics excluded, {ExcludedRewardTalentIds.Count} talents excluded");
+                }
+            }
+            catch (Exception ex) { Log.LogWarning($"[Config] reward_pools.txt: {ex.Message}"); }
+
             LoadCampaignFolders();
         }
         catch (Exception ex)
@@ -426,6 +521,8 @@ public class Plugin : BasePlugin
         else if (key == "logo from") team.LogoFrom = val;
         else if (key == "import team") team.ImportTeam = val;
         else if (key == "abbreviation") team.Abbreviation = val;
+        else if (key == "description") team.Description = val;
+        else if (key == "squad head") team.SquadHead = val;
         else if (key == "stat scale") team.StatScale = ParseRandomFloat(val);
         // Home Colors
         else if (key == "jersey primary") team.JerseyPrimary = ParseRandomColor(val);
@@ -481,6 +578,11 @@ public class Plugin : BasePlugin
             team.Relics = new List<string>();
             foreach (var r in val.Split(','))
             { string t = r.Trim(); if (t.Length > 0) team.Relics.Add(t); }
+        }
+        else if (key == "no bench bonus" || key == "disable bench bonus")
+        {
+            string lv = (val ?? "").Trim().ToLowerInvariant();
+            team.NoBenchBonus = (lv == "yes" || lv == "true" || lv == "1");
         }
         else if (key == "team random talents") team.TeamRandomTalents = ParseRandomInt(val);
         else if (key == "team random pool")
@@ -689,7 +791,10 @@ public class Plugin : BasePlugin
                 if (posFromInside != null) slot = SlotFor(posFromInside);
             }
             if (slot != null)
+            {
                 LoadPlayerFile(file, slot);
+                Log.LogDebug($"[Campaign] Loaded '{Path.GetFileName(file)}' -> position '{position}', slot Name='{slot.Name}'");
+            }
             else
                 Log.LogWarning($"[Campaign] Could not determine position for player file: {Path.GetFileName(file)}");
         }
@@ -710,25 +815,26 @@ public class Plugin : BasePlugin
         Array.Sort(teamDirs, StringComparer.OrdinalIgnoreCase);
 
         ConfigTeams = new List<TeamConfig>();
+        ConfigTeamDirs = new List<string>();
         foreach (var teamDir in teamDirs)
         {
             var tc = new TeamConfig();
             LoadTeamFile(Path.Combine(teamDir, "team.txt"), tc);
             LoadPlayersFolder(Path.Combine(teamDir, "players"), tc);
             ConfigTeams.Add(tc);
+            ConfigTeamDirs.Add(teamDir);
             string name = !string.IsNullOrEmpty(tc.ImportTeam) ? $"IMPORT '{tc.ImportTeam}'" : $"'{tc.Name}'";
             Log.LogInfo($"  Loaded team: {Path.GetFileName(teamDir)} → {name}");
         }
         Log.LogInfo($"[Campaign] Multi-folder: {ConfigTeams.Count} teams loaded");
     }
 
-    internal static void LoadPlayerTeamsFolders()
+    internal static void LoadPlayerTeamsFolders(bool loadTeams, bool loadDraft)
     {
         string rootDir = Path.Combine(ModFolder, "player_teams");
         if (!Directory.Exists(rootDir)) return;
-        Log.LogInfo("[PlayerTeam] Loading multi-folder format from player_teams/");
+        Log.LogInfo($"[PlayerTeam] Loading from player_teams/ (teams={loadTeams}, draft={loadDraft})");
 
-        // Expected subfolders: Defense, Speedy, Basic, Trios, draft_pool
         foreach (var subDir in Directory.GetDirectories(rootDir))
         {
             string folderName = Path.GetFileName(subDir);
@@ -736,7 +842,7 @@ public class Plugin : BasePlugin
 
             if (lower == "draft_pool" || lower == "draft pool")
             {
-                // Each file in draft_pool/ is a player, filename = key
+                if (!loadDraft) continue;
                 foreach (var file in Directory.GetFiles(subDir, "*.txt"))
                 {
                     string playerName = Path.GetFileNameWithoutExtension(file);
@@ -748,39 +854,46 @@ public class Plugin : BasePlugin
                 continue;
             }
 
-            // Team folder: Defense/Speedy/Basic/Trios
             string teamKey = null;
-            if (lower.StartsWith("defense")) teamKey = "defense";
-            else if (lower.StartsWith("speed")) teamKey = "speed";
-            else if (lower.StartsWith("basic")) teamKey = "basic";
-            else if (lower.StartsWith("trio")) teamKey = "trio";
+            bool isPreset = false;
+            if (lower.StartsWith("defense")) { teamKey = "defense"; isPreset = true; }
+            else if (lower.StartsWith("speed")) { teamKey = "speed"; isPreset = true; }
+            else if (lower.StartsWith("basic")) { teamKey = "basic"; isPreset = true; }
+            else if (lower.StartsWith("trio")) { teamKey = "trio"; isPreset = true; }
             else teamKey = lower;
+
+            // Preset squads (Basic/Defense/Speedy/Trios) only load when the
+            // user opted in with Use Player Teams = yes — they OVERRIDE the
+            // vanilla starting lineup. Custom squads (non-preset) always load:
+            // they're ADDITIVE new entries in the squad-select menu that the
+            // user picks at campaign start, so they never need the toggle.
+            if (isPreset && !loadTeams) continue;
 
             var tc = new TeamConfig();
             LoadTeamFile(Path.Combine(subDir, "team.txt"), tc);
             LoadPlayersFolder(Path.Combine(subDir, "players"), tc);
             PlayerTeamConfigs[teamKey] = tc;
-            Log.LogInfo($"  Player team: '{teamKey}' loaded from {folderName}");
+            Log.LogInfo($"  Player team: '{teamKey}' loaded from {folderName}{(isPreset ? "" : " (custom squad)")}");
         }
-        Log.LogInfo($"[PlayerTeam] Multi-folder: {PlayerTeamConfigs.Count} teams, {DraftPoolConfigs.Count} draft pool players");
+        Log.LogInfo($"[PlayerTeam] Loaded: {PlayerTeamConfigs.Count} teams, {DraftPoolConfigs.Count} draft pool players");
     }
 
     // ===== PLAYER TEAM EDITOR =====
+    // Draft pool always loads when the folder exists — free agent edits are
+    // additive and never replace the game's structure. Starting-team
+    // replacement (Defense/Speedy/Basic/Trios) still requires opt-in via
+    // `Use Player Teams = yes` because it overwrites the whole lineup.
     internal static void LoadPlayerTeams()
     {
         if (IsDefaultMode) return;
+        if (!Directory.Exists(Path.Combine(ModFolder, "player_teams")))
+        {
+            Log.LogInfo("[PlayerTeam] No player_teams/ folder — nothing to load");
+            return;
+        }
         if (!UsePlayerTeams)
-        {
-            Log.LogInfo("[PlayerTeam] Use Player Teams = no — skipping");
-            return;
-        }
-        // Multi-folder format only: looks for player_teams/ directory
-        if (Directory.Exists(Path.Combine(ModFolder, "player_teams")))
-        {
-            LoadPlayerTeamsFolders();
-            return;
-        }
-        Log.LogInfo("[PlayerTeam] No player_teams/ folder — player teams unchanged");
+            Log.LogInfo("[PlayerTeam] Use Player Teams = no — loading draft pool + custom squads only");
+        LoadPlayerTeamsFolders(loadTeams: UsePlayerTeams, loadDraft: true);
     }
 
 
@@ -824,6 +937,19 @@ public class Plugin : BasePlugin
     {
         if (string.IsNullOrEmpty(val)) return val;
         string lower = val.Trim().ToLower();
+
+        // "none" = explicitly no skin / no helmet / no glasses.
+        // For the helmet slot we return a sentinel so ApplyPlayerConfig can
+        // detect the intent and swap the face to a helmetless variant —
+        // the game's renderer decides helmet visibility from `headSkin`
+        // (via ForwardDataExtensions.HeadsWithoutHelmets), so swapping the
+        // face is the safe way to hide it. Other slots still return "".
+        if (lower == "none")
+        {
+            string hint = (slotHint ?? "body").ToLower();
+            if (hint == "helmet" || hint == "helmet away") return "__NO_HELMET__";
+            return "";
+        }
 
         // Context-aware "standard" / "team colors" / "default"
         if (lower == "standard" || lower == "team colors" || lower == "default")
@@ -978,6 +1104,10 @@ public class Plugin : BasePlugin
         // Standard / team colors
         if (lower == "standard" || lower == "team colors" || lower == "default" || lower == "colored")
         {
+            // Goalie team-tinted mask: this path IS in the game's GOALIE
+            // HELMET SKINS list (17 entries) and is what vanilla NPC goalies
+            // like Bobby Butcher use. Old ALL_SKIN_OPTIONS.txt in repo root
+            // was stale and missed the goalie-helmet section.
             if (slot == "helmet") return "Helmet/Helmet_Customization_colors";
             if (slot == "body") return "Body/Customization_colors";
             if (slot == "glove") return "Body_Glove/Customization/Customization_colors";
@@ -1129,9 +1259,54 @@ public class Plugin : BasePlugin
                 if (parts.Length >= 2 && int.TryParse(parts[1], out int gp))
                     GamesPlayed = gp;
                 Log.LogInfo($"[Campaign] Loaded progress: ActsCompleted={ActsCompleted}, GamesPlayed={GamesPlayed}");
+
+                // Auto-reset: if ANY campaign config file has been modified
+                // since save.txt was last written, treat this as a "fresh run"
+                // so the user's edits actually take effect. This is the only
+                // reliable way to detect "user changed things — please re-apply"
+                // without a dedicated UI button.
+                if (GamesPlayed > 0 && ShouldAutoResetForEdits())
+                {
+                    Log.LogInfo($"[Campaign] Config files newer than save — resetting progress so edits apply");
+                    ActsCompleted = 0;
+                    GamesPlayed = 0;
+                    DraftPoolApplied = false;
+        AppliedDraftPtrs.Clear();
+                    SaveProgress();
+                }
             }
         }
         catch { }
+    }
+
+    /// <summary>Return true if any campaign config file (campaign.txt,
+    /// team.txt's, player files, player_teams/**, defaults.txt) has a newer
+    /// mtime than save.txt. Used to force a fresh-run reset when the user
+    /// has edited config between sessions.</summary>
+    private static bool ShouldAutoResetForEdits()
+    {
+        try
+        {
+            if (!File.Exists(SavePath)) return false;
+            var saveTime = File.GetLastWriteTimeUtc(SavePath);
+            var roots = new List<string> { ModFolder };
+            if (!string.IsNullOrEmpty(DefaultsPath) && File.Exists(DefaultsPath)
+                && File.GetLastWriteTimeUtc(DefaultsPath) > saveTime)
+                return true;
+            foreach (var root in roots)
+            {
+                if (!Directory.Exists(root)) continue;
+                foreach (var f in Directory.EnumerateFiles(root, "*.txt", SearchOption.AllDirectories))
+                {
+                    // Skip save.txt itself
+                    if (string.Equals(Path.GetFullPath(f), Path.GetFullPath(SavePath), StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    if (File.GetLastWriteTimeUtc(f) > saveTime) return true;
+                }
+            }
+        }
+        catch { }
+        return false;
     }
 
     // ===== MAP PROPERTIES (config-driven) =====
@@ -1193,6 +1368,16 @@ public class Plugin : BasePlugin
         if (hasPlayerImport)
             Log.LogInfo("[Config] PLAYER mirror match configured — will clone player team at runtime");
 
+        // Default mode = play vanilla base game. Skip ALL Harmony patches so
+        // no mod behavior sneaks in — team remixes, challenge-node replacement,
+        // save tracking, library dumping, etc. all stay off. The user can
+        // re-enable the mod from active.txt when they want campaign behavior.
+        if (IsDefaultMode)
+        {
+            Log.LogInfo("[Campaign] DEFAULT MODE active — skipping Harmony patches. Game runs 100% vanilla.");
+            return;
+        }
+
         var harmony = new Harmony("com.mods.customcampaign");
         harmony.PatchAll();
 
@@ -1232,6 +1417,217 @@ public class Plugin : BasePlugin
             }
         }
         catch (Exception ex) { Log.LogError($"Failed RunEndHandler.ShowEndRunSequence: {ex}"); }
+
+        // Reset our campaign save when player starts a NEW run from the menu.
+        // PatchOnRunFinished handles run END; this covers the case where a user
+        // abandons a run (without losing) and starts a new one — save.txt still
+        // has leftover GamesPlayed/ActsCompleted that would block fresh-run edits.
+        try
+        {
+            var titleNewRun = AccessTools.Method(typeof(Tape2Tape.Hockey.UI.TitleScreen), "NewRun");
+            if (titleNewRun != null)
+            {
+                harmony.Patch(titleNewRun,
+                    prefix: new HarmonyMethod(typeof(PatchNewRunStart), nameof(PatchNewRunStart.Prefix)));
+                Log.LogInfo("Patched TitleScreen.NewRun — save resets on new-run start!");
+            }
+        }
+        catch (Exception ex) { Log.LogError($"Failed TitleScreen.NewRun: {ex}"); }
+
+        // NOTE: Previously we also patched UI.StartMenu.StartNewRun as a second
+        // site to catch new-run starts. Removed because StartMenu.StartNewRun
+        // ALSO fires on the Continue Run flow (post-squad-pick "begin playing"
+        // coroutine), which was wiping save.txt every time the user clicked
+        // Continue. TitleScreen.NewRun alone covers the fresh-run case because
+        // the New Run button routes through it before squad selection.
+
+        // Cap free-agent map nodes. After Plugin.MaxFreeAgentNodes, swap
+        // further FanNumber1 lookups to GeneralManager so long campaigns
+        // don't overflow the roster with uncollectable free agents.
+        try
+        {
+            var getBlueprint = AccessTools.Method(typeof(STS.Map.MapObject), "GetBlueprint");
+            if (getBlueprint != null)
+            {
+                harmony.Patch(getBlueprint,
+                    prefix: new HarmonyMethod(typeof(PatchMapBlueprint), nameof(PatchMapBlueprint.Prefix)));
+                Log.LogInfo($"Patched MapObject.GetBlueprint — FA nodes capped at {Plugin.MaxFreeAgentNodes}");
+            }
+            else
+            {
+                Log.LogWarning("Could not find MapObject.GetBlueprint");
+            }
+        }
+        catch (Exception ex) { Log.LogError($"Failed MapObject.GetBlueprint: {ex}"); }
+
+        // Apply draft-pool mods BEFORE the pick screen opens so players see
+        // modded names/stats/skins on the free-agent selection cards.
+        // CampaignState.PreGenerateFreeAgents builds the template list that
+        // PreGeneratedFreeAgentData references by name — mutating the
+        // ForwardData templates now propagates into the pick UI.
+        try
+        {
+            var preGenFA = AccessTools.Method(typeof(State.CampaignState), "PreGenerateFreeAgents");
+            if (preGenFA != null)
+            {
+                harmony.Patch(preGenFA,
+                    postfix: new HarmonyMethod(typeof(PatchPreGenerateFreeAgents), nameof(PatchPreGenerateFreeAgents.Postfix)));
+                Log.LogInfo("Patched CampaignState.PreGenerateFreeAgents — draft mods visible on pick screen!");
+            }
+        }
+        catch (Exception ex) { Log.LogError($"Failed CampaignState.PreGenerateFreeAgents: {ex}"); }
+
+        // Register custom squads BEFORE the game tries to resume a saved run.
+        // Without this, RunDataV2.es3 references a squad id like
+        // "customsquad_foo" that isn't in cs.squads yet → game can't resolve
+        // the starting squad → only "New Run" is offered. Hooking
+        // CampaignState.LoadRunData as a prefix injects our squads into the
+        // list before save deserialization runs.
+        try
+        {
+            var loadRunData = AccessTools.Method(typeof(State.CampaignState), "LoadRunData");
+            if (loadRunData != null)
+            {
+                harmony.Patch(loadRunData,
+                    prefix: new HarmonyMethod(typeof(PatchLoadRunData), nameof(PatchLoadRunData.Prefix)));
+                Log.LogInfo("Patched CampaignState.LoadRunData — custom squads registered before save load!");
+            }
+            else
+            {
+                Log.LogWarning("Could not find CampaignState.LoadRunData");
+            }
+        }
+        catch (Exception ex) { Log.LogError($"Failed CampaignState.LoadRunData: {ex}"); }
+
+        // Patch TitleScreen.RefreshCampaignData so custom squads are
+        // registered BEFORE the title screen's save-validity check runs.
+        // Without this, the Continue Run button is suppressed because the
+        // saved squad id can't be resolved at boot.
+        try
+        {
+            var refreshCampaignData = AccessTools.Method(
+                AccessTools.TypeByName("Tape2Tape.Hockey.UI.TitleScreen"), "RefreshCampaignData");
+            if (refreshCampaignData != null)
+            {
+                harmony.Patch(refreshCampaignData,
+                    prefix: new HarmonyMethod(typeof(PatchTitleScreenRefresh), nameof(PatchTitleScreenRefresh.Prefix)));
+                Log.LogInfo("Patched TitleScreen.RefreshCampaignData — custom squads registered before save check!");
+            }
+            else
+            {
+                Log.LogWarning("Could not find TitleScreen.RefreshCampaignData");
+            }
+        }
+        catch (Exception ex) { Log.LogError($"Failed TitleScreen.RefreshCampaignData: {ex}"); }
+
+        // Reward-pool filters — filter RelicRepository and TalentRepository
+        // so excluded ids (from reward_pools.txt) never show up as random
+        // rewards. Postfixes on the random-selector methods mutate the
+        // returned list before callers read it.
+        try
+        {
+            var relicRepoType = typeof(RelicRepository);
+            var miList = AccessTools.Method(relicRepoType, "GetRandomRelics");
+            var miOne  = AccessTools.Method(relicRepoType, "GetRandomRelic");
+            if (miList != null)
+            {
+                harmony.Patch(miList,
+                    prefix:  new HarmonyMethod(typeof(PatchFilterRelicRewards), nameof(PatchFilterRelicRewards.Prefix)),
+                    postfix: new HarmonyMethod(typeof(PatchFilterRelicRewards), nameof(PatchFilterRelicRewards.Postfix)));
+                Log.LogInfo("Patched RelicRepository.GetRandomRelics — reward-pool pre+post filter active");
+            }
+            if (miOne != null)
+            {
+                harmony.Patch(miOne,
+                    postfix: new HarmonyMethod(typeof(PatchFilterSingleRelicReward), nameof(PatchFilterSingleRelicReward.Postfix)));
+            }
+
+            var talentRepoType = AccessTools.TypeByName("TalentRepository");
+            if (talentRepoType != null)
+            {
+                var mTList = AccessTools.Method(talentRepoType, "GetRandomTalents");
+                var mTOne  = AccessTools.Method(talentRepoType, "GetRandomTalent");
+                if (mTList != null)
+                {
+                    harmony.Patch(mTList,
+                        prefix:  new HarmonyMethod(typeof(PatchFilterTalentRewards), nameof(PatchFilterTalentRewards.Prefix)),
+                        postfix: new HarmonyMethod(typeof(PatchFilterTalentRewards), nameof(PatchFilterTalentRewards.Postfix)));
+                    Log.LogInfo("Patched TalentRepository.GetRandomTalents — reward-pool pre+post filter active");
+                }
+                if (mTOne != null)
+                {
+                    harmony.Patch(mTOne,
+                        postfix: new HarmonyMethod(typeof(PatchFilterSingleTalentReward), nameof(PatchFilterSingleTalentReward.Postfix)));
+                }
+            }
+        }
+        catch (Exception ex) { Log.LogError($"Failed reward-pool patches: {ex}"); }
+
+        // Inject user-defined custom squads into the campaign squad-select
+        // menu. Any `player_teams/<FolderName>/` whose folder isn't one of
+        // the four presets (Basic/Defense/Speed/Trio) becomes a brand-new
+        // squad option. PatchChooseMetaUI clones an existing squad SO +
+        // its startingTeam, renames them to the config key, and appends to
+        // CampaignState.squads before the menu builds its buttons.
+        try
+        {
+            // The visible "Choose Your Squad" screen (shows Squad/Records/
+            // Starting Relics panels, locked "???" tiles, etc.) is
+            // Tape2Tape.Hockey.UI.ChooseMetaMenu — NOT Rogue.ChooseMetaUI
+            // (that's a different, simpler controller that isn't triggered
+            // by the main-menu flow). SetupMetas() is the method that
+            // instantiates a MetaTeamItem per squad in CampaignState.squads.
+            var setupMetas = AccessTools.Method(typeof(Tape2Tape.Hockey.UI.ChooseMetaMenu), "SetupMetas");
+            if (setupMetas != null)
+            {
+                harmony.Patch(setupMetas,
+                    prefix: new HarmonyMethod(typeof(PatchChooseMetaUI), nameof(PatchChooseMetaUI.PrefixMenu)));
+                Log.LogInfo("Patched ChooseMetaMenu.SetupMetas — custom squads appear in menu!");
+            }
+            else
+            {
+                Log.LogWarning("Could not find ChooseMetaMenu.SetupMetas");
+            }
+            // Keep the legacy ChooseMetaUI patch too (no-op if not used).
+            var setupButtons = AccessTools.Method(typeof(Rogue.ChooseMetaUI), "SetupMetaTeamButtons");
+            if (setupButtons != null)
+            {
+                harmony.Patch(setupButtons,
+                    prefix: new HarmonyMethod(typeof(PatchChooseMetaUI), nameof(PatchChooseMetaUI.Prefix)));
+                Log.LogInfo("Patched ChooseMetaUI.SetupMetaTeamButtons (legacy path)");
+            }
+
+            // Redirect LocalizedSquadName/LocalizedSquadDesc for Custom_* ids
+            // so the menu shows our team's Name/Description instead of "???"
+            // from missing localization keys.
+            var nameGetter = AccessTools.Method(typeof(RunSquadScriptableObject), "get_LocalizedSquadName");
+            if (nameGetter != null)
+                harmony.Patch(nameGetter,
+                    postfix: new HarmonyMethod(typeof(PatchSquadLocalization), nameof(PatchSquadLocalization.NamePostfix)));
+            var descGetter = AccessTools.Method(typeof(RunSquadScriptableObject), "get_LocalizedSquadDesc");
+            if (descGetter != null)
+                harmony.Patch(descGetter,
+                    postfix: new HarmonyMethod(typeof(PatchSquadLocalization), nameof(PatchSquadLocalization.DescPostfix)));
+            var unlockGetter = AccessTools.Method(typeof(RunSquadScriptableObject), "get_LocalizedUnlockCondition");
+            if (unlockGetter != null)
+                harmony.Patch(unlockGetter,
+                    postfix: new HarmonyMethod(typeof(PatchSquadLocalization), nameof(PatchSquadLocalization.UnlockPostfix)));
+        }
+        catch (Exception ex) { Log.LogError($"Failed squad-menu patches: {ex}"); }
+
+        // Show the opponent team name on world-map match nodes so the player
+        // knows who they're about to fight before committing to the node.
+        try
+        {
+            var setupTooltip = AccessTools.Method(typeof(STS.Map.MapNode), "SetupTooltip");
+            if (setupTooltip != null)
+            {
+                harmony.Patch(setupTooltip,
+                    postfix: new HarmonyMethod(typeof(PatchMapNodeTooltip), nameof(PatchMapNodeTooltip.Postfix)));
+                Log.LogInfo("Patched MapNode.SetupTooltip — opponent name visible on world map!");
+            }
+        }
+        catch (Exception ex) { Log.LogError($"Failed MapNode.SetupTooltip: {ex}"); }
 
         // Suppress GoalDenier (Bad Luck) completely
         try
@@ -1285,6 +1681,9 @@ public class Plugin : BasePlugin
         catch (Exception ex) { Log.LogError($"Failed CreateMapNode patch: {ex}"); }
 
         Log.LogInfo("All patches applied.");
+
+        // Auto-dump: hook into SetCurrentAct (fires on main menu load) to run on main thread.
+        _pendingAutoDump = true;
     }
 
     public static int WrapAct(int act)
@@ -1315,43 +1714,76 @@ public static class PatchMatchGameEnd
     [HarmonyPrefix]
     public static void Prefix(MatchMapNode __instance, bool isWinning)
     {
-        if (isWinning)
+        if (!isWinning) return;
+
+        // Log the actual runtime type so we can diagnose what Spartan/challenge/etc.
+        // matches look like. IL2CPP-proxied objects report their wrapper type via
+        // GetType() and their real Il2Cpp type via GetIl2CppType().
+        string sysTypeName = "";
+        string il2TypeName = "";
+        try { sysTypeName = __instance?.GetType()?.FullName ?? ""; } catch {}
+        try { il2TypeName = __instance?.GetIl2CppType()?.FullName ?? ""; } catch {}
+        Plugin.Log.LogInfo($"[Campaign] MatchMapNode.OnGameEnd(win=true) on type sys='{sysTypeName}' il2='{il2TypeName}'");
+
+        // Robust non-regular-match detection. In IL2CPP the `is` operator can be
+        // unreliable across proxy boundaries — also check the Il2Cpp type name
+        // and the CLR type name for Challenge/Spartan/Gauntlet keywords.
+        bool isChallenge = false;
+        try { if (__instance is ChallengeMapNode) isChallenge = true; } catch {}
+        if (!isChallenge)
         {
-            // Don't count Spartan challenge wins when challenges aren't replaced
-            if (__instance is ChallengeMapNode)
+            string combined = (sysTypeName + " " + il2TypeName).ToLowerInvariant();
+            if (combined.Contains("challenge") || combined.Contains("spartan") || combined.Contains("gauntlet"))
+                isChallenge = true;
+        }
+        if (!isChallenge && __instance != null)
+        {
+            // Also check the opponent team name — Spartans match opponent is named "Spartans"
+            try
             {
-                if (!Plugin.ReplaceChallenges)
+                var opp = __instance.opponent;
+                string oppName = opp?.teamName ?? "";
+                if (oppName.IndexOf("Spartan", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    Plugin.Log.LogInfo("[Campaign] Challenge match won — not counting (replaceChallenges=false)");
-                    return;
-                }
-                // Per-map override (new format: maps:1,3,5)
-                if (Plugin.ReplaceChallengesMaps != null)
-                {
-                    if (!Plugin.ReplaceChallengesMaps.Contains(Plugin.ActsCompleted))
-                    {
-                        Plugin.Log.LogInfo($"[Campaign] Challenge match won — not counting (map {Plugin.ActsCompleted} not in per-map replace list)");
-                        return;
-                    }
-                }
-                // Legacy per-act list
-                else if (Plugin.ReplaceChallengesActs != null)
-                {
-                    int currentAct = Plugin.ActForMap;
-                    bool actMatch = false;
-                    foreach (int a in Plugin.ReplaceChallengesActs)
-                        if (a == currentAct) { actMatch = true; break; }
-                    if (!actMatch)
-                    {
-                        Plugin.Log.LogInfo($"[Campaign] Challenge match won — not counting (act {currentAct} not in replace list)");
-                        return;
-                    }
+                    isChallenge = true;
+                    Plugin.Log.LogInfo($"[Campaign] Detected Spartan match via opponent name '{oppName}'");
                 }
             }
-            Plugin.GamesPlayed++;
-            Plugin.SaveProgress();
-            Plugin.Log.LogInfo($"[Campaign] Match won! GamesPlayed={Plugin.GamesPlayed}");
+            catch {}
         }
+
+        if (isChallenge)
+        {
+            Plugin.Log.LogInfo($"[Campaign] Challenge match won — evaluating whether to count (replace={Plugin.ReplaceChallenges}, map={Plugin.ActsCompleted})");
+            if (!Plugin.ReplaceChallenges)
+            {
+                Plugin.Log.LogInfo("[Campaign] Challenge match won — not counting (replaceChallenges=false)");
+                return;
+            }
+            if (Plugin.ReplaceChallengesMaps != null)
+            {
+                if (!Plugin.ReplaceChallengesMaps.Contains(Plugin.ActsCompleted))
+                {
+                    Plugin.Log.LogInfo($"[Campaign] Challenge match won — not counting (map {Plugin.ActsCompleted} not in per-map replace list)");
+                    return;
+                }
+            }
+            else if (Plugin.ReplaceChallengesActs != null)
+            {
+                int currentAct = Plugin.ActForMap;
+                bool actMatch = false;
+                foreach (int a in Plugin.ReplaceChallengesActs)
+                    if (a == currentAct) { actMatch = true; break; }
+                if (!actMatch)
+                {
+                    Plugin.Log.LogInfo($"[Campaign] Challenge match won — not counting (act {currentAct} not in replace list)");
+                    return;
+                }
+            }
+        }
+        Plugin.GamesPlayed++;
+        Plugin.SaveProgress();
+        Plugin.Log.LogInfo($"[Campaign] Match won! GamesPlayed={Plugin.GamesPlayed}");
     }
 }
 
@@ -1440,6 +1872,1137 @@ public static class PatchPuckManager
 }
 
 // ============================================================
+// Inject user-defined custom squads into CampaignState.squads before the
+// campaign squad-select menu builds its buttons. Each non-preset folder in
+// player_teams/ becomes a new squad, cloned from the first existing squad
+// so all refs/fields stay valid. The cloned squad's startingTeam is also
+// cloned and renamed so PatchPlayerTeamInit's config-matching finds the
+// right PlayerTeamConfig entry when the player selects it.
+// ============================================================
+public static class PatchChooseMetaUI
+{
+    // The actual in-game "Choose Your Squad" screen (screenshot with locked
+    // "???" tiles). Injects custom squads by replacing locked slots in
+    // CampaignState.squads BEFORE the menu instantiates its grid items.
+    public static void PrefixMenu(Tape2Tape.Hockey.UI.ChooseMetaMenu __instance)
+    {
+        Plugin.Log.LogInfo($"[CustomSquad] PrefixMenu (ChooseMetaMenu.SetupMetas) called (configs={Plugin.PlayerTeamConfigs?.Count ?? -1})");
+        try
+        {
+            if (Plugin.PlayerTeamConfigs == null || Plugin.PlayerTeamConfigs.Count == 0)
+            {
+                Plugin.Log.LogInfo("[CustomSquad] No PlayerTeamConfigs loaded — nothing to inject");
+                return;
+            }
+
+            // Read the injected CampaignState via reflection — the IL2CPP
+            // field is `m_CampaignState` here (not `_campaignState` like on
+            // the legacy ChooseMetaUI).
+            State.CampaignState cs = null;
+            try
+            {
+                var t = __instance.GetIl2CppType();
+                var f = t.GetField("m_CampaignState") ?? t.GetField("_campaignState") ?? t.GetField("campaignState");
+                if (f != null)
+                {
+                    var v = f.GetValue(__instance);
+                    if (v != null) cs = v.TryCast<State.CampaignState>();
+                }
+            }
+            catch { }
+            if (cs == null)
+            {
+                var all = UnityEngine.Resources.FindObjectsOfTypeAll<State.CampaignState>();
+                if (all != null && all.Length > 0) cs = all[0];
+            }
+            if (cs == null) { Plugin.Log.LogWarning("[CustomSquad] CampaignState not found"); return; }
+
+            InjectCustomSquads(cs);
+        }
+        catch (Exception ex) { Plugin.Log.LogError($"[CustomSquad] PrefixMenu: {ex}"); }
+    }
+
+    internal static void InjectCustomSquads(State.CampaignState cs)
+    {
+        var squads = cs.squads;
+        if (squads == null || squads.Count == 0)
+        {
+            Plugin.Log.LogWarning("[CustomSquad] cs.squads is null/empty");
+            return;
+        }
+
+        ProfileData profile = ProfileData.Instance;
+        var unlocked = profile?.unlockedSquads;
+
+        var customKeys = new List<string>();
+        foreach (var kvp in Plugin.PlayerTeamConfigs)
+        {
+            if (PatchPlayerTeamInit.IsPresetKey(kvp.Key)) continue;
+            customKeys.Add(kvp.Key);
+        }
+        if (customKeys.Count == 0) { Plugin.Log.LogInfo("[CustomSquad] No custom keys"); return; }
+
+        Plugin.Log.LogInfo($"[CustomSquad] squads={squads.Count}, customKeys={customKeys.Count} — appending as NEW entries");
+
+        // Prefer a template with a FULLY populated starting roster (all 5
+        // forward positions non-null). Some squad SOs only fill a couple of
+        // forwards — their nulls would prevent our per-slot apply from
+        // writing the user's configured players.
+        // Pick a 1-line template (exactly 5 forward slots, non-TwoLines).
+        // The "Lines Meta"/TwoLines squad has 10 slots (Line 1 at 0-4 +
+        // Line 2 at 5-9) and its layout collides with our single-line
+        // model. Prefer by name first, then by slot count.
+        RunSquadScriptableObject template = null;
+        RunSquadScriptableObject fallback = null;
+        string[] preferredNames = { "Basic Squad", "Basic", "Defense Squad", "Defense", "Speed", "Speedy" };
+
+        // First pass: search for preferred squad names (case-insensitive),
+        // requiring a 5-slot (1-line) layout.
+        foreach (var name in preferredNames)
+        {
+            for (int i = 0; i < squads.Count; i++)
+            {
+                var sq = squads[i];
+                if (sq == null || sq.startingTeam == null) continue;
+                var tf = sq.startingTeam.forwards;
+                int count = tf?.Count ?? -1;
+                if (count != 5) continue;
+                if (sq.squadName != null && sq.squadName.Equals(name, StringComparison.OrdinalIgnoreCase))
+                {
+                    template = sq;
+                    Plugin.Log.LogInfo($"[CustomSquad] Template matched preferred name '{name}' at index {i}");
+                    break;
+                }
+            }
+            if (template != null) break;
+        }
+
+        // Second pass: any 5-slot squad.
+        if (template == null)
+        {
+            for (int i = 0; i < squads.Count; i++)
+            {
+                var sq = squads[i];
+                if (sq == null || sq.startingTeam == null) continue;
+                var tf = sq.startingTeam.forwards;
+                int count = tf?.Count ?? -1;
+                int nonNull = 0;
+                if (tf != null)
+                    for (int k = 0; k < tf.Count; k++) if (tf[k] != null) nonNull++;
+                Plugin.Log.LogInfo($"[CustomSquad] Template candidate {i}: '{sq.squadName}' fwds={count} nonNull={nonNull}");
+                if (count == 5) { template = sq; break; }
+                if (fallback == null) fallback = sq;
+            }
+        }
+
+        if (template == null) template = fallback;
+        if (template == null) { Plugin.Log.LogWarning("[CustomSquad] no viable template"); return; }
+        Plugin.Log.LogInfo($"[CustomSquad] Chose template '{template.squadName}'");
+
+        for (int i = 0; i < customKeys.Count; i++)
+        {
+            string key = customKeys[i];
+            var cfg = Plugin.PlayerTeamConfigs[key];
+            string displayName = !string.IsNullOrEmpty(cfg?.Name)
+                ? cfg.Name
+                : char.ToUpper(key[0]) + key.Substring(1);
+            string customId = "Custom_" + key;
+
+            // Idempotent re-entry: if the clone already exists in the list
+            // (repeat Prefix calls on the same menu open), just re-unlock it
+            // and skip. This prevents duplicate tiles.
+            bool alreadyPresent = false;
+            for (int j = 0; j < squads.Count; j++)
+            {
+                var sq = squads[j];
+                if (sq != null && sq.id == customId) { alreadyPresent = true; break; }
+            }
+            if (alreadyPresent)
+            {
+                if (unlocked != null && !unlocked.Contains(customId)) unlocked.Add(customId);
+                continue;
+            }
+
+            try
+            {
+                var clone = UnityEngine.Object.Instantiate(template);
+                clone.name = "CustomSquad_" + key;
+                try { clone.squadName = displayName; } catch {}
+                try { clone.id = customId; } catch {}
+
+                var origTeam = template.startingTeam;
+                if (origTeam != null)
+                {
+                    var teamClone = UnityEngine.Object.Instantiate(origTeam);
+                    teamClone.teamName = key + " " + displayName;
+
+                    Plugin.Log.LogInfo($"[CustomSquad] Cloned team '{origTeam.teamName}' -> '{teamClone.teamName}' fwds={teamClone.forwards?.Count ?? -1} goalie={(teamClone.goalie != null ? teamClone.goalie.firstName : "null")}");
+
+                    // Deep-clone every ForwardData in the roster up front.
+                    // Instantiate on TeamData only shallow-clones reference
+                    // fields, so the cloned list still points at Basic's
+                    // actual player SOs. ApplyPlayerTeamConfig would then
+                    // mutate Basic directly (name/stats/talents on Basic's
+                    // real LW, RW, etc.) — which corrupts the Basic tile and
+                    // eventually wipes all squad rendering once the UI tries
+                    // to reuse the stale SOs. Pre-cloning isolates our edits.
+                    try { DeepCloneForwards(teamClone); }
+                    catch (Exception cEx) { Plugin.Log.LogWarning($"[CustomSquad] DeepCloneForwards: {cEx.Message}"); }
+
+                    // For any user-configured slot whose template forward is
+                    // null (e.g. Basic Squad ships with LW/RW/C empty), fill
+                    // the slot with a fresh clone of the first non-null
+                    // forward in the list — gives ApplyPlayerTeamConfig a
+                    // real ForwardData to overwrite with the user's player.
+                    try { FillNullConfiguredSlots(teamClone, cfg); }
+                    catch (Exception fEx) { Plugin.Log.LogWarning($"[CustomSquad] FillNullConfiguredSlots: {fEx.Message}"); }
+
+                    // Apply the user's team config NOW so the menu preview
+                    // shows the custom players (names, stats, skins) — not
+                    // the Basic squad's roster we cloned from. firstApply
+                    // wipes stale talents/relics from the cloned objects.
+                    try { PatchPlayerTeamInit.ApplyPlayerTeamConfig(teamClone, cfg, null, firstApply: true); }
+                    catch (Exception apEx) { Plugin.Log.LogWarning($"[CustomSquad] ApplyPlayerTeamConfig failed for '{key}': {apEx.Message}"); }
+
+                    // Blank any slot the user DIDN'T define in their
+                    // player_teams/<key>/players/ folder. Without this, the
+                    // menu roster still shows Basic's default players in the
+                    // unused positions — not what the user wants.
+                    try { BlankUnconfiguredSlots(teamClone, cfg); }
+                    catch (Exception bEx) { Plugin.Log.LogWarning($"[CustomSquad] Blank slots failed for '{key}': {bEx.Message}"); }
+
+                    // Guarantee a Lineup at lines[0] before the sync — Basic's
+                    // cloned TeamData comes back with lines=null sometimes.
+                    try { EnsureLines(teamClone); }
+                    catch (Exception eEx) { Plugin.Log.LogWarning($"[CustomSquad] EnsureLines failed for '{key}': {eEx.Message}"); }
+
+                    // Sync the cloned team's lines[0] to the new roster.
+                    // Lineup stores each position as a ForwardData.id; the
+                    // pregame draft/UI reads from it to decide "who's
+                    // at LW". If we leave it pointing at Basic's defunct
+                    // ids, our configured players don't render and the
+                    // free-agent picks get assigned straight into those
+                    // line slots, masking the real roster.
+                    try { SyncLinesToForwards(teamClone, cfg); }
+                    catch (Exception lEx) { Plugin.Log.LogWarning($"[CustomSquad] SyncLines failed for '{key}': {lEx.Message}"); }
+
+                    clone.startingTeam = teamClone;
+
+                    // Point m_KeyPlayer at a position the user actually
+                    // defined. The menu renders the squad-tile head icon by
+                    // looking up that position on startingTeam — if it
+                    // lands on an unconfigured (blanked) slot the icon
+                    // resolves to an empty skater and the grid renders
+                    // weirdly. Priority: Goalie > C > LW > RW > LD > RD.
+                    try
+                    {
+                        // Priority: forwards first, goalie last. SquadHead
+                        // face overrides write to startingTeam.KeyPlayer.
+                        // headSkin; goalie head slots can't render forward
+                        // face skins — applying one there caused the goalie
+                        // to render headless in-game. Forwards handle the
+                        // override cleanly, so pick a forward whenever any
+                        // is configured.
+                        Tape2Tape.Customization.UI.ESkaterPosition? picked = null;
+                        if (SlotIsConfigured(cfg.C)) picked = Tape2Tape.Customization.UI.ESkaterPosition.C;
+                        else if (SlotIsConfigured(cfg.LW)) picked = Tape2Tape.Customization.UI.ESkaterPosition.LW;
+                        else if (SlotIsConfigured(cfg.RW)) picked = Tape2Tape.Customization.UI.ESkaterPosition.RW;
+                        else if (SlotIsConfigured(cfg.LD)) picked = Tape2Tape.Customization.UI.ESkaterPosition.LD;
+                        else if (SlotIsConfigured(cfg.RD)) picked = Tape2Tape.Customization.UI.ESkaterPosition.RD;
+                        else if (SlotIsConfigured(cfg.Goalie)) picked = Tape2Tape.Customization.UI.ESkaterPosition.Goalie;
+                        if (picked.HasValue)
+                        {
+                            clone.m_KeyPlayer = picked.Value;
+                            Plugin.Log.LogInfo($"[CustomSquad] KeyPlayer for '{key}' set to {picked.Value}");
+                        }
+
+                        // Optional per-squad head override — user's "Squad Head"
+                        // field overwrites the key player's face for the tile icon.
+                        if (!string.IsNullOrEmpty(cfg?.SquadHead)
+                            && !cfg.SquadHead.Equals("none", StringComparison.OrdinalIgnoreCase))
+                        {
+                            try
+                            {
+                                string faceSkin = Plugin.ResolveSkin(cfg.SquadHead, "face");
+                                int headIdx = picked == Tape2Tape.Customization.UI.ESkaterPosition.LW ? 0
+                                    : picked == Tape2Tape.Customization.UI.ESkaterPosition.RW ? 1
+                                    : picked == Tape2Tape.Customization.UI.ESkaterPosition.C ? 2
+                                    : picked == Tape2Tape.Customization.UI.ESkaterPosition.LD ? 3
+                                    : picked == Tape2Tape.Customization.UI.ESkaterPosition.RD ? 4 : -1;
+                                if (headIdx >= 0 && clone.startingTeam?.forwards != null
+                                    && headIdx < clone.startingTeam.forwards.Count
+                                    && clone.startingTeam.forwards[headIdx] != null)
+                                {
+                                    clone.startingTeam.forwards[headIdx].headSkin = faceSkin;
+                                    Plugin.Log.LogInfo($"[CustomSquad] SquadHead '{cfg.SquadHead}' -> '{faceSkin}' applied to {picked} slot");
+                                }
+                                else if (picked == Tape2Tape.Customization.UI.ESkaterPosition.Goalie
+                                         && clone.startingTeam?.goalie != null)
+                                {
+                                    // Forward face skins (Faces/Princess/Boni etc.) break
+                                    // goalie rendering — the goalie skeleton has a different
+                                    // slot layout and the head renders empty ("headless").
+                                    // Skip the override for goalie-only squads; they'll
+                                    // render with the standard bare-goalie face as vanilla
+                                    // NPC goalies do.
+                                    Plugin.Log.LogInfo($"[CustomSquad] SquadHead '{cfg.SquadHead}' skipped for goalie-only squad — forward faces render headless on goalies (vanilla goalies use empty headSkin)");
+                                }
+                            }
+                            catch (Exception hEx) { Plugin.Log.LogWarning($"[CustomSquad] SquadHead apply: {hEx.Message}"); }
+                        }
+                    }
+                    catch (Exception kpEx) { Plugin.Log.LogWarning($"[CustomSquad] KeyPlayer: {kpEx.Message}"); }
+                }
+
+                // Squad-level "Starting Relics" shown in the menu — driven by
+                // RunSquadScriptableObject.m_RelicsData (a SquadRelicData[]).
+                // Build a fresh array from cfg.Relics so the UI shows the
+                // relics the user defined, all IsUnlockedByDefault=true so
+                // they render as available not "???"-locked.
+                //
+                // Bench Bonus is the vanilla player-squad signature relic
+                // (Basic Squad ships with it in its m_RelicsData). Our clone
+                // overwrites the template's array with cfg.Relics, so the
+                // user loses it unless they add it explicitly. Always
+                // prepend Bench Bonus here unless the user already listed
+                // it (or opted out via "No Bench Bonus = yes"). Keeps custom
+                // squads consistent with how player-chosen squads feel.
+                {
+                    try
+                    {
+                        var relicsToApply = new List<string>();
+                        bool optOut = cfg != null && cfg.NoBenchBonus;
+                        bool hasBenchBonus = false;
+                        if (cfg?.Relics != null)
+                            for (int r = 0; r < cfg.Relics.Count; r++)
+                            {
+                                var rn = cfg.Relics[r] ?? "";
+                                if (rn.Trim().ToLowerInvariant() == "bench bonus") hasBenchBonus = true;
+                                relicsToApply.Add(rn);
+                            }
+                        if (!optOut && !hasBenchBonus) relicsToApply.Insert(0, "Bench Bonus");
+
+                        if (relicsToApply.Count > 0)
+                        {
+                            var arr = new Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<State.SquadRelicData>(relicsToApply.Count);
+                            int writeIdx = 0;
+                            for (int r = 0; r < relicsToApply.Count; r++)
+                            {
+                                var relic = PatchBossLaunchMatch.FindRelic(relicsToApply[r]);
+                                if (relic == null)
+                                {
+                                    Plugin.Log.LogWarning($"[CustomSquad] Relic '{relicsToApply[r]}' not found for '{key}'");
+                                    continue;
+                                }
+                                var entry = new State.SquadRelicData();
+                                entry.Relic = relic;
+                                entry.IsUnlockedByDefault = true;
+                                arr[writeIdx++] = entry;
+                            }
+                            if (writeIdx < relicsToApply.Count)
+                            {
+                                var trimmed = new Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<State.SquadRelicData>(writeIdx);
+                                for (int k2 = 0; k2 < writeIdx; k2++) trimmed[k2] = arr[k2];
+                                arr = trimmed;
+                            }
+                            clone.m_RelicsData = arr;
+                            Plugin.Log.LogInfo($"[CustomSquad] Set {writeIdx} starting relics on '{key}'{(hasBenchBonus || optOut ? "" : " (auto-added Bench Bonus)")}");
+                        }
+                    }
+                    catch (Exception rEx) { Plugin.Log.LogWarning($"[CustomSquad] Relic assign failed for '{key}': {rEx.Message}"); }
+                }
+
+                // Always append — user asked for NEW entries, not replacement
+                // of existing locked tiles. The squad grid expands to fit.
+                squads.Add(clone);
+
+                // Register the display strings so the Localized name/desc
+                // patches return our text instead of "???".
+                Plugin.CustomSquadText[customId] = (displayName, cfg?.Description ?? "");
+
+                Plugin.Log.LogInfo($"[CustomSquad] Appended '{key}' ('{displayName}') at index {squads.Count - 1}");
+
+                // Mark unlocked so the tile is clickable, not greyed out.
+                if (unlocked != null && !unlocked.Contains(customId))
+                    unlocked.Add(customId);
+            }
+            catch (Exception ex) { Plugin.Log.LogError($"[CustomSquad] inject '{key}': {ex}"); }
+        }
+    }
+
+    // Any forward slot (0=LW,1=RW,2=C,3=LD,4=RD) that the user's custom
+    // squad DOESN'T define a player file for gets reset to an empty-ish
+    // placeholder: no name, neutral stats, no talents/ability/skins, no
+    // logo skin. The menu still needs the slot to exist so the lineup
+    // preview isn't broken — we just make it visually empty.
+    internal static bool SlotIsConfigured(PlayerConfig pc)
+    {
+        if (pc == null) return false;
+        return !string.IsNullOrEmpty(pc.Name)
+            || !string.IsNullOrEmpty(pc.ImportPlayer)
+            || !string.IsNullOrEmpty(pc.Face)
+            || !string.IsNullOrEmpty(pc.Ability)
+            || (pc.Talents != null && pc.Talents.Count > 0)
+            || pc.Speed != 50 || pc.ShotPower != 50
+            || pc.Accuracy != 50 || pc.Checking != 50;
+    }
+
+    // Detach team.forwards from whatever it was sharing (Instantiate on
+    // TeamData SHALLOW-copies list fields — the clone and the template point
+    // at the same underlying List<ForwardData>), then Instantiate every
+    // ForwardData / the goalie so edits can't leak back into the template
+    // or any other squad that also references those SOs. Each cloned
+    // forward also gets a FRESH id so lines[0] can point at each position
+    // unambiguously — Instantiate would otherwise copy the donor's id onto
+    // every clone, making id→ForwardData lookup collapse to the first match.
+    internal static void DeepCloneForwards(TeamData team)
+    {
+        if (team == null) return;
+        var origFwds = team.forwards;
+        if (origFwds != null)
+        {
+            var newList = new Il2CppSystem.Collections.Generic.List<Data.ForwardData>();
+            for (int i = 0; i < origFwds.Count; i++)
+            {
+                var f = origFwds[i];
+                if (f == null) { newList.Add(null); continue; }
+                try
+                {
+                    var c = UnityEngine.Object.Instantiate(f);
+                    try { c.id = Guid.NewGuid().ToString(); } catch { }
+                    newList.Add(c);
+                }
+                catch { newList.Add(f); }
+            }
+            try { team.forwards = newList; } catch { }
+        }
+        if (team.goalie != null)
+        {
+            try
+            {
+                var g = UnityEngine.Object.Instantiate(team.goalie);
+                try { g.id = Guid.NewGuid().ToString(); } catch { }
+                team.goalie = g;
+            }
+            catch { }
+        }
+    }
+
+    // Rewrite team.lines[0] so configured positions point at our actual
+    // ForwardData's id and unconfigured positions stay empty strings so
+    // the pregame draft UI marks them as empty/draftable slots. If we
+    // wrote the blank-placeholder's id into lines[0], the draft UI treats
+    // the slot as filled-with-a-0-stats-player and won't let the user pick
+    // an FA for it. The drafted FA reconcile in PatchPlayerTeamInit.Postfix
+    // handles getting the FA into the right slot at match-init time.
+    internal static void SyncLinesToForwards(TeamData team, TeamConfig cfg)
+    {
+        if (team == null) return;
+        var fwds = team.forwards;
+        if (fwds == null) return;
+        var lines = team.lines;
+        if (lines == null || lines.Count == 0) return;
+        var line0 = lines[0];
+        if (line0 == null) return;
+
+        PlayerConfig[] slotCfgs = { cfg?.LW, cfg?.RW, cfg?.C, cfg?.LD, cfg?.RD };
+
+        string IdForConfiguredSlot(int idx)
+        {
+            if (idx >= fwds.Count) return "";
+            if (idx >= slotCfgs.Length) return "";
+            if (!SlotIsConfigured(slotCfgs[idx])) return ""; // draftable
+            var f = fwds[idx];
+            if (f == null) return "";
+            try { return f.id ?? ""; } catch { return ""; }
+        }
+
+        try { line0.leftWinger = IdForConfiguredSlot(0); } catch { }
+        try { line0.rightWinger = IdForConfiguredSlot(1); } catch { }
+        try { line0.center = IdForConfiguredSlot(2); } catch { }
+        try { line0.leftDefensemen = IdForConfiguredSlot(3); } catch { }
+        try { line0.rightDefensemen = IdForConfiguredSlot(4); } catch { }
+        Plugin.Log.LogInfo($"[CustomSquad] Synced lines[0]: LW='{line0.leftWinger}' RW='{line0.rightWinger}' C='{line0.center}' LD='{line0.leftDefensemen}' RD='{line0.rightDefensemen}'");
+    }
+
+    // For each user-configured LW/RW/C/LD/RD slot whose template forward is
+    // null, clone a non-null forward from somewhere else in the same list
+    // into that slot. Each clone gets a FRESH id — Instantiate copies the
+    // donor's id verbatim, so cloning one donor N times produces N forwards
+    // that all share one id. That would collapse the lineup (every
+    // lines[0] position resolves to the same forward) and the other
+    // clones would vanish from the on-ice roster.
+    internal static void FillNullConfiguredSlots(TeamData team, TeamConfig cfg)
+    {
+        if (team == null || cfg == null) return;
+        var fwds = team.forwards;
+        if (fwds == null) return;
+
+        // Find a non-null forward to use as the source for blank slots.
+        Data.ForwardData donor = null;
+        for (int i = 0; i < fwds.Count; i++)
+        {
+            if (fwds[i] != null) { donor = fwds[i]; break; }
+        }
+        if (donor == null) return;
+
+        PlayerConfig[] slotCfgs = { cfg.LW, cfg.RW, cfg.C, cfg.LD, cfg.RD };
+        for (int i = 0; i < Math.Min(fwds.Count, slotCfgs.Length); i++)
+        {
+            if (fwds[i] != null) continue;
+            if (!SlotIsConfigured(slotCfgs[i])) continue;
+            try
+            {
+                var clone = UnityEngine.Object.Instantiate(donor);
+                try { clone.id = Guid.NewGuid().ToString(); } catch { }
+                fwds[i] = clone;
+                Plugin.Log.LogInfo($"[CustomSquad] Filled null slot {i} with clone (new id={clone.id})");
+            }
+            catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] FillNullConfiguredSlots {i}: {ex.Message}"); }
+        }
+    }
+
+    // Guarantee team.lines has a Lineup at index 0. Basic's cloned TeamData
+    // has come back with lines=null in testing — without a Lineup instance,
+    // SyncLinesToForwards has nothing to write to and the game can't figure
+    // out who starts at each position. We create one via reflection/new and
+    // populate only lines[0]; the game only needs index 0 for the default
+    // active line.
+    internal static void EnsureLines(TeamData team)
+    {
+        if (team == null) return;
+        try
+        {
+            var lines = team.lines;
+            if (lines == null)
+            {
+                lines = new Il2CppSystem.Collections.Generic.List<Data.Lineup>();
+                team.lines = lines;
+            }
+            if (lines.Count == 0)
+            {
+                var lu = new Data.Lineup(team);
+                lines.Add(lu);
+                Plugin.Log.LogInfo("[CustomSquad] Created lines[0] (team.lines was empty)");
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] EnsureLines: {ex.Message}"); }
+    }
+
+    // For each unconfigured LW/RW/C/LD/RD slot, replace whatever is in that
+    // index with a BLANK PLACEHOLDER clone (unique id, empty identity,
+    // zero stats). SyncLinesToForwards will leave lines[0].<position>
+    // empty for these slots so the pregame draft UI still treats them as
+    // draftable — but the game needs a non-null ForwardData object sitting
+    // in the fwds slot so drafted free agents can overwrite it. Null slots
+    // cause drafted FAs to silently drop (their id goes into lines[0] but
+    // no ForwardData ever lands in forwards).
+    internal static void BlankUnconfiguredSlots(TeamData team, TeamConfig cfg)
+    {
+        if (team == null || cfg == null) return;
+        PlayerConfig[] slotCfgs = { cfg.LW, cfg.RW, cfg.C, cfg.LD, cfg.RD };
+        string[] slotNames = { "LW", "RW", "C", "LD", "RD" };
+        var fwds = team.forwards;
+        if (fwds == null) return;
+
+        Data.ForwardData donor = null;
+        for (int i = 0; i < fwds.Count; i++)
+            if (fwds[i] != null) { donor = fwds[i]; break; }
+        if (donor == null) return;
+
+        for (int i = 0; i < Math.Min(fwds.Count, slotCfgs.Length); i++)
+        {
+            bool configured = SlotIsConfigured(slotCfgs[i]);
+            string pcName = slotCfgs[i]?.Name ?? "<null>";
+            Plugin.Log.LogDebug($"[CustomSquad] Slot {slotNames[i]}: cfg.Name='{pcName}' configured={configured} fwd={(fwds[i] != null ? fwds[i].firstName : "null")}");
+            if (configured) continue;
+            try
+            {
+                var blank = UnityEngine.Object.Instantiate(donor);
+                try { blank.id = Guid.NewGuid().ToString(); } catch { }
+                try { blank.firstName = ""; } catch { }
+                try { blank.lastName = ""; } catch { }
+                try { blank.speed = 0; } catch { }
+                try { blank.shotPower = 0; } catch { }
+                try { blank.shotAccuracy = 0; } catch { }
+                try { blank.checking = 0; } catch { }
+                try { blank.ability = null; } catch { }
+                try { blank.powerups = new Il2CppSystem.Collections.Generic.List<Rogue.Talent>(); } catch { }
+                fwds[i] = blank;
+            }
+            catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] Placeholder slot {i}: {ex.Message}"); }
+        }
+        // Goalie: blank identity rather than null. Previous tests showed that
+        // assigning null to team.goalie while the squad was being rendered
+        // broke the menu — some renderer does an unchecked deref even though
+        // the forwards list tolerates nulls just fine.
+        if (team.goalie != null && !SlotIsConfigured(cfg.Goalie))
+        {
+            try { team.goalie.firstName = ""; } catch { }
+            try { team.goalie.lastName = ""; } catch { }
+        }
+    }
+
+    public static void Prefix(Rogue.ChooseMetaUI __instance)
+    {
+        // Unconditional entry log so we can confirm the hook is firing.
+        Plugin.Log.LogInfo($"[CustomSquad] Prefix called (configs={Plugin.PlayerTeamConfigs?.Count ?? -1})");
+        try
+        {
+            if (Plugin.PlayerTeamConfigs == null || Plugin.PlayerTeamConfigs.Count == 0)
+            {
+                Plugin.Log.LogInfo("[CustomSquad] No PlayerTeamConfigs loaded — nothing to inject");
+                return;
+            }
+
+            // Find CampaignState via the _campaignState field on ChooseMetaUI
+            var t = __instance.GetIl2CppType();
+            var csField = t.GetField("_campaignState") ?? t.GetField("m_CampaignState") ?? t.GetField("campaignState");
+            State.CampaignState cs = null;
+            if (csField != null)
+            {
+                var v = csField.GetValue(__instance);
+                if (v != null) cs = v.TryCast<State.CampaignState>();
+            }
+            if (cs == null)
+            {
+                var all = UnityEngine.Resources.FindObjectsOfTypeAll<State.CampaignState>();
+                if (all != null && all.Length > 0) cs = all[0];
+            }
+            if (cs == null)
+            {
+                Plugin.Log.LogWarning("[CustomSquad] CampaignState not found — cannot inject");
+                return;
+            }
+
+            var squads = cs.squads;
+            if (squads == null || squads.Count == 0)
+            {
+                Plugin.Log.LogWarning("[CustomSquad] cs.squads is null/empty — cannot inject");
+                return;
+            }
+
+            // ProfileData.unlockedSquads is the source of truth for whether a
+            // button is clickable or shows as "???". To make custom squads
+            // selectable we must (1) put them in cs.squads and (2) add their
+            // id to unlockedSquads.
+            ProfileData profile = ProfileData.Instance;
+            var unlocked = profile?.unlockedSquads;
+
+            // Build ordered list of keys we want to inject. The squad grid in
+            // the UI has a fixed slot count; adding past it means our squads
+            // don't render. So we REPLACE the locked slots instead of adding.
+            var customKeys = new List<string>();
+            foreach (var kvp in Plugin.PlayerTeamConfigs)
+            {
+                if (PatchPlayerTeamInit.IsPresetKey(kvp.Key)) continue;
+                customKeys.Add(kvp.Key);
+            }
+            if (customKeys.Count == 0)
+            {
+                Plugin.Log.LogInfo("[CustomSquad] No custom (non-preset) keys in config");
+                return;
+            }
+
+            // Find locked slots = indices whose squad.id isn't in unlocked.
+            var lockedIndices = new List<int>();
+            for (int i = 0; i < squads.Count; i++)
+            {
+                var sq = squads[i];
+                if (sq == null) continue;
+                bool isUnlocked = unlocked != null
+                    && !string.IsNullOrEmpty(sq.id)
+                    && unlocked.Contains(sq.id);
+                if (!isUnlocked) lockedIndices.Add(i);
+            }
+            Plugin.Log.LogInfo($"[CustomSquad] squads={squads.Count}, locked slots={lockedIndices.Count}, custom keys={customKeys.Count}");
+
+            // Template to clone — first squad in the list; its internal refs
+            // (relics, icons, etc.) are all valid so the cloned entry won't
+            // crash when the UI/game reads them.
+            var template = squads[0];
+            if (template == null)
+            {
+                Plugin.Log.LogWarning("[CustomSquad] squads[0] is null — cannot clone");
+                return;
+            }
+
+            int injected = 0;
+            int lockedCursor = 0;
+            for (int i = 0; i < customKeys.Count; i++)
+            {
+                string key = customKeys[i];
+                var cfg = Plugin.PlayerTeamConfigs[key];
+                string displayName = !string.IsNullOrEmpty(cfg?.Name)
+                    ? cfg.Name
+                    : char.ToUpper(key[0]) + key.Substring(1);
+                string customId = "Custom_" + key;
+
+                // Idempotent re-entry: if this custom squad is already sitting
+                // in cs.squads from a previous Prefix call, skip it.
+                bool alreadyPresent = false;
+                for (int j = 0; j < squads.Count; j++)
+                {
+                    var sq = squads[j];
+                    if (sq != null && sq.id == customId) { alreadyPresent = true; break; }
+                }
+                if (alreadyPresent)
+                {
+                    if (unlocked != null && !unlocked.Contains(customId))
+                        unlocked.Add(customId);
+                    continue;
+                }
+
+                try
+                {
+                    var clone = UnityEngine.Object.Instantiate(template);
+                    clone.name = "CustomSquad_" + key;
+                    try { clone.squadName = displayName; } catch {}
+                    try { clone.id = customId; } catch {}
+
+                    var origTeam = template.startingTeam;
+                    if (origTeam != null)
+                    {
+                        var teamClone = UnityEngine.Object.Instantiate(origTeam);
+                        // Team name must START WITH the config key so the
+                        // PatchPlayerTeamInit prefix-match can find it.
+                        teamClone.teamName = key + " " + displayName;
+                        clone.startingTeam = teamClone;
+                    }
+
+                    // Slot in: REPLACE a locked slot if one is available, else
+                    // append. Replacement keeps the UI grid bounded so custom
+                    // squads always render.
+                    if (lockedCursor < lockedIndices.Count)
+                    {
+                        int idx = lockedIndices[lockedCursor++];
+                        squads[idx] = clone;
+                        Plugin.Log.LogInfo($"[CustomSquad] Replaced locked slot {idx} with '{key}' ('{displayName}')");
+                    }
+                    else
+                    {
+                        squads.Add(clone);
+                        Plugin.Log.LogInfo($"[CustomSquad] Appended '{key}' ('{displayName}') at {squads.Count - 1}");
+                    }
+
+                    // Mark it unlocked so the button is clickable.
+                    if (unlocked != null && !unlocked.Contains(customId))
+                        unlocked.Add(customId);
+
+                    injected++;
+                }
+                catch (Exception ex) { Plugin.Log.LogError($"[CustomSquad] Failed to inject '{key}': {ex}"); }
+            }
+            Plugin.Log.LogInfo($"[CustomSquad] Done — injected {injected} custom squads");
+        }
+        catch (Exception ex) { Plugin.Log.LogError($"[CustomSquad] SetupMetaTeamButtons prefix: {ex}"); }
+    }
+}
+
+// ============================================================
+// Redirect RunSquadScriptableObject.LocalizedSquadName / Desc / UnlockCondition
+// for Custom_<key> ids so the menu shows our display name + description
+// instead of "???" (localization misses fall back to the key literal).
+// ============================================================
+public static class PatchSquadLocalization
+{
+    public static void NamePostfix(RunSquadScriptableObject __instance, ref string __result)
+    {
+        try
+        {
+            if (__instance == null) return;
+            string id = __instance.id;
+            if (string.IsNullOrEmpty(id)) return;
+            if (!id.StartsWith("Custom_", StringComparison.Ordinal)) return;
+            if (Plugin.CustomSquadText.TryGetValue(id, out var v) && !string.IsNullOrEmpty(v.name))
+                __result = v.name;
+            else if (!string.IsNullOrEmpty(__instance.squadName))
+                __result = __instance.squadName;
+        }
+        catch { }
+    }
+
+    public static void DescPostfix(RunSquadScriptableObject __instance, ref string __result)
+    {
+        try
+        {
+            if (__instance == null) return;
+            string id = __instance.id;
+            if (string.IsNullOrEmpty(id)) return;
+            if (!id.StartsWith("Custom_", StringComparison.Ordinal)) return;
+            if (Plugin.CustomSquadText.TryGetValue(id, out var v))
+                __result = string.IsNullOrEmpty(v.desc) ? "Custom squad." : v.desc;
+            else
+                __result = "Custom squad.";
+        }
+        catch { }
+    }
+
+    public static void UnlockPostfix(RunSquadScriptableObject __instance, ref string __result)
+    {
+        try
+        {
+            if (__instance == null) return;
+            string id = __instance.id;
+            if (string.IsNullOrEmpty(id)) return;
+            // Custom squads are always unlocked — blank the unlock condition.
+            if (id.StartsWith("Custom_", StringComparison.Ordinal))
+                __result = "";
+        }
+        catch { }
+    }
+}
+
+// ============================================================
+// Reset campaign progress when player starts a NEW run from menu.
+// Run-end reset (PatchOnRunFinished) only fires on loss/final victory;
+// this catches abandonment cases where save.txt still has stale values.
+// ============================================================
+public static class PatchNewRunStart
+{
+    public static void Prefix()
+    {
+        try
+        {
+            // Guard: if a Continue Run just loaded (within 15s), this call is
+            // part of the Continue flow, not a fresh NewRun — do NOT wipe save.
+            float dt = UnityEngine.Time.realtimeSinceStartup - Plugin.LastLoadRunDataTime;
+            if (Plugin.LastLoadRunDataTime > 0f && dt < 15f)
+            {
+                Plugin.Log.LogInfo($"[Campaign] NewRun prefix skipped — Continue Run active ({dt:F1}s since LoadRunData)");
+                return;
+            }
+            Plugin.ActsCompleted = 0;
+            Plugin.GamesPlayed = 0;
+            Plugin.DraftPoolApplied = false;
+            Plugin.AppliedDraftPtrs.Clear();
+            Plugin.BossJustBeaten = false;
+            Plugin.FreeAgentNodesPlaced = 0;
+            Plugin.SaveProgress();
+            Plugin.Log.LogInfo("[Campaign] New run starting — save reset (ActsCompleted=0, GamesPlayed=0)");
+        }
+        catch (Exception ex) { Plugin.Log.LogError($"[Campaign] NewRunStart reset: {ex.Message}"); }
+    }
+}
+
+// ============================================================
+// Register custom squads before the game loads saved run data. Without
+// this, RunDataV2.es3 references a squad id like "customsquad_foo" that
+// can't be resolved because our squads are only injected when the user
+// opens the Choose Your Squad menu (i.e. on New Run flow). Running
+// InjectCustomSquads here means "Continue Run" works and the saved run
+// resumes with the right custom squad.
+// ============================================================
+public static class PatchLoadRunData
+{
+    private static bool injected = false;
+    public static void Prefix(State.CampaignState __instance)
+    {
+        try
+        {
+            // Stamp Continue Run timing so PatchNewRunStart can avoid wiping
+            // save.txt when StartMenu.StartNewRun (which fires on BOTH Continue
+            // and New Run flows) triggers our reset code by mistake.
+            Plugin.LastLoadRunDataTime = UnityEngine.Time.realtimeSinceStartup;
+            if (injected) return; // only once per game launch
+            if (__instance == null) return;
+            if (Plugin.PlayerTeamConfigs == null || Plugin.PlayerTeamConfigs.Count == 0) return;
+            PatchChooseMetaUI.InjectCustomSquads(__instance);
+            injected = true;
+            Plugin.Log.LogInfo("[Campaign] Custom squads registered via LoadRunData prefix — Continue Run should work");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Campaign] LoadRunData prefix: {ex.Message}"); }
+    }
+
+    // Reset the "already injected" latch so the next squads-reload cycle
+    // (e.g. when the user re-opens the title screen without restarting)
+    // can re-run.
+    internal static void ResetLatch() { injected = false; }
+}
+
+// ============================================================
+// Register custom squads BEFORE TitleScreen validates the save. The
+// earlier PatchLoadRunData fires only when the user clicks "Continue
+// Run" — but the Continue Run button is gated by RefreshCampaignData's
+// save-validity check, which runs at title-screen load. If our custom
+// squads aren't in cs.squads at that moment, the saved squad id can't
+// be resolved and the Continue button never appears. Hooking
+// TitleScreen.RefreshCampaignData as a prefix ensures squads are
+// registered before the check runs.
+// ============================================================
+public static class PatchTitleScreenRefresh
+{
+    public static void Prefix()
+    {
+        try
+        {
+            if (Plugin.PlayerTeamConfigs == null || Plugin.PlayerTeamConfigs.Count == 0) return;
+            State.CampaignState cs = null;
+            var all = UnityEngine.Resources.FindObjectsOfTypeAll<State.CampaignState>();
+            if (all != null && all.Length > 0) cs = all[0];
+            if (cs == null) { Plugin.Log.LogInfo("[Campaign] TitleScreen.RefreshCampaignData prefix: CampaignState not found yet"); return; }
+            if (cs.squads == null || cs.squads.Count == 0) { Plugin.Log.LogInfo("[Campaign] TitleScreen.RefreshCampaignData prefix: cs.squads not populated yet"); return; }
+            PatchChooseMetaUI.InjectCustomSquads(cs);
+            Plugin.Log.LogInfo("[Campaign] Custom squads registered via TitleScreen.RefreshCampaignData prefix");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Campaign] TitleScreen.RefreshCampaignData prefix: {ex.Message}"); }
+    }
+}
+
+// ============================================================
+// Free-agent (GM-choice) node cap. Long campaigns stack up GeneralManager
+// nodes — each offers a choice of free agents to recruit — beyond the
+// roster's capacity, which crashes the game when the 5th+ FA tries to
+// sign. Patch MapObject.GetBlueprint to redirect GeneralManager lookups
+// to TeamTraining (team upgrade) once Plugin.MaxFreeAgentNodes have been
+// placed this run.
+// ============================================================
+public static class PatchMapBlueprint
+{
+    public static void Prefix(ref STS.Map.NodeType type)
+    {
+        try
+        {
+            if (type != STS.Map.NodeType.GeneralManager) return;
+            if (Plugin.FreeAgentNodesPlaced >= Plugin.MaxFreeAgentNodes)
+            {
+                type = STS.Map.NodeType.TeamTraining;
+                Plugin.Log.LogInfo($"[Campaign] FA node cap ({Plugin.MaxFreeAgentNodes}) reached — substituting TeamTraining");
+            }
+            else
+            {
+                Plugin.FreeAgentNodesPlaced++;
+                Plugin.Log.LogInfo($"[Campaign] FA node placed #{Plugin.FreeAgentNodesPlaced}/{Plugin.MaxFreeAgentNodes}");
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Campaign] MapBlueprint prefix: {ex.Message}"); }
+    }
+}
+
+// ============================================================
+// Reward-pool filtering. Harmony postfixes on RelicRepository /
+// TalentRepository strip excluded IDs (loaded from reward_pools.txt) out
+// of the lists the game shows as random rewards. We mutate the returned
+// list in-place so all callers downstream see the filtered pool without
+// needing the shop / reward menu to know anything changed.
+// ============================================================
+public static class PatchFilterRelicRewards
+{
+    // PREFIX: add our excluded ids to the `excludedRelics` arg that the game
+    // already passes in, so GetRandomRelics NEVER picks them in the first
+    // place. Much safer than a postfix strip — the game would return empty
+    // ("Rogue rewards have invalid data") if every picked relic got filtered.
+    public static void Prefix(
+        Il2CppSystem.Collections.Generic.List<Rogue.Relic> excludedRelics,
+        RelicRepository __instance)
+    {
+        try
+        {
+            if (Plugin.ExcludedRewardRelicIds.Count == 0) return;
+            if (__instance == null || excludedRelics == null) return;
+            int added = 0;
+            foreach (var id in Plugin.ExcludedRewardRelicIds)
+            {
+                if (string.IsNullOrEmpty(id)) continue;
+                try
+                {
+                    var relic = __instance.GetRelic(id, false);
+                    if (relic == null) continue;
+                    bool present = false;
+                    for (int j = 0; j < excludedRelics.Count; j++)
+                        if (excludedRelics[j] != null && excludedRelics[j].id == id) { present = true; break; }
+                    if (!present) { excludedRelics.Add(relic); added++; }
+                }
+                catch { }
+            }
+            if (added > 0) Plugin.Log.LogInfo($"[RewardPool] Relic prefilter: added {added} exclusions to GetRandomRelics call");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[RewardPool] Relic prefilter: {ex.Message}"); }
+    }
+
+    // POSTFIX safety net: if the game somehow still returned an excluded relic
+    // (e.g. it re-cloned internally and skipped our prefix), strip it — but
+    // NEVER leave the list empty, since callers treat that as an error.
+    public static void Postfix(Il2CppSystem.Collections.Generic.List<Rogue.Relic> __result)
+    {
+        try
+        {
+            if (__result == null || __result.Count == 0) return;
+            if (Plugin.ExcludedRewardRelicIds.Count == 0) return;
+            int before = __result.Count;
+            for (int i = __result.Count - 1; i >= 0 && __result.Count > 1; i--)
+            {
+                var r = __result[i];
+                if (r == null) continue;
+                if (Plugin.ExcludedRewardRelicIds.Contains(r.id ?? ""))
+                    __result.RemoveAt(i);
+            }
+            if (__result.Count != before)
+                Plugin.Log.LogInfo($"[RewardPool] Relic postfix safety-net: {before} -> {__result.Count} (kept at least 1 to avoid empty rewards)");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[RewardPool] Relic postfix: {ex.Message}"); }
+    }
+}
+
+public static class PatchFilterSingleRelicReward
+{
+    public static void Postfix(ref Rogue.Relic __result)
+    {
+        try
+        {
+            if (__result == null) return;
+            if (Plugin.ExcludedRewardRelicIds.Count == 0) return;
+            if (Plugin.ExcludedRewardRelicIds.Contains(__result.id ?? ""))
+            {
+                // The chosen relic is excluded — null it out. The caller
+                // may or may not handle null gracefully; this is a best-
+                // effort fallback since most paths go through GetRandomRelics
+                // (the list form) which we filter cleanly above.
+                Plugin.Log.LogInfo($"[RewardPool] Excluded relic '{__result.id}' was picked — returning null");
+                __result = null;
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[RewardPool] Single-relic filter: {ex.Message}"); }
+    }
+}
+
+public static class PatchFilterTalentRewards
+{
+    public static void Prefix(
+        Il2CppSystem.Collections.Generic.List<Rogue.Talent> excludedTalents,
+        TalentRepository __instance)
+    {
+        try
+        {
+            if (Plugin.ExcludedRewardTalentIds.Count == 0) return;
+            if (__instance == null || excludedTalents == null) return;
+            int added = 0;
+            foreach (var id in Plugin.ExcludedRewardTalentIds)
+            {
+                if (string.IsNullOrEmpty(id)) continue;
+                try
+                {
+                    var t = __instance.GetTalent(id, false);
+                    if (t == null) continue;
+                    bool present = false;
+                    for (int j = 0; j < excludedTalents.Count; j++)
+                        if (excludedTalents[j] != null && excludedTalents[j].name == id) { present = true; break; }
+                    if (!present) { excludedTalents.Add(t); added++; }
+                }
+                catch { }
+            }
+            if (added > 0) Plugin.Log.LogInfo($"[RewardPool] Talent prefilter: added {added} exclusions to GetRandomTalents call");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[RewardPool] Talent prefilter: {ex.Message}"); }
+    }
+
+    public static void Postfix(Il2CppSystem.Collections.Generic.List<Rogue.Talent> __result)
+    {
+        try
+        {
+            if (__result == null || __result.Count == 0) return;
+            if (Plugin.ExcludedRewardTalentIds.Count == 0) return;
+            int before = __result.Count;
+            for (int i = __result.Count - 1; i >= 0 && __result.Count > 1; i--)
+            {
+                var t = __result[i];
+                if (t == null) continue;
+                if (Plugin.ExcludedRewardTalentIds.Contains(t.name ?? ""))
+                    __result.RemoveAt(i);
+            }
+            if (__result.Count != before)
+                Plugin.Log.LogInfo($"[RewardPool] Talent postfix safety-net: {before} -> {__result.Count} (kept at least 1)");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[RewardPool] Talent postfix: {ex.Message}"); }
+    }
+}
+
+public static class PatchFilterSingleTalentReward
+{
+    public static void Postfix(ref Rogue.Talent __result)
+    {
+        try
+        {
+            if (__result == null) return;
+            if (Plugin.ExcludedRewardTalentIds.Count == 0) return;
+            if (Plugin.ExcludedRewardTalentIds.Contains(__result.name ?? ""))
+            {
+                Plugin.Log.LogInfo($"[RewardPool] Excluded talent '{__result.name}' was picked — returning null");
+                __result = null;
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[RewardPool] Single-talent filter: {ex.Message}"); }
+    }
+}
+
+// ============================================================
+// Apply draft-pool mods to ForwardData templates BEFORE the free-agent
+// pick UI reads them — without this, pick cards show vanilla names/looks
+// until the player actually signs someone and the team re-initializes.
+// ============================================================
+public static class PatchPreGenerateFreeAgents
+{
+    // Cache the output list Harmony hands us so ApplyDraftPool can read it
+    // without needing to locate the property/field on CampaignState.
+    internal static Il2CppSystem.Collections.Generic.List<Rogue.FreeAgents.PreGeneratedFreeAgentData> LastOutput;
+
+    public static void Postfix(
+        Il2CppSystem.Collections.Generic.List<Data.ForwardData> __1,
+        Il2CppSystem.Collections.Generic.List<Rogue.FreeAgents.PreGeneratedFreeAgentData> __2)
+    {
+        try
+        {
+            if (Plugin.DraftPoolConfigs == null || Plugin.DraftPoolConfigs.Count == 0) return;
+            LastOutput = __2;
+            int templatesCount = __1?.Count ?? -1;
+            int outCount = __2?.Count ?? -1;
+            Plugin.Log.LogInfo($"[Campaign] PreGenerateFreeAgents postfix — templates={templatesCount} output={outCount}");
+            PatchPlayerTeamInit.ApplyDraftPool();
+        }
+        catch (Exception ex) { Plugin.Log.LogError($"[Campaign] PreGenerateFreeAgents: {ex.Message}"); }
+    }
+}
+
+// ============================================================
+// Append opponent team name to world-map node tooltip so the player
+// can see which team they're about to fight before entering the node.
+// ============================================================
+public static class PatchMapNodeTooltip
+{
+    public static void Postfix(STS.Map.MapNode __instance)
+    {
+        try
+        {
+            if (__instance == null) return;
+            // Only MatchMapNode (and subclasses: EliteMapNode, BossMapNode,
+            // ChallengeMapNode) have an opponent team.
+            var mm = __instance.TryCast<STS.Map.MatchMapNode>();
+            if (mm == null) return;
+            var opp = mm.opponent;
+            if (opp == null) return;
+            string teamName = opp.teamName;
+            if (string.IsNullOrEmpty(teamName)) return;
+
+            // Append "vs <Team>" to the tooltip description via reflection —
+            // the tooltip text field name varies (m_TooltipDesc / tooltipDesc).
+            var t = __instance.GetIl2CppType();
+            var field = t.GetField("m_TooltipDesc") ?? t.GetField("tooltipDesc") ?? t.GetField("m_TooltipDescription");
+            if (field == null) return;
+            var tmp = field.GetValue(__instance);
+            if (tmp == null) return;
+            var tmpType = tmp.GetIl2CppType();
+            var textProp = tmpType.GetProperty("text");
+            if (textProp == null) return;
+            var cur = textProp.GetValue(tmp)?.ToString() ?? "";
+            string suffix = $"\nvs {teamName}";
+            if (!cur.Contains(suffix.Trim()))
+                textProp.SetValue(tmp, (Il2CppSystem.Object)(cur + suffix));
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Campaign] MapNodeTooltip: {ex.Message}"); }
+    }
+}
+
+// ============================================================
 // Intercept OnRunFinished — block it entirely, let the game
 // show the stats screen (RunFailed path) and handle continue
 // ============================================================
@@ -1452,10 +3015,17 @@ public static class PatchOnRunFinished
             Plugin.Log.LogInfo("[Campaign] OnRunFinished BLOCKED (boss redirect active)");
             return false;
         }
-        // Run actually ended (loss or final victory) — reset ActsCompleted only
+        // Run actually ended (loss or final victory) — reset progress so the
+        // next fresh run gets mod edits applied again. The fresh-run guard on
+        // Team.Initialize uses GamesPlayed == 0 to decide whether to apply
+        // team/relic/uniform edits; leaving it non-zero after a lost run
+        // permanently blocks edits on the new run's game 1.
         Plugin.ActsCompleted = 0;
+        Plugin.GamesPlayed = 0;
+        Plugin.DraftPoolApplied = false;
+        Plugin.AppliedDraftPtrs.Clear();  // allow re-application to fresh forwards
         Plugin.SaveProgress();
-        Plugin.Log.LogInfo("[Campaign] Run ended, ActsCompleted reset to 0 (GamesPlayed={Plugin.GamesPlayed} preserved)");
+        Plugin.Log.LogInfo("[Campaign] Run ended — ActsCompleted + GamesPlayed reset to 0 for next run");
         return true;
     }
 }
@@ -1617,6 +3187,14 @@ public static class PatchSetCurrentAct
         }
 
         Plugin.Log.LogInfo($"[Campaign] RunData.CurrentAct is now {act}");
+
+        // Trigger auto-dump on first SetCurrentAct call (fires on main menu load)
+        if (Plugin._pendingAutoDump)
+        {
+            Plugin._pendingAutoDump = false;
+            try { LogRepositories.AutoDumpNameLists(); }
+            catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Auto-dump failed: {ex.Message}"); }
+        }
     }
 }
 
@@ -1800,6 +3378,12 @@ public static class PatchBossLaunchMatch
     {
         { "Goalie Pass Propel", "Goalie Pass Proepl" },
         { "Goalie Pass Propell", "Goalie Pass Proepl" },
+        // X-Ray Shot: the asset is "xRay" but users write "XRay Shot" / "X-Ray Shot"
+        { "XRay Shot", "xRay" },
+        { "X-Ray Shot", "xRay" },
+        { "X Ray Shot", "xRay" },
+        { "XRay", "xRay" },
+        { "X-Ray", "xRay" },
     };
 
     internal static Rogue.Talent FindTalent(string name)
@@ -2379,7 +3963,234 @@ public static class PatchBossLaunchMatch
 
     // ========== CONFIG-DRIVEN TEAM APPLICATION ==========
 
-    private static void ApplyTeamFromConfig(TeamData team, TeamConfig cfg)
+    internal static string ColorToRGB(Color c)
+    {
+        return $"{(int)(c.r * 255)}, {(int)(c.g * 255)}, {(int)(c.b * 255)}";
+    }
+
+    internal static string ReverseSkinPath(string path, string slot)
+    {
+        if (string.IsNullOrEmpty(path)) return "";
+        string lower = path.ToLower();
+        if (lower.Contains("customization_colors") || lower.Contains("helmet_colors"))
+            return slot == "helmet" ? "team colors" : "standard";
+        if (lower.Contains("helmet_face")) return "cage";
+        // Extract last segment as friendly name
+        string last = path.Contains("/") ? path.Substring(path.LastIndexOf('/') + 1) : path;
+        // Known sticks
+        if (lower.StartsWith("sticks/")) return last.ToLower();
+        // Known bodies/biceps/etc
+        string[] knownNames = { "tycoons", "princess", "golfers", "prisoners", "mountaineers",
+            "hockey_fc", "figure_skaters", "referee", "knights", "crusaders", "cultists" };
+        foreach (var n in knownNames)
+            if (lower.Contains(n)) return n;
+        if (lower.Contains("black_skates")) return "black skates";
+        return last;
+    }
+
+    private static void MaterializeTeamToDisk(string teamDir, TeamData team, string importName)
+    {
+        Plugin.Log.LogInfo($"[Materialize] Writing resolved team to {teamDir}");
+        var sb = new System.Text.StringBuilder();
+
+        // Write team.txt with resolved data (no Import Team line)
+        sb.AppendLine($"# Materialized from Import Team = {importName}");
+        sb.AppendLine($"Team Name               = {team.teamName}");
+        if (!string.IsNullOrEmpty(team.city)) sb.AppendLine($"City                    = {team.city}");
+        if (!string.IsNullOrEmpty(team.nickname)) sb.AppendLine($"Abbreviation            = {team.nickname}");
+        sb.AppendLine($"Logo From               = {importName}");
+
+        // Colors from homeColors
+        try
+        {
+            var hc = team.homeColors;
+            if (hc != null)
+            {
+                if (hc.jerseyScheme != null)
+                {
+                    sb.AppendLine($"Jersey Primary          = {PatchBossLaunchMatch.ColorToRGB(hc.jerseyScheme.primaryColor)}");
+                    sb.AppendLine($"Jersey Secondary        = {PatchBossLaunchMatch.ColorToRGB(hc.jerseyScheme.secondaryColor)}");
+                    sb.AppendLine($"Jersey Accent           = {PatchBossLaunchMatch.ColorToRGB(hc.jerseyScheme.tertiaryColor)}");
+                }
+                if (hc.helmetScheme != null)
+                {
+                    sb.AppendLine($"Helmet Color            = {PatchBossLaunchMatch.ColorToRGB(hc.helmetScheme.primaryColor)}");
+                    sb.AppendLine($"Helmet Secondary Color  = {PatchBossLaunchMatch.ColorToRGB(hc.helmetScheme.secondaryColor)}");
+                    sb.AppendLine($"Helmet Tertiary Color   = {PatchBossLaunchMatch.ColorToRGB(hc.helmetScheme.tertiaryColor)}");
+                }
+                if (hc.glovesScheme != null)
+                {
+                    sb.AppendLine($"Gloves Color            = {PatchBossLaunchMatch.ColorToRGB(hc.glovesScheme.primaryColor)}");
+                    sb.AppendLine($"Gloves Secondary Color  = {PatchBossLaunchMatch.ColorToRGB(hc.glovesScheme.secondaryColor)}");
+                    sb.AppendLine($"Gloves Tertiary Color   = {PatchBossLaunchMatch.ColorToRGB(hc.glovesScheme.tertiaryColor)}");
+                }
+                if (hc.pantsScheme != null)
+                {
+                    sb.AppendLine($"Pants Color             = {PatchBossLaunchMatch.ColorToRGB(hc.pantsScheme.primaryColor)}");
+                    sb.AppendLine($"Pants Secondary Color   = {PatchBossLaunchMatch.ColorToRGB(hc.pantsScheme.secondaryColor)}");
+                    sb.AppendLine($"Pants Tertiary Color    = {PatchBossLaunchMatch.ColorToRGB(hc.pantsScheme.tertiaryColor)}");
+                }
+                if (hc.skatesScheme != null)
+                {
+                    sb.AppendLine($"Skates Color            = {PatchBossLaunchMatch.ColorToRGB(hc.skatesScheme.primaryColor)}");
+                    sb.AppendLine($"Blade Color             = {PatchBossLaunchMatch.ColorToRGB(hc.skatesScheme.secondaryColor)}");
+                    sb.AppendLine($"Laces Color             = {PatchBossLaunchMatch.ColorToRGB(hc.skatesScheme.tertiaryColor)}");
+                }
+                if (hc.socksScheme != null)
+                {
+                    sb.AppendLine($"Socks Color             = {PatchBossLaunchMatch.ColorToRGB(hc.socksScheme.primaryColor)}");
+                    sb.AppendLine($"Socks Secondary Color   = {PatchBossLaunchMatch.ColorToRGB(hc.socksScheme.secondaryColor)}");
+                    sb.AppendLine($"Socks Tertiary Color    = {PatchBossLaunchMatch.ColorToRGB(hc.socksScheme.tertiaryColor)}");
+                }
+                if (hc.numberScheme != null)
+                {
+                    sb.AppendLine($"Number Color Home       = {PatchBossLaunchMatch.ColorToRGB(hc.numberScheme.primaryColor)}");
+                    sb.AppendLine($"Number Color Away       = {PatchBossLaunchMatch.ColorToRGB(hc.numberScheme.secondaryColor)}");
+                }
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Materialize] Color export error: {ex.Message}"); }
+
+        // Uniform skins
+        sb.AppendLine($"Body                    = standard");
+        sb.AppendLine($"Bicep                   = standard");
+        sb.AppendLine($"Gloves                  = standard");
+        sb.AppendLine($"Pants                   = standard");
+        sb.AppendLine($"Skates                  = standard");
+        sb.AppendLine($"Helmet                  = team colors");
+        sb.AppendLine($"Helmet Away             = team colors");
+        sb.AppendLine($"Stick                   = black");
+
+        File.WriteAllText(Path.Combine(teamDir, "team.txt"), sb.ToString());
+
+        // Write player files
+        string playersDir = Path.Combine(teamDir, "players");
+        Directory.CreateDirectory(playersDir);
+
+        var forwards = team.GetForwards();
+        if (forwards != null)
+        {
+            string[] posNames = { "Left Wing", "Right Wing", "Center", "Left Defense", "Right Defense" };
+            for (int i = 0; i < Math.Min(forwards.Count, posNames.Length); i++)
+            {
+                var f = forwards[i];
+                if (f == null) continue;
+                string pos = posNames[i];
+                string pname = $"{f.firstName} {f.lastName}".Trim();
+                if (string.IsNullOrEmpty(pname)) pname = pos;
+                string safe = pname;
+                foreach (char c in Path.GetInvalidFileNameChars()) safe = safe.Replace(c, '_');
+
+                var psb = new System.Text.StringBuilder();
+                psb.AppendLine($"Name                    = {pname}");
+                psb.AppendLine($"Number                  = {f.number}");
+                try { psb.AppendLine($"Face                    = {PatchBossLaunchMatch.ReverseSkinPath(f.headSkin, "face")}"); } catch {}
+                psb.AppendLine($"Left Handed             = {(f.isLefty ? "yes" : "no")}");
+                psb.AppendLine($"Skin Color              = {(f.isBlack ? "dark" : "light")}");
+                psb.AppendLine($"Size                    = {f.skaterSize}");
+                psb.AppendLine($"Speed                   = {f.speed}");
+                psb.AppendLine($"Shot Power              = {f.shotPower}");
+                psb.AppendLine($"Accuracy                = {f.shotAccuracy}");
+                psb.AppendLine($"Checking                = {f.checking}");
+                // Skins
+                try { psb.AppendLine($"Stick                   = {PatchBossLaunchMatch.ReverseSkinPath(f.stickSkin, "stick")}"); } catch {}
+                try { psb.AppendLine($"Helmet                  = {PatchBossLaunchMatch.ReverseSkinPath(f.helmetSkin, "helmet")}"); } catch {}
+                try { psb.AppendLine($"Body                    = {PatchBossLaunchMatch.ReverseSkinPath(f.bodySkin, "body")}"); } catch {}
+                try { psb.AppendLine($"Bicep                   = {PatchBossLaunchMatch.ReverseSkinPath(f.bicepSkin, "bicep")}"); } catch {}
+                psb.AppendLine($"Gloves                  = standard");
+                psb.AppendLine($"Pants                   = standard");
+                try { psb.AppendLine($"Skates                  = {PatchBossLaunchMatch.ReverseSkinPath(f.skateSkin, "skates")}"); } catch {}
+                // Talents
+                try
+                {
+                    if (f.powerups != null && f.powerups.Count > 0)
+                    {
+                        var tnames = new List<string>();
+                        for (int ti = 0; ti < f.powerups.Count; ti++)
+                            if (f.powerups[ti] != null)
+                                tnames.Add(f.powerups[ti].name);
+                        if (tnames.Count > 0)
+                            psb.AppendLine($"Talents                 = {string.Join(", ", tnames)}");
+                    }
+                } catch {}
+
+                string fname = $"{pos} - {safe}.txt";
+                File.WriteAllText(Path.Combine(playersDir, fname), psb.ToString());
+            }
+        }
+
+        // Goalie
+        try
+        {
+            var g = team.goalie;
+            if (g != null)
+            {
+                string gname = $"{g.firstName} {g.lastName}".Trim();
+                if (string.IsNullOrEmpty(gname)) gname = "Goalie";
+                string gsafe = gname;
+                foreach (char c in Path.GetInvalidFileNameChars()) gsafe = gsafe.Replace(c, '_');
+
+                var gsb = new System.Text.StringBuilder();
+                gsb.AppendLine($"Name                    = {gname}");
+                gsb.AppendLine($"Face                    = Helmet_Face");
+                gsb.AppendLine($"Skill                   = {g.catchingSkill}");
+                gsb.AppendLine($"Catching                = {g.catchingSkill}");
+                gsb.AppendLine($"Glove                   = {g.gloveSkill}");
+                gsb.AppendLine($"Blocker                 = {g.blockerSkill}");
+                gsb.AppendLine($"Five Hole               = {g.fiveHoleSkill}");
+                gsb.AppendLine($"Standing Speed          = {g.standingSpeed}");
+                gsb.AppendLine($"Butterfly Speed         = {g.butterflySpeed}");
+                gsb.AppendLine($"Control                 = {g.controlSkill}");
+                gsb.AppendLine($"Recovery                = {g.recoverySkill}");
+                gsb.AppendLine($"Pass Power              = {g.passPower}");
+                gsb.AppendLine($"Shot Power              = {g.shotPower}");
+                gsb.AppendLine($"Poke Check              = {g.pokecheckSkill}");
+                gsb.AppendLine($"Depth                   = {g.depth}");
+                try { gsb.AppendLine($"Pass Read               = {g.passReadSkill}"); } catch {}
+                // Goalie talents
+                try
+                {
+                    if (g.powerups != null && g.powerups.Count > 0)
+                    {
+                        var tnames = new List<string>();
+                        for (int ti = 0; ti < g.powerups.Count; ti++)
+                            if (g.powerups[ti] != null)
+                                tnames.Add(g.powerups[ti].name);
+                        if (tnames.Count > 0)
+                            gsb.AppendLine($"Goalie Talents          = {string.Join(", ", tnames)}");
+                    }
+                } catch {}
+
+                File.WriteAllText(Path.Combine(playersDir, $"Goalie - {gsafe}.txt"), gsb.ToString());
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Materialize] Goalie write error: {ex.Message}"); }
+
+        // Also copy to library
+        try
+        {
+            string libDir = Path.Combine(Plugin.ModContentRoot, "library", "teams", team.teamName);
+            if (!Directory.Exists(libDir))
+            {
+                CopyDirectory(teamDir, libDir);
+                Plugin.Log.LogInfo($"[Materialize] Copied to library: {libDir}");
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Materialize] Library copy failed: {ex.Message}"); }
+
+        Plugin.Log.LogInfo($"[Materialize] Team '{team.teamName}' written to disk ({teamDir})");
+    }
+
+    private static void CopyDirectory(string src, string dst)
+    {
+        Directory.CreateDirectory(dst);
+        foreach (var file in Directory.GetFiles(src))
+            File.Copy(file, Path.Combine(dst, Path.GetFileName(file)), true);
+        foreach (var dir in Directory.GetDirectories(src))
+            CopyDirectory(dir, Path.Combine(dst, Path.GetFileName(dir)));
+    }
+
+    internal static void ApplyTeamFromConfig(TeamData team, TeamConfig cfg)
     {
         Plugin.Log.LogInfo($"[Config] Applying team: '{cfg.Name}' (import={cfg.IsImport})");
 
@@ -2542,6 +4353,19 @@ public static class PatchBossLaunchMatch
             }
 
             Plugin.Log.LogInfo($"[Config] Imported '{cfg.ImportTeam}' as '{team.teamName}'");
+
+            // Materialize: write resolved data to disk so users can edit it later.
+            // Find the team's folder path and write team.txt + player files.
+            int cfgIdx = Plugin.ConfigTeams.IndexOf(cfg);
+            if (cfgIdx >= 0 && cfgIdx < Plugin.ConfigTeamDirs.Count)
+            {
+                try
+                {
+                    MaterializeTeamToDisk(Plugin.ConfigTeamDirs[cfgIdx], team, cfg.ImportTeam);
+                }
+                catch (Exception ex) { Plugin.Log.LogWarning($"[Materialize] Failed: {ex.Message}"); }
+            }
+
             return;
         }
 
@@ -2829,6 +4653,7 @@ public static class PatchBossLaunchMatch
                     Plugin.Log.LogWarning($"[Config] Goalie '{cfg.Goalie.ImportPlayer}' not found for import");
             }
             ApplyGoalieConfig(team.goalie, cfg.Goalie);
+            ApplyTeamEquipmentColorsToGoalie(team.goalie, team, cfg);
         }
 
         // Apply relics
@@ -2958,7 +4783,45 @@ public static class PatchBossLaunchMatch
         catch (Exception ex) { Plugin.Log.LogWarning($"[Config] Team equipment color error: {ex.Message}"); }
     }
 
-    private static void ApplyPlayerConfig(ForwardData f, PlayerConfig pc, UniformConfig uniform)
+    /// <summary>
+    /// Give the goalie the SAME color schemes as the team's forwards so the
+    /// customizable mask (Helmet_Customization_colors) renders in team colors.
+    /// Painting individual fields on g.colorSchemes.helmetScheme didn't stick —
+    /// sharing the reference does.
+    /// </summary>
+    internal static void ApplyTeamEquipmentColorsToGoalie(GoaltenderData g, TeamData team, TeamConfig cfg)
+    {
+        if (g == null || team == null) return;
+        try
+        {
+            if (team.homeColors != null)
+            {
+                g.colorSchemes = team.homeColors;
+                Plugin.Log.LogInfo($"[Config] Goalie '{g.firstName} {g.lastName}' colorSchemes linked to team homeColors");
+            }
+            // Then still paint per-field cfg overrides on top (in case user
+            // set specific Helmet Color values for this team).
+            if (g.colorSchemes != null && cfg != null)
+            {
+                // Helmet color fallback chain: explicit TeamHelmet* →
+                // jersey home colors → leave whatever the template had.
+                // Ensures the team-tinted goalie mask has SOME sensible
+                // color even when the user only set jersey colors.
+                int[] helmetPrimary = cfg.TeamHelmetColor ?? cfg.JerseyPrimary;
+                int[] helmetSecondary = cfg.TeamHelmetSecondary ?? cfg.JerseySecondary;
+                int[] helmetTertiary = cfg.TeamHelmetTertiary ?? cfg.JerseyAccent;
+                SetSchemeColor(g.colorSchemes.helmetScheme, helmetPrimary, helmetSecondary, helmetTertiary);
+                SetSchemeColor(g.colorSchemes.glovesScheme, cfg.TeamGlovesColor, cfg.TeamGlovesSecondary, cfg.TeamGlovesTertiary);
+                SetSchemeColor(g.colorSchemes.pantsScheme, cfg.TeamPantsColor, cfg.TeamPantsSecondary, cfg.TeamPantsTertiary);
+                SetSchemeColor(g.colorSchemes.skatesScheme, cfg.TeamSkatesColor, cfg.TeamBladeColor, cfg.TeamLacesColor);
+                SetSchemeColor(g.colorSchemes.socksScheme, cfg.TeamSocksColor, cfg.TeamSocksSecondary, cfg.TeamSocksTertiary);
+                SetSchemeColor(g.colorSchemes.numberScheme, cfg.TeamNumberColor, cfg.TeamNumberSecondary, null);
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Config] Goalie team equipment color error: {ex.Message}"); }
+    }
+
+    internal static void ApplyPlayerConfig(ForwardData f, PlayerConfig pc, UniformConfig uniform)
     {
         if (f == null || pc == null) return;
         if (uniform == null) uniform = new UniformConfig();
@@ -3067,6 +4930,11 @@ public static class PatchBossLaunchMatch
             int num = pc.Number > 0 && pc.Number < 100 ? pc.Number : 88;
             f.numberSkin = $"Numbers/Number_{num}{(pc.Lefty ? "LH" : "")}";
 
+            // Helmet=none handling via shared helper — see HandleNoHelmetSentinel
+            // for details. Registers the face in HeadsWithoutHelmets so helmet
+            // is skipped at render time, keeping the user's chosen face intact.
+            PatchPlayerTeamInit.HandleNoHelmetSentinel(f);
+
             // Fallback defaults from defaults.txt — ensure no invisible/broken assets
             var ds = Plugin.DefaultSkater;
             var du = Plugin.DefaultTeam.Uniform;
@@ -3084,10 +4952,18 @@ public static class PatchBossLaunchMatch
                 f.pantsSkin = !string.IsNullOrEmpty(du.Pants) ? du.Pants : "Body_Pants/Customization/Customization_colors";
             if (string.IsNullOrEmpty(f.skateSkin))
                 f.skateSkin = !string.IsNullOrEmpty(du.Skates) ? du.Skates : "Body_Skates/Customization/Customization_colors";
-            if (string.IsNullOrEmpty(f.helmetSkin))
-                f.helmetSkin = !string.IsNullOrEmpty(du.Helmet) ? du.Helmet : "Faces/Custom/Helmet_Colors";
-            if (string.IsNullOrEmpty(f.helmetAwaySkin))
-                f.helmetAwaySkin = !string.IsNullOrEmpty(du.HelmetAway) ? du.HelmetAway : f.helmetSkin;
+            // Skip helmet default-fill for players explicitly flagged as
+            // no-helmet (Helmet = none). Without this gate, the fallback
+            // would re-stamp Helmet_Colors onto them and the helmet would
+            // render as a grey team-colored shell on opponent teams.
+            bool noHelmet = PatchPlayerTeamInit.NoHelmetForwards.Contains(f.Pointer);
+            if (!noHelmet)
+            {
+                if (string.IsNullOrEmpty(f.helmetSkin))
+                    f.helmetSkin = !string.IsNullOrEmpty(du.Helmet) ? du.Helmet : "Faces/Custom/Helmet_Colors";
+                if (string.IsNullOrEmpty(f.helmetAwaySkin))
+                    f.helmetAwaySkin = !string.IsNullOrEmpty(du.HelmetAway) ? du.HelmetAway : f.helmetSkin;
+            }
             if (string.IsNullOrEmpty(f.stickSkin))
                 f.stickSkin = !string.IsNullOrEmpty(du.Stick) ? du.Stick : "Sticks/Black";
             if (string.IsNullOrEmpty(f.numberSkin))
@@ -3157,6 +5033,88 @@ public static class PatchBossLaunchMatch
         }
     }
 
+    /// <summary>
+    /// Add a skin path to the goalie's private per-field list (_skins,
+    /// _helmetSkins, _gloveSkins, etc.). These lists are the pool the Spine
+    /// skeleton actually loads at runtime — setting g.helmetSkin to a path
+    /// NOT in _helmetSkins causes the slot to render empty (headless). We
+    /// must add the path to the pool whenever we override a skin.
+    /// </summary>
+    internal static void EnsureGoalieSkinInPool(GoaltenderData g, string fieldName, string path)
+    {
+        if (g == null || string.IsNullOrEmpty(path)) return;
+        try
+        {
+            var field = g.GetType().GetField(fieldName,
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (field == null) return;
+            var list = field.GetValue(g) as Il2CppSystem.Collections.Generic.List<string>;
+            if (list == null)
+            {
+                list = new Il2CppSystem.Collections.Generic.List<string>();
+                field.SetValue(g, list);
+            }
+            for (int i = 0; i < list.Count; i++)
+                if (list[i] == path) return;
+            list.Add(path);
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Config] EnsureGoalieSkinInPool({fieldName}='{path}'): {ex.Message}"); }
+    }
+
+    /// <summary>
+    /// Copy every private _*Skins pool from a donor NPC goalie into the
+    /// target goalie. We populate the target's pool with the UNION of donor
+    /// + target so no pre-loaded skins are lost. Use this when cloning a
+    /// player-team template (Bobby Butcher) but the user wants a themed
+    /// mask (Knights, Canadians, etc.) that's only pre-loaded on the
+    /// corresponding NPC goalie (Sir Godfrey, etc.).
+    /// </summary>
+    internal static void CopyGoalieSkinPoolsFrom(GoaltenderData target, GoaltenderData donor)
+    {
+        if (target == null || donor == null) return;
+        string[] pools = { "_skins", "_awaySkin", "_helmetSkins", "_headSkins",
+                           "_logoSkins", "_blockerSkins", "_gloveSkins",
+                           "_padSkins", "_stickSkins" };
+        foreach (var p in pools)
+        {
+            try
+            {
+                var f = donor.GetType().GetField(p,
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (f == null) continue;
+                var dList = f.GetValue(donor) as Il2CppSystem.Collections.Generic.List<string>;
+                if (dList == null) continue;
+                for (int i = 0; i < dList.Count; i++)
+                    if (!string.IsNullOrEmpty(dList[i])) EnsureGoalieSkinInPool(target, p, dList[i]);
+            }
+            catch (Exception ex) { Plugin.Log.LogWarning($"[Config] CopyGoalieSkinPoolsFrom({p}): {ex.Message}"); }
+        }
+    }
+
+    /// <summary>
+    /// Scan all GoaltenderData in the asset pool and return the first one
+    /// whose helmetSkin matches the requested path. Used to find an NPC
+    /// goalie whose Spine pool already contains the helmet so we can copy
+    /// its skin pools onto our custom-squad clone.
+    /// </summary>
+    internal static GoaltenderData FindGoalieWithHelmet(string helmetPath)
+    {
+        if (string.IsNullOrEmpty(helmetPath)) return null;
+        try
+        {
+            var all = UnityEngine.Resources.FindObjectsOfTypeAll<GoaltenderData>();
+            if (all == null) return null;
+            for (int i = 0; i < all.Length; i++)
+            {
+                var cand = all[i];
+                if (cand == null) continue;
+                if (cand.helmetSkin == helmetPath) return cand;
+            }
+        }
+        catch { }
+        return null;
+    }
+
     internal static void ApplyGoalieConfig(GoaltenderData g, PlayerConfig pc)
     {
         if (g == null || pc == null) return;
@@ -3192,18 +5150,71 @@ public static class PatchBossLaunchMatch
                 g.headSkin = Plugin.ResolveSkin(pc.Face);
 
             // Goalie-specific skins (all resolved through ResolveGoalieSkin for friendly names)
-            if (!string.IsNullOrEmpty(pc.GoalieSkin)) try { g.skin = Plugin.ResolveGoalieSkin(pc.GoalieSkin, "body"); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieSkinAway)) try { g.awaySkin = Plugin.ResolveGoalieSkin(pc.GoalieSkinAway, "body"); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieGloveSkin)) try { g.gloveSkin = Plugin.ResolveGoalieSkin(pc.GoalieGloveSkin, "glove"); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieGloveAway)) try { g.awayGloveSkin = Plugin.ResolveGoalieSkin(pc.GoalieGloveAway, "glove"); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieBlockerSkin)) try { g.blockerSkin = Plugin.ResolveGoalieSkin(pc.GoalieBlockerSkin, "blocker"); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieBlockerAway)) try { g.awayBlockerSkin = Plugin.ResolveGoalieSkin(pc.GoalieBlockerAway, "blocker"); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoaliePadsSkin)) try { g.padsSkin = Plugin.ResolveGoalieSkin(pc.GoaliePadsSkin, "pads"); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoaliePadsAway)) try { g.awayPadsSkin = Plugin.ResolveGoalieSkin(pc.GoaliePadsAway, "pads"); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieStickSkin)) try { g.stickSkin = Plugin.ResolveGoalieSkin(pc.GoalieStickSkin, "stick"); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieStickAway)) try { g.awayStickSkin = Plugin.ResolveGoalieSkin(pc.GoalieStickAway, "stick"); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieHelmetSkin)) try { g.helmetSkin = Plugin.ResolveGoalieSkin(pc.GoalieHelmetSkin, "helmet"); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieLogoSkin)) try { g.logoSkin = pc.GoalieLogoSkin; } catch {}
+            // Each override also gets registered in the private pool (_skins,
+            // _helmetSkins, etc.) — without that the Spine skeleton won't load
+            // the asset and the slot renders empty.
+            if (!string.IsNullOrEmpty(pc.GoalieSkin)) try { g.skin = Plugin.ResolveGoalieSkin(pc.GoalieSkin, "body"); EnsureGoalieSkinInPool(g, "_skins", g.skin); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoalieSkinAway)) try { g.awaySkin = Plugin.ResolveGoalieSkin(pc.GoalieSkinAway, "body"); EnsureGoalieSkinInPool(g, "_awaySkin", g.awaySkin); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoalieGloveSkin)) try { g.gloveSkin = Plugin.ResolveGoalieSkin(pc.GoalieGloveSkin, "glove"); EnsureGoalieSkinInPool(g, "_gloveSkins", g.gloveSkin); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoalieGloveAway)) try { g.awayGloveSkin = Plugin.ResolveGoalieSkin(pc.GoalieGloveAway, "glove"); EnsureGoalieSkinInPool(g, "_gloveSkins", g.awayGloveSkin); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoalieBlockerSkin)) try { g.blockerSkin = Plugin.ResolveGoalieSkin(pc.GoalieBlockerSkin, "blocker"); EnsureGoalieSkinInPool(g, "_blockerSkins", g.blockerSkin); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoalieBlockerAway)) try { g.awayBlockerSkin = Plugin.ResolveGoalieSkin(pc.GoalieBlockerAway, "blocker"); EnsureGoalieSkinInPool(g, "_blockerSkins", g.awayBlockerSkin); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoaliePadsSkin)) try { g.padsSkin = Plugin.ResolveGoalieSkin(pc.GoaliePadsSkin, "pads"); EnsureGoalieSkinInPool(g, "_padSkins", g.padsSkin); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoaliePadsAway)) try { g.awayPadsSkin = Plugin.ResolveGoalieSkin(pc.GoaliePadsAway, "pads"); EnsureGoalieSkinInPool(g, "_padSkins", g.awayPadsSkin); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoalieStickSkin)) try { g.stickSkin = Plugin.ResolveGoalieSkin(pc.GoalieStickSkin, "stick"); EnsureGoalieSkinInPool(g, "_stickSkins", g.stickSkin); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoalieStickAway)) try { g.awayStickSkin = Plugin.ResolveGoalieSkin(pc.GoalieStickAway, "stick"); EnsureGoalieSkinInPool(g, "_stickSkins", g.awayStickSkin); } catch {}
+            if (!string.IsNullOrEmpty(pc.GoalieHelmetSkin))
+                try
+                {
+                    var rh = Plugin.ResolveGoalieSkin(pc.GoalieHelmetSkin, "helmet");
+                    if (!string.IsNullOrEmpty(rh))
+                    {
+                        g.helmetSkin = rh;
+                        EnsureGoalieSkinInPool(g, "_helmetSkins", rh);
+                        // If an NPC goalie already uses this helmet path, copy
+                        // all their private skin pools onto ours. Their Spine
+                        // skeleton knows how to load this helmet; ours inherits
+                        // that knowledge. Critical for themed masks (Knights,
+                        // Canadians, etc.) that aren't pre-loaded on the
+                        // player-team template goalie we cloned from.
+                        var donor = FindGoalieWithHelmet(rh);
+                        if (donor != null && donor != g)
+                        {
+                            CopyGoalieSkinPoolsFrom(g, donor);
+                            Plugin.Log.LogInfo($"[Config] Goalie helmet pool donor found for '{rh}': '{donor.firstName} {donor.lastName}' — skin pools copied");
+                        }
+                        else
+                        {
+                            Plugin.Log.LogInfo($"[Config] No NPC donor found for helmet '{rh}' (path may still load if already in pool)");
+                        }
+                    }
+                }
+                catch (Exception ex) { Plugin.Log.LogWarning($"[Config] Goalie helmet apply: {ex.Message}"); }
+            if (!string.IsNullOrEmpty(pc.GoalieLogoSkin)) try { g.logoSkin = pc.GoalieLogoSkin; EnsureGoalieSkinInPool(g, "_logoSkins", pc.GoalieLogoSkin); } catch {}
+
+            // Goalies render with a mask placed over the bare goalie face
+            // (headSkin). If helmetSkin is empty we'd see the bare face with
+            // no mask, so fill in the team-tinted default — the same path
+            // vanilla NPC goalies (Bobby Butcher etc.) use.
+            try
+            {
+                if (string.IsNullOrEmpty(g.helmetSkin))
+                    g.helmetSkin = "Helmet/Helmet_Customization_colors";
+            }
+            catch { }
+
+            // Diagnostic dump so we can see what actually got applied at
+            // runtime (distinct from what config requested).
+            try
+            {
+                Plugin.Log.LogInfo(
+                    $"[GoalieDbg] '{g.firstName} {g.lastName}' " +
+                    $"cfg.helmet='{pc.GoalieHelmetSkin}' -> g.helmetSkin='{g.helmetSkin}' " +
+                    $"g.headSkin='{g.headSkin}' g.skin='{g.skin}' g.awaySkin='{g.awaySkin}' " +
+                    $"colorsNull={(g.colorSchemes == null)} " +
+                    $"helmetSchemePri={(g.colorSchemes?.helmetScheme == null ? "null" : g.colorSchemes.helmetScheme.primaryColor.ToString())}");
+            }
+            catch { }
 
             // Fallback defaults for goalie from defaults.txt
             var dg = Plugin.DefaultGoalie;
@@ -3214,12 +5225,11 @@ public static class PatchBossLaunchMatch
                 g.firstName = np[0];
                 g.lastName = np.Length > 1 ? np[1] : "";
             }
-            // Always ensure goalie has a valid face — use defaults.txt or hardcoded fallback
-            if (string.IsNullOrWhiteSpace(g.headSkin))
-            {
-                g.headSkin = !string.IsNullOrEmpty(dg.Face) ? Plugin.ResolveSkin(dg.Face) : "Faces/Custom/Helmet_Face";
-                Plugin.Log.LogInfo($"[Config] Goalie '{g.firstName}' had no face — set to '{g.headSkin}'");
-            }
+            // Vanilla goalies ALL have empty headSkin (confirmed: 92/92 NPC
+            // goalies in ALL_TEAMS_FULL have headSkin=""). The helmet mask
+            // fully covers the head, so no face skin is needed — and forcing
+            // one (e.g. Faces/Custom/Helmet_Face) on a goalie skeleton slot
+            // caused rendering to break on some squads. Leave as-is.
 
             // Talents
             if (pc.Talents != null)
@@ -5787,6 +7797,7 @@ public static class PatchEliteLaunchMatch
 
 }
 
+
 // ============================================================
 // Log all relics, abilities, talents from repositories
 // ============================================================
@@ -6346,7 +8357,7 @@ public static class LogRepositories
     }
 
     private static bool _guiListsDumped = false;
-    private static void AutoDumpNameLists()
+    public static void AutoDumpNameLists()
     {
         if (_guiListsDumped) return;
         _guiListsDumped = true;
@@ -6354,43 +8365,498 @@ public static class LogRepositories
         string root = Plugin.ModContentRoot;
         if (string.IsNullOrEmpty(root) || !Directory.Exists(root)) return;
 
-        // Dump team names (one per line)
-        try
-        {
-            var allTeams = UnityEngine.Resources.FindObjectsOfTypeAll<TeamData>();
-            if (allTeams != null && allTeams.Length > 0)
-            {
-                var names = new List<string>();
-                foreach (var t in allTeams)
-                    if (t != null && !string.IsNullOrEmpty(t.teamName))
-                        names.Add(t.teamName);
-                names.Sort();
-                File.WriteAllLines(Path.Combine(root, "_game_team_names.txt"), names.ToArray());
-                Plugin.Log.LogInfo($"[Dump] Team name list: {names.Count} teams → _game_team_names.txt");
-            }
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Team names failed: {ex.Message}"); }
+        var allTeams = UnityEngine.Resources.FindObjectsOfTypeAll<TeamData>();
+        if (allTeams == null || allTeams.Length == 0) return;
 
-        // Dump player names (one per line, "FirstName LastName")
+        // 1. Name lists (for GUI dropdowns)
         try
         {
+            var teamNames = new List<string>();
+            foreach (var t in allTeams)
+                if (t != null && !string.IsNullOrEmpty(t.teamName))
+                    teamNames.Add(t.teamName);
+            teamNames.Sort();
+            File.WriteAllLines(Path.Combine(root, "_game_team_names.txt"), teamNames.ToArray());
+
             var allPlayers = UnityEngine.Resources.FindObjectsOfTypeAll<ForwardData>();
             var allGoalies = UnityEngine.Resources.FindObjectsOfTypeAll<GoaltenderData>();
-            var names = new HashSet<string>();
+            var playerNames = new HashSet<string>();
             if (allPlayers != null)
                 foreach (var p in allPlayers)
                     if (p != null && !string.IsNullOrEmpty(p.firstName))
-                        names.Add($"{p.firstName} {p.lastName}".Trim());
+                        playerNames.Add($"{p.firstName} {p.lastName}".Trim());
             if (allGoalies != null)
                 foreach (var g in allGoalies)
                     if (g != null && !string.IsNullOrEmpty(g.firstName))
-                        names.Add($"{g.firstName} {g.lastName}".Trim());
-            var sorted = new List<string>(names);
-            sorted.Sort();
-            File.WriteAllLines(Path.Combine(root, "_game_player_names.txt"), sorted.ToArray());
-            Plugin.Log.LogInfo($"[Dump] Player name list: {sorted.Count} players → _game_player_names.txt");
+                        playerNames.Add($"{g.firstName} {g.lastName}".Trim());
+            var sortedP = new List<string>(playerNames);
+            sortedP.Sort();
+            File.WriteAllLines(Path.Combine(root, "_game_player_names.txt"), sortedP.ToArray());
+            Plugin.Log.LogInfo($"[Dump] Name lists: {teamNames.Count} teams, {sortedP.Count} players");
         }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Player names failed: {ex.Message}"); }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Name lists failed: {ex.Message}"); }
+
+        // 1b. Dump every team logo as PNG into the game's CustomLogos folder.
+        //     Makes the vanilla logos available to the in-game logo picker AND
+        //     gives the GUI a list to populate the Logo From dropdown.
+        DumpTeamLogosToCustomLogos(allTeams, root);
+
+        // 2. Full library dump — write every game team as editable files
+        //    into library/Base Game Teams/<TeamName>/team.txt + players/
+        //    Runs EVERY launch to catch updates. Overwrites existing files.
+        //    Users should COPY teams/players out if they want to customize.
+        string baseGameDir = Path.Combine(root, "library", "Base Game Teams");
+        string basePlayersDir = Path.Combine(root, "library", "Base Game Players");
+
+        // Skip the 4 player-team presets (user edits those per-campaign)
+        var excludeTeams = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { "Basic", "Basic Squad", "Defense", "Defense Squad",
+              "Speedy", "Speed Squad", "Trios", "Trio Squad" };
+
+        // The 32 base game (NHL parody) teams — anything NOT in this list
+        // is a custom/in-game-editor team and goes to a separate folder.
+        var baseGameTeamNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Anaheim", "Boston", "Buffalo", "Calgary", "Carolina", "Chicago",
+            "Colorado", "Columbus", "Dallas", "Detroit", "Edmonton", "Florida",
+            "Long Island", "Los Angeles", "Minnesota", "Montreal", "Nashville",
+            "New Jersey", "New York", "Ottawa", "Philadelphia", "Pittsburgh",
+            "San Jose", "Seattle", "St-Louis", "Tampa Bay", "Toronto", "Utah",
+            "Vancouver", "Vegas", "Washington", "Winnipeg",
+            "Calaveras", "Greasy Lettuce", "Top Cheese", "Meatballs",
+            "The Officials", "Crusaders", "Princess", "Cup Cultists",
+            "Mountaineers", "Disco", "Golfers", "Hockey FC",
+            "Shooting Stars", "Team Canada", "Tycoons", "Prisoners",
+            // Internal/special teams
+            "16-Bit", "Spartans", "Gauntlet", "Solo", "Bum Squad",
+            "Random", "Vanilla", "NoRelic", "Stats", "Trio", "TwoLines",
+            "My Team"
+        };
+
+        string customTeamsDir = Path.Combine(root, "library", "Custom Teams (in-game editor)");
+        string customPlayersDir = Path.Combine(root, "library", "Custom Players (in-game editor)");
+
+        // Skip the full library dump if already done — writing ~85 teams each
+        // launch is slow and spams logs. User can delete library/Base Game Teams/
+        // to force a refresh, or set `dump data = yes` in active.txt to force.
+        bool alreadyDumped = Directory.Exists(baseGameDir)
+            && Directory.GetDirectories(baseGameDir).Length > 10;
+        if (alreadyDumped && !Plugin.DumpData)
+        {
+            Plugin.Log.LogInfo("[Dump] Library already populated — skipping full team/player dump. Delete library/Base Game Teams/ to refresh.");
+            return;
+        }
+
+        Plugin.Log.LogInfo($"[Dump] Dumping all game teams + players to library...");
+        int teamCount = 0;
+        foreach (var team in allTeams)
+        {
+            if (team == null || string.IsNullOrEmpty(team.teamName)) continue;
+            if (excludeTeams.Contains(team.teamName.Trim())) continue;
+            try
+            {
+                bool isBaseGame = baseGameTeamNames.Contains(team.teamName.Trim());
+                string targetTeamDir = isBaseGame ? baseGameDir : customTeamsDir;
+                string targetPlayerDir = isBaseGame ? basePlayersDir : customPlayersDir;
+                DumpTeamToLibrary(targetTeamDir, team);
+                DumpTeamPlayersFlat(targetPlayerDir, team);
+                teamCount++;
+            }
+            catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Team '{team.teamName}' failed: {ex.Message}"); }
+        }
+
+        // Write a README note in all auto-generated folders
+        try
+        {
+            string note = "# AUTO-GENERATED — DO NOT EDIT IN PLACE\r\n"
+                + "# These files are regenerated every time the game launches.\r\n"
+                + "# To customize a team or player, COPY them to:\r\n"
+                + "#   library/teams/<YourTeamName>/\r\n"
+                + "#   library/players/<PlayerName>.txt\r\n"
+                + "# Your copies will NOT be overwritten.\r\n";
+            Directory.CreateDirectory(baseGameDir);
+            Directory.CreateDirectory(basePlayersDir);
+            Directory.CreateDirectory(customTeamsDir);
+            Directory.CreateDirectory(customPlayersDir);
+            File.WriteAllText(Path.Combine(baseGameDir, "_README.txt"), note);
+            File.WriteAllText(Path.Combine(basePlayersDir, "_README.txt"), note);
+            File.WriteAllText(Path.Combine(customTeamsDir, "_README.txt"), note);
+            File.WriteAllText(Path.Combine(customPlayersDir, "_README.txt"), note);
+        } catch {}
+
+        Plugin.Log.LogInfo($"[Dump] Dumped {teamCount} teams to library");
+    }
+
+    private static bool _logosDumped = false;
+    private static void DumpTeamLogosToCustomLogos(TeamData[] allTeams, string modRoot)
+    {
+        if (_logosDumped) return;
+        _logosDumped = true;
+        try
+        {
+            string logoDir = Path.Combine(UnityEngine.Application.persistentDataPath, "CustomLogos");
+            Directory.CreateDirectory(logoDir);
+
+            int wrote = 0, skipped = 0, failed = 0;
+            var logoNames = new List<string>();
+            foreach (var t in allTeams)
+            {
+                if (t == null || string.IsNullOrEmpty(t.teamName)) continue;
+                if (t.logo == null) continue;
+
+                string safe = t.teamName;
+                foreach (char c in Path.GetInvalidFileNameChars()) safe = safe.Replace(c, '_');
+                logoNames.Add(safe);
+
+                string outPath = Path.Combine(logoDir, safe + ".png");
+                if (File.Exists(outPath)) { skipped++; continue; }
+
+                try
+                {
+                    byte[] bytes = SpriteToPng(t.logo);
+                    if (bytes != null && bytes.Length > 0)
+                    {
+                        File.WriteAllBytes(outPath, bytes);
+                        wrote++;
+                    }
+                    else failed++;
+                }
+                catch (Exception ex)
+                {
+                    failed++;
+                    Plugin.Log.LogDebug($"[Dump] Logo '{t.teamName}' failed: {ex.Message}");
+                }
+            }
+
+            // Write _game_team_logos.txt next to the team/player name lists so
+            // the GUI can populate the Logo From dropdown without scanning the
+            // persistent data folder.
+            try
+            {
+                logoNames.Sort();
+                File.WriteAllLines(Path.Combine(modRoot, "_game_team_logos.txt"), logoNames.ToArray());
+            }
+            catch { }
+
+            Plugin.Log.LogInfo($"[Dump] CustomLogos: wrote {wrote}, skipped {skipped} existing, failed {failed} -> {logoDir}");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] CustomLogos failed: {ex.Message}"); }
+    }
+
+    private static byte[] SpriteToPng(UnityEngine.Sprite sprite)
+    {
+        if (sprite == null || sprite.texture == null) return null;
+        var src = sprite.texture;
+        UnityEngine.RenderTexture rt = null;
+        UnityEngine.Texture2D readable = null;
+        var prevActive = UnityEngine.RenderTexture.active;
+        try
+        {
+            // Blit the (possibly non-readable) atlas texture into a temp RT so
+            // we can ReadPixels it back into a CPU-side Texture2D.
+            rt = UnityEngine.RenderTexture.GetTemporary(
+                src.width, src.height, 0,
+                UnityEngine.RenderTextureFormat.ARGB32,
+                UnityEngine.RenderTextureReadWrite.Linear);
+            UnityEngine.Graphics.Blit(src, rt);
+            UnityEngine.RenderTexture.active = rt;
+
+            var r = sprite.textureRect;
+            int x = Math.Max(0, (int)r.x);
+            int y = Math.Max(0, (int)r.y);
+            int w = Math.Max(1, (int)r.width);
+            int h = Math.Max(1, (int)r.height);
+            if (x + w > src.width) w = src.width - x;
+            if (y + h > src.height) h = src.height - y;
+
+            readable = new UnityEngine.Texture2D(w, h, UnityEngine.TextureFormat.ARGB32, false);
+            readable.ReadPixels(new UnityEngine.Rect(x, y, w, h), 0, 0);
+            readable.Apply();
+
+            return UnityEngine.ImageConversion.EncodeToPNG(readable);
+        }
+        finally
+        {
+            UnityEngine.RenderTexture.active = prevActive;
+            if (rt != null) UnityEngine.RenderTexture.ReleaseTemporary(rt);
+            if (readable != null) UnityEngine.Object.Destroy(readable);
+        }
+    }
+
+    private static void DumpTeamToLibrary(string baseDir, TeamData team)
+    {
+        string safe = team.teamName;
+        foreach (char c in Path.GetInvalidFileNameChars()) safe = safe.Replace(c, '_');
+        string teamDir = Path.Combine(baseDir, safe);
+        string playersDir = Path.Combine(teamDir, "players");
+        Directory.CreateDirectory(playersDir);
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"# Base game team: {team.teamName}");
+        sb.AppendLine($"Team Name               = {team.teamName}");
+        if (!string.IsNullOrEmpty(team.city)) sb.AppendLine($"City                    = {team.city}");
+        if (!string.IsNullOrEmpty(team.nickname)) sb.AppendLine($"Abbreviation            = {team.nickname}");
+        sb.AppendLine($"Logo From               = {team.teamName}");
+
+        // Colors
+        try
+        {
+            var hc = team.homeColors;
+            if (hc != null)
+            {
+                if (hc.jerseyScheme != null)
+                {
+                    sb.AppendLine($"Jersey Primary          = {PatchBossLaunchMatch.ColorToRGB(hc.jerseyScheme.primaryColor)}");
+                    sb.AppendLine($"Jersey Secondary        = {PatchBossLaunchMatch.ColorToRGB(hc.jerseyScheme.secondaryColor)}");
+                    sb.AppendLine($"Jersey Accent           = {PatchBossLaunchMatch.ColorToRGB(hc.jerseyScheme.tertiaryColor)}");
+                }
+                if (hc.helmetScheme != null)
+                {
+                    sb.AppendLine($"Helmet Color            = {PatchBossLaunchMatch.ColorToRGB(hc.helmetScheme.primaryColor)}");
+                    sb.AppendLine($"Helmet Secondary Color  = {PatchBossLaunchMatch.ColorToRGB(hc.helmetScheme.secondaryColor)}");
+                    sb.AppendLine($"Helmet Tertiary Color   = {PatchBossLaunchMatch.ColorToRGB(hc.helmetScheme.tertiaryColor)}");
+                }
+                if (hc.glovesScheme != null)
+                {
+                    sb.AppendLine($"Gloves Color            = {PatchBossLaunchMatch.ColorToRGB(hc.glovesScheme.primaryColor)}");
+                    sb.AppendLine($"Gloves Secondary Color  = {PatchBossLaunchMatch.ColorToRGB(hc.glovesScheme.secondaryColor)}");
+                    sb.AppendLine($"Gloves Tertiary Color   = {PatchBossLaunchMatch.ColorToRGB(hc.glovesScheme.tertiaryColor)}");
+                }
+                if (hc.pantsScheme != null)
+                {
+                    sb.AppendLine($"Pants Color             = {PatchBossLaunchMatch.ColorToRGB(hc.pantsScheme.primaryColor)}");
+                    sb.AppendLine($"Pants Secondary Color   = {PatchBossLaunchMatch.ColorToRGB(hc.pantsScheme.secondaryColor)}");
+                    sb.AppendLine($"Pants Tertiary Color    = {PatchBossLaunchMatch.ColorToRGB(hc.pantsScheme.tertiaryColor)}");
+                }
+                if (hc.skatesScheme != null)
+                {
+                    sb.AppendLine($"Skates Color            = {PatchBossLaunchMatch.ColorToRGB(hc.skatesScheme.primaryColor)}");
+                    sb.AppendLine($"Blade Color             = {PatchBossLaunchMatch.ColorToRGB(hc.skatesScheme.secondaryColor)}");
+                    sb.AppendLine($"Laces Color             = {PatchBossLaunchMatch.ColorToRGB(hc.skatesScheme.tertiaryColor)}");
+                }
+                if (hc.socksScheme != null)
+                {
+                    sb.AppendLine($"Socks Color             = {PatchBossLaunchMatch.ColorToRGB(hc.socksScheme.primaryColor)}");
+                    sb.AppendLine($"Socks Secondary Color   = {PatchBossLaunchMatch.ColorToRGB(hc.socksScheme.secondaryColor)}");
+                    sb.AppendLine($"Socks Tertiary Color    = {PatchBossLaunchMatch.ColorToRGB(hc.socksScheme.tertiaryColor)}");
+                }
+                if (hc.numberScheme != null)
+                {
+                    sb.AppendLine($"Number Color Home       = {PatchBossLaunchMatch.ColorToRGB(hc.numberScheme.primaryColor)}");
+                    sb.AppendLine($"Number Color Away       = {PatchBossLaunchMatch.ColorToRGB(hc.numberScheme.secondaryColor)}");
+                }
+                if (hc.stickScheme != null)
+                    sb.AppendLine($"Stick Color             = {PatchBossLaunchMatch.ColorToRGB(hc.stickScheme.primaryColor)}");
+            }
+            // Away colors
+            var ac = team.awayColors;
+            if (ac != null && ac.jerseyScheme != null)
+            {
+                sb.AppendLine($"Away Primary            = {PatchBossLaunchMatch.ColorToRGB(ac.jerseyScheme.primaryColor)}");
+                sb.AppendLine($"Away Secondary          = {PatchBossLaunchMatch.ColorToRGB(ac.jerseyScheme.secondaryColor)}");
+                sb.AppendLine($"Away Accent             = {PatchBossLaunchMatch.ColorToRGB(ac.jerseyScheme.tertiaryColor)}");
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Colors for '{team.teamName}': {ex.Message}"); }
+
+        // Skins
+        sb.AppendLine($"Body                    = standard");
+        sb.AppendLine($"Bicep                   = standard");
+        sb.AppendLine($"Gloves                  = standard");
+        sb.AppendLine($"Pants                   = standard");
+        sb.AppendLine($"Skates                  = standard");
+        sb.AppendLine($"Helmet                  = team colors");
+        sb.AppendLine($"Stick                   = black");
+
+        // Relics
+        try
+        {
+            if (team.relics != null && team.relics.Count > 0)
+            {
+                var rnames = new List<string>();
+                for (int i = 0; i < team.relics.Count; i++)
+                    if (team.relics[i] != null) rnames.Add(team.relics[i].name);
+                if (rnames.Count > 0)
+                    sb.AppendLine($"Team Relics             = {string.Join(", ", rnames)}");
+            }
+        } catch {}
+
+        File.WriteAllText(Path.Combine(teamDir, "team.txt"), sb.ToString());
+
+        // Forwards
+        try
+        {
+            var forwards = team.GetForwards();
+            string[] posNames = { "Left Wing", "Right Wing", "Center", "Left Defense", "Right Defense" };
+            if (forwards != null)
+            {
+                for (int i = 0; i < Math.Min(forwards.Count, posNames.Length); i++)
+                {
+                    var f = forwards[i];
+                    if (f == null) continue;
+                    DumpSkaterToFile(playersDir, posNames[i], f);
+                }
+            }
+        } catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Forwards for '{team.teamName}': {ex.Message}"); }
+
+        // Goalie
+        try
+        {
+            var g = team.goalie;
+            if (g != null) DumpGoalieToFile(playersDir, g);
+        } catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Goalie for '{team.teamName}': {ex.Message}"); }
+    }
+
+    private static void DumpTeamPlayersFlat(string basePlayersDir, TeamData team)
+    {
+        Directory.CreateDirectory(basePlayersDir);
+        try
+        {
+            var forwards = team.GetForwards();
+            if (forwards != null)
+            {
+                for (int i = 0; i < forwards.Count; i++)
+                {
+                    var f = forwards[i];
+                    if (f == null) continue;
+                    string pname = $"{f.firstName} {f.lastName}".Trim();
+                    if (string.IsNullOrEmpty(pname)) continue;
+                    string safe = pname;
+                    foreach (char c in Path.GetInvalidFileNameChars()) safe = safe.Replace(c, '_');
+                    // Write flat file (no position prefix — these are library players)
+                    string path = Path.Combine(basePlayersDir, safe + ".txt");
+                    // Reuse the skater dump logic but write to flat path
+                    string[] posNames = { "Left Wing", "Right Wing", "Center", "Left Defense", "Right Defense" };
+                    string pos = i < posNames.Length ? posNames[i] : "Center";
+                    DumpSkaterToFile(basePlayersDir, pos, f, flat: true);
+                }
+            }
+        } catch {}
+        try
+        {
+            var g = team.goalie;
+            if (g != null) DumpGoalieToFile(basePlayersDir, g, flat: true);
+        } catch {}
+    }
+
+    private static void DumpSkaterToFile(string playersDir, string position, ForwardData f, bool flat = false)
+    {
+        string pname = $"{f.firstName} {f.lastName}".Trim();
+        if (string.IsNullOrEmpty(pname)) pname = position;
+        string safe = pname;
+        foreach (char c in Path.GetInvalidFileNameChars()) safe = safe.Replace(c, '_');
+        // flat = library player (just Name.txt); non-flat = team player (Position - Name.txt)
+        string fname = flat ? $"{safe}.txt" : $"{position} - {safe}.txt";
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"Name                    = {pname}");
+        sb.AppendLine($"Number                  = {f.number}");
+        try { sb.AppendLine($"Face                    = {PatchBossLaunchMatch.ReverseSkinPath(f.headSkin, "face")}"); } catch {}
+        sb.AppendLine($"Left Handed             = {(f.isLefty ? "yes" : "no")}");
+        sb.AppendLine($"Skin Color              = {(f.isBlack ? "dark" : "light")}");
+        sb.AppendLine($"Size                    = {f.skaterSize}");
+        try
+        {
+            float so = f.sizeOffsetPercentage;
+            if (Math.Abs(so - 1.0f) > 0.01f)
+                sb.AppendLine($"Size Offset             = {so:F2}");
+        } catch {}
+        sb.AppendLine($"Speed                   = {f.speed}");
+        sb.AppendLine($"Shot Power              = {f.shotPower}");
+        sb.AppendLine($"Accuracy                = {f.shotAccuracy}");
+        sb.AppendLine($"Checking                = {f.checking}");
+        // Ability
+        try
+        {
+            if (f.ability != null && !string.IsNullOrEmpty(f.ability.name))
+                sb.AppendLine($"Ability                 = {f.ability.name}");
+        } catch {}
+        // Talents
+        try
+        {
+            if (f.powerups != null && f.powerups.Count > 0)
+            {
+                var tnames = new List<string>();
+                for (int ti = 0; ti < f.powerups.Count; ti++)
+                    if (f.powerups[ti] != null) tnames.Add(f.powerups[ti].name);
+                if (tnames.Count > 0)
+                    sb.AppendLine($"Talents                 = {string.Join(", ", tnames)}");
+            }
+        } catch {}
+        // Skins
+        try { sb.AppendLine($"Stick                   = {PatchBossLaunchMatch.ReverseSkinPath(f.stickSkin, "stick")}"); } catch {}
+        try { sb.AppendLine($"Helmet                  = {PatchBossLaunchMatch.ReverseSkinPath(f.helmetSkin, "helmet")}"); } catch {}
+        try { sb.AppendLine($"Helmet Away             = {PatchBossLaunchMatch.ReverseSkinPath(f.helmetAwaySkin, "helmet")}"); } catch {}
+        try { sb.AppendLine($"Body                    = {PatchBossLaunchMatch.ReverseSkinPath(f.bodySkin, "body")}"); } catch {}
+        try { sb.AppendLine($"Body Away               = {PatchBossLaunchMatch.ReverseSkinPath(f.bodyAwaySkin, "body")}"); } catch {}
+        try { sb.AppendLine($"Bicep                   = {PatchBossLaunchMatch.ReverseSkinPath(f.bicepSkin, "bicep")}"); } catch {}
+        try { sb.AppendLine($"Gloves                  = {PatchBossLaunchMatch.ReverseSkinPath(f.gloveSkin, "gloves")}"); } catch {}
+        try { sb.AppendLine($"Pants                   = {PatchBossLaunchMatch.ReverseSkinPath(f.pantsSkin, "pants")}"); } catch {}
+        try { sb.AppendLine($"Skates                  = {PatchBossLaunchMatch.ReverseSkinPath(f.skateSkin, "skates")}"); } catch {}
+        try
+        {
+            if (!string.IsNullOrEmpty(f.glassesSkin))
+                sb.AppendLine($"Glasses                 = {f.glassesSkin}");
+        } catch {}
+
+        File.WriteAllText(Path.Combine(playersDir, fname), sb.ToString());
+    }
+
+    private static void DumpGoalieToFile(string playersDir, GoaltenderData g, bool flat = false)
+    {
+        string gname = $"{g.firstName} {g.lastName}".Trim();
+        if (string.IsNullOrEmpty(gname)) gname = "Goalie";
+        string safe = gname;
+        foreach (char c in Path.GetInvalidFileNameChars()) safe = safe.Replace(c, '_');
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"Name                    = {gname}");
+        // Read the actual headSkin instead of hardcoding "Helmet_Face".
+        // 92/92 vanilla goalies have empty headSkin — the mask covers the
+        // head entirely. Only write the Face line when the goalie actually
+        // has one, so round-tripping (load -> save) preserves accuracy.
+        try
+        {
+            if (!string.IsNullOrEmpty(g.headSkin))
+                sb.AppendLine($"Face                    = {PatchBossLaunchMatch.ReverseSkinPath(g.headSkin, "face")}");
+        } catch {}
+        try { sb.AppendLine($"Skill                   = {g.catchingSkill}"); } catch {}
+        try { sb.AppendLine($"Catching                = {g.catchingSkill}"); } catch {}
+        try { sb.AppendLine($"Glove                   = {g.gloveSkill}"); } catch {}
+        try { sb.AppendLine($"Blocker                 = {g.blockerSkill}"); } catch {}
+        try { sb.AppendLine($"Five Hole               = {g.fiveHoleSkill}"); } catch {}
+        try { sb.AppendLine($"Standing Speed          = {g.standingSpeed}"); } catch {}
+        try { sb.AppendLine($"Butterfly Speed         = {g.butterflySpeed}"); } catch {}
+        try { sb.AppendLine($"Control                 = {g.controlSkill}"); } catch {}
+        try { sb.AppendLine($"Recovery                = {g.recoverySkill}"); } catch {}
+        try { sb.AppendLine($"Pass Power              = {g.passPower}"); } catch {}
+        try { sb.AppendLine($"Shot Power              = {g.shotPower}"); } catch {}
+        try { sb.AppendLine($"Poke Check              = {g.pokecheckSkill}"); } catch {}
+        try { sb.AppendLine($"Depth                   = {g.depth}"); } catch {}
+        try { sb.AppendLine($"Pass Read               = {g.passReadSkill}"); } catch {}
+        // Goalie talents
+        try
+        {
+            if (g.powerups != null && g.powerups.Count > 0)
+            {
+                var tnames = new List<string>();
+                for (int ti = 0; ti < g.powerups.Count; ti++)
+                    if (g.powerups[ti] != null) tnames.Add(g.powerups[ti].name);
+                if (tnames.Count > 0)
+                    sb.AppendLine($"Goalie Talents          = {string.Join(", ", tnames)}");
+            }
+        } catch {}
+        // Goalie skins
+        try { if (!string.IsNullOrEmpty(g.helmetSkin)) sb.AppendLine($"Helmet Skin             = {PatchBossLaunchMatch.ReverseSkinPath(g.helmetSkin, "helmet")}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.skin)) sb.AppendLine($"Skin                    = {PatchBossLaunchMatch.ReverseSkinPath(g.skin, "body")}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.awaySkin)) sb.AppendLine($"Skin Away               = {PatchBossLaunchMatch.ReverseSkinPath(g.awaySkin, "body")}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.gloveSkin)) sb.AppendLine($"Glove Skin              = {PatchBossLaunchMatch.ReverseSkinPath(g.gloveSkin, "glove")}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.blockerSkin)) sb.AppendLine($"Blocker Skin            = {PatchBossLaunchMatch.ReverseSkinPath(g.blockerSkin, "blocker")}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.padsSkin)) sb.AppendLine($"Pads Skin               = {PatchBossLaunchMatch.ReverseSkinPath(g.padsSkin, "pads")}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.stickSkin)) sb.AppendLine($"Stick Skin              = {PatchBossLaunchMatch.ReverseSkinPath(g.stickSkin, "stick")}"); } catch {}
+
+        string gfname = flat ? $"{safe}.txt" : $"Goalie - {safe}.txt";
+        File.WriteAllText(Path.Combine(playersDir, gfname), sb.ToString());
     }
 
     private static void DumpTeamFull(StringBuilder sb, TeamData t)
@@ -6738,6 +9204,139 @@ public static class LogRepositories
             }
         }
         catch (Exception ex) { Plugin.Log.LogError($"[Dump] Talents file error: {ex.Message}"); }
+
+        // SIMPLE REWARD-POOL LISTS: id|display_name|category — consumed by
+        // the Campaign Creator GUI to build the per-relic / per-talent
+        // checkbox lists under Reward Pools.
+        try
+        {
+            var relicRepos2 = UnityEngine.Resources.FindObjectsOfTypeAll<RelicRepository>();
+            var relicRepo2 = relicRepos2 != null && relicRepos2.Length > 0 ? relicRepos2[0] : null;
+            if (relicRepo2 != null)
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine("# id|display_name|category_hint|in_default_pool  — used by Campaign Creator Reward Pools tab");
+                sb.AppendLine("# in_default_pool: 1 = shows up in random rewards by default, 0 = not in default pool (boss/customization/hidden)");
+                var seen = new HashSet<string>();
+                // Primary "category hint" for a given relic id — populated first from
+                // the named category lists, so e.g. a relic in offensiveRelics stays
+                // labelled Offensive even if it's also in maxGoalRelics etc.
+                var catHint = new Dictionary<string, string>();
+                // Set of relic ids that are in the default random-reward pool
+                // (usedInCampaignPoolRelics). Drives the default checkbox state in the GUI.
+                var poolIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (relicRepo2.usedInCampaignPoolRelics != null)
+                {
+                    for (int i = 0; i < relicRepo2.usedInCampaignPoolRelics.Count; i++)
+                    {
+                        var r = relicRepo2.usedInCampaignPoolRelics[i];
+                        if (r != null && !string.IsNullOrEmpty(r.id)) poolIds.Add(r.id);
+                    }
+                }
+                // Walk every categorised list we know about. Order matters: first
+                // non-empty hint wins (Offensive beats Utility etc.).
+                var catLists = new (Il2CppSystem.Collections.Generic.List<Rogue.Relic> list, string cat)[]
+                {
+                    (relicRepo2.offensiveRelics, "Offensive"),
+                    (relicRepo2.defensiveRelics, "Defensive"),
+                    (relicRepo2.utilityRelics,   "Utility"),
+                    (relicRepo2.speedRelics,     "Speed"),
+                    (relicRepo2.checkingRelics,  "Checking"),
+                    (relicRepo2.powerRelics,     "Power"),
+                    (relicRepo2.accuracyRelics,  "Accuracy"),
+                    (relicRepo2.chaosRelics,     "Chaos"),
+                    (relicRepo2.bossRelics,      "Boss"),
+                    (relicRepo2.goalieRelics,    "Goalie"),
+                    (relicRepo2.coachRelics,     "Coach"),
+                    (relicRepo2.injuryRelics,    "Injury"),
+                    (relicRepo2.timerRelics,     "Timer"),
+                    (relicRepo2.maxGoalRelics,   "MaxGoal"),
+                    (relicRepo2.customizationRelics, "Customization"),
+                };
+                foreach (var (list, cat) in catLists)
+                {
+                    if (list == null) continue;
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        var r = list[i];
+                        if (r == null || string.IsNullOrEmpty(r.id)) continue;
+                        if (!catHint.ContainsKey(r.id)) catHint[r.id] = cat;
+                    }
+                }
+                // Now walk every Relic SO in memory (catches ones not in any
+                // categorised list, e.g. challenge relics or legacy assets).
+                var all = UnityEngine.Resources.FindObjectsOfTypeAll<Rogue.Relic>();
+                if (all != null)
+                {
+                    for (int i = 0; i < all.Length; i++)
+                    {
+                        var r = all[i];
+                        if (r == null || string.IsNullOrEmpty(r.id)) continue;
+                        if (!seen.Add(r.id)) continue;
+                        string display = "";
+                        try { display = r.localizedRelicName ?? ""; } catch { }
+                        if (string.IsNullOrEmpty(display)) display = r.relicName ?? r.id;
+                        string cat = catHint.TryGetValue(r.id, out var c) ? c : "Uncategorised";
+                        int inPool = poolIds.Contains(r.id) ? 1 : 0;
+                        sb.AppendLine($"{r.id}|{display}|{cat}|{inPool}");
+                    }
+                }
+                File.WriteAllText(Path.Combine(basePath, "_reward_relics.txt"), sb.ToString());
+                Plugin.Log.LogInfo($"[Dump] Wrote _reward_relics.txt ({seen.Count} relics, {poolIds.Count} in default pool)");
+            }
+
+            var talentRepos2 = UnityEngine.Resources.FindObjectsOfTypeAll<TalentRepository>();
+            var talentRepo2 = talentRepos2 != null && talentRepos2.Length > 0 ? talentRepos2[0] : null;
+            if (talentRepo2 != null && talentRepo2.talents != null)
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine("# id|display_name|in_default_pool  — used by Campaign Creator Reward Pools tab");
+                sb.AppendLine("# in_default_pool: 1 = shows up in random talent rewards by default, 0 = not in default pool");
+                var seen = new HashSet<string>();
+                // Pull the "used in campaign pool" list via reflection (private field).
+                var poolNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                try
+                {
+                    var fld = talentRepo2.GetIl2CppType().GetField("usedInCampaignPoolTalents",
+                        Il2CppSystem.Reflection.BindingFlags.NonPublic | Il2CppSystem.Reflection.BindingFlags.Instance);
+                    if (fld != null)
+                    {
+                        var v = fld.GetValue(talentRepo2);
+                        if (v != null)
+                        {
+                            var poolList = v.Cast<Il2CppSystem.Collections.Generic.List<Rogue.Talent>>();
+                            if (poolList != null)
+                            {
+                                for (int i = 0; i < poolList.Count; i++)
+                                {
+                                    var pt = poolList[i];
+                                    if (pt != null && !string.IsNullOrEmpty(pt.name)) poolNames.Add(pt.name);
+                                }
+                            }
+                        }
+                    }
+                }
+                catch { }
+                var talents = talentRepo2.talents;
+                for (int i = 0; i < talents.Count; i++)
+                {
+                    var t = talents[i];
+                    if (t == null || string.IsNullOrEmpty(t.name)) continue;
+                    if (!seen.Add(t.name)) continue;
+                    string descKey = ""; try { descKey = t.description ?? ""; } catch { }
+                    string nameKey = "";
+                    if (!string.IsNullOrEmpty(descKey) && descKey.EndsWith("/description"))
+                        nameKey = descKey.Replace("/description", "/name");
+                    string display = ResolveI2(nameKey);
+                    if (string.IsNullOrEmpty(display)) display = t.name;
+                    int inPool = poolNames.Contains(t.name) ? 1 : 0;
+                    sb.AppendLine($"{t.name}|{display}|{inPool}");
+                }
+                File.WriteAllText(Path.Combine(basePath, "_reward_talents.txt"), sb.ToString());
+                Plugin.Log.LogInfo($"[Dump] Wrote _reward_talents.txt ({seen.Count} talents, {poolNames.Count} in default pool)");
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogError($"[Dump] reward-pool list dump: {ex.Message}"); }
     }
 }
 
@@ -6793,6 +9392,156 @@ public static class DebugTeamBoost
 }
 
 // ============================================================
+// Reconcile drafted FAs right before match launch. The game's match
+// controller calls InitializeForwardsForTeam to build the on-ice roster
+// — if our drafted FAs aren't in teamData.forwards at that moment, they
+// never appear on the ice. Running reconcile here (in addition to the
+// Team.Initialize postfix) makes sure the TeamData the match sees has
+// all the drafted players injected.
+// ============================================================
+[HarmonyPatch]
+public static class PatchMatchInitForwards
+{
+    static System.Reflection.MethodBase TargetMethod()
+    {
+        try
+        {
+            var t = AccessTools.TypeByName("NormalMatchGameModeController");
+            if (t == null) return null;
+            return AccessTools.Method(t, "InitializeForwardsForTeam");
+        }
+        catch { return null; }
+    }
+
+    [HarmonyPrefix]
+    public static void Prefix(TeamData team)
+    {
+        if (Plugin.IsDefaultMode) return;
+        if (team == null) return;
+        if (Plugin.PlayerTeamConfigs == null || Plugin.PlayerTeamConfigs.Count == 0) return;
+        string name = "";
+        try { name = team.teamName?.Trim() ?? ""; } catch { return; }
+        bool isCustom = false;
+        foreach (var key in Plugin.PlayerTeamConfigs.Keys)
+        {
+            if (PatchPlayerTeamInit.IsPresetKey(key)) continue;
+            if (name.StartsWith(key, StringComparison.OrdinalIgnoreCase)) { isCustom = true; break; }
+        }
+        if (!isCustom) return;
+        PatchPlayerTeamInit.ReconcileDraftedFAs(team, "MatchInit");
+    }
+}
+
+// ============================================================
+// Intercept TeamData.AddForward* — when the game drafts an FA onto a
+// custom squad, the native AddForwardToActiveLine can't find a null
+// slot in fwds[0..4] (our blanks are non-null), so it appends to
+// fwds[5+]. We move it into the first unconfigured slot immediately
+// and write the FA's id into lines[0] so InitializeLine resolves the
+// id at match-init. Patches all three variants because the draft can
+// go through any of them depending on the event path.
+// ============================================================
+internal static class DraftAddForwardHelper
+{
+    public static void MoveIntoBlank(TeamData team, ForwardData forward, string source)
+    {
+        try
+        {
+            if (team == null || forward == null) return;
+            if (Plugin.PlayerTeamConfigs == null || Plugin.PlayerTeamConfigs.Count == 0) return;
+
+            string name = "";
+            try { name = team.teamName?.Trim() ?? ""; } catch { return; }
+            if (string.IsNullOrEmpty(name)) return;
+            TeamConfig cfg = null;
+            foreach (var kvp in Plugin.PlayerTeamConfigs)
+            {
+                if (PatchPlayerTeamInit.IsPresetKey(kvp.Key)) continue;
+                if (name.StartsWith(kvp.Key, StringComparison.OrdinalIgnoreCase))
+                {
+                    cfg = kvp.Value;
+                    break;
+                }
+            }
+            Plugin.Log.LogInfo($"[PatchAddForward/{source}] fired: team='{name}' cfgMatched={(cfg != null)} fwd='{forward.firstName} {forward.lastName}' id='{forward.id}'");
+            if (cfg == null) return;
+
+            var fwds = team.forwards;
+            if (fwds == null) return;
+            Plugin.Log.LogInfo($"[PatchAddForward/{source}] fwds.Count={fwds.Count}");
+
+            PlayerConfig[] slotCfgs = { cfg.LW, cfg.RW, cfg.C, cfg.LD, cfg.RD };
+            int blankIdx = -1;
+            for (int i = 0; i < 5 && i < fwds.Count; i++)
+            {
+                if (!PatchChooseMetaUI.SlotIsConfigured(slotCfgs[i])) { blankIdx = i; break; }
+            }
+            if (blankIdx < 0)
+            {
+                Plugin.Log.LogInfo($"[PatchAddForward/{source}] no blank slot available (all 5 configured)");
+                return;
+            }
+
+            for (int j = fwds.Count - 1; j >= 5; j--)
+            {
+                var f = fwds[j];
+                if (f != null && f.Pointer == forward.Pointer)
+                {
+                    try { fwds.RemoveAt(j); } catch { }
+                    break;
+                }
+            }
+
+            fwds[blankIdx] = forward;
+            string faId = "";
+            try { faId = forward.id ?? ""; } catch { }
+            try
+            {
+                var lns = team.lines;
+                if (lns != null && lns.Count > 0 && lns[0] != null)
+                {
+                    switch (blankIdx)
+                    {
+                        case 0: lns[0].leftWinger = faId; break;
+                        case 1: lns[0].rightWinger = faId; break;
+                        case 2: lns[0].center = faId; break;
+                        case 3: lns[0].leftDefensemen = faId; break;
+                        case 4: lns[0].rightDefensemen = faId; break;
+                    }
+                }
+            }
+            catch { }
+            Plugin.Log.LogInfo($"[PatchAddForward/{source}] Moved '{forward.firstName} {forward.lastName}' into slot {blankIdx}");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[PatchAddForward/{source}] {ex.Message}"); }
+    }
+}
+
+[HarmonyPatch(typeof(TeamData), nameof(TeamData.AddForward))]
+public static class PatchTeamDataAddForward
+{
+    [HarmonyPostfix]
+    public static void Postfix(TeamData __instance, ForwardData forward)
+        => DraftAddForwardHelper.MoveIntoBlank(__instance, forward, "AddForward");
+}
+
+[HarmonyPatch(typeof(TeamData), nameof(TeamData.AddForwardToActiveLine))]
+public static class PatchTeamDataAddForwardToActiveLine
+{
+    [HarmonyPostfix]
+    public static void Postfix(TeamData __instance, ForwardData forward)
+        => DraftAddForwardHelper.MoveIntoBlank(__instance, forward, "AddForwardToActiveLine");
+}
+
+[HarmonyPatch(typeof(TeamData), nameof(TeamData.AddForwardToBench))]
+public static class PatchTeamDataAddForwardToBench
+{
+    [HarmonyPostfix]
+    public static void Postfix(TeamData __instance, ForwardData forward)
+        => DraftAddForwardHelper.MoveIntoBlank(__instance, forward, "AddForwardToBench");
+}
+
+// ============================================================
 // Player Team Editor — apply player_teams.txt to player teams
 // ============================================================
 [HarmonyPatch(typeof(Team), nameof(Team.Initialize))]
@@ -6801,22 +9550,37 @@ public static class PatchPlayerTeamInit
     private static readonly string[] PlayerPrefixes = { "Basic", "Defense", "Speed", "Trio" };
     private static readonly HashSet<IntPtr> AppliedTeamPtrs = new();
 
+    internal static bool IsPresetKey(string key)
+    {
+        if (string.IsNullOrEmpty(key)) return false;
+        key = key.ToLowerInvariant();
+        return key == "basic" || key == "defense" || key == "speed" || key == "trio";
+    }
+
     [HarmonyPostfix]
     public static void Postfix(Team __instance, TeamData teamData)
     {
         if (Plugin.IsDefaultMode) return;
 
-        // Apply draft pool modifications on first Team.Initialize call
-        if (!Plugin.DraftPoolApplied && Plugin.DraftPoolConfigs.Count > 0)
-        {
-            Plugin.DraftPoolApplied = true;
+        // Draft pool runs on EVERY Team.Initialize (including mid-run) so that
+        // free agents which load lazily still get their names/stats/skins
+        // applied. Per-forward HashSet prevents re-applying to the same one —
+        // so earned progress during a run is preserved.
+        if (Plugin.DraftPoolConfigs.Count > 0)
             ApplyDraftPool();
-        }
+
+        // GUARD for starting-team replacement: only on FRESH runs (GamesPlayed == 0).
+        // On continue, player has earned stats/relics that we must not reset.
+        if (Plugin.GamesPlayed > 0) return;
 
         // Check if this is a player team
         if (teamData == null) return;
         if (Plugin.PlayerTeamConfigs.Count == 0) return;
         string name = teamData.teamName?.Trim() ?? "";
+        // Match first against hardcoded presets, then fall back to any custom
+        // squad key the user added via player_teams/<FolderName>/. The custom
+        // squad injection (PatchChooseMetaUI) renames each cloned team to the
+        // config key, so name.StartsWith finds them here.
         string matchedKey = null;
         foreach (var p in PlayerPrefixes)
         {
@@ -6826,19 +9590,277 @@ public static class PatchPlayerTeamInit
                 break;
             }
         }
+        if (matchedKey == null)
+        {
+            foreach (var key in Plugin.PlayerTeamConfigs.Keys)
+            {
+                // Skip presets (already handled above via PlayerPrefixes)
+                if (IsPresetKey(key)) continue;
+                if (name.StartsWith(key, StringComparison.OrdinalIgnoreCase))
+                {
+                    matchedKey = key;
+                    break;
+                }
+            }
+        }
         if (matchedKey == null) return;
 
         if (!Plugin.PlayerTeamConfigs.ContainsKey(matchedKey)) return;
-        if (AppliedTeamPtrs.Contains(teamData.Pointer)) return;
-        AppliedTeamPtrs.Add(teamData.Pointer);
+
+        // Re-apply on every Team.Initialize during the fresh-run window
+        // (GamesPlayed == 0) — the game re-initializes the Team between map
+        // generation and match launch (including for Spartan/Challenge), which
+        // resets stats/skins/colors back to defaults. Only the first call for
+        // each TeamData does the destructive talent/relic wipe; subsequent
+        // calls refresh the non-destructive fields so the player still sees
+        // their modded team during the Spartan match.
+        bool firstApply = !AppliedTeamPtrs.Contains(teamData.Pointer);
+        if (firstApply) AppliedTeamPtrs.Add(teamData.Pointer);
 
         var cfg = Plugin.PlayerTeamConfigs[matchedKey];
-        Plugin.Log.LogInfo($"[PlayerTeam] Applying config for '{matchedKey}' to team '{name}'");
-        ApplyPlayerTeamConfig(teamData, cfg, __instance);
+        Plugin.Log.LogInfo($"[PlayerTeam] Applying config for '{matchedKey}' to team '{name}' (firstApply={firstApply})");
+
+        // For custom squads: reconcile drafted FAs into the starting-five
+        // slots. The problem: our blank placeholder slots at fwds[0..2] (for
+        // unconfigured LW/RW/C) are non-null, so the game's AddForwardToActiveLine
+        // doesn't recognize them as "empty" — it appends the drafted FA to
+        // fwds[5+] instead of overwriting the blank. Result: lines[0] still
+        // references blank.id, the drafted FA is stuck on the bench, and
+        // nothing renders on the ice at that position.
+        //
+        // Fix: scan fwds[0..4] for blank placeholders (empty firstName AND
+        // lastName — the marker we set in BlankUnconfiguredSlots), scan
+        // fwds[5+] for real drafted forwards, and swap them in. Also update
+        // lines[0] to reference the drafted FA's id at each moved slot.
+        if (!IsPresetKey(matchedKey))
+            ReconcileDraftedFAs(teamData, "Team.Init");
+
+
+        // Re-sync lines[0] for CONFIGURED positions only. The game
+        // regenerates forward ids between menu-inject and match-init (the
+        // log showed lines[0].LW pointing at a defunct id 7aa98674 while
+        // fwds[0] had the new BigBOy id 5beebbe6), so Big BOy never
+        // resolved at render time → not on the ice. We only rewrite the
+        // slots WE configured; free-agent picks in other slots stay put.
+        if (!IsPresetKey(matchedKey))
+        {
+            try
+            {
+                var lns = teamData.lines;
+                if (lns != null && lns.Count > 0 && lns[0] != null)
+                {
+                    var l0 = lns[0];
+                    var fwds = teamData.forwards;
+                    void SyncSlot(int idx, PlayerConfig pc, Action<string> setter)
+                    {
+                        if (pc == null) return;
+                        bool has = !string.IsNullOrEmpty(pc.Name)
+                                    || !string.IsNullOrEmpty(pc.ImportPlayer)
+                                    || !string.IsNullOrEmpty(pc.Face)
+                                    || !string.IsNullOrEmpty(pc.Ability)
+                                    || (pc.Talents != null && pc.Talents.Count > 0)
+                                    || pc.Speed != 50 || pc.ShotPower != 50
+                                    || pc.Accuracy != 50 || pc.Checking != 50;
+                        if (!has) return;
+                        if (fwds == null || idx >= fwds.Count) return;
+                        var f = fwds[idx];
+                        if (f == null) return;
+                        try { setter(f.id ?? ""); } catch { }
+                    }
+                    SyncSlot(0, cfg.LW, id => l0.leftWinger = id);
+                    SyncSlot(1, cfg.RW, id => l0.rightWinger = id);
+                    SyncSlot(2, cfg.C,  id => l0.center = id);
+                    SyncSlot(3, cfg.LD, id => l0.leftDefensemen = id);
+                    SyncSlot(4, cfg.RD, id => l0.rightDefensemen = id);
+                    Plugin.Log.LogInfo($"[PlayerTeam] Re-synced lines[0]: LW='{l0.leftWinger}' RW='{l0.rightWinger}' C='{l0.center}' LD='{l0.leftDefensemen}' RD='{l0.rightDefensemen}'");
+                }
+            }
+            catch (Exception ex) { Plugin.Log.LogWarning($"[PlayerTeam] Re-sync lines failed: {ex.Message}"); }
+        }
+
+        // Roster snapshot pre-apply so we can diagnose "game one has no
+        // players except goalie" situations.
+        try
+        {
+            var rf = teamData.forwards;
+            if (rf != null)
+            {
+                for (int i = 0; i < rf.Count; i++)
+                {
+                    var f = rf[i];
+                    Plugin.Log.LogInfo($"[PlayerTeam] pre-apply fwds[{i}] = {(f == null ? "null" : (f.firstName + " " + f.lastName + " id=" + (f.id ?? "")))}");
+                }
+            }
+            Plugin.Log.LogInfo($"[PlayerTeam] pre-apply goalie = {(teamData.goalie == null ? "null" : (teamData.goalie.firstName + " " + teamData.goalie.lastName))}");
+            var lns = teamData.lines;
+            if (lns != null && lns.Count > 0 && lns[0] != null)
+            {
+                var l0 = lns[0];
+                Plugin.Log.LogInfo($"[PlayerTeam] pre-apply lines[0]: LW='{l0.leftWinger}' RW='{l0.rightWinger}' C='{l0.center}' LD='{l0.leftDefensemen}' RD='{l0.rightDefensemen}'");
+            }
+            else Plugin.Log.LogInfo($"[PlayerTeam] pre-apply lines is null/empty");
+        }
+        catch { }
+        ApplyPlayerTeamConfig(teamData, cfg, __instance, firstApply);
+        // Snapshot after apply too, so we can see whether the game or our
+        // code mutated the roster between menu-inject and match-init.
+        try
+        {
+            var rf = teamData.forwards;
+            if (rf != null)
+            {
+                for (int i = 0; i < rf.Count; i++)
+                {
+                    var f = rf[i];
+                    Plugin.Log.LogInfo($"[PlayerTeam] post-apply fwds[{i}] = {(f == null ? "null" : (f.firstName + " " + f.lastName))}");
+                }
+            }
+        }
+        catch { }
     }
 
-    private static void ApplyPlayerTeamConfig(TeamData team, TeamConfig cfg, Team instance)
+    // Finds ForwardData whose id appears in lines[0] but is missing from
+    // teamData.forwards, and injects a clone into the matching slot. The
+    // game's FA draft for custom squads writes the id to lines[0] but
+    // never adds the SO to fwds (because our non-null blank placeholders
+    // block AddForwardToActiveLine's null-slot search). Instantiate the
+    // ForwardData (not share the template) so lifetime is owned by us.
+    internal static void ReconcileDraftedFAs(TeamData teamData, string source)
     {
+        if (teamData == null) return;
+        try
+        {
+            var lns = teamData.lines;
+            var fwds = teamData.forwards;
+            if (lns == null || lns.Count == 0 || lns[0] == null) return;
+            if (fwds == null || fwds.Count < 5) return;
+
+            string[] lineIds = {
+                lns[0].leftWinger ?? "",
+                lns[0].rightWinger ?? "",
+                lns[0].center ?? "",
+                lns[0].leftDefensemen ?? "",
+                lns[0].rightDefensemen ?? ""
+            };
+            Plugin.Log.LogInfo($"[Reconcile/{source}] team='{teamData.teamName}' lineIds: LW='{lineIds[0]}' RW='{lineIds[1]}' C='{lineIds[2]}' LD='{lineIds[3]}' RD='{lineIds[4]}'");
+
+            bool IsInFwds(string id)
+            {
+                if (string.IsNullOrEmpty(id)) return false;
+                for (int i = 0; i < fwds.Count; i++)
+                {
+                    var f = fwds[i];
+                    if (f != null && f.id == id) return true;
+                }
+                return false;
+            }
+
+            var missingByPos = new System.Collections.Generic.Dictionary<int, string>();
+            for (int pos = 0; pos < 5; pos++)
+            {
+                if (!string.IsNullOrEmpty(lineIds[pos]) && !IsInFwds(lineIds[pos]))
+                    missingByPos[pos] = lineIds[pos];
+            }
+            if (missingByPos.Count == 0) return;
+            Plugin.Log.LogInfo($"[Reconcile/{source}] missing FA ids: {missingByPos.Count}");
+
+            var allCS = UnityEngine.Resources.FindObjectsOfTypeAll<State.CampaignState>();
+            Il2CppSystem.Collections.Generic.List<Data.ForwardData> freeAgents = null;
+            if (allCS != null && allCS.Length > 0) freeAgents = allCS[0].freeAgents;
+
+            Data.ForwardData[] allFwdsScene = null;
+            try { allFwdsScene = UnityEngine.Resources.FindObjectsOfTypeAll<Data.ForwardData>(); }
+            catch { }
+
+            Data.ForwardData LookupById(string id)
+            {
+                if (string.IsNullOrEmpty(id)) return null;
+                if (freeAgents != null)
+                {
+                    for (int i = 0; i < freeAgents.Count; i++)
+                    {
+                        var f = freeAgents[i];
+                        if (f != null && f.id == id) return f;
+                    }
+                }
+                if (allFwdsScene != null)
+                {
+                    for (int i = 0; i < allFwdsScene.Length; i++)
+                    {
+                        var f = allFwdsScene[i];
+                        if (f != null && f.id == id) return f;
+                    }
+                }
+                return null;
+            }
+
+            int moved = 0;
+            foreach (var kvp in missingByPos)
+            {
+                int pos = kvp.Key;
+                string id = kvp.Value;
+                var fa = LookupById(id);
+                if (fa == null)
+                {
+                    Plugin.Log.LogWarning($"[Reconcile/{source}] FA id '{id}' for slot {pos} NOT FOUND");
+                    continue;
+                }
+                if (pos >= fwds.Count) continue;
+                // Instantiate so we own the SO (no unloading surprises) and
+                // preserve the id so lines[0] lookups still resolve.
+                Data.ForwardData injected = fa;
+                try
+                {
+                    var clone = UnityEngine.Object.Instantiate(fa);
+                    try { clone.id = fa.id; } catch { }
+                    injected = clone;
+                }
+                catch { }
+                fwds[pos] = injected;
+                moved++;
+                Plugin.Log.LogInfo($"[Reconcile/{source}] Injected FA '{injected.firstName} {injected.lastName}' into slot {pos}");
+            }
+            Plugin.Log.LogInfo($"[Reconcile/{source}] done moved={moved}");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Reconcile/{source}] {ex.Message}"); }
+    }
+
+    internal static void ApplyPlayerTeamConfig(TeamData team, TeamConfig cfg, Team instance, bool firstApply)
+    {
+        // Diagnostic: print which slot configs the loader populated so we can
+        // tell "loaded but skipped" from "never loaded at all".
+        try
+        {
+            Plugin.Log.LogDebug(
+                $"[PlayerTeam] Slot cfg for '{team?.teamName}': " +
+                $"LW='{cfg?.LW?.Name}' RW='{cfg?.RW?.Name}' C='{cfg?.C?.Name}' " +
+                $"LD='{cfg?.LD?.Name}' RD='{cfg?.RD?.Name}' G='{cfg?.Goalie?.Name}'");
+        }
+        catch { }
+        // On firstApply only: wipe earned talents/relics from previous runs so
+        // the config's Talents + Relics are the only ones present. Re-entries
+        // during the same run (e.g. Spartan match re-init) MUST NOT wipe —
+        // that would destroy in-run earned progress.
+        if (firstApply)
+        {
+            try
+            {
+                if (team.forwards != null)
+                {
+                    for (int i = 0; i < team.forwards.Count; i++)
+                    {
+                        var fwd = team.forwards[i];
+                        if (fwd == null) continue;
+                        try { fwd.powerups = new Il2CppSystem.Collections.Generic.List<Rogue.Talent>(); } catch {}
+                    }
+                }
+                if (team.goalie != null)
+                    try { team.goalie.powerups = new Il2CppSystem.Collections.Generic.List<Rogue.Talent>(); } catch {}
+                try { team.relics = new Il2CppSystem.Collections.Generic.List<Rogue.Relic>(); } catch {}
+            }
+            catch (Exception ex) { Plugin.Log.LogWarning($"[PlayerTeam] New-run wipe: {ex.Message}"); }
+        }
+
         // Logo from another team
         if (!string.IsNullOrEmpty(cfg.LogoFrom))
         {
@@ -6902,10 +9924,32 @@ public static class PatchPlayerTeamInit
             for (int i = 0; i < fwds.Count; i++)
             {
                 if (fwds[i] == null) continue;
-                // Apply team uniform skins (body, gloves, pants, etc.)
                 ApplyUniformToForward(fwds[i], cfg.Uniform);
-                // Apply team equipment colors
                 PatchBossLaunchMatch.ApplyTeamEquipmentColors(fwds[i], cfg);
+            }
+
+            // Per-slot player overrides — for each starting lineup slot that
+            // has a file on disk, apply that player's name/stats/face/colors
+            // to the matching forward. Positions in cfg are set by
+            // LoadPlayersFolder (matches the "Left Defense.txt" etc. filenames).
+            // Forward array order: 0=LW, 1=RW, 2=C, 3=LD, 4=RD.
+            PlayerConfig[] line1 = { cfg.LW, cfg.RW, cfg.C, cfg.LD, cfg.RD };
+            for (int i = 0; i < Math.Min(fwds.Count, line1.Length); i++)
+            {
+                var pc = line1[i];
+                if (pc == null || fwds[i] == null) continue;
+                // Skip slots with no real data — LoadPlayersFolder leaves
+                // untouched slots at their default empty PlayerConfig.
+                bool hasAny = !string.IsNullOrEmpty(pc.Name) || !string.IsNullOrEmpty(pc.ImportPlayer)
+                               || !string.IsNullOrEmpty(pc.Face)
+                               || pc.Speed != 50 || pc.ShotPower != 50
+                               || pc.Accuracy != 50 || pc.Checking != 50
+                               || (pc.Talents != null && pc.Talents.Count > 0)
+                               || !string.IsNullOrEmpty(pc.Ability);
+                if (!hasAny) continue;
+                try { PatchBossLaunchMatch.ApplyPlayerConfig(fwds[i], pc, cfg.Uniform); }
+                catch (Exception ex) { Plugin.Log.LogWarning($"[PlayerTeam] slot {i} apply error: {ex.Message}"); }
+                Plugin.Log.LogInfo($"[PlayerTeam] Applied slot override: {pc.Name ?? pc.ImportPlayer}");
             }
         }
 
@@ -6922,10 +9966,13 @@ public static class PatchPlayerTeamInit
                 }
             }
             PatchBossLaunchMatch.ApplyGoalieConfig(team.goalie, cfg.Goalie);
+            PatchBossLaunchMatch.ApplyTeamEquipmentColorsToGoalie(team.goalie, team, cfg);
         }
 
-        // Apply relics (additive — adds starting relics)
-        if (cfg.Relics.Count > 0)
+        // Apply relics (additive — adds starting relics). Only on firstApply:
+        // subsequent re-applies during the same run (e.g. Spartan match init)
+        // must not add duplicate copies of every starting relic.
+        if (firstApply && cfg.Relics.Count > 0)
         {
             foreach (var r in cfg.Relics)
                 PatchBossLaunchMatch.GiveRelic(team, r);
@@ -6952,48 +9999,207 @@ public static class PatchPlayerTeamInit
             if (!string.IsNullOrEmpty(uniform.Bicep)) f.bicepSkin = uniform.Bicep;
             if (!string.IsNullOrEmpty(uniform.BicepAway)) f.bicepAwaySkin = uniform.BicepAway;
             if (!string.IsNullOrEmpty(uniform.Stick)) f.stickSkin = uniform.Stick;
+            HandleNoHelmetSentinel(f);
         }
         catch (Exception ex) { Plugin.Log.LogError($"[PlayerTeam] Uniform apply error: {ex.Message}"); }
     }
 
-    private static void ApplyDraftPool()
+    // Forwards explicitly flagged as no-helmet via `Helmet = none` in config.
+    // Checked by the fallback default-fill code so the default helmet skin
+    // doesn't sneak back in for these players.
+    internal static readonly HashSet<IntPtr> NoHelmetForwards = new HashSet<IntPtr>();
+
+    /// Shared no-helmet sentinel handler. If helmetSkin was stamped with the
+    /// `__NO_HELMET__` marker by ResolveSkin (Helmet = none in config), this
+    /// registers the forward's face in ForwardDataExtensions.HeadsWithoutHelmets
+    /// and flags the forward in NoHelmetForwards so the default-fill code
+    /// won't re-stamp a helmet skin onto it. MUST be called from every code
+    /// path that assigns helmetSkin.
+    internal static void HandleNoHelmetSentinel(ForwardData f)
     {
-        Plugin.Log.LogInfo($"[PlayerTeam] Applying draft pool modifications ({Plugin.DraftPoolConfigs.Count} players)...");
-        var allFwds = UnityEngine.Resources.FindObjectsOfTypeAll<ForwardData>();
-        if (allFwds == null || allFwds.Length == 0)
+        if (f == null) return;
+        if (f.helmetSkin == "__NO_HELMET__" || f.helmetAwaySkin == "__NO_HELMET__")
         {
-            Plugin.Log.LogWarning("[PlayerTeam] No ForwardData objects found in memory");
-            return;
+            Plugin.RegisterFaceAsHelmetless(f.headSkin);
+            if (f.helmetSkin == "__NO_HELMET__") f.helmetSkin = "";
+            if (f.helmetAwaySkin == "__NO_HELMET__") f.helmetAwaySkin = "";
+            NoHelmetForwards.Add(f.Pointer);
+            Plugin.Log.LogInfo($"[NoHelmet] '{f.firstName} {f.lastName}' face '{f.headSkin}' flagged as helmetless");
         }
+    }
+
+    // Names we've already announced in the log this session. ApplyDraftPool
+    // runs on every Team.Initialize (many times per scene); this keeps the
+    // log to one line per unique player rather than one per instance.
+    private static readonly HashSet<string> _loggedDraftNames = new(StringComparer.OrdinalIgnoreCase);
+
+    internal static void ApplyDraftPool()
+    {
+        var allFwds = UnityEngine.Resources.FindObjectsOfTypeAll<ForwardData>();
+        if (allFwds == null || allFwds.Length == 0) return;
+
+        // Track which configs got applied via name-match so the index-based
+        // fallback only uses the leftovers.
+        var appliedConfigKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         int applied = 0;
         foreach (var f in allFwds)
         {
             if (f == null) continue;
+            if (Plugin.AppliedDraftPtrs.Contains(f.Pointer)) continue;  // already done
+
             string fullName = $"{f.firstName} {f.lastName}".Trim().ToLower();
-            // Also try last name only for flexibility
             string lastName = (f.lastName ?? "").Trim().ToLower();
 
             PlayerConfig pc = null;
+            string matchedKey = null;
             foreach (var kvp in Plugin.DraftPoolConfigs)
             {
                 if (kvp.Key == fullName || kvp.Key == lastName)
                 {
                     pc = kvp.Value;
+                    matchedKey = kvp.Key;
                     break;
                 }
             }
             if (pc == null) continue;
 
-            Plugin.Log.LogInfo($"[PlayerTeam] Modifying draft player '{f.firstName} {f.lastName}'");
+            appliedConfigKeys.Add(matchedKey);
+            Plugin.AppliedDraftPtrs.Add(f.Pointer);
+            // Only log once per unique name — the game keeps multiple
+            // ForwardData instances per named player (league rosters, bench,
+            // pick-screen templates) and we mod every copy, so suppress
+            // duplicate log lines to keep the log readable.
+            string nameKey = $"{f.firstName} {f.lastName}".Trim();
+            if (_loggedDraftNames.Add(nameKey))
+                Plugin.Log.LogInfo($"[PlayerTeam] Modifying draft player '{nameKey}' (name match)");
+            ApplyConfigToForward(f, pc);
+            applied++;
+        }
 
-            // Apply name
-            if (!string.IsNullOrEmpty(pc.Name))
+        // INDEX-BASED FALLBACK: any configs whose filename didn't match a
+        // vanilla free-agent name get applied to the actual generated free
+        // agents (CampaignState.preGeneratedFreeAgents), in order. This is
+        // the common case when the user names their draft files with
+        // original labels rather than matching vanilla names.
+        var leftovers = new List<PlayerConfig>();
+        foreach (var kvp in Plugin.DraftPoolConfigs)
+            if (!appliedConfigKeys.Contains(kvp.Key))
+                leftovers.Add(kvp.Value);
+
+        if (leftovers.Count > 0)
+        {
+            var targets = GetGeneratedFreeAgentForwards(allFwds);
+            int n = Math.Min(leftovers.Count, targets.Count);
+            for (int i = 0; i < n; i++)
             {
-                var parts = pc.Name.Split(' ');
-                f.firstName = parts[0];
-                f.lastName = parts.Length > 1 ? string.Join(" ", parts, 1, parts.Length - 1) : "";
+                var f = targets[i];
+                if (f == null) continue;
+                if (Plugin.AppliedDraftPtrs.Contains(f.Pointer)) continue;
+                Plugin.AppliedDraftPtrs.Add(f.Pointer);
+                Plugin.Log.LogInfo($"[PlayerTeam] Modifying generated free agent #{i} '{f.firstName} {f.lastName}' -> '{leftovers[i].Name}' (index fallback)");
+                ApplyConfigToForward(f, leftovers[i]);
+                applied++;
             }
+        }
+
+        if (applied > 0)
+            Plugin.Log.LogInfo($"[PlayerTeam] Draft pool: {applied} player instance(s) modified ({_loggedDraftNames.Count}/{Plugin.DraftPoolConfigs.Count} unique names)");
+    }
+
+    // Look up the ForwardData instances that correspond to currently
+    // pre-generated free agents. Reads CampaignState.preGeneratedFreeAgents
+    // (List<PreGeneratedFreeAgentData>) and matches each entry's
+    // templateFullName to a loaded ForwardData.
+    private static List<ForwardData> GetGeneratedFreeAgentForwards(ForwardData[] allFwds)
+    {
+        var result = new List<ForwardData>();
+        try
+        {
+            // Try BOTH sources and take whichever has items — PreGenerateFreeAgents
+            // may overwrite CampaignState.preGeneratedFreeAgents with a new list
+            // reference, leaving the `output` arg we cached pointing at an old
+            // empty list. Looking up the current property value covers that case.
+            var cached = PatchPreGenerateFreeAgents.LastOutput;
+            Il2CppSystem.Collections.Generic.List<Rogue.FreeAgents.PreGeneratedFreeAgentData> fromState = null;
+
+            var allCS = UnityEngine.Resources.FindObjectsOfTypeAll<State.CampaignState>();
+            if (allCS != null && allCS.Length > 0)
+            {
+                var cs = allCS[0];
+                var csType = cs.GetIl2CppType();
+                var prop = csType.GetProperty("preGeneratedFreeAgents");
+                if (prop != null)
+                {
+                    var val = prop.GetValue(cs);
+                    if (val != null)
+                        fromState = val.TryCast<Il2CppSystem.Collections.Generic.List<Rogue.FreeAgents.PreGeneratedFreeAgentData>>();
+                }
+                if (fromState == null)
+                {
+                    var field = csType.GetField("preGeneratedFreeAgents")
+                             ?? csType.GetField("_preGeneratedFreeAgents")
+                             ?? csType.GetField("m_PreGeneratedFreeAgents");
+                    if (field != null)
+                    {
+                        var val = field.GetValue(cs);
+                        if (val != null)
+                            fromState = val.TryCast<Il2CppSystem.Collections.Generic.List<Rogue.FreeAgents.PreGeneratedFreeAgentData>>();
+                    }
+                }
+            }
+
+            int cachedCount = cached?.Count ?? -1;
+            int stateCount = fromState?.Count ?? -1;
+            Plugin.Log.LogInfo($"[PlayerTeam] PreGenerated list counts: cached_arg={cachedCount}, campaign_state={stateCount}");
+
+            // Pick the richer source
+            var list = (stateCount > cachedCount) ? fromState : cached;
+            if (list == null || list.Count == 0)
+            {
+                Plugin.Log.LogInfo("[PlayerTeam] preGeneratedFreeAgents is empty — pick screen not yet populated");
+                return result;
+            }
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                var pg = list[i];
+                if (pg == null) continue;
+                string templ = pg.templateFullName;
+                if (string.IsNullOrEmpty(templ)) continue;
+
+                // Match against ForwardData — try UnityEngine.Object name first,
+                // then firstName+lastName composite.
+                ForwardData hit = null;
+                foreach (var f in allFwds)
+                {
+                    if (f == null) continue;
+                    string assetName = f.name ?? "";
+                    string composed = $"{f.firstName} {f.lastName}".Trim();
+                    if (assetName.Equals(templ, StringComparison.OrdinalIgnoreCase)
+                        || composed.Equals(templ, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hit = f;
+                        break;
+                    }
+                }
+                if (hit != null) result.Add(hit);
+            }
+            Plugin.Log.LogInfo($"[PlayerTeam] GetGeneratedFreeAgentForwards: resolved {result.Count}/{list.Count} templates to ForwardData");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[PlayerTeam] GetGeneratedFreeAgentForwards: {ex.Message}"); }
+        return result;
+    }
+
+    private static void ApplyConfigToForward(ForwardData f, PlayerConfig pc)
+    {
+        // NAME is skipped intentionally for draft-pool free agents. Renaming
+        // them breaks the rest of the customization (looks, stats, abilities
+        // stop applying) because the lookup pipeline keys by the vanilla
+        // firstName/lastName in several places. Look/ability/stat mods all
+        // still apply — only the display name stays at the game's default.
+        // Revisit once the name-keyed lookups are refactored to use pointer
+        // identity instead.
 
             // Apply stats (only if non-default, i.e. not 50)
             if (pc.Speed != 50) f.speed = pc.Speed;
@@ -7084,11 +10290,14 @@ public static class PatchPlayerTeamInit
             if (!string.IsNullOrEmpty(pc.Glasses))
                 try { f.glassesSkin = pc.Glasses; } catch {}
 
-            applied++;
-            Plugin.Log.LogInfo($"[PlayerTeam] Modified '{f.firstName} {f.lastName}' — SPD={f.speed} PWR={f.shotPower} ACC={f.shotAccuracy} CHK={f.checking}");
-        }
-
-        Plugin.Log.LogInfo($"[PlayerTeam] Draft pool: {applied}/{Plugin.DraftPoolConfigs.Count} players modified");
+            // Helmet=none: catch the sentinel from team uniform OR per-player
+            // override paths that assigned it above — final check so all
+            // helmet-set flows normalize through the same logic.
+            HandleNoHelmetSentinel(f);
+            // Tail stats-log removed — the "Modifying" line in ApplyDraftPool
+            // already announces each unique player once per session. Leaving
+            // it in here caused N-copy-per-name spam since the game keeps
+            // multiple ForwardData instances per player.
     }
 }
 
@@ -7203,6 +10412,8 @@ public class TeamConfig
     public string Name = "";
     public string City = "";
     public string Abbreviation = "";
+    public string Description = "";
+    public string SquadHead = "";     // face name for the custom-squad tile icon
     public string LogoFrom = "";
     public string ImportTeam = "";
     public float StatScale = 1.0f;
@@ -7242,6 +10453,12 @@ public class TeamConfig
     public string BenchHead = "";
     public UniformConfig Uniform = new UniformConfig();
     public List<string> Relics = new List<string>();
+    // Opt-out for the auto-added Bench Bonus starting relic. Custom
+    // player-team squads auto-prepend "Bench Bonus" to m_RelicsData (the
+    // relic that buffs bench players by their slot position — the signature
+    // mechanic of player-chosen squads). Set "No Bench Bonus = yes" in
+    // team.txt to disable.
+    public bool NoBenchBonus = false;
     public int TeamRandomTalents = 0;
     public List<string> TeamRandomPool = new List<string>();
     public bool TeamRandomPoolAll = false;

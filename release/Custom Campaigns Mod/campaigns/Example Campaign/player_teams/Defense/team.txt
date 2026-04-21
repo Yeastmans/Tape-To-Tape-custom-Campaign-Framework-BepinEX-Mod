@@ -1,0 +1,26 @@
+# Player Team: Defense
+Team Name               = Defense Squad
+City                    = Defensburgh
+Abbreviation            = DEF
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Helmet                  = team colors
+Stick                   = red
+Jersey Primary          = 40, 60, 120
+Jersey Secondary        = 20, 30, 60
+Jersey Accent           = 200, 200, 220
+Away Primary            = 255, 255, 255
+Away Secondary          = 40, 60, 120
+Away Accent             = 200, 200, 220
+Helmet Color            = 40, 60, 120
+Gloves Color            = 20, 30, 60
+Pants Color             = 20, 30, 60
+Socks Color             = 40, 60, 120
+Bicep Color             = 20, 30, 60
+Number Color Home       = 255, 255, 255
+Number Color Away       = 40, 60, 120
+Team Random Talents     = 0
+Team Relics             = Fast Shoulder, Holiest Grenade, Polarized Glasses, Metallic Fury, Stopwatch

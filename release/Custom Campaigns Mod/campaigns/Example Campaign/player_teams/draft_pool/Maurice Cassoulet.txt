@@ -1,0 +1,14 @@
+Name                    = Maurice Cassoulet
+Number                  = 7
+Face                    = Captain
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Size Offset             = 1.1
+Speed                   = 42
+Shot Power              = 55
+Accuracy                = 22
+Checking                = 50
+Ability                 =
+Talents                 = Porcelain Hammer, XRay Shot, Blue Line Boost
+Stick                   = black

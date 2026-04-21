@@ -1,0 +1,14 @@
+Name                    = Ricky Kirby
+Number                  = 7
+Face                    = Bench_Kirby
+Left Handed             = yes
+Skin Color              = light
+Size                    = Small
+Size Offset             = 1.0
+Speed                   = 60
+Shot Power              = 45
+Accuracy                = 45
+Checking                = 40
+Ability                 =
+Talents                 =
+Stick                   = black

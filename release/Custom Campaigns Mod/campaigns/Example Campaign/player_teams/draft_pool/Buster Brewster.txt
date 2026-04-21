@@ -1,0 +1,14 @@
+Name                    = Buster Brewster
+Number                  = 85
+Face                    = Bench_Brewster
+Left Handed             = yes
+Skin Color              = dark
+Size                    = ExtraBig
+Size Offset             = 1.0
+Speed                   = 40
+Shot Power              = 55
+Accuracy                = 40
+Checking                = 65
+Ability                 = spinorama
+Talents                 =
+Stick                   = black

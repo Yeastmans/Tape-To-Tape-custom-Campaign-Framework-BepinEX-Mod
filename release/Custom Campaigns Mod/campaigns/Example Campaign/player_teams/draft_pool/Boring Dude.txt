@@ -1,0 +1,14 @@
+Name                    = Boring Dude
+Number                  = 93
+Face                    = Bench_Buttface
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Size Offset             = 0.9
+Speed                   = 48
+Shot Power              = 48
+Accuracy                = 48
+Checking                = 48
+Ability                 =
+Talents                 = Curve Ball, Flawless Feeder, Onepunch, Blue Line Boost
+Stick                   = black

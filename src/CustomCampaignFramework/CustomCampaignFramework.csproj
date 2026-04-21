@@ -6,6 +6,12 @@
     <AssemblyName>CustomCampaignFramework</AssemblyName>
     <RootNamespace>EndlessMode</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Try the live BepInEx interop folder first; fall back to our committed backup
+         if the installer wiped it. Rebuilds no longer require relaunching the game. -->
+    <InteropLive>C:\Steam\steamapps\common\Tape to Tape\BepInEx\interop</InteropLive>
+    <InteropBackup>$(MSBuildThisFileDirectory)..\..\interop_backup</InteropBackup>
+    <InteropDir Condition="Exists('$(InteropLive)\Assembly-CSharp.dll')">$(InteropLive)</InteropDir>
+    <InteropDir Condition="'$(InteropDir)' == ''">$(InteropBackup)</InteropDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,23 +32,35 @@
       <Private>false</Private>
     </Reference>
     <Reference Include="Il2Cppmscorlib">
-      <HintPath>C:\Steam\steamapps\common\Tape to Tape\BepInEx\interop\Il2Cppmscorlib.dll</HintPath>
+      <HintPath>$(InteropDir)\Il2Cppmscorlib.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>C:\Steam\steamapps\common\Tape to Tape\BepInEx\interop\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(InteropDir)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>$(InteropDir)\UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BishopGames.UIModule">
+      <HintPath>$(InteropDir)\BishopGames.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BishopGames.Module">
+      <HintPath>$(InteropDir)\BishopGames.Module.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>C:\Steam\steamapps\common\Tape to Tape\BepInEx\interop\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(InteropDir)\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="MainScriptsAssembly">
-      <HintPath>C:\Steam\steamapps\common\Tape to Tape\BepInEx\interop\MainScriptsAssembly.dll</HintPath>
+      <HintPath>$(InteropDir)\MainScriptsAssembly.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="I2_assembly">
-      <HintPath>C:\Steam\steamapps\common\Tape to Tape\BepInEx\interop\I2_assembly.dll</HintPath>
+      <HintPath>$(InteropDir)\I2_assembly.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>

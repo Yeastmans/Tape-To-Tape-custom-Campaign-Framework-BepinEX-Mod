@@ -1,0 +1,26 @@
+# Player Team: Speedy
+Team Name               = Speed Squad
+City                    = Spurton
+Abbreviation            = SPD
+Body                    = standard
+Body Away               = standard
+Bicep                   = standard
+Gloves                  = standard
+Pants                   = standard
+Helmet                  = team colors
+Stick                   = red
+Jersey Primary          = 0, 150, 200
+Jersey Secondary        = 0, 80, 120
+Jersey Accent           = 255, 255, 255
+Away Primary            = 255, 255, 255
+Away Secondary          = 0, 150, 200
+Away Accent             = 255, 255, 255
+Helmet Color            = 0, 150, 200
+Gloves Color            = 0, 80, 120
+Pants Color             = 0, 80, 120
+Socks Color             = 0, 150, 200
+Bicep Color             = 0, 80, 120
+Number Color Home       = 255, 255, 255
+Number Color Away       = 0, 150, 200
+Team Random Talents     = 0
+Team Relics             = Retro Rocket, Remarkable Rock, Revenge

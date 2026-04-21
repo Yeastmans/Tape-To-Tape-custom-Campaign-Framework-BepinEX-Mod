@@ -1,0 +1,38 @@
+# Build artefacts
+bin/
+obj/
+*.pdb
+*.cache
+.vs/
+
+# Python build
+__pycache__/
+*.pyc
+_build/
+build/
+dist/
+*.spec
+
+# Editor / IDE
+.idea/
+.vscode/
+*.suo
+*.user
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Large dumps / backups / local testing
+BACKUPS/
+interop_backup/
+assembilies/
+release/Custom Campaigns Mod/_build/
+release/Custom Campaigns Mod/__pycache__/
+
+# Installer intermediate
+installer/Output_Linux/
+
+# Local log / debug
+*.log
+LogOutput.log

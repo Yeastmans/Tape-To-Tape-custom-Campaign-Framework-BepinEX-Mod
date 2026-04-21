@@ -1,0 +1,3 @@
+# Team: PLAYER
+Import Team             = PLAYER
+Team Name               = Mirror Match

@@ -1,0 +1,6 @@
+# Campaign Settings
+Act Sequence            = 1, 1, 2, 2, 1, 2, 2, 2, 3
+Replace Challenges      = yes
+Replace Soccer Ball     = yes
+Replace Golf Ball       = yes
+Use Player Teams        = yes

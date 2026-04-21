@@ -1,0 +1,14 @@
+Name                    = Freddy Kovalski
+Number                  = 16
+Face                    = Bench_Kovalski
+Left Handed             = no
+Skin Color              = light
+Size                    = Medium
+Size Offset             = 1.0339
+Speed                   = 55
+Shot Power              = 21
+Accuracy                = 55
+Checking                = 45
+Ability                 =
+Talents                 =
+Stick                   = red
