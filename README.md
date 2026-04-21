@@ -128,372 +128,76 @@ BepInEx/plugins/
 
 ## Campaign Creator Tool
 
-The campaign creator is an interactive script that walks you through building a complete campaign step by step. It asks questions, you answer, and it generates the `campaign.txt` file for you. **No text file editing needed.**
-
-### Installing Python (Required)
-
-The creator is a Python script. You need Python installed:
-
-- **Windows:** Install from the [Microsoft Store](https://apps.microsoft.com/detail/python-3) (search "Python") or from [python.org](https://www.python.org/downloads/). Both are free.
-- **Mac:** Python 3 is usually pre-installed. If not, install from [python.org](https://www.python.org/downloads/) or run `brew install python3`.
-- **Linux:** Usually pre-installed. If not: `sudo apt install python3` (Ubuntu/Debian) or `sudo dnf install python3` (Fedora).
-
-To check if Python is installed, open a terminal and type `python3 --version` or `py --version`.
-
-### Running the Creator
-
-The script is in the campaign creator folder inside `Campaigns/`.
-
-**Windows:**
-1. Navigate to `BepInEx/plugins/Campaigns/` and open the campaign creator folder
-2. Double-click `Create Campaign.bat`
-3. A terminal window opens and the creator starts
-
-**Mac / Linux:**
-1. Open a terminal
-2. Navigate to the campaign creator folder:
-   ```
-   cd "/path/to/Tape to Tape/BepInEx/plugins/Campaigns/CAMPAIGN CREATOR AND DOCUMENTATION VERY IMPORTANT"
-   ```
-3. Run the script:
-   ```
-   python3 create_campaign.py
-   ```
-
-### Step-by-Step Walkthrough
-
-When you run the creator, here's exactly what happens:
-
-**1. Main Menu** — Choose `1` to create a new campaign or `2` to edit an existing one.
-
-**2. Campaign Name** — Type a name. This becomes the folder name (e.g. `My Campaign` creates `Campaigns/My Campaign/`).
-
-**3. Act Sequence** — Define your campaign structure. You type a list of numbers like `1, 2, 3`. Each number is one map. The creator explains what each number means and validates your input. Act 3 must be the last number and can only appear once.
-
-**4. Spartan Replacement** — For each Act 1 map, choose whether to replace the 3v3 Spartan challenge with a regular 5v5 game. If you have multiple Act 1 maps, you choose for each one individually.
-
-**5. Minigame Settings** — Choose whether to replace soccer balls and golf balls with regular pucks.
-
-**6. Build Each Team** — For every game in your campaign, the creator asks you to set up a team. You pick one of 4 methods:
-
-| Method | What You Do | Best For |
-|--------|------------|----------|
-| **1. Import** | Pick an in-game team name, set stat scale, add relics/talents | Quick setup, realistic teams |
-| **2. Manual** | Set everything: name, city, colors, uniform, every player stat | Full creative control |
-| **3. Mirror Match** | Clones the player's own team as the opponent | Fun boss fights |
-| **4. Random** | Random team each time you play | Chaos, replayability |
-
-**7. For each player on a manual team**, you choose:
-- **Import** — type a player name to copy their look and stats, or type `random`
-- **Manual** — set name, number, face, size, stats, ability, talents, uniform, colors
-- **Skip** — leave this position empty (mod fills in defaults)
-
-**8. Line 2** — For every team, the creator asks if you want to add 5 extra players (10-player roster). Boss teams get a reminder that this is recommended for teams like Tycoons.
-
-**9. Save** — The creator writes `campaign.txt` to your campaign folder. Set it as active in `active.txt` and launch the game.
-
-### Editing an Existing Campaign
-
-Choose option `2` from the main menu. The creator:
-1. Lists all campaigns that have a `campaign.txt`
-2. Shows every team in the campaign by name
-3. Lets you pick what to do:
-   - Type a **team number** to rebuild that team from scratch
-   - Type **s** to edit campaign settings (act sequence, toggles)
-   - Type **d** to save all changes and exit
-   - Type **q** to quit without saving
-
-You can rebuild as many teams as you want. Only rebuilt teams are changed — everything else stays the same.
-
-### How Colors Work in the Creator
-
-Whenever the creator asks for a color:
-- Type `R,G,B` — three numbers 0-255, e.g. `255,0,0` for red, `0,0,255` for blue
-- Type `random` — random color each game
-- Press **Enter** — skip, uses team default or fallback color
-
-### Reference File
-
-`VALID_VALUES.txt` in the same folder lists every valid value for every field — all face names, abilities, talents, relics, team names, sizes, and color examples. The creator tells you which section to check when relevant.
-
-### Full Tutorial: Building Your First Campaign
-
-This walks through every screen you'll see when creating a campaign from scratch.
-
----
-
-**SCREEN 1 — Main Menu**
-```
-1. Create new campaign
-2. Edit existing campaign
-Pick 1-2 [1]:
-```
-Type `1` and press Enter.
-
----
-
-**SCREEN 2 — Campaign Name**
-```
-Campaign name [My Campaign]:
-```
-Type a name for your campaign. This creates a folder with that name. Example: `NHL Remix`
-
----
-
-**SCREEN 3 — Act Sequence**
-```
----- ACT SEQUENCE ----
-Your campaign is built from maps. Each map is one number.
-
-MAP TYPES:
-  1 = Act 1 — longest map. 4 games normally, 5 if Spartans replaced.
-  2 = Act 2 — 3 games per map.
-  3 = Act 3 — 3 games, FINAL BOSS. MUST be the last number.
-
-Act Sequence [1, 2, 3]:
-```
-Type your map sequence. Examples:
-- `1, 2, 3` — short campaign (~10 games)
-- `1, 1, 2, 2, 3` — medium (~17 games)
-- `1, 2, 1, 2, 2, 3` — long (~20 games)
-
-**Rules:** Must end with `3`. Only one `3` allowed. The creator will reject invalid input and ask again.
-
----
-
-**SCREEN 4 — Spartan Replacement**
-
-If you have Act 1 maps, the creator asks whether to replace the 3v3 Spartan challenges with regular 5v5 games. If you have multiple Act 1s, it asks for each one:
-```
-Map 1 (Act 1 #1) — replace Spartans with 5v5? (yes/no) [yes]:
-Map 4 (Act 1 #2) — replace Spartans with 5v5? (yes/no) [yes]:
-```
-Replacing adds 1 extra game per Act 1 map (you'll need more teams).
-
----
-
-**SCREEN 5 — Minigame Settings**
-```
-Replace soccer ball with puck? (yes/no) [yes]:
-Replace golf ball with puck? (yes/no) [yes]:
-```
-These replace the special balls in soccer/golf minigames with regular pucks.
-:NOTE TO USE THE HOCKEY AND SOCCER ARENAS AND TEAMS YOU HAVE TO IMPORT THE GOLFERS OR HOCKEY FC. it will always be ice with custom teams. only ball is changed with these settings 
----
-
-**SCREEN 6 — Team Count Summary**
-```
-Your campaign: 3 maps, 10 games, 10 teams needed.
-```
-Now you build each team one by one.
-
----
-
-**SCREEN 7 — Team Setup (repeats for each team)**
-```
-##################################################
-  TEAM 1 (Act 1)
-##################################################
-
-How to set up this team?
-  1. Import an in-game team (easiest)
-  2. Build manually (full control)
-  3. Mirror match (clone player's own team)
-  4. Random team (different each launch)
-Pick 1-4 [1]:
-```
-
-**If you pick 1 (Import):**
-```
-Team name to import:
-```
-Type a team name. Open `VALID_VALUES.txt` Section 17 for all valid names. Examples: `Vancouver`, `Chicago`, `Colorado`, `Toronto`
-```
-Display name [Vancouver]:  (change imported teams name)
-Stat Scale (1.0=normal) [1.0]:
-Random talents for every player (0=none) [0]:
-Relics (comma-separated, Enter=none):
-Bench size (0-10, Enter=default):
-```
-- **Stat Scale** — `1.0` = normal stats, `1.5` = 50% stronger, `2.0` = double, `0.5` = half
-- **Random talents** — give every player on this team N random talents. Type a number or `0` for none
-- **Relics** — comma-separated relic names. See `VALID_VALUES.txt` Section 16. Example: `sorest_loser, bolt:2`
-- **Bench size** — extra bench players (0-10)
-
-That's it for imported teams — the rest is automatic.
-
-**If you pick 2 (Manual):** the creator walks through identity, colors, uniform, relics, goalie, and all 5 skaters. See below.
-
-**If you pick 3 (Mirror):** just sets a display name. The team clones the player's roster.
-
-**If you pick 4 (Random):** sets stat scale and optional random talents. Different team each launch.
-
----
-
-**MANUAL TEAM — Identity**
-```
-Team name:
-City:
-Abbreviation (3 letters):
-Logo From:
-```
-- **Logo From** — borrow a logo from an in-game team. See `VALID_VALUES.txt` Section 17. Type `random` for random each game, or press Enter for none.
-
----
-
-**MANUAL TEAM — Team Colors**
-
-The creator asks for RGB colors for each equipment piece. Colors are optional — press Enter to skip any of them.
-
-```
-JERSEY (3 colors):
-  Jersey Primary (main body) [R,G,B | random | Enter=skip]:
-  Jersey Secondary (trim) [R,G,B | random | Enter=skip]:
-  Jersey Accent (detail) [R,G,B | random | Enter=skip]:
-```
-Then optionally away jersey (3 colors), equipment colors (helmet, gloves, pants, skates, socks — each with 3 channels), bicep, number, and transition colors.
-
-**Tip:** See `VALID_VALUES.txt` Section 8 for common color values like `255,0,0` = red, `0,0,255` = blue.
-
----
-
-**MANUAL TEAM — Uniform**
-
-Pick what each equipment piece looks like:
-```
-Body:
-  1. Standard (colorable - takes RGB)
-  2. Tycoons (business suit - fixed look)
-  3. Princess (armored - fixed look) ect
-  See `VALID_VALUES.txt
-  ... 
-Pick number [1]:
-```
-For body, helmet, and stick, you pick a skin from a numbered list. See `VALID_VALUES.txt` Sections 1-4 for all options.
-
-- **Colorable skins** (`standard`, `team colors`, `team stick`) — the creator asks for an RGB color after you pick
-- **Fixed skins** (`tycoons`, `cage`, `black`, etc.) — have their own look, no color needed
-
-Gloves, pants, and bicep just ask for RGB directly (they always use the default model).
-
-Skates always ask for 3 colors: body, blade, laces.
-
----
-
-**MANUAL TEAM — Gameplay & Relics**
-```
-Random talents for EVERY player on this team (0=none) [0]:
-Relics (Enter=none):
-```
-- **Random talents** — every player gets N random talents. If non-zero, asks which pool to pick from (`all` = entire game, or a comma-separated list)
-- **Relics** — comma-separated. See `VALID_VALUES.txt` Section 16. Add `:2` for level 2 (e.g. `bolt:2`)
-
----
-
-**MANUAL TEAM — Goalie**
-```
-Import goalie or build manual? (import/manual) [manual]:
-```
-**Import:** type a goalie name (see `VALID_VALUES.txt` Section 17 for teams, or type `random`)
-
-**Manual:** set name, face (see `VALID_VALUES.txt` Section 7), then all 14 stats:
-```
-Skill (overall modifier) [50]:
-Catching [50]:
-Glove (glove-side saves) [50]:
-Blocker (blocker-side saves) [50]:
-Five Hole [50]:
-Standing Speed [50]:
-Butterfly Speed [50]:
-Control (rebound control) [50]:
-Recovery [50]:
-Pass Power [50]:
-Shot Power [50]:
-Poke Check [50]:
-Depth (positioning) [50]:
-Pass Read (0.0-1.0, higher=better) [0.5]:
-```
-Stats range 0-999. Base game is ~30-80. Then optionally set goalie talents (see `VALID_VALUES.txt` Section 15).
-
----
-
-**MANUAL TEAM — Skaters (5 positions)**
-
-For each position (Left Wing, Right Wing, Center, Left Defense, Right Defense):
-```
-Import player or build manual? (import/manual/skip) [manual]:
-```
-
-**Import:** type a player name or `random`. See any in-game team's roster. Optionally override display name and stats.
-
-**Manual:**
-```
-Player name (First Last) [Player]:
-Jersey number (1-99) [88]:
-Face [random]:
-Left handed? (yes/no/random) [no]:
-Skin tone (light/dark/random) [light]:
-Player size: (pick 1-7)
-Speed [50]:
-Shot Power [50]:
-Accuracy [50]:
-Checking [50]:
-Ability:
-Talents:
-Random talents per game (0=none) [0]:
-```
-- **Face** — see `VALID_VALUES.txt` Section 7 for all face names. Type `random` for random each game.
-- **Size** — pick from ExtraSmall to ExtraExtraBig. See `VALID_VALUES.txt` Section 6.
-- **Stats** — 0-999. Use `random(min,max)` for random (e.g. `random(40,90)`).
-- **Ability** — one ability name. See `VALID_VALUES.txt` Section 13. Press Enter for none.
-- **Talents** — comma-separated talent names. See `VALID_VALUES.txt` Section 14. Press Enter for none.
-- **Random talents** — if non-zero, asks for pool (`all` or a talent list).
-
-Then optionally customize uniform (stick, helmet, body, skates, gloves, pants, bicep with colors) and per-player color overrides.
-
-**Skip:** omits this position. The mod fills it with defaults from `defaults.txt`.
-
----
-
-**LINE 2 — Extra Players**
-```
----- LINE 2 (5 extra players) ----
-RECOMMENDED: This is a FINAL BOSS team.
-Add Line 2 players? (yes/no) [yes]:
-```
-Line 2 adds 5 extra players for a 10-player roster. The creator gives context:
-- **Final bosses (Act 3):** Recommended — many boss teams use 10 players
-- **Other bosses:** Available but optional
-- **Regular teams:** Available for immersion or Tycoons-style teams
-
----
-
-**SCREEN 8 — Save**
-```
-==================================================
-  SAVED!
-  Folder: .../Campaigns/NHL Remix
-  File:   campaign.txt
-==================================================
-
-To play, edit active.txt:
-  Active Campaign = NHL Remix
-```
-
-Your campaign is ready. Open `active.txt`, set your campaign name, and launch the game.
-
----
-
-### Tips for Using the Creator Effectively
-
-- **Start small.** Your first campaign should be `1, 2, 3` (10 games). You can always make longer ones later.
-- **Import first, customize later.** Use option 1 (Import) for most teams, then edit the `campaign.txt` by hand to tweak specific things.
-- **Keep `VALID_VALUES.txt` open** in another window while using the creator. You'll reference it for face names, talents, abilities, relics, and team names.
-- **Press Enter to accept defaults.** Most prompts have a default value in brackets `[like this]`. Just press Enter to use it.
-- **Use `random` liberally.** Typing `random` for faces, colors, and stats makes campaigns that feel different every time.
-- **Stat scale is your friend.** When importing teams, stat scale controls difficulty. Start at `0.8` for early games, ramp to `1.5-2.0` for bosses.
-- **Edit mode for tweaks.** Made a mistake on one team? Use Edit mode (option 2) to rebuild just that team without redoing the whole campaign.
-- **Boss teams should be harder.** Give bosses higher stat scales, more relics, more talents, and Line 2 players.
+The **T2T Campaign Creator** is a tkinter GUI that builds and edits every
+part of a campaign — teams, players, goalies, skins, relics, talents,
+reward pools, jersey colors, and logos — with pickers, live previews, and
+jersey rendering. No text editing required.
+
+- **Windows:** the installer puts `T2T Campaign Creator.exe` in the plugin
+  folder and creates a Start Menu / desktop shortcut. Just launch it.
+- **Linux / Steam Deck:**
+  ```sh
+  cd ~/.steam/steam/steamapps/common/Tape\ to\ Tape/BepInEx/plugins/Custom\ Campaigns\ Mod
+  python3 creator_gui.py
+  ```
+  Requires Python 3.10+ and `tkinter` (`python3-tk` on Debian/Ubuntu,
+  `python3-tkinter` on Fedora, `tk` on Arch/Steam Deck).
+
+### What the GUI does
+
+- **Home tab** — tree view of every campaign, team, player, and goalie.
+  Double-click to edit. Right-click for delete / duplicate / rename.
+- **Campaign editor** — set act sequence, Spartan/minigame toggles, choose
+  active campaign, manage reward pools (which relics/talents the game is
+  allowed to offer in random reward nodes).
+- **Team editor** — identity, colors (with live swatches + jersey preview),
+  uniform, relics, goalie, 5-skater lineup (with positional X/remove
+  buttons), optional Line 2, import from any in-game team with one click.
+- **Player editor** — face, size, handedness, skin tone, all stats,
+  ability, talents, per-player uniform overrides.
+- **Goalie editor** — face, all 14 stats, pads/blocker/glove skins, mask.
+- **Player-team creator** — build the squad the player can pick in the
+  *Choose Your Squad* menu. Starting relics (with Bench Bonus auto-added),
+  starting head override, full lineup.
+- **Library** — shared players and teams you can reuse across any campaign.
+- **Import from game** — pulls a real in-game team's roster into your
+  campaign as a starting point, which you then edit freely.
+- **Export to Play Now** — writes your custom player into the game's save
+  folder so you can use them in Play Now / online games.
+- **Auto-updater** — checks GitHub on startup and at your request
+  (Home tab → *Check for updates*). On a new release it downloads the
+  installer with a progress bar and relaunches.
+
+### Starting a campaign
+
+1. Launch the Campaign Creator.
+2. Home tab → *New Campaign*. Name it, pick an act sequence, and save.
+3. Add teams: *New Team* or *Import Game Team* for each game slot.
+4. Edit players and goalies per team as desired.
+5. Home tab → *Active campaign* → pick your new campaign → *Set Active*.
+6. Launch Tape to Tape. The mod loads your campaign automatically.
+
+### Editing an existing campaign
+
+- Double-click any node in the tree (campaign, team, player, goalie) to
+  open its editor in a new tab. Edit as many at once as you want.
+- Save in each tab. Use Ctrl+W or the × on the tab to close.
+- Rebuilding a single team doesn't touch the rest — only what you save is
+  changed.
+
+### Manual text editing (optional)
+
+Everything the GUI writes is plain `.txt`. Crack open any file under
+`campaigns/<your campaign>/` and edit it directly if you prefer.
+
+- `campaign.txt` — act sequence, gameplay toggles, team order.
+- `teams/<team>/team.txt` — team identity, colors, uniform, relics.
+- `teams/<team>/players/<Position> - <Name>.txt` — one file per skater or
+  goalie with all their fields.
+- `defaults.txt` — fallback values used when a field is missing.
+
+See the sections below (Team Fields, Skater Fields, Goalie Fields, etc.)
+for every field the text files accept.
 
 ---
 

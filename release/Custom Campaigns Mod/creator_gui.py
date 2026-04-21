@@ -64,7 +64,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.1"
+APP_VERSION = "2.1.2"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -128,23 +128,68 @@ def _fetch_remote_release(timeout=6):
     return None, None
 
 
-def _download_installer(dest_path, url=None, progress_cb=None, timeout=30):
-    """Download the installer exe. progress_cb(downloaded, total) if provided."""
-    import urllib.request
-    req = urllib.request.Request(url or UPDATE_INSTALLER_URL,
-                                  headers={"User-Agent": "T2T-CampaignCreator"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
+def _updater_log(msg):
+    """Append a line to %TEMP%/t2t_updater.log so we can diagnose hangs."""
+    import tempfile, time
+    try:
+        p = os.path.join(tempfile.gettempdir(), "t2t_updater.log")
+        with open(p, "a", encoding="utf-8") as f:
+            f.write(f"[{time.strftime('%H:%M:%S')}] {msg}\n")
+    except Exception: pass
+
+
+def _download_installer(dest_path, url=None, progress_cb=None, connect_timeout=15,
+                         stall_timeout=30, cancel_flag=None):
+    """Download the installer exe. progress_cb(downloaded, total) if provided.
+    cancel_flag: optional callable returning True to abort mid-download."""
+    import urllib.request, ssl, socket, time
+    src = url or UPDATE_INSTALLER_URL
+    _updater_log(f"download start: {src}")
+    # Use default SSL context so Windows schannel CAs are trusted
+    ctx = ssl.create_default_context()
+    req = urllib.request.Request(src,
+                                  headers={"User-Agent": "T2T-CampaignCreator",
+                                           "Accept": "*/*"})
+    # Write to .part then rename when complete so an aborted download doesn't
+    # leave a corrupt .exe at dest_path
+    part = dest_path + ".part"
+    with urllib.request.urlopen(req, timeout=connect_timeout, context=ctx) as r:
         total = int(r.headers.get("Content-Length") or 0)
+        _updater_log(f"connected: Content-Length={total}, effective_url={getattr(r, 'url', src)}")
         got = 0
-        with open(dest_path, "wb") as f:
+        last_read = time.time()
+        with open(part, "wb") as f:
+            # Set socket timeout so a stalled connection doesn't hang forever
+            try:
+                sock = r.fp.raw._sock  # type: ignore[attr-defined]
+                sock.settimeout(stall_timeout)
+            except Exception: pass
             while True:
-                chunk = r.read(65536)
+                if cancel_flag and cancel_flag():
+                    _updater_log("download cancelled by user")
+                    raise RuntimeError("cancelled")
+                try:
+                    chunk = r.read(65536)
+                except socket.timeout:
+                    _updater_log(f"socket timeout after {got} bytes")
+                    raise RuntimeError(f"Download stalled after {got//1024} KB")
                 if not chunk: break
                 f.write(chunk)
                 got += len(chunk)
+                last_read = time.time()
                 if progress_cb:
                     try: progress_cb(got, total)
                     except Exception: pass
+    # Sanity check: ensure we actually got bytes
+    if got <= 0:
+        raise RuntimeError("Downloaded 0 bytes")
+    if total > 0 and got < total:
+        raise RuntimeError(f"Incomplete download: {got}/{total} bytes")
+    try: os.replace(part, dest_path)
+    except Exception as e:
+        _updater_log(f"rename failed: {e}")
+        raise
+    _updater_log(f"download complete: {got} bytes -> {dest_path}")
 
 
 def check_for_updates_async(root, silent=True):
@@ -187,10 +232,10 @@ def _prompt_update(root, local, remote, installer_url=None):
         parent=root):
         return
 
-    # Download to temp and run.
-    import tempfile, subprocess, threading as _t
+    import tempfile, threading as _t, webbrowser
     tmp = os.path.join(tempfile.gettempdir(),
                        f"T2T_Custom_Campaign_Framework_Setup_{remote}.exe")
+    _updater_log(f"update prompt accepted: url={installer_url}, tmp={tmp}")
 
     dlg = tk.Toplevel(root)
     dlg.title("Downloading update")
@@ -198,42 +243,89 @@ def _prompt_update(root, local, remote, installer_url=None):
     dlg.resizable(False, False)
     tk.Label(dlg, text=f"Downloading v{remote}...", padx=16, pady=(12,4)).pack()
     pb = ttk.Progressbar(dlg, orient="horizontal", mode="determinate",
-                          length=360, maximum=100)
+                          length=420, maximum=100)
     pb.pack(padx=16, pady=(0,4))
-    status = tk.Label(dlg, text="Starting...", padx=16, pady=(0,12))
+    status = tk.Label(dlg, text="Opening connection...", padx=16, pady=(0,8))
     status.pack()
+
+    cancelled = {"v": False}
+
+    btn_row = ttk.Frame(dlg)
+    btn_row.pack(pady=(0, 12))
+
+    def _open_page():
+        try: webbrowser.open(UPDATE_RELEASES_PAGE)
+        except Exception: pass
+
+    def _cancel():
+        cancelled["v"] = True
+        try: dlg.destroy()
+        except Exception: pass
+
+    ttk.Button(btn_row, text="Open download page",
+               command=_open_page).pack(side="left", padx=4)
+    ttk.Button(btn_row, text="Cancel",
+               command=_cancel).pack(side="left", padx=4)
 
     def _progress(got, total):
         def _ui():
             if total > 0:
                 pct = int(got * 100 / total)
                 pb["value"] = pct
-                status.config(text=f"{got//1024} KB / {total//1024} KB ({pct}%)")
+                status.config(text=f"{got//1024:,} / {total//1024:,} KB  ({pct}%)")
             else:
-                status.config(text=f"{got//1024} KB")
+                status.config(text=f"{got//1024:,} KB")
         try: root.after(0, _ui)
         except Exception: pass
 
+    def _launch(path):
+        _updater_log(f"launching: {path}")
+        # Prefer os.startfile on Windows — handles UAC and file associations
+        if sys.platform.startswith("win"):
+            try:
+                os.startfile(path)
+                return True
+            except Exception as e:
+                _updater_log(f"startfile failed: {e}")
+        try:
+            import subprocess
+            subprocess.Popen([path], shell=False)
+            return True
+        except Exception as e:
+            _updater_log(f"Popen failed: {e}")
+            return False
+
     def _do():
         try:
-            _download_installer(tmp, url=installer_url, progress_cb=_progress)
+            _download_installer(tmp, url=installer_url, progress_cb=_progress,
+                                 cancel_flag=lambda: cancelled["v"])
+            if cancelled["v"]:
+                _updater_log("post-cancel, not launching")
+                return
             def _done():
                 try: dlg.destroy()
                 except Exception: pass
-                try:
-                    subprocess.Popen([tmp], shell=False)
-                    root.after(300, lambda: os._exit(0))
-                except Exception as e:
-                    messagebox.showerror("Install failed",
-                                          f"Could not launch installer:\n{e}")
+                ok = _launch(tmp)
+                if ok:
+                    root.after(400, lambda: os._exit(0))
+                else:
+                    messagebox.showerror(
+                        "Install launch failed",
+                        "Downloaded but could not launch the installer.\n\n"
+                        f"Run it manually from:\n{tmp}\n\n"
+                        f"Log: %TEMP%\\t2t_updater.log")
             root.after(0, _done)
         except Exception as e:
+            _updater_log(f"download error: {e!r}")
             def _err():
                 try: dlg.destroy()
                 except Exception: pass
-                messagebox.showerror("Download failed",
-                    f"Could not download the installer:\n{e}\n\n"
-                    f"You can download it manually from:\n{UPDATE_RELEASES_PAGE}")
+                if not cancelled["v"]:
+                    if messagebox.askyesno(
+                        "Download failed",
+                        f"Could not download the installer:\n{e}\n\n"
+                        f"Open the download page in your browser instead?"):
+                        _open_page()
             root.after(0, _err)
 
     _t.Thread(target=_do, daemon=True).start()
