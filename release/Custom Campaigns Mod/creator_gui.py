@@ -64,7 +64,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.5"
+APP_VERSION = "2.1.6"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -333,38 +333,59 @@ def _prompt_update(root, local, remote, installer_url=None):
                        f"T2T_Custom_Campaign_Framework_Setup_{remote}.exe")
     _updater_log(f"update prompt accepted: url={installer_url}, tmp={tmp}")
 
-    dlg = tk.Toplevel(root)
-    dlg.title(f"Downloading update v{remote}")
-    dlg.transient(root)
-    dlg.resizable(False, False)
+    # If anything in dialog construction fails, surface the traceback to the
+    # file log so we can diagnose — otherwise tkinter silently swallows it
+    # and the window appears blank.
+    try:
+        dlg = tk.Toplevel(root)
+        dlg.title(f"Downloading update v{remote}")
+        dlg.transient(root)
+        dlg.resizable(True, True)
+        dlg.geometry("620x460")
 
-    header = tk.Label(dlg, text=f"Downloading Custom Campaign Framework v{remote}",
-                       font=("", 10, "bold"), padx=16, pady=(14, 2))
-    header.pack(anchor="w")
-    subhead = tk.Label(dlg, text=f"Saving to: {tmp}",
-                        fg="#666", font=("", 8), padx=16, pady=(0, 8))
-    subhead.pack(anchor="w")
+        header = tk.Label(dlg, text=f"Downloading Custom Campaign Framework v{remote}",
+                           font=("", 10, "bold"), anchor="w")
+        header.pack(fill="x", padx=16, pady=(14, 2))
+        subhead = tk.Label(dlg, text=f"Saving to: {tmp}",
+                            fg="#666", font=("", 8), anchor="w")
+        subhead.pack(fill="x", padx=16, pady=(0, 8))
 
-    pb = ttk.Progressbar(dlg, orient="horizontal", mode="indeterminate",
-                          length=520, maximum=100)
-    pb.pack(padx=16, pady=(0, 4))
-    pb.start(15)  # animate immediately so user sees activity even before first bytes arrive
+        pb = ttk.Progressbar(dlg, orient="horizontal", mode="indeterminate",
+                              maximum=100)
+        pb.pack(fill="x", padx=16, pady=(0, 4))
 
-    status = tk.Label(dlg, text="Preparing...", padx=16, pady=(0, 4),
-                       font=("", 9))
-    status.pack(anchor="w")
-    size_lbl = tk.Label(dlg, text="", fg="#0066aa", padx=16, pady=(0, 6),
-                         font=("", 9, "bold"))
-    size_lbl.pack(anchor="w")
+        status = tk.Label(dlg, text="Preparing download...",
+                           font=("", 9), anchor="w")
+        status.pack(fill="x", padx=16, pady=(0, 2))
+        size_lbl = tk.Label(dlg, text="", fg="#0066aa",
+                             font=("", 9, "bold"), anchor="w")
+        size_lbl.pack(fill="x", padx=16, pady=(0, 6))
 
-    # Scrolling log of what the downloader is doing — shows each step so user
-    # can see the process isn't frozen.
-    log_frame = ttk.LabelFrame(dlg, text=" Activity log ")
-    log_frame.pack(fill="both", expand=False, padx=16, pady=(4, 8))
-    log_text = tk.Text(log_frame, height=6, width=70, wrap="word",
-                        font=("Consolas", 8), bg="#f5f5f5", bd=0)
-    log_text.pack(fill="both", expand=True, padx=4, pady=4)
-    log_text.configure(state="disabled")
+        # Scrolling log of what the downloader is doing — so user can see the
+        # process isn't frozen even before the first bytes arrive.
+        log_frame = ttk.LabelFrame(dlg, text=" Activity log ")
+        log_frame.pack(fill="both", expand=True, padx=16, pady=(4, 8))
+        log_text = tk.Text(log_frame, height=8, width=70, wrap="word",
+                            font=("Consolas", 8), bg="#f5f5f5", bd=0)
+        log_scroll = ttk.Scrollbar(log_frame, command=log_text.yview)
+        log_text.configure(yscrollcommand=log_scroll.set, state="disabled")
+        log_scroll.pack(side="right", fill="y")
+        log_text.pack(side="left", fill="both", expand=True, padx=4, pady=4)
+
+        # Force tkinter to render widgets NOW so the user sees something
+        # before the download thread starts blocking on network.
+        dlg.update_idletasks()
+        dlg.update()
+        try: pb.start(15)
+        except Exception as _e: _updater_log(f"pb.start failed: {_e}")
+        _updater_log("dialog built OK, widgets rendered")
+    except Exception as _e:
+        import traceback as _tb
+        _updater_log(f"dialog setup FAILED: {_e!r}\n{_tb.format_exc()}")
+        messagebox.showerror("Update dialog error",
+            f"Could not build the update dialog:\n{_e}\n\n"
+            f"Download manually from:\n{UPDATE_RELEASES_PAGE}")
+        return
 
     def _append_log(msg):
         def _ui():
@@ -402,6 +423,7 @@ def _prompt_update(root, local, remote, installer_url=None):
     _append_log(f"Requesting v{remote} from GitHub")
     _append_log(f"URL: {installer_url or UPDATE_INSTALLER_URL}")
     _append_log(f"Target: {tmp}")
+    _updater_log("initial log entries written to UI")
 
     def _fmt_bytes(n):
         if n >= 1024*1024: return f"{n/(1024*1024):.2f} MB"
@@ -503,7 +525,12 @@ def _prompt_update(root, local, remote, installer_url=None):
                 except Exception: pass
             root.after(0, _err)
 
-    _t.Thread(target=_do, daemon=True).start()
+    _updater_log("starting download thread")
+    try:
+        _t.Thread(target=_do, daemon=True).start()
+        _updater_log("download thread started")
+    except Exception as _e:
+        _updater_log(f"thread start FAILED: {_e!r}")
 
 # ============================================================
 #   DIRTY TRACKING (unsaved-changes warning)
