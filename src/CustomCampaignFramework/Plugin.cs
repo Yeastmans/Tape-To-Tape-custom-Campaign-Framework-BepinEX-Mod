@@ -23,7 +23,7 @@ using Rogue.BenchSnapshots;
 
 namespace EndlessMode;
 
-[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.0")]
+[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.1")]
 public class Plugin : BasePlugin
 {
     internal static new ManualLogSource Log;

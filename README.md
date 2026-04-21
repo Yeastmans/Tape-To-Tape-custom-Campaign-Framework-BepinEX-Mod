@@ -35,36 +35,68 @@ A modding framework for **Tape to Tape** (the hockey roguelike by Excellent Rect
 ### Requirements
 
 - **Tape to Tape** — must be on the **EXPERIMENTAL BRANCH** on Steam
-- [BepInEx 6 for IL2CPP](https://builds.bepinex.dev/projects/bepinex_be) — **Use the latest experimental build** (Unity IL2CPP, Windows x64). The stable release does not support IL2CPP games.
+  (right-click the game → Properties → Betas → pick `experimental`).
+- The Windows installer bundles BepInEx 6 (IL2CPP) automatically. On Linux
+  you install BepInEx yourself — see the Linux bundle's `INSTALL.md`.
 
-### Steps
+### Windows (recommended — use the installer)
 
-1. **Download the latest release** from the Releases page. Do NOT clone the repository 
-2. Install BepInEx 6 into your Tape to Tape game folder (extract to root game folder).
-3. Run the game once, then close it.
-4. From the release, copy `CustomCampaignFramework.dll` into `GAMEFOLDER/BepInEx/plugins/`.
-5. From the release, copy the `Campaigns` folder into `GAMEFOLDER/BepInEx/plugins/`.
-6. Launch the game.
+1. Download **`T2T_Custom_Campaign_Framework_Setup.exe`** from the
+   [latest release](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/latest).
+2. Run the installer. It auto-detects your Tape to Tape install (via Steam's
+   `libraryfolders.vdf`), installs BepInEx 6 if missing, drops the DLL into
+   `BepInEx/plugins/`, and installs the `T2T Campaign Creator` GUI with a
+   desktop shortcut.
+3. Launch Tape to Tape. The mod is active out of the box with the built-in
+   Example Campaign.
+
+The Campaign Creator checks for updates on startup. When a new version is
+available you'll get a prompt — it downloads the installer and relaunches
+automatically. You can also hit *Check for updates* on the Home tab.
+
+### Linux / Steam Deck / Proton
+
+1. Download **`T2T_Custom_Campaign_Framework_Linux_vX.Y.Z.zip`** from the
+   [latest release](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/latest).
+2. Unzip and read `INSTALL.md` (or run the included `install.sh`).
+3. The bundle contains the DLL, the `Custom Campaigns Mod/` folder, and the
+   Python creator — the `.exe` is Windows-only.
+
+### Manual install (advanced)
+
+If you'd rather not use the installer:
+1. Install BepInEx 6 IL2CPP (Windows x64 build) into your game folder.
+2. Launch the game once, then quit.
+3. Copy `CustomCampaignFramework.dll` into `GAMEFOLDER/BepInEx/plugins/`.
+4. Copy the `Custom Campaigns Mod/` folder into `GAMEFOLDER/BepInEx/plugins/`.
+5. Launch the game.
 
 ---
 
 ## Quick Start
 
-**Easiest way: USE THE CAMPAIGN CREATOR.** It walks you through every step. No text editing needed.
-- **Windows:** Double-click `Create Campaign.bat` in the campaign creator folder
-- **Mac/Linux:** Open a terminal in the campaign creator folder and run `python3 create_campaign.py` 
+**Easiest way: USE THE CAMPAIGN CREATOR GUI.** It walks you through every
+step with forms, pickers, and live previews — no text editing needed.
 
-**Manual path:** Copy an existing campaign, rename it, edit it.
+- **Windows:** launch `T2T Campaign Creator` from the Start menu or desktop
+  shortcut (installed by the setup exe).
+- **Linux:**
+  ```sh
+  cd ~/.steam/steam/steamapps/common/Tape\ to\ Tape/BepInEx/plugins/Custom\ Campaigns\ Mod
+  python3 creator_gui.py
+  ```
+  Requires Python 3.10+ and tkinter (`python3-tk` on Debian/Ubuntu).
 
-1. Go to `BepInEx/plugins/Campaigns/`.
-2. Copy `Example Campaign Or one of the blank templates` and rename the copy.
-3. Edit `active.txt`: `Active Campaign = My Campaign`
-4. Edit `My Campaign/campaign.txt`.
+**Manual path:** copy an existing campaign, rename it, edit it.
+
+1. Open `BepInEx/plugins/Custom Campaigns Mod/campaigns/`.
+2. Duplicate `Example Campaign` (or any blank template) and rename the copy.
+3. Edit `active.txt` next to the templates: `active = My Campaign`.
+4. Edit your campaign's `campaign.txt`, `team.txt` files, player files, etc.
 5. Launch the game.
 
-**Even faster manually:** Use the `Blank Import Teams` template — just fill in team names and stat scales.
-
-**Disable the mod:** Set `Active Campaign = default` in `active.txt` to play the base game.
+**Disable the mod:** set `active = default` in `active.txt` — the DLL loads
+but registers no patches, so the game runs 100% vanilla.
 
 ---
 
@@ -72,22 +104,24 @@ A modding framework for **Tape to Tape** (the hockey roguelike by Excellent Rect
 
 ```
 BepInEx/plugins/
-  CustomCampaignFramework.dll
-  Campaigns/
+  CustomCampaignFramework.dll          The mod DLL
+  Custom Campaigns Mod/                Everything you can edit
+    T2T Campaign Creator.exe           Windows: launch the creator GUI
+    creator_gui.py                     Linux: run via python3
+    _game_data.py                      Data registry used by the GUI
+    VERSION.txt                        Current installed version
     active.txt                         Which campaign to play
-    defaults.txt                       Fallback values for missing/broken fields
-    CAMPAIGN CREATOR.../               Campaign builder tool + value reference
-        create_campaign.py             Interactive campaign builder (Python)
-        Create Campaign.bat            Windows launcher (double-click to run)
-        VALID_VALUES.txt               Every valid value for every field
-    Example Campaign/                  33-team NHL-style campaign
-        campaign.txt                   Teams and campaign structure
-        save.txt                       Progress (auto-generated)
-    Random Campaign/                   Fully randomized chaos campaign
-    Nightmare Mode/                    Brutal difficulty campaign
-    Blank Campaign/                    Every field shown blank
-    Blank Import Teams/                Import-only quick setup
-    Blank Import Players/              Import individual players
+    defaults.txt                       Fallback values for missing fields
+    save.txt                           Progress (auto-generated at runtime)
+    campaigns/                         Your campaign folders live here
+      Example Campaign/                Full 33-team NHL-style campaign
+        campaign.txt                   Act sequence, map nodes, rules
+        teams/                         Per-team .txt + players/
+        player_teams/                  Optional custom player-selectable squads
+      (more campaigns you create)
+    library/                           Shared players + teams across campaigns
+      players/
+      teams/
 ```
 
 ---
