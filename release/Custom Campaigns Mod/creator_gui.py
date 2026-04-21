@@ -64,7 +64,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.4"
+APP_VERSION = "2.1.5"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -169,47 +169,53 @@ def _download_with_urllib(src, dest_path, progress_cb=None, cancel_flag=None,
     os.replace(part, dest_path)
 
 
+def _head_content_length(url, timeout=10):
+    """Best-effort: ask GitHub how big the installer is via a HEAD request.
+    Follows redirects. Returns 0 on failure."""
+    import urllib.request
+    try:
+        req = urllib.request.Request(url, method="HEAD",
+                                      headers={"User-Agent": "T2T-CampaignCreator"})
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            cl = r.headers.get("Content-Length")
+            return int(cl) if cl else 0
+    except Exception as e:
+        _updater_log(f"HEAD failed: {e}")
+        return 0
+
+
 def _download_with_curl(src, dest_path, progress_cb=None, cancel_flag=None,
-                         timeout=600):
-    """Download using curl.exe (built into Windows 10/11 since 1803).
-    Reliable redirect + SSL handling. Progress from --progress-bar output."""
-    import subprocess, shutil, threading as _t, re as _re, time as _time
+                         status_cb=None, timeout=600):
+    """Download using curl.exe. Runs curl in the background with stderr
+    suppressed, and polls the .part file size for progress (much more
+    reliable than parsing curl's progress bar from a pipe)."""
+    import subprocess, shutil, time as _time
     curl = shutil.which("curl") or r"C:\Windows\System32\curl.exe"
     if not os.path.isfile(curl):
         raise RuntimeError("curl.exe not found on this system")
     _updater_log(f"curl start: {src}")
+    if status_cb: status_cb("Getting file size...")
+
+    total = _head_content_length(src)
+    _updater_log(f"HEAD content-length: {total}")
+    if status_cb:
+        status_cb(f"Starting download ({total//1024:,} KB)..." if total else
+                  "Starting download...")
+
     part = dest_path + ".part"
-    # -L follow redirects, -o output, -# simple progress, -# writes to stderr
-    # --fail returns error on HTTP 4xx/5xx, --location-trusted keeps auth on redirect
+    try: os.remove(part)
+    except Exception: pass
+
     p = subprocess.Popen(
         [curl, "-L", "--fail", "-A", "T2T-CampaignCreator",
          "--connect-timeout", "30", "--max-time", str(timeout),
-         "-#", "-o", part, src],
+         "-s", "-o", part, src],
         stderr=subprocess.PIPE, stdout=subprocess.PIPE,
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
 
-    # Stream stderr to parse curl's ##### progress bar (percentage only)
-    def _read_stderr():
-        buf = b""
-        while True:
-            ch = p.stderr.read(1)
-            if not ch: break
-            buf += ch
-            if ch in (b"\r", b"\n"):
-                line = buf.decode("ascii", errors="ignore")
-                buf = b""
-                m = _re.search(r"(\d+\.\d+)%", line)
-                if m and progress_cb:
-                    try:
-                        pct = float(m.group(1))
-                        # Synthesize got/total from pct only — we don't have sizes
-                        progress_cb(int(pct * 100), 10000)
-                    except Exception: pass
-
-    t = _t.Thread(target=_read_stderr, daemon=True)
-    t.start()
-
-    # Poll for cancel
+    last_size = 0
+    last_change = _time.time()
+    stall_threshold = 45  # abort if no bytes arrive for 45s
     while True:
         if cancel_flag and cancel_flag():
             try: p.terminate()
@@ -217,39 +223,62 @@ def _download_with_curl(src, dest_path, progress_cb=None, cancel_flag=None,
             _updater_log("curl cancelled")
             raise RuntimeError("cancelled")
         rc = p.poll()
+        try:
+            size = os.path.getsize(part) if os.path.isfile(part) else 0
+        except Exception:
+            size = 0
+        if size != last_size:
+            last_size = size
+            last_change = _time.time()
+            if progress_cb:
+                try: progress_cb(size, total)
+                except Exception: pass
+        elif _time.time() - last_change > stall_threshold:
+            try: p.terminate()
+            except Exception: pass
+            _updater_log(f"curl stalled at {size} bytes")
+            raise RuntimeError(
+                f"Download stalled at {size//1024} KB (no activity for {stall_threshold}s)")
         if rc is not None:
             break
-        _time.sleep(0.25)
+        _time.sleep(0.2)
 
-    t.join(timeout=2)
     if rc != 0:
-        err = (p.stderr.read() or b"").decode("ascii", errors="ignore")[:300]
+        err = (p.stderr.read() or b"").decode("ascii", errors="ignore")[:400]
         _updater_log(f"curl failed rc={rc}: {err}")
-        raise RuntimeError(f"curl exited {rc}: {err.strip()}")
+        raise RuntimeError(f"curl exited {rc}: {err.strip() or '(no output)'}")
     size = os.path.getsize(part) if os.path.isfile(part) else 0
     _updater_log(f"curl done: {size} bytes")
     if size < 1024:
         raise RuntimeError(f"Downloaded only {size} bytes")
+    # Final progress tick so UI shows 100%
+    if progress_cb and total > 0:
+        try: progress_cb(size, total)
+        except Exception: pass
     os.replace(part, dest_path)
 
 
 def _download_installer(dest_path, url=None, progress_cb=None,
-                         cancel_flag=None, **_):
+                         cancel_flag=None, status_cb=None, **_):
     """Download the installer. Tries curl.exe first (most reliable on
-    Windows), falls back to urllib on failure or non-Windows."""
+    Windows), falls back to urllib on failure or non-Windows.
+    status_cb(text): optional callback for short human-readable status strings."""
     src = url or UPDATE_INSTALLER_URL
     _updater_log(f"download start: {src}")
+    if status_cb: status_cb("Preparing download...")
     errors = []
     if sys.platform.startswith("win"):
         try:
             _download_with_curl(src, dest_path, progress_cb=progress_cb,
-                                 cancel_flag=cancel_flag)
+                                 cancel_flag=cancel_flag, status_cb=status_cb)
             return
         except Exception as e:
             if cancel_flag and cancel_flag(): raise
             _updater_log(f"curl failed, falling back to urllib: {e!r}")
+            if status_cb: status_cb(f"curl failed ({e}) — trying urllib...")
             errors.append(f"curl: {e}")
     try:
+        if status_cb: status_cb("Downloading via urllib...")
         _download_with_urllib(src, dest_path, progress_cb=progress_cb,
                                cancel_flag=cancel_flag)
         return
@@ -299,26 +328,60 @@ def _prompt_update(root, local, remote, installer_url=None):
         parent=root):
         return
 
-    import tempfile, threading as _t, webbrowser
+    import tempfile, threading as _t, webbrowser, time as _time
     tmp = os.path.join(tempfile.gettempdir(),
                        f"T2T_Custom_Campaign_Framework_Setup_{remote}.exe")
     _updater_log(f"update prompt accepted: url={installer_url}, tmp={tmp}")
 
     dlg = tk.Toplevel(root)
-    dlg.title("Downloading update")
+    dlg.title(f"Downloading update v{remote}")
     dlg.transient(root)
     dlg.resizable(False, False)
-    tk.Label(dlg, text=f"Downloading v{remote}...", padx=16, pady=(12,4)).pack()
-    pb = ttk.Progressbar(dlg, orient="horizontal", mode="determinate",
-                          length=420, maximum=100)
-    pb.pack(padx=16, pady=(0,4))
-    status = tk.Label(dlg, text="Opening connection...", padx=16, pady=(0,8))
-    status.pack()
+
+    header = tk.Label(dlg, text=f"Downloading Custom Campaign Framework v{remote}",
+                       font=("", 10, "bold"), padx=16, pady=(14, 2))
+    header.pack(anchor="w")
+    subhead = tk.Label(dlg, text=f"Saving to: {tmp}",
+                        fg="#666", font=("", 8), padx=16, pady=(0, 8))
+    subhead.pack(anchor="w")
+
+    pb = ttk.Progressbar(dlg, orient="horizontal", mode="indeterminate",
+                          length=520, maximum=100)
+    pb.pack(padx=16, pady=(0, 4))
+    pb.start(15)  # animate immediately so user sees activity even before first bytes arrive
+
+    status = tk.Label(dlg, text="Preparing...", padx=16, pady=(0, 4),
+                       font=("", 9))
+    status.pack(anchor="w")
+    size_lbl = tk.Label(dlg, text="", fg="#0066aa", padx=16, pady=(0, 6),
+                         font=("", 9, "bold"))
+    size_lbl.pack(anchor="w")
+
+    # Scrolling log of what the downloader is doing — shows each step so user
+    # can see the process isn't frozen.
+    log_frame = ttk.LabelFrame(dlg, text=" Activity log ")
+    log_frame.pack(fill="both", expand=False, padx=16, pady=(4, 8))
+    log_text = tk.Text(log_frame, height=6, width=70, wrap="word",
+                        font=("Consolas", 8), bg="#f5f5f5", bd=0)
+    log_text.pack(fill="both", expand=True, padx=4, pady=4)
+    log_text.configure(state="disabled")
+
+    def _append_log(msg):
+        def _ui():
+            try:
+                log_text.configure(state="normal")
+                ts = _time.strftime("%H:%M:%S")
+                log_text.insert("end", f"[{ts}] {msg}\n")
+                log_text.see("end")
+                log_text.configure(state="disabled")
+            except Exception: pass
+        try: root.after(0, _ui)
+        except Exception: pass
 
     cancelled = {"v": False}
 
     btn_row = ttk.Frame(dlg)
-    btn_row.pack(pady=(0, 12))
+    btn_row.pack(pady=(2, 12))
 
     def _open_page():
         try: webbrowser.open(UPDATE_RELEASES_PAGE)
@@ -326,6 +389,7 @@ def _prompt_update(root, local, remote, installer_url=None):
 
     def _cancel():
         cancelled["v"] = True
+        _append_log("Cancelled by user")
         try: dlg.destroy()
         except Exception: pass
 
@@ -334,71 +398,109 @@ def _prompt_update(root, local, remote, installer_url=None):
     ttk.Button(btn_row, text="Cancel",
                command=_cancel).pack(side="left", padx=4)
 
+    # Kick log with the URL + target so user can see what's happening
+    _append_log(f"Requesting v{remote} from GitHub")
+    _append_log(f"URL: {installer_url or UPDATE_INSTALLER_URL}")
+    _append_log(f"Target: {tmp}")
+
+    def _fmt_bytes(n):
+        if n >= 1024*1024: return f"{n/(1024*1024):.2f} MB"
+        if n >= 1024: return f"{n/1024:.0f} KB"
+        return f"{n} B"
+
+    def _status(text):
+        def _ui():
+            try: status.config(text=text)
+            except Exception: pass
+        try: root.after(0, _ui)
+        except Exception: pass
+        _append_log(text)
+
     def _progress(got, total):
         def _ui():
-            # curl path synthesizes got/total as (pct*100, 10000) so we get a
-            # pct without actual KB counts. urllib path sends real byte counts.
-            if total == 10000 and got <= 10000:
-                pct = got / 100.0
-                pb["value"] = pct
-                status.config(text=f"Downloading... {pct:.1f}%")
-            elif total > 0:
-                pct = int(got * 100 / total)
-                pb["value"] = pct
-                status.config(text=f"{got//1024:,} / {total//1024:,} KB  ({pct}%)")
-            else:
-                status.config(text=f"{got//1024:,} KB")
+            try:
+                if total > 0 and got <= total:
+                    # Switch bar to determinate mode the first time we know the size
+                    if str(pb["mode"]) != "determinate":
+                        try: pb.stop()
+                        except Exception: pass
+                        pb.config(mode="determinate", maximum=100)
+                    pct = got * 100 / total
+                    pb["value"] = pct
+                    size_lbl.config(
+                        text=f"{_fmt_bytes(got)} of {_fmt_bytes(total)}  ({pct:.1f}%)")
+                else:
+                    size_lbl.config(text=f"{_fmt_bytes(got)} downloaded")
+            except Exception: pass
         try: root.after(0, _ui)
         except Exception: pass
 
     def _launch(path):
         _updater_log(f"launching: {path}")
-        # Prefer os.startfile on Windows — handles UAC and file associations
+        _append_log(f"Launching installer: {os.path.basename(path)}")
         if sys.platform.startswith("win"):
             try:
                 os.startfile(path)
                 return True
             except Exception as e:
                 _updater_log(f"startfile failed: {e}")
+                _append_log(f"os.startfile failed: {e}")
         try:
             import subprocess
             subprocess.Popen([path], shell=False)
             return True
         except Exception as e:
             _updater_log(f"Popen failed: {e}")
+            _append_log(f"Popen failed: {e}")
             return False
 
     def _do():
         try:
             _download_installer(tmp, url=installer_url, progress_cb=_progress,
-                                 cancel_flag=lambda: cancelled["v"])
+                                 cancel_flag=lambda: cancelled["v"],
+                                 status_cb=_status)
             if cancelled["v"]:
                 _updater_log("post-cancel, not launching")
                 return
+            _status("Download complete — launching installer")
             def _done():
-                try: dlg.destroy()
+                try:
+                    pb.stop()
+                    pb.config(mode="determinate", maximum=100, value=100)
                 except Exception: pass
-                ok = _launch(tmp)
-                if ok:
-                    root.after(400, lambda: os._exit(0))
-                else:
-                    messagebox.showerror(
-                        "Install launch failed",
-                        "Downloaded but could not launch the installer.\n\n"
-                        f"Run it manually from:\n{tmp}\n\n"
-                        f"Log: %TEMP%\\t2t_updater.log")
+                # Let the user see "complete" briefly before launching
+                def _fire():
+                    try: dlg.destroy()
+                    except Exception: pass
+                    ok = _launch(tmp)
+                    if ok:
+                        root.after(400, lambda: os._exit(0))
+                    else:
+                        messagebox.showerror(
+                            "Install launch failed",
+                            "Downloaded but could not launch the installer.\n\n"
+                            f"Run it manually from:\n{tmp}\n\n"
+                            f"Log: %TEMP%\\t2t_updater.log")
+                root.after(600, _fire)
             root.after(0, _done)
         except Exception as e:
             _updater_log(f"download error: {e!r}")
+            _append_log(f"ERROR: {e}")
             def _err():
+                try:
+                    pb.stop()
+                    pb.config(mode="determinate", value=0)
+                except Exception: pass
+                if cancelled["v"]: return
+                if messagebox.askyesno(
+                    "Download failed",
+                    f"Could not download the installer:\n\n{e}\n\n"
+                    f"Log: %TEMP%\\t2t_updater.log\n\n"
+                    f"Open the download page in your browser instead?",
+                    parent=dlg):
+                    _open_page()
                 try: dlg.destroy()
                 except Exception: pass
-                if not cancelled["v"]:
-                    if messagebox.askyesno(
-                        "Download failed",
-                        f"Could not download the installer:\n{e}\n\n"
-                        f"Open the download page in your browser instead?"):
-                        _open_page()
             root.after(0, _err)
 
     _t.Thread(target=_do, daemon=True).start()
@@ -2767,10 +2869,14 @@ TEAM_FIELD_ORDER = [
 
 
 class TeamEditor(ttk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, is_player_team=False):
         super().__init__(parent)
         self.widgets = {}
         self.loaded_dir = None
+        # Squad Head / Description are only read by the DLL for player-selectable
+        # custom squads (shown in the Choose Your Squad menu). For regular
+        # campaign teams they have no effect, so we hide them to avoid confusion.
+        self.is_player_team = is_player_team
 
         # Validation banner at the very top
         self.validation = ValidationBanner(self)
@@ -2897,16 +3003,14 @@ class TeamEditor(ttk.Frame):
         self.add_entry(parent, "Team Name")
         self.add_entry(parent, "City")
         self.add_entry(parent, "Abbreviation", "3 letters, e.g. VAN")
-        # Description is only consumed by custom squads (shown under the
-        # Zamboni in the Choose Your Squad menu). Safe to leave blank for
-        # regular teams — they never display it.
-        self.add_entry(parent, "Description",
-                       "Only shown for custom squads on the Choose Your Squad menu")
-        # Squad Head: face shown on the custom squad's tile icon (Choose Your
-        # Squad grid). Only consumed by custom squads — no effect on regular
-        # teams. "none" leaves the default key-player face.
-        self.add_combo(parent, "Squad Head", FACES,
-                       "Custom squad tile icon — face for the key player shown in the Choose Your Squad menu")
+        if self.is_player_team:
+            # These two are only consumed by the DLL for player-selectable
+            # custom squads (shown in the Choose Your Squad menu). Regular
+            # campaign teams ignore them, so we only surface them here.
+            self.add_entry(parent, "Description",
+                           "Shown under the Zamboni in the Choose Your Squad menu")
+            self.add_combo(parent, "Squad Head", FACES,
+                           "Face for the key player shown on this squad's tile icon")
         # Logo From: union of (1) in-game team logos dumped by the DLL and
         # (2) any PNGs the user has added to the game's CustomLogos folder.
         # Fallback to the combined team list if the dump file is missing
@@ -4599,8 +4703,15 @@ def open_team_editor(team_dir=None, on_save=None):
 
     tracker = host.attach_tracker(title)
 
+    # Player-selectable squads live under .../player_teams/. Squad Head and
+    # Description fields only apply to those, so hide them for regular teams.
+    is_player_team = False
+    if team_dir:
+        norm_td = os.path.normpath(team_dir)
+        is_player_team = (os.sep + "player_teams" + os.sep) in (norm_td + os.sep)
+
     left = ttk.Frame(paned)
-    ed = TeamEditor(left)
+    ed = TeamEditor(left, is_player_team=is_player_team)
     ed.pack(fill="both", expand=True)
     paned.add(left, weight=3)
 
@@ -4642,6 +4753,57 @@ def open_team_editor(team_dir=None, on_save=None):
     ttk.Label(right, text="Roster", font=("", 11, "bold")).pack(anchor="w", pady=(4, 2))
     ttk.Label(right, text="Click a position to add/edit. Right-click for more options.",
               foreground="#777", font=("", 8)).pack(anchor="w", padx=4)
+
+    # Team relics (read straight from team.txt's --- Team Relics --- section).
+    # Shown here so the user can see at a glance what the team starts with
+    # without scrolling through the form.
+    relics_box = ttk.LabelFrame(right, text=" Team Relics ")
+    relics_box.pack(fill="x", padx=4, pady=(4, 4))
+    relics_lbl = ttk.Label(relics_box, text="(none)", font=("", 8),
+                            foreground="#555", wraplength=260, justify="left")
+    relics_lbl.pack(anchor="w", padx=6, pady=4)
+
+    def _read_team_relics():
+        if not team_dir: return []
+        tp = os.path.join(team_dir, "team.txt")
+        if not os.path.isfile(tp): return []
+        try:
+            with open(tp, encoding="utf-8") as f: raw = f.readlines()
+        except Exception: return []
+        out, in_section = [], False
+        for ln in raw:
+            s = ln.strip()
+            if s.startswith("---"):
+                header = s.replace("-", "").strip().lower()
+                in_section = header.startswith("team relics") or header.startswith("relics")
+                continue
+            if in_section and s and not s.startswith("#") and "=" not in s:
+                out.append(s)
+        return out
+
+    def _compute_overall(pdata, is_goalie):
+        """Rough overall: skater = avg(Speed, Shot Power, Accuracy, Checking).
+        Goalie = avg of the 8 main goalie stats."""
+        def _n(key):
+            v = (pdata.get(key) or "").strip()
+            # Handle 'random(40, 90)' — use midpoint
+            if v.lower().startswith("random"):
+                try:
+                    inside = v[v.index("(")+1:v.index(")")]
+                    lo, hi = [float(x.strip()) for x in inside.split(",")[:2]]
+                    return (lo + hi) / 2
+                except Exception: return 0
+            try: return float(v)
+            except Exception: return 0
+        if is_goalie:
+            keys = ["Catching", "Glove", "Blocker", "Five Hole",
+                    "Standing Speed", "Butterfly Speed", "Control", "Recovery"]
+        else:
+            keys = ["Speed", "Shot Power", "Accuracy", "Checking"]
+        vals = [_n(k) for k in keys]
+        vals = [v for v in vals if v > 0]
+        if not vals: return 0
+        return int(round(sum(vals) / len(vals)))
 
     # Visual lineup — 2-row rink formation. Goalie sits between the D pair
     # (mirrors defensive-zone positioning) so no cell is empty.
@@ -4754,19 +4916,37 @@ def open_team_editor(team_dir=None, on_save=None):
 
     def refresh_players():
         team_cols = _get_team_colors()
+        # Update team relics list
+        try:
+            relics = _read_team_relics()
+            relics_lbl.configure(text=(", ".join(relics) if relics else "(none)"),
+                                  foreground=("#000" if relics else "#888"))
+        except Exception: pass
         for pos, entry in _slot_labels.items():
-            name_lbl, slot_btn, mini_cv, remove_btn = entry
+            name_lbl, slot_btn, mini_cv, remove_btn, info_lbl = entry
             fname, name = _get_player_at(pos)
             try:
                 remove_btn.configure(state=("normal" if fname else "disabled"))
             except Exception: pass
             if fname:
                 name_lbl.configure(text=name, foreground="#000")
-                # Read player colors, merge with team colors for preview
+                # Read player colors + stats + ability/talents for preview + info
                 player_path = os.path.join(team_dir, "players", fname)
                 merged = dict(team_cols)
+                info_parts = []
                 try:
                     pdata = read_kv(player_path)
+                    is_goalie_slot = (pos == "Goalie")
+                    ovr = _compute_overall(pdata, is_goalie_slot)
+                    if ovr: info_parts.append(f"OVR {ovr}")
+                    ability = (pdata.get("Ability") or "").strip()
+                    if ability and ability.lower() != "none":
+                        info_parts.append(f"Ab: {ability}")
+                    talents = (pdata.get("Talents") or "").strip()
+                    if talents and talents.lower() != "none":
+                        # Truncate long talent lists so the tile doesn't balloon
+                        tshort = talents if len(talents) < 60 else talents[:57] + "..."
+                        info_parts.append(f"Tal: {tshort}")
                     # Map player color fields to team-style field names
                     player_to_team = {
                         "Jersey Color": "Jersey Primary",
@@ -4777,12 +4957,16 @@ def open_team_editor(team_dir=None, on_save=None):
                         if pv:
                             tk_key = player_to_team.get(pk, pk)
                             merged[tk_key] = pv
-                            merged[pk] = pv  # keep both mappings
+                            merged[pk] = pv
                 except Exception: pass
                 _draw_mini_jersey(mini_cv, merged)
+                try: info_lbl.configure(text="  |  ".join(info_parts) or "")
+                except Exception: pass
             else:
                 name_lbl.configure(text="Empty", foreground="#999")
                 _draw_mini_jersey(mini_cv, team_cols)
+                try: info_lbl.configure(text="")
+                except Exception: pass
 
     def _slot_click(pos, is_goalie):
         if not team_dir:
@@ -4932,7 +5116,12 @@ def open_team_editor(team_dir=None, on_save=None):
                                  command=lambda p=pos: _remove_click(p))
         remove_btn.pack(side="left", padx=(2, 0))
 
-        _slot_labels[pos] = (name_lbl, slot_btn, mini_cv, remove_btn)
+        info_lbl = ttk.Label(cell, text="", font=("", 7), foreground="#555",
+                              wraplength=int(32 * _JERSEY_SCALE * 4),
+                              justify="left")
+        info_lbl.pack(anchor=pack_anchor, padx=2, pady=(0, 2))
+
+        _slot_labels[pos] = (name_lbl, slot_btn, mini_cv, remove_btn, info_lbl)
 
     # Separator + Line 2 (optional, collapsible)
     ttk.Separator(right, orient="horizontal").pack(fill="x", padx=4, pady=6)
@@ -4970,7 +5159,11 @@ def open_team_editor(team_dir=None, on_save=None):
         remove_btn2 = ttk.Button(btn_row2, text="x", width=2,
                                   command=lambda p=pos: _remove_click(p))
         remove_btn2.pack(side="left", padx=(2, 0))
-        _slot_labels[pos] = (name_lbl, slot_btn, mini_cv, remove_btn2)
+        info_lbl2 = ttk.Label(cell, text="", font=("", 7), foreground="#555",
+                               wraplength=int(32 * _JERSEY_SCALE * 4),
+                               justify="left")
+        info_lbl2.pack(anchor=pack_anchor, padx=2, pady=(0, 2))
+        _slot_labels[pos] = (name_lbl, slot_btn, mini_cv, remove_btn2, info_lbl2)
 
     def _toggle_line2():
         if line2_var.get():
