@@ -64,7 +64,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.3"
+APP_VERSION = "2.1.4"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -138,58 +138,125 @@ def _updater_log(msg):
     except Exception: pass
 
 
-def _download_installer(dest_path, url=None, progress_cb=None, connect_timeout=15,
-                         stall_timeout=30, cancel_flag=None):
-    """Download the installer exe. progress_cb(downloaded, total) if provided.
-    cancel_flag: optional callable returning True to abort mid-download."""
-    import urllib.request, ssl, socket, time
+def _download_with_urllib(src, dest_path, progress_cb=None, cancel_flag=None,
+                           connect_timeout=30):
+    """Download using urllib.request.urlretrieve — simple and follows
+    redirects automatically."""
+    import urllib.request, socket
+    socket.setdefaulttimeout(connect_timeout)
+    _updater_log(f"urllib start: {src}")
+
+    # Install opener with User-Agent (github sometimes rejects default)
+    opener = urllib.request.build_opener()
+    opener.addheaders = [("User-Agent", "T2T-CampaignCreator"),
+                          ("Accept", "*/*")]
+    urllib.request.install_opener(opener)
+
+    def hook(count, block_size, total_size):
+        if cancel_flag and cancel_flag():
+            raise RuntimeError("cancelled")
+        got = count * block_size
+        if progress_cb:
+            try: progress_cb(got, total_size if total_size > 0 else 0)
+            except Exception: pass
+
+    part = dest_path + ".part"
+    urllib.request.urlretrieve(src, part, reporthook=hook)
+    size = os.path.getsize(part)
+    _updater_log(f"urllib done: {size} bytes")
+    if size < 1024:
+        raise RuntimeError(f"Downloaded only {size} bytes - likely an error page")
+    os.replace(part, dest_path)
+
+
+def _download_with_curl(src, dest_path, progress_cb=None, cancel_flag=None,
+                         timeout=600):
+    """Download using curl.exe (built into Windows 10/11 since 1803).
+    Reliable redirect + SSL handling. Progress from --progress-bar output."""
+    import subprocess, shutil, threading as _t, re as _re, time as _time
+    curl = shutil.which("curl") or r"C:\Windows\System32\curl.exe"
+    if not os.path.isfile(curl):
+        raise RuntimeError("curl.exe not found on this system")
+    _updater_log(f"curl start: {src}")
+    part = dest_path + ".part"
+    # -L follow redirects, -o output, -# simple progress, -# writes to stderr
+    # --fail returns error on HTTP 4xx/5xx, --location-trusted keeps auth on redirect
+    p = subprocess.Popen(
+        [curl, "-L", "--fail", "-A", "T2T-CampaignCreator",
+         "--connect-timeout", "30", "--max-time", str(timeout),
+         "-#", "-o", part, src],
+        stderr=subprocess.PIPE, stdout=subprocess.PIPE,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+
+    # Stream stderr to parse curl's ##### progress bar (percentage only)
+    def _read_stderr():
+        buf = b""
+        while True:
+            ch = p.stderr.read(1)
+            if not ch: break
+            buf += ch
+            if ch in (b"\r", b"\n"):
+                line = buf.decode("ascii", errors="ignore")
+                buf = b""
+                m = _re.search(r"(\d+\.\d+)%", line)
+                if m and progress_cb:
+                    try:
+                        pct = float(m.group(1))
+                        # Synthesize got/total from pct only — we don't have sizes
+                        progress_cb(int(pct * 100), 10000)
+                    except Exception: pass
+
+    t = _t.Thread(target=_read_stderr, daemon=True)
+    t.start()
+
+    # Poll for cancel
+    while True:
+        if cancel_flag and cancel_flag():
+            try: p.terminate()
+            except Exception: pass
+            _updater_log("curl cancelled")
+            raise RuntimeError("cancelled")
+        rc = p.poll()
+        if rc is not None:
+            break
+        _time.sleep(0.25)
+
+    t.join(timeout=2)
+    if rc != 0:
+        err = (p.stderr.read() or b"").decode("ascii", errors="ignore")[:300]
+        _updater_log(f"curl failed rc={rc}: {err}")
+        raise RuntimeError(f"curl exited {rc}: {err.strip()}")
+    size = os.path.getsize(part) if os.path.isfile(part) else 0
+    _updater_log(f"curl done: {size} bytes")
+    if size < 1024:
+        raise RuntimeError(f"Downloaded only {size} bytes")
+    os.replace(part, dest_path)
+
+
+def _download_installer(dest_path, url=None, progress_cb=None,
+                         cancel_flag=None, **_):
+    """Download the installer. Tries curl.exe first (most reliable on
+    Windows), falls back to urllib on failure or non-Windows."""
     src = url or UPDATE_INSTALLER_URL
     _updater_log(f"download start: {src}")
-    # Use default SSL context so Windows schannel CAs are trusted
-    ctx = ssl.create_default_context()
-    req = urllib.request.Request(src,
-                                  headers={"User-Agent": "T2T-CampaignCreator",
-                                           "Accept": "*/*"})
-    # Write to .part then rename when complete so an aborted download doesn't
-    # leave a corrupt .exe at dest_path
-    part = dest_path + ".part"
-    with urllib.request.urlopen(req, timeout=connect_timeout, context=ctx) as r:
-        total = int(r.headers.get("Content-Length") or 0)
-        _updater_log(f"connected: Content-Length={total}, effective_url={getattr(r, 'url', src)}")
-        got = 0
-        last_read = time.time()
-        with open(part, "wb") as f:
-            # Set socket timeout so a stalled connection doesn't hang forever
-            try:
-                sock = r.fp.raw._sock  # type: ignore[attr-defined]
-                sock.settimeout(stall_timeout)
-            except Exception: pass
-            while True:
-                if cancel_flag and cancel_flag():
-                    _updater_log("download cancelled by user")
-                    raise RuntimeError("cancelled")
-                try:
-                    chunk = r.read(65536)
-                except socket.timeout:
-                    _updater_log(f"socket timeout after {got} bytes")
-                    raise RuntimeError(f"Download stalled after {got//1024} KB")
-                if not chunk: break
-                f.write(chunk)
-                got += len(chunk)
-                last_read = time.time()
-                if progress_cb:
-                    try: progress_cb(got, total)
-                    except Exception: pass
-    # Sanity check: ensure we actually got bytes
-    if got <= 0:
-        raise RuntimeError("Downloaded 0 bytes")
-    if total > 0 and got < total:
-        raise RuntimeError(f"Incomplete download: {got}/{total} bytes")
-    try: os.replace(part, dest_path)
+    errors = []
+    if sys.platform.startswith("win"):
+        try:
+            _download_with_curl(src, dest_path, progress_cb=progress_cb,
+                                 cancel_flag=cancel_flag)
+            return
+        except Exception as e:
+            if cancel_flag and cancel_flag(): raise
+            _updater_log(f"curl failed, falling back to urllib: {e!r}")
+            errors.append(f"curl: {e}")
+    try:
+        _download_with_urllib(src, dest_path, progress_cb=progress_cb,
+                               cancel_flag=cancel_flag)
+        return
     except Exception as e:
-        _updater_log(f"rename failed: {e}")
-        raise
-    _updater_log(f"download complete: {got} bytes -> {dest_path}")
+        if cancel_flag and cancel_flag(): raise
+        errors.append(f"urllib: {e}")
+        raise RuntimeError(" | ".join(errors))
 
 
 def check_for_updates_async(root, silent=True):
@@ -269,7 +336,13 @@ def _prompt_update(root, local, remote, installer_url=None):
 
     def _progress(got, total):
         def _ui():
-            if total > 0:
+            # curl path synthesizes got/total as (pct*100, 10000) so we get a
+            # pct without actual KB counts. urllib path sends real byte counts.
+            if total == 10000 and got <= 10000:
+                pct = got / 100.0
+                pb["value"] = pct
+                status.config(text=f"Downloading... {pct:.1f}%")
+            elif total > 0:
                 pct = int(got * 100 / total)
                 pb["value"] = pct
                 status.config(text=f"{got//1024:,} / {total//1024:,} KB  ({pct}%)")
