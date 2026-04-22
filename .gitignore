@@ -36,3 +36,6 @@ installer/Output_Linux/
 # Local log / debug
 *.log
 LogOutput.log
+
+# Dropbox API secrets (bundled into exe by PyInstaller, never commit)
+release/Custom Campaigns Mod/_dropbox_secrets.py

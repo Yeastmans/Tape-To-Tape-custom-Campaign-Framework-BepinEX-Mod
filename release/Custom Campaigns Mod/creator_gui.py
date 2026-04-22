@@ -64,7 +64,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.8"
+APP_VERSION = "2.1.9"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -614,6 +614,116 @@ def confirm_tab_close(master, tab):
                               f"Could not save:\n{e}", parent=master)
         return False
     return bool(ok) if ok is not None else True
+
+
+# ============================================================
+#   COMMUNITY UPLOADS (Dropbox via Cloudflare Worker proxy)
+# ============================================================
+# The worker holds the Dropbox credentials. Creator never sees them — it
+# only knows this public URL. POST /upload ships a zip + metadata.
+# GET /list returns available campaigns. GET /download?path=X streams a zip.
+COMMUNITY_WORKER_URL = "https://t2tcampaings.shaespring14.workers.dev"
+
+
+def _community_list(timeout=10):
+    """Return list of { name, path, size, modified } dicts, or raise."""
+    import urllib.request, json as _json
+    req = urllib.request.Request(COMMUNITY_WORKER_URL + "/list",
+                                  headers={"User-Agent": "T2T-CampaignCreator"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        data = _json.loads(r.read().decode("utf-8", errors="ignore"))
+    if not data.get("ok"):
+        raise RuntimeError(data.get("error") or "list failed")
+    return data.get("items", [])
+
+
+def _community_download(path, dest_path, timeout=60):
+    """Stream a campaign zip from the Dropbox folder to dest_path."""
+    import urllib.request, urllib.parse
+    url = COMMUNITY_WORKER_URL + "/download?path=" + urllib.parse.quote(path)
+    req = urllib.request.Request(url, headers={"User-Agent": "T2T-CampaignCreator"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        with open(dest_path, "wb") as f:
+            while True:
+                chunk = r.read(65536)
+                if not chunk: break
+                f.write(chunk)
+
+
+def _community_upload(zip_path, display_name, meta_json="", timeout=120):
+    """Upload a zip to Dropbox via the worker. Returns the uploaded path on Dropbox."""
+    import urllib.request, json as _json, mimetypes, uuid
+    boundary = "----T2T" + uuid.uuid4().hex
+    with open(zip_path, "rb") as f:
+        file_bytes = f.read()
+    parts = []
+    def _add_text(name, value):
+        parts.append(f"--{boundary}\r\n".encode())
+        parts.append(f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode())
+        parts.append((value + "\r\n").encode())
+    def _add_file(name, fname, data):
+        parts.append(f"--{boundary}\r\n".encode())
+        parts.append(f'Content-Disposition: form-data; name="{name}"; filename="{fname}"\r\n'.encode())
+        parts.append(b'Content-Type: application/zip\r\n\r\n')
+        parts.append(data)
+        parts.append(b"\r\n")
+    _add_text("name", display_name)
+    _add_text("meta", meta_json or "{}")
+    _add_file("file", os.path.basename(zip_path), file_bytes)
+    parts.append(f"--{boundary}--\r\n".encode())
+    body = b"".join(parts)
+    req = urllib.request.Request(
+        COMMUNITY_WORKER_URL + "/upload",
+        data=body,
+        headers={
+            "Content-Type": f"multipart/form-data; boundary={boundary}",
+            "User-Agent": "T2T-CampaignCreator",
+        },
+        method="POST")
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        resp = _json.loads(r.read().decode("utf-8", errors="ignore"))
+    if not resp.get("ok"):
+        raise RuntimeError(resp.get("error") or "upload failed")
+    return resp.get("path", "")
+
+
+def _zip_campaign(campaign_dir, dest_zip, exclude=("save.txt",)):
+    """Zip a campaign folder (skipping listed names at any depth)."""
+    import zipfile
+    base = os.path.dirname(campaign_dir)
+    with zipfile.ZipFile(dest_zip, "w", zipfile.ZIP_DEFLATED) as zf:
+        for root, dirs, files in os.walk(campaign_dir):
+            # Normalize excludes — applies to any file whose basename matches
+            for fn in files:
+                if fn in exclude: continue
+                full = os.path.join(root, fn)
+                arc = os.path.relpath(full, base)
+                zf.write(full, arc)
+
+
+def _extract_campaign_zip(zip_path, dest_campaigns_dir):
+    """Extract a campaign zip. Returns the top-level folder name installed
+    (assumes the zip contains a single folder at its root). Existing folders
+    are NOT overwritten — caller should handle collision resolution."""
+    import zipfile
+    with zipfile.ZipFile(zip_path, "r") as zf:
+        names = zf.namelist()
+        # Detect top-level folder name (first path segment)
+        top = None
+        for n in names:
+            seg = n.split("/", 1)[0]
+            if seg and (top is None or seg == top):
+                top = seg
+            elif seg != top:
+                top = None
+                break
+        if not top:
+            raise RuntimeError("Zip doesn't have a single top-level folder")
+        target = os.path.join(dest_campaigns_dir, top)
+        if os.path.exists(target):
+            raise FileExistsError(target)
+        zf.extractall(dest_campaigns_dir)
+        return top
 
 
 try:
@@ -6236,6 +6346,20 @@ class MainMenu(tk.Tk):
             ttk.Button(edit_box, text=lbl, command=cmd, width=24).pack(
                 padx=8, pady=2, anchor="w")
 
+        # Community — download other people's campaigns or share your own.
+        community_box = ttk.LabelFrame(right, text=" Community ")
+        community_box.pack(pady=(0, 10), fill="x")
+        ttk.Button(community_box, text="🌐 Browse Community Campaigns…",
+                   command=self.browse_community, width=30).pack(padx=8, pady=2, anchor="w")
+        ttk.Button(community_box, text="📤 Share Your Campaign…",
+                   command=self.share_community, width=30).pack(padx=8, pady=2, anchor="w")
+        ttk.Button(community_box, text="📦 Import Campaign from File…",
+                   command=self.import_campaign_from_file, width=30).pack(padx=8, pady=2, anchor="w")
+        ttk.Label(community_box,
+                  text="Browse downloads straight into your\ncampaigns folder. Share zips the active\ncampaign and uploads it anonymously.",
+                  foreground="#777", font=("", 8), justify="left"
+                  ).pack(padx=8, pady=(0, 4))
+
         ttk.Label(home,
             text="Editors open as tabs — Ctrl+W closes current tab.",
             foreground="#555", font=("", 8)).pack(pady=(4, 0))
@@ -6690,6 +6814,244 @@ class MainMenu(tk.Tk):
             # + draft pool) so the user has every player team ready to edit.
             _seed_player_teams_from_example(campaign_dir)
         open_campaign_editor(campaign_dir)
+
+    # ===== Community (Dropbox-backed) =====
+    def browse_community(self):
+        """List campaigns from the community Dropbox folder and download any."""
+        import threading, tempfile
+        dlg = tk.Toplevel(self)
+        dlg.title("Community Campaigns")
+        dlg.geometry("720x460")
+        dlg.transient(self)
+
+        tk.Label(dlg, text="Community Campaigns", font=("", 12, "bold"),
+                 anchor="w").pack(fill="x", padx=12, pady=(10, 2))
+        status = tk.Label(dlg, text="Loading campaign list…", fg="#666", anchor="w")
+        status.pack(fill="x", padx=12, pady=(0, 6))
+
+        cols = ("name", "size", "modified")
+        tree = ttk.Treeview(dlg, columns=cols, show="headings", selectmode="browse")
+        tree.heading("name", text="Campaign")
+        tree.heading("size", text="Size")
+        tree.heading("modified", text="Uploaded")
+        tree.column("name", width=380, anchor="w")
+        tree.column("size", width=90, anchor="e")
+        tree.column("modified", width=190, anchor="w")
+        sb = ttk.Scrollbar(dlg, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=sb.set)
+        tree.pack(side="left", fill="both", expand=True, padx=(12, 0), pady=4)
+        sb.pack(side="left", fill="y", padx=(0, 0), pady=4)
+
+        row = ttk.Frame(dlg)
+        row.pack(side="right", fill="y", padx=12, pady=4)
+        ttk.Label(row, text="").pack()  # top spacer
+
+        path_by_iid = {}
+
+        def _fmt_bytes(n):
+            if n >= 1024*1024: return f"{n/(1024*1024):.2f} MB"
+            if n >= 1024: return f"{n/1024:.0f} KB"
+            return f"{n} B"
+
+        def _refresh():
+            status.config(text="Loading…")
+            tree.delete(*tree.get_children())
+            path_by_iid.clear()
+            def _worker():
+                try:
+                    items = _community_list()
+                except Exception as e:
+                    self.after(0, lambda: status.config(
+                        text=f"Failed to load: {e}", fg="#c00"))
+                    return
+                def _ui():
+                    for it in items:
+                        iid = tree.insert("", "end", values=(
+                            it["name"], _fmt_bytes(it.get("size", 0)),
+                            it.get("modified", "")[:19].replace("T", " ")))
+                        path_by_iid[iid] = it["path"]
+                    status.config(
+                        text=(f"{len(items)} campaign(s) available" if items else
+                              "No campaigns uploaded yet — be the first!"),
+                        fg="#666")
+                self.after(0, _ui)
+            threading.Thread(target=_worker, daemon=True).start()
+
+        def _download_selected():
+            sel = tree.selection()
+            if not sel: return
+            iid = sel[0]
+            path = path_by_iid.get(iid)
+            if not path: return
+            name = tree.item(iid, "values")[0]
+            status.config(text=f"Downloading {name}…")
+            tmp = os.path.join(tempfile.gettempdir(), "t2t_" + os.path.basename(path))
+            def _worker():
+                try:
+                    _community_download(path, tmp)
+                    top = _extract_campaign_zip(tmp, CAMPAIGNS_DIR)
+                    try: os.remove(tmp)
+                    except Exception: pass
+                    self.after(0, lambda: self._on_community_installed(top, dlg))
+                except FileExistsError as e:
+                    target = str(e)
+                    self.after(0, lambda: self._prompt_overwrite_install(tmp, target, dlg))
+                except Exception as e:
+                    self.after(0, lambda: messagebox.showerror("Download failed",
+                                                                str(e), parent=dlg))
+            threading.Thread(target=_worker, daemon=True).start()
+
+        ttk.Button(row, text="↻ Refresh", command=_refresh, width=14).pack(pady=4)
+        ttk.Button(row, text="⬇ Download + Install",
+                   command=_download_selected, width=20).pack(pady=4)
+        ttk.Button(row, text="Close", command=dlg.destroy, width=14).pack(pady=(20, 4))
+
+        _refresh()
+
+    def _on_community_installed(self, folder_name, parent_dlg=None):
+        messagebox.showinfo("Installed",
+            f"Campaign '{folder_name}' installed into:\n{CAMPAIGNS_DIR}\n\n"
+            f"Use Active campaign → Set Active to play it.",
+            parent=parent_dlg or self)
+        try: self._refresh_tree()
+        except Exception: pass
+        try: self._refresh_active_picker()
+        except Exception: pass
+
+    def _prompt_overwrite_install(self, zip_path, existing_dir, parent_dlg):
+        base = os.path.basename(existing_dir)
+        ans = messagebox.askyesnocancel(
+            "Campaign already exists",
+            f"A campaign named '{base}' already exists.\n\n"
+            f"Yes = rename the download (adds suffix)\n"
+            f"No  = overwrite the existing campaign\n"
+            f"Cancel = abort",
+            parent=parent_dlg)
+        if ans is None: return
+        import zipfile, shutil
+        if ans is False:
+            # Overwrite
+            try: shutil.rmtree(existing_dir)
+            except Exception as e:
+                messagebox.showerror("Overwrite failed", str(e), parent=parent_dlg)
+                return
+            try:
+                top = _extract_campaign_zip(zip_path, CAMPAIGNS_DIR)
+                self._on_community_installed(top, parent_dlg)
+            except Exception as e:
+                messagebox.showerror("Install failed", str(e), parent=parent_dlg)
+        else:
+            # Rename the top folder inside zip as we extract
+            i = 2
+            while os.path.exists(existing_dir + f" ({i})"): i += 1
+            new_name = base + f" ({i})"
+            new_dir = os.path.join(CAMPAIGNS_DIR, new_name)
+            try:
+                with zipfile.ZipFile(zip_path, "r") as zf:
+                    for m in zf.infolist():
+                        parts = m.filename.split("/", 1)
+                        rel = parts[1] if len(parts) > 1 else ""
+                        if m.is_dir():
+                            os.makedirs(os.path.join(new_dir, rel), exist_ok=True)
+                        elif rel:
+                            full = os.path.join(new_dir, rel)
+                            os.makedirs(os.path.dirname(full), exist_ok=True)
+                            with zf.open(m) as src, open(full, "wb") as dst:
+                                dst.write(src.read())
+                self._on_community_installed(new_name, parent_dlg)
+            except Exception as e:
+                messagebox.showerror("Install failed", str(e), parent=parent_dlg)
+
+    def share_community(self):
+        """Zip the active campaign (or prompt to pick one) and upload."""
+        import threading, tempfile, json as _json
+        camp = read_active_campaign()
+        if not camp or camp == "default":
+            camps = [c for c in list_campaigns() if c != LIBRARY_SOURCE]
+            if not camps:
+                messagebox.showwarning("No campaign",
+                    "No campaigns to share yet. Create one first.")
+                return
+            camp = _ask_pick("Share campaign",
+                              "Pick a campaign to upload to the community folder:",
+                              camps, parent=self)
+            if not camp: return
+
+        camp_dir = os.path.join(CAMPAIGNS_DIR, camp)
+        if not os.path.isdir(camp_dir):
+            messagebox.showerror("Not found",
+                f"Campaign folder '{camp_dir}' doesn't exist.")
+            return
+
+        # Collect submitter info
+        from tkinter.simpledialog import askstring
+        author = askstring("Your name",
+                            "Your name or handle (shown on the uploaded file):",
+                            parent=self) or "Anonymous"
+        description = askstring("Description",
+                                  "One-line description (optional):",
+                                  parent=self) or ""
+
+        meta = _json.dumps({"author": author, "description": description,
+                             "campaign_name": camp})
+
+        dlg = tk.Toplevel(self)
+        dlg.title("Uploading to community")
+        dlg.geometry("420x180")
+        dlg.transient(self)
+        tk.Label(dlg, text=f"Sharing {camp}", font=("", 11, "bold"),
+                 anchor="w").pack(fill="x", padx=12, pady=(14, 2))
+        status = tk.Label(dlg, text="Zipping…", anchor="w")
+        status.pack(fill="x", padx=12, pady=(4, 2))
+        pb = ttk.Progressbar(dlg, orient="horizontal", mode="indeterminate",
+                              maximum=100)
+        pb.pack(fill="x", padx=12, pady=4)
+        pb.start(15)
+        ttk.Button(dlg, text="Close", command=dlg.destroy, width=12).pack(pady=10)
+
+        def _worker():
+            try:
+                tmp_zip = os.path.join(tempfile.gettempdir(),
+                                        f"t2t_{camp.replace(' ', '_')}.zip")
+                _zip_campaign(camp_dir, tmp_zip)
+                self.after(0, lambda: status.config(
+                    text=f"Uploading {os.path.getsize(tmp_zip)//1024:,} KB…"))
+                display = f"{camp} - {author}"
+                path = _community_upload(tmp_zip, display_name=display,
+                                          meta_json=meta)
+                try: os.remove(tmp_zip)
+                except Exception: pass
+                def _done():
+                    try: pb.stop(); dlg.destroy()
+                    except Exception: pass
+                    messagebox.showinfo("Uploaded",
+                        f"Uploaded successfully!\n\nPath: {path}\n\n"
+                        f"Anyone browsing the community folder will see it.",
+                        parent=self)
+                self.after(0, _done)
+            except Exception as e:
+                def _err():
+                    try: pb.stop(); dlg.destroy()
+                    except Exception: pass
+                    messagebox.showerror("Upload failed", str(e), parent=self)
+                self.after(0, _err)
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def import_campaign_from_file(self):
+        """Install a campaign zip picked from disk (useful for direct shares)."""
+        from tkinter.filedialog import askopenfilename
+        path = askopenfilename(
+            title="Pick a campaign zip",
+            filetypes=[("Campaign zip", "*.zip *.t2tcampaign"), ("All files", "*.*")])
+        if not path: return
+        try:
+            top = _extract_campaign_zip(path, CAMPAIGNS_DIR)
+            self._on_community_installed(top, self)
+        except FileExistsError as e:
+            self._prompt_overwrite_install(path, str(e), self)
+        except Exception as e:
+            messagebox.showerror("Install failed", str(e))
 
     def import_game_team(self):
         """Pick a game team by name and create a library reference for it."""
