@@ -5,4 +5,4 @@
 #   Active Campaign          = Example Campaign
 #   Active Campaign          = default
 #
-Active Campaign          = default
+Active Campaign          = Example Campaign

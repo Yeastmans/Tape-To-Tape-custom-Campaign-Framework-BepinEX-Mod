@@ -1,4 +1,3 @@
-# Team: Florida
 Team Name               = Florida
 City                    = Florida
 Abbreviation            = FLA
@@ -9,6 +8,8 @@ Jersey Accent           = 185, 151, 91
 Away Primary            = 255, 255, 255
 Away Secondary          = 4, 30, 66
 Away Accent             = 255, 255, 255
+Number Color Home       = 255, 255, 255
+Number Color Away       = 0, 0, 0
 Helmet Color            = 4, 30, 66
 Helmet Secondary Color  = 200, 16, 46
 Helmet Tertiary Color   = 185, 151, 91
@@ -25,8 +26,6 @@ Socks Color             = 4, 30, 66
 Socks Secondary Color   = 0, 0, 0
 Socks Tertiary Color    = 185, 151, 91
 Bicep Color             = 200, 16, 46
-Number Color Home       = 255, 255, 255
-Number Color Away       = 0, 0, 0
 Transition Primary      = 4, 30, 66
 Transition Secondary    = 200, 16, 46
 Transition Tertiary     = 185, 151, 91

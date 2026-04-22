@@ -1,4 +1,3 @@
-# Team: Vancouver
 Team Name               = Vancouver
 City                    = Vancouver
 Abbreviation            = VAN
@@ -9,6 +8,8 @@ Jersey Accent           = 255, 255, 255
 Away Primary            = 255, 255, 255
 Away Secondary          = 0, 51, 160
 Away Accent             = 255, 255, 255
+Number Color Home       = 255, 255, 255
+Number Color Away       = 0, 0, 0
 Helmet Color            = 0, 51, 160
 Helmet Secondary Color  = 4, 28, 44
 Helmet Tertiary Color   = 255, 255, 255
@@ -25,8 +26,6 @@ Socks Color             = 0, 51, 160
 Socks Secondary Color   = 0, 0, 0
 Socks Tertiary Color    = 255, 255, 255
 Bicep Color             = 4, 28, 44
-Number Color Home       = 255, 255, 255
-Number Color Away       = 0, 0, 0
 Transition Primary      = 0, 51, 160
 Transition Secondary    = 4, 28, 44
 Transition Tertiary     = 255, 255, 255

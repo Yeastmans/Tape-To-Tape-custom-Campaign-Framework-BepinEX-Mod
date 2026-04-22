@@ -1,4 +1,3 @@
-# Team: New York
 Team Name               = New York
 City                    = New York
 Abbreviation            = NYR
@@ -9,6 +8,8 @@ Jersey Accent           = 255, 255, 255
 Away Primary            = 255, 255, 255
 Away Secondary          = 0, 56, 168
 Away Accent             = 255, 255, 255
+Number Color Home       = 255, 255, 255
+Number Color Away       = 0, 0, 0
 Helmet Color            = 0, 56, 168
 Helmet Secondary Color  = 206, 17, 38
 Helmet Tertiary Color   = 255, 255, 255
@@ -25,8 +26,6 @@ Socks Color             = 0, 56, 168
 Socks Secondary Color   = 0, 0, 0
 Socks Tertiary Color    = 255, 255, 255
 Bicep Color             = 206, 17, 38
-Number Color Home       = 255, 255, 255
-Number Color Away       = 0, 0, 0
 Transition Primary      = 0, 56, 168
 Transition Secondary    = 206, 17, 38
 Transition Tertiary     = 255, 255, 255

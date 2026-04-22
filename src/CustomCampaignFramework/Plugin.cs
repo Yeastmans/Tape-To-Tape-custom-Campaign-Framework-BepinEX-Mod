@@ -23,7 +23,7 @@ using Rogue.BenchSnapshots;
 
 namespace EndlessMode;
 
-[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.6")]
+[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.7")]
 public class Plugin : BasePlugin
 {
     internal static new ManualLogSource Log;
@@ -103,7 +103,7 @@ public class Plugin : BasePlugin
     // free agents than the roster has slots for and crash the game on
     // 5th+ FA signing. When the cap is reached, further FanNumber1 nodes
     // get substituted with GeneralManager (team-upgrade) nodes.
-    internal const int MaxFreeAgentNodes = 0;  // TEMP: 0 = replace ALL FA nodes with TeamTraining (testing)
+    internal const int MaxFreeAgentNodes = 4;  // First 4 FA nodes kept, rest substituted with TeamTraining
     internal static int FreeAgentNodesPlaced = 0;
     // Track which ForwardData instances we've already applied draft-pool
     // config to. Using pointers so re-apply is skipped for the same instance
@@ -1457,8 +1457,35 @@ public class Plugin : BasePlugin
             {
                 Log.LogWarning("Could not find MapObject.GetBlueprint");
             }
+
+            // Backup: patch CreateMapNode too since IL2CPP sometimes inlines
+            // short methods and the GetBlueprint hook silently no-ops.
+            var createMapNode = AccessTools.Method(typeof(STS.Map.MapObject), "CreateMapNode");
+            if (createMapNode != null)
+            {
+                harmony.Patch(createMapNode,
+                    prefix: new HarmonyMethod(typeof(PatchCreateMapNodeFACap), nameof(PatchCreateMapNodeFACap.Prefix)));
+                Log.LogInfo("Patched MapObject.CreateMapNode — FA node cap (backup path)");
+            }
+            else
+            {
+                Log.LogWarning("Could not find MapObject.CreateMapNode");
+            }
+
+            // Third line of defense: post-InitializeMap sweep.
+            var initMap = AccessTools.Method(typeof(STS.Map.MapObject), "InitializeMap");
+            if (initMap != null)
+            {
+                harmony.Patch(initMap,
+                    postfix: new HarmonyMethod(typeof(PatchInitializeMapPost), nameof(PatchInitializeMapPost.Postfix)));
+                Log.LogInfo("Patched MapObject.InitializeMap — FA node post-sweep");
+            }
+            else
+            {
+                Log.LogWarning("Could not find MapObject.InitializeMap");
+            }
         }
-        catch (Exception ex) { Log.LogError($"Failed MapObject.GetBlueprint: {ex}"); }
+        catch (Exception ex) { Log.LogError($"Failed MapObject FA patches: {ex}"); }
 
         // Apply draft-pool mods BEFORE the pick screen opens so players see
         // modded names/stats/skins on the free-agent selection cards.
@@ -2759,6 +2786,10 @@ public static class PatchTitleScreenRefresh
 // ============================================================
 public static class PatchMapBlueprint
 {
+    // First line of defense: mutate the NodeType on the way INTO GetBlueprint.
+    // IL2CPP's Harmony hook on this method is flaky (method is short enough to
+    // be inlined in some builds), so we also patch CreateMapNode below as
+    // a belt-and-suspenders — the one that fires first handles the swap.
     public static void Prefix(ref STS.Map.NodeType type)
     {
         try
@@ -2767,15 +2798,85 @@ public static class PatchMapBlueprint
             if (Plugin.FreeAgentNodesPlaced >= Plugin.MaxFreeAgentNodes)
             {
                 type = STS.Map.NodeType.TeamTraining;
-                Plugin.Log.LogInfo($"[Campaign] FA node cap ({Plugin.MaxFreeAgentNodes}) reached — substituting TeamTraining");
+                Plugin.Log.LogInfo($"[Campaign] GetBlueprint: FA node cap ({Plugin.MaxFreeAgentNodes}) reached — substituting TeamTraining");
             }
             else
             {
                 Plugin.FreeAgentNodesPlaced++;
-                Plugin.Log.LogInfo($"[Campaign] FA node placed #{Plugin.FreeAgentNodesPlaced}/{Plugin.MaxFreeAgentNodes}");
+                Plugin.Log.LogInfo($"[Campaign] GetBlueprint: FA node placed #{Plugin.FreeAgentNodesPlaced}/{Plugin.MaxFreeAgentNodes}");
             }
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[Campaign] MapBlueprint prefix: {ex.Message}"); }
+    }
+}
+
+// ============================================================
+// Second line of defense for FA node cap. Separate class so it doesn't
+// collide with PatchCreateMapNode (which handles Challenge→Elite swaps).
+// Both prefixes run on CreateMapNode; order is not important since they
+// operate on different nodeType values.
+// ============================================================
+public static class PatchCreateMapNodeFACap
+{
+    public static void Prefix(STS.Map.Node node)
+    {
+        try
+        {
+            if (node?.layerNodeType == null) return;
+            var lnt = node.layerNodeType;
+            if (lnt.nodeType != STS.Map.NodeType.GeneralManager) return;
+            if (Plugin.FreeAgentNodesPlaced >= Plugin.MaxFreeAgentNodes)
+            {
+                lnt.nodeType = STS.Map.NodeType.TeamTraining;
+                Plugin.Log.LogInfo($"[Campaign] CreateMapNode: FA node cap ({Plugin.MaxFreeAgentNodes}) reached — swapping layer to TeamTraining");
+            }
+            else
+            {
+                Plugin.FreeAgentNodesPlaced++;
+                Plugin.Log.LogInfo($"[Campaign] CreateMapNode: FA node placed #{Plugin.FreeAgentNodesPlaced}/{Plugin.MaxFreeAgentNodes}");
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Campaign] CreateMapNode FA cap prefix: {ex.Message}"); }
+    }
+}
+
+// ============================================================
+// Third line of defense: after MapObject.InitializeMap runs, walk every
+// MapNode and, if it's a GeneralManagerMapNode, replace its layerNodeType.
+// This catches any FA node that slipped past the earlier patches (e.g.
+// regenerated by a chaos effect or loaded from a saved map).
+// ============================================================
+public static class PatchInitializeMapPost
+{
+    public static void Postfix(STS.Map.MapObject __instance)
+    {
+        try
+        {
+            if (__instance == null) return;
+            var nodes = __instance.MapNodes;
+            if (nodes == null) return;
+            int swapped = 0;
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                var mn = nodes[i];
+                if (mn == null) continue;
+                var lnt = mn?.Node?.layerNodeType;
+                if (lnt == null) continue;
+                if (lnt.nodeType != STS.Map.NodeType.GeneralManager) continue;
+                if (Plugin.FreeAgentNodesPlaced >= Plugin.MaxFreeAgentNodes)
+                {
+                    lnt.nodeType = STS.Map.NodeType.TeamTraining;
+                    swapped++;
+                }
+                else
+                {
+                    Plugin.FreeAgentNodesPlaced++;
+                }
+            }
+            if (swapped > 0)
+                Plugin.Log.LogInfo($"[Campaign] InitializeMap post: swapped {swapped} FA node(s) to TeamTraining");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Campaign] InitializeMap postfix: {ex.Message}"); }
     }
 }
 
@@ -10018,6 +10119,21 @@ public static class PatchPlayerTeamInit
     internal static void HandleNoHelmetSentinel(ForwardData f)
     {
         if (f == null) return;
+
+        // Themed "Canadians" faces bake hair/beards into the head mesh, so
+        // helmets clip or don't render. Force helmet off regardless of
+        // uniform or per-player override settings.
+        if (!string.IsNullOrEmpty(f.headSkin) &&
+            f.headSkin.StartsWith("Faces/Canadians/", System.StringComparison.Ordinal))
+        {
+            Plugin.RegisterFaceAsHelmetless(f.headSkin);
+            f.helmetSkin = "";
+            f.helmetAwaySkin = "";
+            NoHelmetForwards.Add(f.Pointer);
+            Plugin.Log.LogInfo($"[NoHelmet] '{f.firstName} {f.lastName}' head '{f.headSkin}' auto-bared (themed Canadians face)");
+            return;
+        }
+
         if (f.helmetSkin == "__NO_HELMET__" || f.helmetAwaySkin == "__NO_HELMET__")
         {
             Plugin.RegisterFaceAsHelmetless(f.headSkin);

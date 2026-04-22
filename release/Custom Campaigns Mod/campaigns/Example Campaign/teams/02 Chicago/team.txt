@@ -1,4 +1,3 @@
-# Team: Chicago
 Team Name               = Chicago
 City                    = Chicago
 Abbreviation            = CHI
@@ -9,6 +8,8 @@ Jersey Accent           = 255, 209, 0
 Away Primary            = 255, 255, 255
 Away Secondary          = 207, 10, 44
 Away Accent             = 255, 255, 255
+Number Color Home       = 255, 255, 255
+Number Color Away       = 0, 0, 0
 Helmet Color            = 207, 10, 44
 Helmet Secondary Color  = 0, 0, 0
 Helmet Tertiary Color   = 255, 209, 0
@@ -25,8 +26,6 @@ Socks Color             = 207, 10, 44
 Socks Secondary Color   = 0, 0, 0
 Socks Tertiary Color    = 255, 209, 0
 Bicep Color             = 0, 0, 0
-Number Color Home       = 255, 255, 255
-Number Color Away       = 0, 0, 0
 Transition Primary      = 207, 10, 44
 Transition Secondary    = 0, 0, 0
 Transition Tertiary     = 255, 209, 0
