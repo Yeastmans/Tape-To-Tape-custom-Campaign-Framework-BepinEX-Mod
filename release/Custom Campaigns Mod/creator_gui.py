@@ -64,7 +64,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.9"
+APP_VERSION = "2.1.10"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -341,7 +341,7 @@ def _prompt_update(root, local, remote, installer_url=None):
         dlg.title(f"Downloading update v{remote}")
         dlg.transient(root)
         dlg.resizable(True, True)
-        dlg.geometry("620x460")
+        _fit_geometry(dlg, 620, 460)
 
         header = tk.Label(dlg, text=f"Downloading Custom Campaign Framework v{remote}",
                            font=("", 10, "bold"), anchor="w")
@@ -1776,7 +1776,7 @@ class ListPicker(ttk.Frame):
     def add_item(self):
         dlg = tk.Toplevel(self)
         dlg.title("Add")
-        dlg.geometry("700x550")
+        _fit_geometry(dlg, 700, 550)
         dlg.transient(self.winfo_toplevel())
         dlg.grab_set()
 
@@ -3872,6 +3872,20 @@ class CampaignEditor(ttk.Frame):
 _TAB_HOST = None  # Set by TabbedMainMenu to a ttk.Notebook; None = use Toplevels
 
 
+def _fit_geometry(win, w, h):
+    """Set window geometry but never larger than 95% of the user's screen.
+    Use this everywhere we open a Toplevel so Steam Deck (1280x720) and
+    laptops with low resolution still see the full UI."""
+    try:
+        sw = win.winfo_screenwidth()
+        sh = win.winfo_screenheight()
+        w = min(int(w), int(sw * 0.95))
+        h = min(int(h), int(sh * 0.92))
+        win.geometry(f"{w}x{h}")
+    except Exception:
+        win.geometry(f"{w}x{h}")
+
+
 class _EditorHost:
     """Host for one editor window. If a notebook is registered globally
        (_TAB_HOST), adds a tab and returns its content Frame as .container.
@@ -3893,7 +3907,17 @@ class _EditorHost:
             self._toplevel = tk.Toplevel()
             self._toplevel.title(title)
             if size:
-                self._toplevel.geometry(size)
+                # Cap size to 95% of screen so editors don't open off-screen
+                # on smaller laptops / Steam Deck.
+                try:
+                    w, h = (int(x) for x in size.lower().split("x"))
+                    sw = self._toplevel.winfo_screenwidth()
+                    sh = self._toplevel.winfo_screenheight()
+                    w = min(w, int(sw * 0.95))
+                    h = min(h, int(sh * 0.92))
+                    self._toplevel.geometry(f"{w}x{h}")
+                except Exception:
+                    self._toplevel.geometry(size)
             self.container = self._toplevel
 
     def set_title(self, t):
@@ -3958,7 +3982,7 @@ def _ask_pick(title, prompt, items, parent=None):
     """Modal picker with a searchable listbox. Returns the picked item or None."""
     dlg = tk.Toplevel(parent)
     dlg.title(title)
-    dlg.geometry("460x460")
+    _fit_geometry(dlg, 460, 460)
     if parent: dlg.transient(parent)
     dlg.grab_set()
 
@@ -4005,7 +4029,7 @@ def _ask_choice(title, prompt, options, parent=None):
     """Modal dialog that returns the user's selection from a list, or None."""
     dlg = tk.Toplevel(parent)
     dlg.title(title)
-    dlg.geometry("420x340")
+    _fit_geometry(dlg, 420, 340)
     if parent: dlg.transient(parent)
     dlg.grab_set()
 
@@ -4469,7 +4493,7 @@ def _ask_library_save(is_goalie=False, parent=None):
        Creates library/players/<Name>.txt."""
     dlg = tk.Toplevel(parent)
     dlg.title("Save to Library")
-    dlg.geometry("460x220")
+    _fit_geometry(dlg, 460, 220)
     if parent:
         dlg.transient(parent)
     dlg.grab_set()
@@ -4532,7 +4556,7 @@ def _ask_target_position(src_file, parent=None):
 
     dlg = tk.Toplevel(parent)
     dlg.title("Assign to slot")
-    dlg.geometry("500x220")
+    _fit_geometry(dlg, 500, 220)
     if parent:
         dlg.transient(parent)
     dlg.grab_set()
@@ -4586,7 +4610,7 @@ def _ask_team_library_save(parent=None):
        Creates library/teams/<Name>/."""
     dlg = tk.Toplevel(parent)
     dlg.title("Save Team to Library")
-    dlg.geometry("460x220")
+    _fit_geometry(dlg, 460, 220)
     if parent:
         dlg.transient(parent)
     dlg.grab_set()
@@ -5514,7 +5538,7 @@ def open_reward_pools_editor(campaign_dir):
 
     win = tk.Toplevel()
     win.title(f"Reward Pools — {os.path.basename(campaign_dir)}")
-    win.geometry("780x640")
+    _fit_geometry(win, 780, 640)
 
     if not relics and not talents:
         ttk.Label(win,
@@ -5683,7 +5707,7 @@ def open_team_browser(current_campaign_dir, on_pick, button_label="Open"):
        button_label customizes the action button (e.g. 'Import' when importing)."""
     win = tk.Toplevel()
     win.title("Browse Teams")
-    win.geometry("560x560")
+    _fit_geometry(win, 560, 560)
 
     ttk.Label(win, text="Pick a team", font=("", 11, "bold")).pack(
         anchor="w", padx=10, pady=(10, 2))
@@ -5794,7 +5818,7 @@ def open_multi_team_browser(on_pick):
        Calls on_pick([(camp, team), ...]) when user clicks Import."""
     win = tk.Toplevel()
     win.title("Import Teams")
-    win.geometry("640x640")
+    _fit_geometry(win, 640, 640)
 
     ttk.Label(win, text="Pick one or more teams to import",
               font=("", 11, "bold")).pack(anchor="w", padx=10, pady=(10, 2))
@@ -5879,7 +5903,7 @@ def open_multi_player_browser(on_pick):
     """Multi-select player browser. Calls on_pick([(camp, team, filename), ...])."""
     win = tk.Toplevel()
     win.title("Import Players")
-    win.geometry("640x640")
+    _fit_geometry(win, 640, 640)
 
     ttk.Label(win, text="Pick one or more players to import",
               font=("", 11, "bold")).pack(anchor="w", padx=10, pady=(10, 2))
@@ -5985,7 +6009,7 @@ def open_player_browser(on_pick, button_label="Open"):
        button_label lets callers use 'Import' vs 'Open' etc."""
     win = tk.Toplevel()
     win.title("Browse Players")
-    win.geometry("640x660")
+    _fit_geometry(win, 640, 660)
 
     ttk.Label(win, text="Pick a player", font=("", 11, "bold")).pack(
         anchor="w", padx=10, pady=(10, 2))
@@ -6176,11 +6200,20 @@ class MainMenu(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("T2T Campaign Creator")
-        self.geometry("1200x820")
-        # Prevent the window shrinking past the point where editor content
-        # can still fit. Users can still maximize or drag larger — this only
-        # blocks sizes where fields would get clipped off the right/bottom.
-        self.minsize(900, 600)
+        # Initial size adapts to the screen — caps at 1280x820 but never asks
+        # for more than 95% of available pixels. Important on Steam Deck (720p)
+        # and laptop screens where 1200x820 was too tall.
+        try:
+            sw = self.winfo_screenwidth()
+            sh = self.winfo_screenheight()
+            init_w = min(1280, int(sw * 0.95))
+            init_h = min(820, int(sh * 0.92))
+            self.geometry(f"{init_w}x{init_h}")
+        except Exception:
+            _fit_geometry(self, 1200, 820)
+        # Allow shrinking down to a Steam Deck / small-laptop friendly size.
+        # Inner content scrolls when it doesn't fit at this minimum.
+        self.minsize(800, 520)
 
         # Top-level notebook that holds the Home tab plus every open editor.
         self.notebook = ttk.Notebook(self)
@@ -6292,8 +6325,34 @@ class MainMenu(tk.Tk):
                    command=self._refresh_tree).pack(anchor="w", pady=(2, 0))
 
         # --- RIGHT: actions + active campaign picker ---
-        right = ttk.Frame(body)
-        right.pack(side="right", fill="y")
+        # Wrap the right column in a scrollable canvas so on small screens
+        # (Steam Deck 720p, narrow laptops) the user can still reach every
+        # action group instead of having Community/Edit boxes clipped off.
+        right_outer = ttk.Frame(body, width=300)
+        right_outer.pack(side="right", fill="y")
+        right_outer.pack_propagate(False)
+        right_canvas = tk.Canvas(right_outer, highlightthickness=0, width=290)
+        right_sb = ttk.Scrollbar(right_outer, orient="vertical",
+                                  command=right_canvas.yview)
+        right_canvas.configure(yscrollcommand=right_sb.set)
+        right_sb.pack(side="right", fill="y")
+        right_canvas.pack(side="left", fill="both", expand=True)
+        right = ttk.Frame(right_canvas)
+        right_window = right_canvas.create_window((0, 0), window=right, anchor="nw")
+        def _on_right_resize(e=None):
+            try:
+                right_canvas.configure(scrollregion=right_canvas.bbox("all"))
+                # Match inner frame width to canvas so children fill horizontally
+                right_canvas.itemconfig(right_window, width=right_canvas.winfo_width())
+            except Exception: pass
+        right.bind("<Configure>", _on_right_resize)
+        right_canvas.bind("<Configure>", _on_right_resize)
+        # Mouse wheel scrolling while pointer is over the right column
+        def _on_right_wheel(e):
+            try: right_canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
+            except Exception: pass
+        right_canvas.bind("<Enter>", lambda e: right_canvas.bind_all("<MouseWheel>", _on_right_wheel))
+        right_canvas.bind("<Leave>", lambda e: right_canvas.unbind_all("<MouseWheel>"))
 
         # Active campaign
         active_box = ttk.LabelFrame(right, text=" Active campaign (what the game will load) ")
@@ -6821,7 +6880,7 @@ class MainMenu(tk.Tk):
         import threading, tempfile
         dlg = tk.Toplevel(self)
         dlg.title("Community Campaigns")
-        dlg.geometry("720x460")
+        _fit_geometry(dlg, 720, 460)
         dlg.transient(self)
 
         tk.Label(dlg, text="Community Campaigns", font=("", 12, "bold"),
@@ -6997,7 +7056,7 @@ class MainMenu(tk.Tk):
 
         dlg = tk.Toplevel(self)
         dlg.title("Uploading to community")
-        dlg.geometry("420x180")
+        _fit_geometry(dlg, 420, 180)
         dlg.transient(self)
         tk.Label(dlg, text=f"Sharing {camp}", font=("", 11, "bold"),
                  anchor="w").pack(fill="x", padx=12, pady=(14, 2))
