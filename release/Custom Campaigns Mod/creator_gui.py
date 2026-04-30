@@ -64,7 +64,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.10"
+APP_VERSION = "2.1.11"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -6888,22 +6888,27 @@ class MainMenu(tk.Tk):
         status = tk.Label(dlg, text="Loading campaign list…", fg="#666", anchor="w")
         status.pack(fill="x", padx=12, pady=(0, 6))
 
+        # Pack the button column FIRST so it reserves its width — otherwise
+        # the tree's expand=True steals everything and buttons clip off the
+        # right edge on smaller windows.
+        row = ttk.Frame(dlg, width=170)
+        row.pack(side="right", fill="y", padx=12, pady=4)
+        row.pack_propagate(False)
+
         cols = ("name", "size", "modified")
-        tree = ttk.Treeview(dlg, columns=cols, show="headings", selectmode="browse")
+        tree_frame = ttk.Frame(dlg)
+        tree_frame.pack(side="left", fill="both", expand=True, padx=(12, 0), pady=4)
+        tree = ttk.Treeview(tree_frame, columns=cols, show="headings", selectmode="browse")
         tree.heading("name", text="Campaign")
         tree.heading("size", text="Size")
         tree.heading("modified", text="Uploaded")
-        tree.column("name", width=380, anchor="w")
-        tree.column("size", width=90, anchor="e")
-        tree.column("modified", width=190, anchor="w")
-        sb = ttk.Scrollbar(dlg, orient="vertical", command=tree.yview)
+        tree.column("name", width=300, anchor="w")
+        tree.column("size", width=80, anchor="e")
+        tree.column("modified", width=150, anchor="w")
+        sb = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=sb.set)
-        tree.pack(side="left", fill="both", expand=True, padx=(12, 0), pady=4)
-        sb.pack(side="left", fill="y", padx=(0, 0), pady=4)
-
-        row = ttk.Frame(dlg)
-        row.pack(side="right", fill="y", padx=12, pady=4)
-        ttk.Label(row, text="").pack()  # top spacer
+        sb.pack(side="right", fill="y")
+        tree.pack(side="left", fill="both", expand=True)
 
         path_by_iid = {}
 
