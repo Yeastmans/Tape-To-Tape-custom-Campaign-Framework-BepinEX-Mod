@@ -64,7 +64,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.14"
+APP_VERSION = "2.1.15"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -2105,8 +2105,8 @@ class ActSequenceBuilder(ttk.Frame):
         a3_count = sum(1 for a in self._slots if a == 3)
         a1_replaced = sum(1 for _, r in a1_maps if r)
         a1_default = len(a1_maps) - a1_replaced
-        # Act 1: 4 games, +1 if Spartan replaced → 5. Act 2/3: always 3.
-        a1_games = a1_default * 4 + a1_replaced * 5
+        # Act 1: 3 games default, +1 if Spartan replaced → 4. Act 2/3: always 3.
+        a1_games = a1_default * 3 + a1_replaced * 4
         a2_games = a2_count * 3
         a3_games = a3_count * 3
         total_games = a1_games + a2_games + a3_games
@@ -2246,8 +2246,8 @@ class ReplaceChallengesPicker(ttk.Frame):
     Spartans are the ONLY challenge maps in Tape to Tape — they appear on every
     Act 1 map. Soccer / golf / boss are elite games, not challenges, and they
     always happen regardless. So this widget has one toggle:
-      checked  → Spartans replaced with a full elite-team match (Act 1 maps = 5 games)
-      unchecked → default Spartan challenge mini-game (Act 1 maps = 4 games)
+      checked  → Spartans replaced with a full elite-team match (Act 1 maps = 4 games)
+      unchecked → default Spartan challenge mini-game (Act 1 maps = 3 games)
 
     Serializes to the plugin's 'Replace Challenges' field:
       checked   → 'yes' (the plugin accepts 'yes' as 'all challenge maps',
@@ -3563,9 +3563,9 @@ class CampaignEditor(ttk.Frame):
             if ab and hasattr(ab, "get_replace_challenges"):
                 rc_val = ab.get_replace_challenges()
                 if rc_val == "yes":
-                    sp_note = "All Act 1 Spartans replaced — each Act 1 map = 5 games."
+                    sp_note = "All Act 1 Spartans replaced — each Act 1 map = 4 games."
                 elif rc_val == "no":
-                    sp_note = "No Spartans replaced — each Act 1 map = 4 games."
+                    sp_note = "No Spartans replaced — each Act 1 map = 3 games."
                 else:
                     sp_note = f"Per-map Spartan replacement: {rc_val}"
             else:
