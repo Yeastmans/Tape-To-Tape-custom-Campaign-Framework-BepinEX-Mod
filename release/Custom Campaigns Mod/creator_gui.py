@@ -3487,28 +3487,47 @@ class CampaignEditor(ttk.Frame):
         if not self._drag_moved or self._drag_idx is None or not self.loaded_dir:
             self._drag_idx = None
             return
-        # Only persist renumber if items actually moved
         final_idx = self._drag_idx
         teams_now = [self.teams_list.get(i) for i in range(self.teams_list.size())]
         teams_dir = os.path.join(self.loaded_dir, "teams")
+
+        import time
+        stamp = int(time.time() * 1000) % 1000000
+        tmp_prefix = f"__tdrag{stamp}_"
+
+        # Build rename plan — only folders that actually exist on disk
+        plan = []  # (src_path, tmp_path, final_path, original_name)
+        for i, t in enumerate(teams_now):
+            src = os.path.join(teams_dir, t)
+            if not os.path.isdir(src):
+                continue
+            base = re.sub(r"^\d+\s+", "", t)
+            tmp = os.path.join(teams_dir, f"{tmp_prefix}{i:03d}__")
+            final = os.path.join(teams_dir, f"{i+1:02d} {base}")
+            plan.append((src, tmp, final, t))
+
+        renamed_p1 = []  # (tmp_path, orig_src) — for rollback
         try:
-            for i, t in enumerate(teams_now):
-                src = os.path.join(teams_dir, t)
-                tmp = os.path.join(teams_dir, f"__tmp_drag_{i}__")
-                if os.path.isdir(src):
-                    os.rename(src, tmp)
-            for i, t in enumerate(teams_now):
-                tmp = os.path.join(teams_dir, f"__tmp_drag_{i}__")
-                base = re.sub(r"^\d+\s+", "", t)
-                new_name = f"{i+1:02d} {base}"
-                if os.path.isdir(tmp):
-                    os.rename(tmp, os.path.join(teams_dir, new_name))
+            for src, tmp, final, _ in plan:
+                os.rename(src, tmp)
+                renamed_p1.append((tmp, src))
+            for src, tmp, final, _ in plan:
+                os.rename(tmp, final)
+            renamed_p1.clear()
         except Exception as e:
-            messagebox.showerror("Reorder failed", f"{type(e).__name__}: {e}")
+            # Rollback: restore any phase-1 renames
+            for tmp_path, orig_src in reversed(renamed_p1):
+                try:
+                    if not os.path.isdir(orig_src):
+                        os.rename(tmp_path, orig_src)
+                except Exception:
+                    pass
+            messagebox.showerror("Reorder failed",
+                f"{type(e).__name__}: {e}\n\nThe campaign was restored to its original order.")
+
         self._drag_idx = None
         self._drag_moved = False
         self.refresh_list()
-        # Re-select the item that was dragged
         if 0 <= final_idx < self.teams_list.size():
             self.teams_list.selection_set(final_idx)
 
@@ -4147,15 +4166,57 @@ def _rgb_to_color_dict(rgb_str):
     return {"r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0}
 
 
-def _face_skin_path(face_name):
-    """Our GUI face names (e.g. 'Angus_Chad') aren't full paths. The game
-    stores headSkin as 'Faces/<Team>/<Name>'. Best-effort: if it already
-    looks like a path, keep it; otherwise leave as-is and let the game
-    resolve. Many face names happen to work both ways."""
-    if not face_name: return ""
-    if "/" in face_name: return face_name
-    # Common pattern in CustomForward exports.
-    return "Faces/" + face_name
+_FACE_FULL_PATHS = [
+    "Faces/Twinfalls/Wiener", "Faces/Twinfalls/Haggis", "Faces/Twinfalls/Jerky", "Faces/Twinfalls/Crockett",
+    "Faces/Toronto/Mathieu", "Faces/Toronto/Jelly", "Faces/Toronto/Kilmore", "Faces/Toronto/Spark",
+    "Faces/Toronto/Dord", "Faces/Toronto/Popping",
+    "Faces/Chicago/Angus", "Faces/Chicago/Rory", "Faces/Chicago/Grohl", "Faces/Chicago/Chicos",
+    "Faces/Chicago/Chapstick", "Faces/Chicago/Louder", "Faces/Chicago/Angus_Pixel",
+    "Faces/Canadians/Captain", "Faces/Canadians/Poule", "Faces/Canadians/Gratz",
+    "Faces/Midwest/Brie", "Faces/Midwest/Amber", "Faces/Midwest/Mental", "Faces/Midwest/Rochefort",
+    "Faces/Moutaineers/Krupp", "Faces/Moutaineers/Wurst", "Faces/Moutaineers/Torte",
+    "Faces/Moutaineers/Furter", "Faces/Moutaineers/Pianist",
+    "Faces/Princess/Joan", "Faces/Princess/Clementine", "Faces/Princess/Boni",
+    "Faces/Tycoons/Tycoons_Large", "Faces/Tycoons/Tycoons_Small",
+    "Faces/Tycoons/Tycoons_Elite", "Faces/Tycoons/Tycoons_Lady",
+    "Faces/Prisoners/Dalton", "Faces/Prisoners/Ma", "Faces/Prisoners/Averell", "Faces/Prisoners/Joe",
+    "Faces/Knights/Prince", "Faces/Knights/Lancelov",
+    "Faces/Cultists/Cultist", "Faces/Cultists/Jelly_Evil", "Faces/Cultists/Rory_Evil", "Faces/Cultists/Dord_Evil",
+    "Faces/HockeyFC/Knudribble", "Faces/HockeyFC/Zidanejad", "Faces/HockeyFC/OHenry",
+    "Faces/HockeyFC/Icekicks", "Faces/HockeyFC/Ronaldo", "Faces/HockeyFC/Messier",
+    "Faces/HockeyFC/Maroondona", "Faces/HockeyFC/Backham", "Faces/HockeyFC/Ehrhoffaldo",
+    "Faces/Golfers/Golfer_Lady", "Faces/Golfers/Golfer_Ramirez",
+    "Faces/Golfers/Golfer_Elite", "Faces/Golfers/Golfer_Whacker", "Faces/Golfers/Golfer_Gillman",
+    "Faces/Disco/Oioioi", "Faces/Referees/Gedeon", "Faces/Custom/Helmet_Face",
+    "Faces/Anyteam/Nasher", "Faces/Anyteam/Chickensneeze", "Faces/Anyteam/Onepunch",
+    "Faces/Anyteam/Bench_Kovalski", "Faces/Anyteam/Bench_Bench",
+    "Faces/Anyteam/Bench_Brewster", "Faces/Anyteam/Bench_Kirby",
+    "Faces/Anyteam/Bench_Buttface", "Faces/Anyteam/Bench_Stumple",
+]
+# Short-name → full path lookup (mirrors DLL ResolveSkin face table)
+_FACE_LOOKUP = {p.rsplit("/", 1)[1].lower(): p for p in _FACE_FULL_PATHS}
+
+
+def _face_skin_path(face_name, default=""):
+    """Resolve a short face name to its full Faces/Team/Name path.
+    Mirrors Plugin.ResolveSkin face lookup so Play Now exports write the
+    same paths the game engine expects."""
+    if not face_name:
+        return default
+    s = face_name.strip()
+    if "/" in s:
+        return s
+    lo = s.lower()
+    # Exact match
+    if lo in _FACE_LOOKUP:
+        return _FACE_LOOKUP[lo]
+    # Underscore/space-normalised match
+    lo_norm = lo.replace(" ", "_")
+    for key, path in _FACE_LOOKUP.items():
+        if lo_norm == key or lo.replace("_", "") == key.replace("_", ""):
+            return path
+    # Not in table — return as-is (game may handle it directly)
+    return s
 
 
 # Goalie helmet friendly name -> full asset path. Mirrors
@@ -4203,6 +4264,127 @@ def _resolve_goalie_helmet(val):
                                    "Helmet/Helmet_Customization_colors"))
 
 
+def _resolve_fwd_skin(val, slot="body"):
+    """Resolve a forward skin friendly name to the full asset path.
+    Mirrors Plugin.ResolveSkin for Play Now JSON export."""
+    if not val:
+        return {"body": "Body/Customization/Customization_colors",
+                "stick": "Sticks/Customization/Customization_colors"}.get(slot, "")
+    s = val.strip()
+    if "/" in s:
+        return s
+    lo = s.lower().replace("_", " ")
+    if lo in ("standard", "team colors", "default", "team stick", "colored stick"):
+        if slot == "stick":
+            return "Sticks/Customization/Customization_colors"
+        return "Body/Customization/Customization_colors"
+    if slot == "body":
+        return {
+            "tycoons":          "Body/Tycoons/Tycoons",
+            "princess":         "Body/Princess/Princess",
+            "golfers":          "Body/Golfers/Golfers",
+            "prisoners":        "Body/Prisoners/Prisoners",
+            "mountaineers":     "Body/Mountaineers/Mountaineers",
+            "mountaineers beer":"Body/Mountaineers/Mountaineers_Beer",
+            "hockey fc":        "Body/HockeyFC/HockeyFC",
+            "figure skaters":   "Body/Figure_Skaters/Figure_Skaters",
+            "referee":          "Body/Alumni/Ref_Alumni",
+        }.get(lo, "Body/Customization/Customization_colors")
+    if slot == "stick":
+        return {
+            "sword": "Sticks/Sword",
+            "golf":  "Sticks/Golf_Iron",
+        }.get(lo, "Sticks/Customization/Customization_colors")
+    return s
+
+
+def _resolve_gk_skin(val, slot):
+    """Resolve a goalie skin friendly name to the full asset path.
+    Mirrors Plugin.ResolveGoalieSkin for Play Now JSON export."""
+    _defaults = {
+        "helmet":  "Helmet/Helmet_Customization_colors",
+        "body":    "Body/Customization_colors",
+        "glove":   "Body_Glove/Customization/Customization_colors",
+        "blocker": "Body_Blocker/Customization/Customization_colors",
+        "pads":    "Body_Pads/Customization/Customization_colors",
+        "stick":   "Body_Stick/Customization/Customization_colors",
+    }
+    if not val:
+        return _defaults.get(slot, "")
+    s = val.strip()
+    if "/" in s:
+        return s
+    lo = s.lower().replace("_", " ")
+    if lo in ("standard", "team colors", "default", "colored"):
+        return _defaults.get(slot, "")
+    if slot == "helmet":
+        return {
+            "canadians":    "Helmet/Helmet_Canadians",
+            "cheese":       "Helmet/Helmet_Cheese",
+            "cultists":     "Helmet/Helmet_Cultists",
+            "disco":        "Helmet/Helmet_Disco",
+            "figure skaters":"Helmet/Helmet_Figure_Skaters",
+            "golfers":      "Helmet/Helmet_Golfers",
+            "hockey fc":    "Helmet/Helmet_HockeyFC",
+            "hockeyfc":     "Helmet/Helmet_HockeyFC",
+            "knights":      "Helmet/Helmet_Knights",
+            "meatballs":    "Helmet/Helmet_Meatballs",
+            "mountaineers": "Helmet/Helmet_Mountaineers",
+            "princess":     "Helmet/Helmet_Princess",
+            "prisoners":    "Helmet/Helmet_Prisoners",
+            "referees":     "Helmet/Helmet_Referees",
+            "referee":      "Helmet/Helmet_Referees",
+            "toronto":      "Helmet/Helmet_Toronto",
+            "tycoons":      "Helmet/Helmet_Tycoons",
+        }.get(lo, _defaults["helmet"])
+    if slot == "body":
+        return {
+            "figure skaters":"Body/Figure_Skaters",
+            "golfers":       "Body/Golfers",
+            "hockey fc":     "Body/HockeyFC",
+            "hockeyfc":      "Body/HockeyFC",
+            "knights":       "Body/Knights",
+            "mountaineers":  "Body/Mountaineers",
+            "princess":      "Body/Princess",
+            "prisoners":     "Body/Prisoners",
+            "referees":      "Body/Referees",
+            "referee":       "Body/Referees",
+            "tycoons":       "Body/Tycoons",
+        }.get(lo, _defaults["body"])
+    if slot == "glove":
+        return {
+            "brown":         "Body_Glove/Brown",
+            "figure skaters":"Body_Glove/Figure_Skaters",
+            "golfers":       "Body_Glove/Golfers",
+            "hockey fc":     "Body_Glove/Hockey_FC",
+            "hockeyfc":      "Body_Glove/Hockey_FC",
+            "knights":       "Body_Glove/Knights",
+            "tycoons":       "Body_Glove/Tycoons",
+        }.get(lo, _defaults["glove"])
+    if slot == "blocker":
+        return {
+            "brown":         "Body_Blocker/Brown",
+            "figure skaters":"Body_Blocker/Figure_Skaters",
+            "golfers":       "Body_Blocker/Golfers",
+            "knights":       "Body_Blocker/Knights",
+            "tycoons":       "Body_Blocker/Tycoons",
+        }.get(lo, _defaults["blocker"])
+    if slot == "pads":
+        return {
+            "brown":         "Body_Pads/Brown",
+            "figure skaters":"Body_Pads/Figure_Skaters",
+            "hockey fc":     "Body_Pads/Hockey_FC",
+            "hockeyfc":      "Body_Pads/Hockey_FC",
+            "tycoons":       "Body_Pads/Tycoons",
+        }.get(lo, _defaults["pads"])
+    if slot == "stick":
+        return {
+            "figure skaters":"Body_Stick/Figure_Skaters",
+            "tycoons":       "Body_Stick/Tycoons",
+        }.get(lo, _defaults["stick"])
+    return s
+
+
 def _player_data_to_custom_forward(data, import_id=None, import_number=67):
     """Convert our key=value player data dict into the game's CustomForward
     JSON format. Skips talent/ability IDs — those require GUIDs that aren't
@@ -4220,7 +4402,7 @@ def _player_data_to_custom_forward(data, import_id=None, import_number=67):
     return {
         "checking": int(data.get("Checking") or 50),
         "speed": int(data.get("Speed") or 50),
-        "bodySkin": data.get("Body") or "Body/Customization/Customization_colors",
+        "bodySkin": _resolve_fwd_skin(data.get("Body"), "body"),
         "forwardRarity": 1,
         "headSkin": _face_skin_path(data.get("Face") or ""),
         "isBlack": (data.get("Skin Color") or "").lower() == "dark",
@@ -4230,8 +4412,8 @@ def _player_data_to_custom_forward(data, import_id=None, import_number=67):
         "shotAccuracy": int(data.get("Accuracy") or 50),
         "shotPower": int(data.get("Shot Power") or 50),
         "skaterSize": size_map.get(size_str, 2),
-        "stickSkin": data.get("Stick") or "Sticks/Customization/Customization_colors",
-        "bodyAwaySkin": data.get("Body Away") or "Body/Customization/Customization_colors",
+        "stickSkin": _resolve_fwd_skin(data.get("Stick"), "stick"),
+        "bodyAwaySkin": _resolve_fwd_skin(data.get("Body Away"), "body"),
         "defaultSkaterType": 4,
         "abilityId": "",
         "id": fid,
@@ -4253,39 +4435,43 @@ def _goalie_data_to_custom_goalie(data, import_id=None):
     def stat(k, d=50):
         try: return int(data.get(k) or d)
         except Exception: return d
+    # Widget labels and config-file keys use bare names ("Skin", "Helmet Skin",
+    # "Glove Skin", etc.) — NOT the old "Goalie " prefix that was here before.
     return {
-        "skin": data.get("Goalie Skin") or "Body/Customization_colors",
-        "awaySkin": data.get("Goalie Skin Away") or "Body/Customization_colors",
-        "logoSkin": data.get("Logo Skin") or "Team_Logo/Calaveras",
-        "helmetSkin": _resolve_goalie_helmet(data.get("Goalie Helmet Skin")),
-        "headSkin": _face_skin_path(data.get("Face") or ""),
-        "blockerSkin": data.get("Goalie Blocker Skin") or "Body_Blocker/Customization/Customization_colors",
-        "awayBlockerSkin": data.get("Goalie Blocker Away") or "Body_Blocker/Customization/Customization_colors",
-        "stickSkin": data.get("Goalie Stick Skin") or "Body_Stick/Customization/Customization_colors",
-        "awayStickSkin": data.get("Goalie Stick Away") or "Body_Stick/Customization/Customization_colors",
-        "gloveSkin": data.get("Goalie Glove Skin") or "Body_Glove/Customization/Customization_colors",
-        "awayGloveSkin": data.get("Goalie Glove Away") or "Body_Glove/Customization/Customization_colors",
-        "padsSkin": data.get("Goalie Pads Skin") or "Body_Pads/Customization/Customization_colors",
-        "awayPadsSkin": data.get("Goalie Pads Away") or "Body_Pads/Customization/Customization_colors",
+        "skin":          _resolve_gk_skin(data.get("Skin"), "body"),
+        "awaySkin":      _resolve_gk_skin(data.get("Skin Away"), "body"),
+        "logoSkin":      data.get("Logo Skin") or "Team_Logo/Calaveras",
+        "helmetSkin":    _resolve_gk_skin(data.get("Helmet Skin"), "helmet"),
+        # Goalies don't have a Face field — default to the helmet-head face so
+        # the goalie isn't headless in Play Now.
+        "headSkin":      _face_skin_path(data.get("Face") or "", default="Faces/Custom/Helmet_Face"),
+        "blockerSkin":   _resolve_gk_skin(data.get("Blocker Skin"), "blocker"),
+        "awayBlockerSkin": _resolve_gk_skin(data.get("Blocker Away"), "blocker"),
+        "stickSkin":     _resolve_gk_skin(data.get("Stick Skin"), "stick"),
+        "awayStickSkin": _resolve_gk_skin(data.get("Stick Away"), "stick"),
+        "gloveSkin":     _resolve_gk_skin(data.get("Glove Skin"), "glove"),
+        "awayGloveSkin": _resolve_gk_skin(data.get("Glove Away"), "glove"),
+        "padsSkin":      _resolve_gk_skin(data.get("Pads Skin"), "pads"),
+        "awayPadsSkin":  _resolve_gk_skin(data.get("Pads Away"), "pads"),
         "abilityId": "",
         "id": gid,
         "number": stat("Number", 30),
         "talentIds": [],
         "firstName": first,
         "lastName": last,
-        "skill": stat("Skill"),
-        "catchingSkill": stat("Catching"),
-        "gloveSkill": stat("Glove"),
-        "blockerSkill": stat("Blocker"),
-        "fiveHoleSkill": stat("Five Hole"),
-        "standingSpeed": stat("Standing Speed"),
+        "skill":          stat("Skill"),
+        "catchingSkill":  stat("Catching"),
+        "gloveSkill":     stat("Glove"),
+        "blockerSkill":   stat("Blocker"),
+        "fiveHoleSkill":  stat("Five Hole"),
+        "standingSpeed":  stat("Standing Speed"),
         "butterflySpeed": stat("Butterfly Speed"),
-        "recoverySkill": stat("Recovery"),
-        "passPower": stat("Pass Power"),
-        "shotPower": stat("Shot Power"),
-        "pokecheckSkill": stat("Pokecheck"),
-        "depth": stat("Depth"),
-        "controlSkill": stat("Control"),
+        "recoverySkill":  stat("Recovery"),
+        "passPower":      stat("Pass Power"),
+        "shotPower":      stat("Shot Power"),
+        "pokecheckSkill": stat("Poke Check"),
+        "depth":          stat("Depth"),
+        "controlSkill":   stat("Control"),
     }
 
 
