@@ -23,7 +23,7 @@ using Rogue.BenchSnapshots;
 
 namespace EndlessMode;
 
-[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.13")]
+[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.14")]
 public class Plugin : BasePlugin
 {
     internal static new ManualLogSource Log;
@@ -4694,8 +4694,8 @@ public static class PatchBossLaunchMatch
                 }
                 // Apply player config (skins, stats, talents — but NOT per-player colors yet)
                 ApplyPlayerConfig(fwds[i], pc, cfg.Uniform);
-                // Apply team-level equipment color defaults
-                ApplyTeamEquipmentColors(fwds[i], cfg);
+                // Apply team-level equipment color defaults (pass team so jersey scheme is synced)
+                ApplyTeamEquipmentColors(fwds[i], cfg, team);
                 // Apply per-player color overrides (highest priority, overrides team defaults)
                 PatchBossLaunchMatch.ApplyPlayerColorOverrides(fwds[i], pc);
             }
@@ -4862,12 +4862,24 @@ public static class PatchBossLaunchMatch
         }
     }
 
-    internal static void ApplyTeamEquipmentColors(ForwardData f, TeamConfig cfg)
+    internal static void ApplyTeamEquipmentColors(ForwardData f, TeamConfig cfg, TeamData team = null)
     {
         if (f == null || cfg == null) return;
         try
         {
             if (f.colorSchemes == null) return;
+
+            // Sync jersey scheme from the team's fully-resolved homeColors so that
+            // Body/Customization_colors renders in team colors instead of black.
+            // This must happen before per-player Jersey Color overrides (applied later
+            // in ApplyPlayerColorOverrides), which will stomp these values if set.
+            if (team?.homeColors?.jerseyScheme != null)
+            {
+                var jc = team.homeColors.jerseyScheme;
+                f.colorSchemes.jerseyScheme.primaryColor   = jc.primaryColor;
+                f.colorSchemes.jerseyScheme.secondaryColor = jc.secondaryColor;
+                f.colorSchemes.jerseyScheme.tertiaryColor  = jc.tertiaryColor;
+            }
 
             SetSchemeColor(f.colorSchemes.glovesScheme, cfg.TeamGlovesColor, cfg.TeamGlovesSecondary, cfg.TeamGlovesTertiary);
             SetSchemeColor(f.colorSchemes.helmetScheme, cfg.TeamHelmetColor, cfg.TeamHelmetSecondary, cfg.TeamHelmetTertiary);
@@ -10026,7 +10038,7 @@ public static class PatchPlayerTeamInit
             {
                 if (fwds[i] == null) continue;
                 ApplyUniformToForward(fwds[i], cfg.Uniform);
-                PatchBossLaunchMatch.ApplyTeamEquipmentColors(fwds[i], cfg);
+                PatchBossLaunchMatch.ApplyTeamEquipmentColors(fwds[i], cfg, team);
             }
 
             // Per-slot player overrides — for each starting lineup slot that
