@@ -23,7 +23,7 @@ using Rogue.BenchSnapshots;
 
 namespace EndlessMode;
 
-[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.15")]
+[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.16")]
 public class Plugin : BasePlugin
 {
     internal static new ManualLogSource Log;
@@ -3308,7 +3308,12 @@ public static class PatchGetActBosses
     [HarmonyPrefix]
     public static void Prefix(ref int act, CampaignOpponentsConfig __instance)
     {
-        // Debug team logging removed for release
+        // Never wrap away from act 3 — boss games always need the game's own
+        // act-3 boss list so SetBoss gets a non-null list. Our ApplyManualTeam
+        // overwrites the opponent team afterwards. Wrapping 3→1 returns a null
+        // or empty list that crashes SetBoss in multi-cycle campaigns where
+        // ActsCompleted has looped back to 0.
+        if (act == 3) return;
 
         int original = act;
         act = Plugin.WrapAct(act);
