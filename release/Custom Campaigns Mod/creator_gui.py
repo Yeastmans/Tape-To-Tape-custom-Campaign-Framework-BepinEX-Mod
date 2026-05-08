@@ -64,7 +64,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.18"
+APP_VERSION = "2.1.19"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -289,9 +289,58 @@ def _download_installer(dest_path, url=None, progress_cb=None,
         raise RuntimeError(" | ".join(errors))
 
 
+def _show_changelog(root, version, changelog, is_current=False):
+    """Display a changelog window for the given version."""
+    dlg = tk.Toplevel(root)
+    dlg.title(f"Changelog — v{version}")
+    dlg.transient(root)
+    dlg.resizable(True, True)
+    _fit_geometry(dlg, 560, 380)
+
+    status = "  ✓  You are on this version" if is_current else f"Latest release: v{version}"
+    ttk.Label(dlg, text=f"v{version}",
+              font=("", 13, "bold"), anchor="w").pack(fill="x", padx=16, pady=(14, 2))
+    ttk.Label(dlg, text=status, foreground="#555" if is_current else "#0066aa",
+              anchor="w").pack(fill="x", padx=16, pady=(0, 8))
+
+    cl_frame = ttk.LabelFrame(dlg, text=" What's new ")
+    cl_frame.pack(fill="both", expand=True, padx=16, pady=(0, 12))
+    cl_text = tk.Text(cl_frame, wrap="word", font=("", 9),
+                      bg="#f8f8f8", bd=0, relief="flat")
+    cl_scroll = ttk.Scrollbar(cl_frame, command=cl_text.yview)
+    cl_text.configure(yscrollcommand=cl_scroll.set)
+    cl_scroll.pack(side="right", fill="y")
+    cl_text.pack(side="left", fill="both", expand=True, padx=6, pady=6)
+    cl_text.insert("1.0", changelog if changelog else "(No changelog available for this release.)")
+    cl_text.configure(state="disabled")
+
+    ttk.Button(dlg, text="Close", command=dlg.destroy).pack(pady=(0, 12))
+    dlg.update_idletasks()
+
+
+def show_changelog_async(root):
+    """Fetch the latest release changelog and show it — used by the Changelog button."""
+    import threading
+
+    def _worker():
+        try:
+            remote, _, changelog = _fetch_remote_release()
+            local = _read_local_version()
+            if not remote:
+                root.after(0, lambda: messagebox.showwarning(
+                    "Changelog", "Could not reach GitHub to fetch the changelog."))
+                return
+            is_current = _parse_version(remote) <= _parse_version(local)
+            root.after(0, lambda: _show_changelog(root, remote, changelog, is_current))
+        except Exception as e:
+            root.after(0, lambda: messagebox.showerror("Changelog", f"Failed to fetch changelog: {e}"))
+
+    threading.Thread(target=_worker, daemon=True).start()
+
+
 def check_for_updates_async(root, silent=True):
     """Kick off a background version check. On a newer remote, prompt on
-    the tk main thread. If silent=False, also notify when up-to-date."""
+    the tk main thread. If silent=False, also show changelog when up-to-date."""
     import threading
 
     def _worker():
@@ -306,9 +355,7 @@ def check_for_updates_async(root, silent=True):
                 return
             if _parse_version(remote) <= _parse_version(local):
                 if not silent:
-                    root.after(0, lambda: messagebox.showinfo(
-                        "Up to date",
-                        f"You're on the latest version ({local})."))
+                    root.after(0, lambda: _show_changelog(root, remote, changelog, is_current=True))
                 return
             root.after(0, lambda: _prompt_update(root, local, remote, installer_url, changelog))
         except Exception as e:
@@ -6522,6 +6569,9 @@ class MainMenu(tk.Tk):
         ttk.Button(ver_row, text="Check for updates",
                    command=lambda: check_for_updates_async(self, silent=False)
                    ).pack(side="left")
+        ttk.Button(ver_row, text="Changelog",
+                   command=lambda: show_changelog_async(self)
+                   ).pack(side="left", padx=(6, 0))
 
         # Two-column layout: tree (left) + actions (right)
         body = ttk.Frame(home)
