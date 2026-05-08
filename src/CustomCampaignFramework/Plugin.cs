@@ -23,7 +23,7 @@ using Rogue.BenchSnapshots;
 
 namespace EndlessMode;
 
-[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.16")]
+[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.17")]
 public class Plugin : BasePlugin
 {
     internal static new ManualLogSource Log;
@@ -7919,7 +7919,7 @@ public static class PatchEliteLaunchMatch
 // ============================================================
 // Log all relics, abilities, talents from repositories
 // ============================================================
-[HarmonyPatch(typeof(Team), nameof(Team.Initialize))]
+[HarmonyPatch(typeof(Team), nameof(Team.Initialize), new Type[] { typeof(TeamData) })]
 public static class LogRepositories
 {
     [HarmonyPostfix]
@@ -9461,7 +9461,7 @@ public static class LogRepositories
 // ============================================================
 // DEBUG: Boost player team
 // ============================================================
-[HarmonyPatch(typeof(Team), nameof(Team.Initialize))]
+[HarmonyPatch(typeof(Team), nameof(Team.Initialize), new Type[] { typeof(TeamData) })]
 public static class DebugTeamBoost
 {
     private static readonly HashSet<IntPtr> BoostedPtrs = new();
@@ -9662,7 +9662,7 @@ public static class PatchTeamDataAddForwardToBench
 // ============================================================
 // Player Team Editor — apply player_teams.txt to player teams
 // ============================================================
-[HarmonyPatch(typeof(Team), nameof(Team.Initialize))]
+[HarmonyPatch(typeof(Team), nameof(Team.Initialize), new Type[] { typeof(TeamData) })]
 public static class PatchPlayerTeamInit
 {
     private static readonly string[] PlayerPrefixes = { "Basic", "Defense", "Speed", "Trio" };
