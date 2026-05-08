@@ -64,7 +64,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.20"
+APP_VERSION = "2.1.21"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -451,23 +451,71 @@ def _show_changelog(root, version, changelog, is_current=False):
 
 
 def show_changelog_async(root):
-    """Fetch the latest release changelog and show it — used by the Changelog button."""
-    import threading
+    """Fetch all release changelogs from GitHub and show full history."""
+    import threading, urllib.request, json
 
     def _worker():
         try:
-            remote, _, changelog = _fetch_remote_release()
             local = _read_local_version()
-            if not remote:
+            api_url = f"https://api.github.com/repos/{UPDATE_REPO}/releases?per_page=30"
+            req = urllib.request.Request(api_url,
+                headers={"User-Agent": "T2T-CampaignCreator",
+                         "Accept": "application/vnd.github+json"})
+            with urllib.request.urlopen(req, timeout=8) as r:
+                releases = json.loads(r.read().decode("utf-8", errors="ignore"))
+            if not releases:
                 root.after(0, lambda: messagebox.showwarning(
-                    "Changelog", "Could not reach GitHub to fetch the changelog."))
+                    "Changelog", "No releases found on GitHub."))
                 return
-            is_current = _parse_version(remote) <= _parse_version(local)
-            root.after(0, lambda: _show_changelog(root, remote, changelog, is_current))
+            root.after(0, lambda: _show_full_changelog(root, local, releases))
         except Exception as e:
-            root.after(0, lambda: messagebox.showerror("Changelog", f"Failed to fetch changelog: {e}"))
+            root.after(0, lambda: messagebox.showerror("Changelog",
+                f"Failed to fetch changelog:\n{e}"))
 
     threading.Thread(target=_worker, daemon=True).start()
+
+
+def _show_full_changelog(root, local_version, releases):
+    """Display all release notes in a scrollable window."""
+    dlg = tk.Toplevel(root)
+    dlg.title("Changelog — All Versions")
+    dlg.transient(root)
+    dlg.resizable(True, True)
+    _fit_geometry(dlg, 600, 520)
+
+    ttk.Label(dlg, text="Changelog",
+              font=("", 12, "bold"), anchor="w").pack(fill="x", padx=16, pady=(12, 2))
+    ttk.Label(dlg, text=f"Installed: v{local_version}",
+              foreground="#555", anchor="w").pack(fill="x", padx=16, pady=(0, 8))
+
+    frame = ttk.Frame(dlg)
+    frame.pack(fill="both", expand=True, padx=16, pady=(0, 8))
+    text = tk.Text(frame, wrap="word", font=("", 9), bg="#f8f8f8", bd=0, relief="flat")
+    scroll = ttk.Scrollbar(frame, command=text.yview)
+    text.configure(yscrollcommand=scroll.set)
+    scroll.pack(side="right", fill="y")
+    text.pack(side="left", fill="both", expand=True, padx=4, pady=4)
+
+    text.tag_configure("version", font=("", 10, "bold"), foreground="#0066aa")
+    text.tag_configure("current", font=("", 10, "bold"), foreground="#007700")
+    text.tag_configure("body", font=("", 9))
+    text.tag_configure("sep", foreground="#cccccc")
+
+    for rel in releases:
+        tag = (rel.get("tag_name") or "").lstrip("vV")
+        body = (rel.get("body") or "").strip()
+        is_cur = _parse_version(tag) == _parse_version(local_version)
+        label = f"v{tag}" + ("  ← installed" if is_cur else "")
+        text.insert("end", label + "\n", "current" if is_cur else "version")
+        if body:
+            text.insert("end", body + "\n", "body")
+        else:
+            text.insert("end", "(no notes)\n", "body")
+        text.insert("end", "─" * 60 + "\n", "sep")
+
+    text.configure(state="disabled")
+    ttk.Button(dlg, text="Close", command=dlg.destroy).pack(pady=(0, 12))
+    dlg.update_idletasks()
 
 
 def check_for_updates_async(root, silent=True):
@@ -4301,6 +4349,40 @@ TEAM_LIBRARY_DIR = os.path.join(LIBRARY_DIR, "teams")
 #   EXPORT TO PLAY NOW (custom players / teams in-game editor)
 # ============================================================
 
+_EXPORT_TALENT_MAP = None   # talent_key → guid
+_EXPORT_ABILITY_MAP = None  # ability_name → guid
+
+def _load_export_id_maps():
+    """Parse _export_id_map.txt written by the DLL to get talent/ability GUIDs."""
+    global _EXPORT_TALENT_MAP, _EXPORT_ABILITY_MAP
+    talent_map, ability_map = {}, {}
+    path = os.path.join(_PLUGINS_DIR, "_export_id_map.txt")
+    if not os.path.isfile(path):
+        _EXPORT_TALENT_MAP = talent_map
+        _EXPORT_ABILITY_MAP = ability_map
+        return
+    try:
+        section = None
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line == "[talents]":   section = "t"
+                elif line == "[abilities]": section = "a"
+                elif "|" in line and section:
+                    key, guid = line.split("|", 1)
+                    key, guid = key.strip(), guid.strip()
+                    if section == "t":  talent_map[key] = guid
+                    elif section == "a": ability_map[key] = guid
+    except Exception: pass
+    _EXPORT_TALENT_MAP = talent_map
+    _EXPORT_ABILITY_MAP = ability_map
+
+def _get_export_maps():
+    if _EXPORT_TALENT_MAP is None:
+        _load_export_id_maps()
+    return _EXPORT_TALENT_MAP or {}, _EXPORT_ABILITY_MAP or {}
+
+
 def find_game_save_dir():
     """Find Tape to Tape's TeamDataModels folder (where Play Now reads
     CustomForward/CustomGoalie/CustomTeam .json from)."""
@@ -4620,6 +4702,10 @@ def _player_data_to_custom_forward(data, import_id=None, import_number=67):
     size_str = (data.get("Size") or "Medium").strip().lower()
     size_map = {"extrasmall": 0, "small": 1, "medium": 2, "big": 3,
                 "extrabig": 4, "extraextrabig": 5}
+    talent_map, ability_map = _get_export_maps()
+    talent_names = [t.strip() for t in (data.get("Talents") or "").split(",") if t.strip()]
+    talent_ids = [talent_map[t] for t in talent_names if t in talent_map]
+    ability_id = ability_map.get((data.get("Ability") or "").strip(), "")
     return {
         "checking": int(data.get("Checking") or 50),
         "speed": int(data.get("Speed") or 50),
@@ -4636,11 +4722,11 @@ def _player_data_to_custom_forward(data, import_id=None, import_number=67):
         "stickSkin": _resolve_fwd_skin(data.get("Stick"), "stick"),
         "bodyAwaySkin": _resolve_fwd_skin(data.get("Body Away"), "body"),
         "defaultSkaterType": 4,
-        "abilityId": "",
+        "abilityId": ability_id,
         "id": fid,
         "name": "defaultCustomForwardData(Clone)",
         "number": int(data.get("Number") or import_number),
-        "talentIds": [],
+        "talentIds": talent_ids,
         "firstName": first,
         "lastName": last,
     }
@@ -4656,8 +4742,10 @@ def _goalie_data_to_custom_goalie(data, import_id=None):
     def stat(k, d=50):
         try: return int(data.get(k) or d)
         except Exception: return d
-    # Widget labels and config-file keys use bare names ("Skin", "Helmet Skin",
-    # "Glove Skin", etc.) — NOT the old "Goalie " prefix that was here before.
+    talent_map, ability_map = _get_export_maps()
+    talent_names = [t.strip() for t in (data.get("Goalie Talents") or "").split(",") if t.strip()]
+    goalie_talent_ids = [talent_map[t] for t in talent_names if t in talent_map]
+    goalie_ability_id = ability_map.get((data.get("Ability") or "").strip(), "")
     return {
         "skin":          _resolve_gk_skin(data.get("Skin"), "body"),
         "awaySkin":      _resolve_gk_skin(data.get("Skin Away"), "body"),
@@ -4674,10 +4762,10 @@ def _goalie_data_to_custom_goalie(data, import_id=None):
         "awayGloveSkin": _resolve_gk_skin(data.get("Glove Away"), "glove"),
         "padsSkin":      _resolve_gk_skin(data.get("Pads Skin"), "pads"),
         "awayPadsSkin":  _resolve_gk_skin(data.get("Pads Away"), "pads"),
-        "abilityId": "",
+        "abilityId": goalie_ability_id,
         "id": gid,
         "number": stat("Number", 30),
-        "talentIds": [],
+        "talentIds": goalie_talent_ids,
         "firstName": first,
         "lastName": last,
         "skill":          stat("Skill"),
@@ -5336,18 +5424,10 @@ def open_team_editor(team_dir=None, on_save=None):
         tp = os.path.join(team_dir, "team.txt")
         if not os.path.isfile(tp): return []
         try:
-            with open(tp, encoding="utf-8") as f: raw = f.readlines()
+            val = (read_kv(tp).get("Team Relics") or "").strip()
+            if not val: return []
+            return [r.strip() for r in val.split(",") if r.strip()]
         except Exception: return []
-        out, in_section = [], False
-        for ln in raw:
-            s = ln.strip()
-            if s.startswith("---"):
-                header = s.replace("-", "").strip().lower()
-                in_section = header.startswith("team relics") or header.startswith("relics")
-                continue
-            if in_section and s and not s.startswith("#") and "=" not in s:
-                out.append(s)
-        return out
 
     def _compute_overall(pdata, is_goalie):
         """Rough overall: skater = avg(Speed, Shot Power, Accuracy, Checking).

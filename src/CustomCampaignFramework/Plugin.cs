@@ -23,7 +23,7 @@ using Rogue.BenchSnapshots;
 
 namespace EndlessMode;
 
-[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.20")]
+[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.21")]
 public class Plugin : BasePlugin
 {
     internal static new ManualLogSource Log;
@@ -9322,6 +9322,44 @@ public static class LogRepositories
             }
         }
         catch (Exception ex) { Plugin.Log.LogError($"[Dump] Talents file error: {ex.Message}"); }
+
+        // PLAY-NOW EXPORT ID MAP: talent_key|guid and ability_name|guid —
+        // consumed by the Campaign Creator when exporting players to Play Now.
+        try
+        {
+            var sb2 = new StringBuilder();
+            var talentRepos3 = UnityEngine.Resources.FindObjectsOfTypeAll<TalentRepository>();
+            var talentRepo3 = talentRepos3 != null && talentRepos3.Length > 0 ? talentRepos3[0] : null;
+            if (talentRepo3 != null)
+            {
+                sb2.AppendLine("[talents]");
+                var list3 = talentRepo3.talents;
+                if (list3 != null)
+                    for (int i = 0; i < list3.Count; i++)
+                    {
+                        var t = list3[i];
+                        if (t == null || string.IsNullOrEmpty(t.id) || string.IsNullOrEmpty(t.name)) continue;
+                        sb2.AppendLine($"{t.name}|{t.id}");
+                    }
+            }
+            var abilRepos2 = UnityEngine.Resources.FindObjectsOfTypeAll<AbilityRepository>();
+            var abilRepo2 = abilRepos2 != null && abilRepos2.Length > 0 ? abilRepos2[0] : null;
+            if (abilRepo2 != null)
+            {
+                sb2.AppendLine("[abilities]");
+                var alist2 = abilRepo2.abilities;
+                if (alist2 != null)
+                    for (int i = 0; i < alist2.Count; i++)
+                    {
+                        var a = alist2[i];
+                        if (a == null || string.IsNullOrEmpty(a.id) || string.IsNullOrEmpty(a.name)) continue;
+                        sb2.AppendLine($"{a.name}|{a.id}");
+                    }
+            }
+            File.WriteAllText(Path.Combine(basePath, "_export_id_map.txt"), sb2.ToString());
+            Plugin.Log.LogInfo("[Dump] Wrote _export_id_map.txt (talent + ability GUIDs for Play Now export)");
+        }
+        catch (Exception ex) { Plugin.Log.LogError($"[Dump] Export ID map error: {ex.Message}"); }
 
         // SIMPLE REWARD-POOL LISTS: id|display_name|category — consumed by
         // the Campaign Creator GUI to build the per-relic / per-talent
