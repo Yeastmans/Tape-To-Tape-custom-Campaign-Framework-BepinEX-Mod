@@ -64,7 +64,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.17"
+APP_VERSION = "2.1.18"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -96,9 +96,9 @@ def _parse_version(s):
 
 
 def _fetch_remote_release(timeout=6):
-    """Return (version, installer_url). Prefer the latest GitHub Release
-    (has a tag_name like 'v2.1.0' and the installer .exe attached as an
-    asset); fall back to raw VERSION.txt on the main branch."""
+    """Return (version, installer_url, changelog). Prefer the latest GitHub
+    Release (has a tag_name like 'v2.1.0', installer .exe asset, and body
+    text as changelog); fall back to raw VERSION.txt on the main branch."""
     import urllib.request, json
     # 1) GitHub Releases API
     try:
@@ -114,18 +114,19 @@ def _fetch_remote_release(timeout=6):
             if name.endswith(".exe") and "setup" in name:
                 installer_url = a.get("browser_download_url")
                 break
+        changelog = (data.get("body") or "").strip()
         if tag:
-            return tag, (installer_url or UPDATE_INSTALLER_URL)
+            return tag, (installer_url or UPDATE_INSTALLER_URL), changelog
     except Exception: pass
-    # 2) Raw VERSION.txt on main
+    # 2) Raw VERSION.txt on main (no changelog available)
     try:
         req = urllib.request.Request(UPDATE_VERSION_URL,
                                       headers={"User-Agent": "T2T-CampaignCreator"})
         with urllib.request.urlopen(req, timeout=timeout) as r:
             v = (r.read().decode("utf-8", errors="ignore") or "").strip()
-            if v: return v, UPDATE_INSTALLER_URL
+            if v: return v, UPDATE_INSTALLER_URL, ""
     except Exception: pass
-    return None, None
+    return None, None, ""
 
 
 def _updater_log(msg):
@@ -296,7 +297,7 @@ def check_for_updates_async(root, silent=True):
     def _worker():
         try:
             local = _read_local_version()
-            remote, installer_url = _fetch_remote_release()
+            remote, installer_url, changelog = _fetch_remote_release()
             if not remote:
                 if not silent:
                     root.after(0, lambda: messagebox.showwarning(
@@ -309,7 +310,7 @@ def check_for_updates_async(root, silent=True):
                         "Up to date",
                         f"You're on the latest version ({local})."))
                 return
-            root.after(0, lambda: _prompt_update(root, local, remote, installer_url))
+            root.after(0, lambda: _prompt_update(root, local, remote, installer_url, changelog))
         except Exception as e:
             if not silent:
                 root.after(0, lambda: messagebox.showerror("Update check",
@@ -318,14 +319,55 @@ def check_for_updates_async(root, silent=True):
     threading.Thread(target=_worker, daemon=True).start()
 
 
-def _prompt_update(root, local, remote, installer_url=None):
-    if not messagebox.askyesno(
-        "Update available",
-        f"A newer version of the Custom Campaign Framework is available.\n\n"
-        f"Installed: {local}\n"
-        f"Available: {remote}\n\n"
-        f"Download and launch the installer now?",
-        parent=root):
+def _prompt_update(root, local, remote, installer_url=None, changelog=""):
+    """Show 'update available' dialog with version info + changelog, then
+    proceed to the download dialog if the user clicks Install."""
+    dlg = tk.Toplevel(root)
+    dlg.title(f"Update available — v{remote}")
+    dlg.transient(root)
+    dlg.resizable(True, True)
+    _fit_geometry(dlg, 560, 400)
+
+    ttk.Label(dlg, text=f"Custom Campaign Framework v{remote} is available",
+              font=("", 11, "bold"), anchor="w").pack(fill="x", padx=16, pady=(14, 2))
+    ttk.Label(dlg, text=f"Installed: v{local}    →    Available: v{remote}",
+              foreground="#555", anchor="w").pack(fill="x", padx=16, pady=(0, 8))
+
+    if changelog:
+        cl_frame = ttk.LabelFrame(dlg, text=" What's new ")
+        cl_frame.pack(fill="both", expand=True, padx=16, pady=(0, 8))
+        cl_text = tk.Text(cl_frame, wrap="word", font=("", 9),
+                          bg="#f8f8f8", bd=0, relief="flat", height=10)
+        cl_scroll = ttk.Scrollbar(cl_frame, command=cl_text.yview)
+        cl_text.configure(yscrollcommand=cl_scroll.set)
+        cl_scroll.pack(side="right", fill="y")
+        cl_text.pack(side="left", fill="both", expand=True, padx=6, pady=6)
+        cl_text.insert("1.0", changelog)
+        cl_text.configure(state="disabled")
+    else:
+        ttk.Label(dlg, text="(No changelog available for this release)",
+                  foreground="#888", anchor="w").pack(fill="x", padx=16, pady=(0, 8))
+
+    accepted = {"v": False}
+
+    def _install():
+        accepted["v"] = True
+        dlg.destroy()
+
+    def _skip():
+        dlg.destroy()
+
+    btn_row = ttk.Frame(dlg)
+    btn_row.pack(pady=(4, 14))
+    ttk.Button(btn_row, text="Install update",
+               command=_install).pack(side="left", padx=6)
+    ttk.Button(btn_row, text="Skip",
+               command=_skip).pack(side="left", padx=6)
+
+    dlg.update_idletasks()
+    dlg.wait_window()
+
+    if not accepted["v"]:
         return
 
     import tempfile, threading as _t, webbrowser, time as _time
