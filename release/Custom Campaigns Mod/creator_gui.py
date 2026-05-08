@@ -64,7 +64,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.19"
+APP_VERSION = "2.1.20"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -287,6 +287,138 @@ def _download_installer(dest_path, url=None, progress_cb=None,
         if cancel_flag and cancel_flag(): raise
         errors.append(f"urllib: {e}")
         raise RuntimeError(" | ".join(errors))
+
+
+def open_uninstaller(root):
+    """Show uninstall dialog with 3 options."""
+    import shutil, glob
+
+    game_root   = os.path.abspath(os.path.join(_PLUGINS_DIR, "../.."))
+    bepinex_dir = os.path.dirname(_PLUGINS_DIR)          # BepInEx/
+    mod_dll     = os.path.join(_PLUGINS_DIR, "CustomCampaignFramework.dll")
+    creator_dir = SCRIPT_DIR                              # Custom Campaigns Mod/
+
+    def _rm(path):
+        try:
+            if os.path.isdir(path):  shutil.rmtree(path, ignore_errors=True)
+            elif os.path.isfile(path): os.remove(path)
+        except Exception: pass
+
+    def _shortcuts():
+        """Return list of shortcut paths to delete."""
+        paths = []
+        desk = os.path.join(os.path.expanduser("~"), "Desktop", "T2T Campaign Creator.lnk")
+        paths.append(desk)
+        # Inno Setup puts Start Menu entries here
+        start = os.path.join(os.environ.get("APPDATA", ""),
+                             "Microsoft", "Windows", "Start Menu", "Programs",
+                             "T2T Custom Campaign Framework")
+        paths.append(start)
+        return paths
+
+    dlg = tk.Toplevel(root)
+    dlg.title("Uninstall")
+    dlg.transient(root)
+    dlg.resizable(False, False)
+    _fit_geometry(dlg, 500, 380)
+
+    ttk.Label(dlg, text="Uninstall — choose an option",
+              font=("", 11, "bold")).pack(anchor="w", padx=16, pady=(14, 6))
+
+    choice = tk.IntVar(value=0)
+
+    options = [
+        (1,
+         "Full uninstall",
+         f"Removes BepInEx, the mod DLL, the Campaign Creator, all campaigns,\n"
+         f"desktop + Start Menu shortcuts, and all related files.\n"
+         f"Game folder: {game_root}"),
+        (2,
+         "Uninstall mod / BepInEx — keep Campaign Creator",
+         f"Removes the mod DLL and BepInEx (game runs vanilla again).\n"
+         f"Keeps the Campaign Creator exe and all your campaign files so\n"
+         f"you can still edit them if you reinstall later."),
+        (3,
+         "Clear all campaign save data",
+         f"Deletes all save.txt progress files inside your campaigns folder.\n"
+         f"Resets run progress for every campaign without removing any\n"
+         f"campaign configurations, teams, or players."),
+    ]
+
+    for val, title, desc in options:
+        row = ttk.Frame(dlg)
+        row.pack(fill="x", padx=12, pady=4)
+        ttk.Radiobutton(row, variable=choice, value=val,
+                        text=title, width=45).pack(anchor="w")
+        ttk.Label(row, text=desc, foreground="#555", font=("", 8),
+                  justify="left", wraplength=460).pack(anchor="w", padx=22)
+
+    ttk.Separator(dlg, orient="horizontal").pack(fill="x", padx=12, pady=8)
+
+    def _run():
+        c = choice.get()
+        if c == 0:
+            messagebox.showwarning("Uninstall", "Select an option first.", parent=dlg)
+            return
+
+        if c == 1:
+            if not messagebox.askyesno(
+                "Full uninstall — are you sure?",
+                "This will permanently delete BepInEx, all campaigns, the Campaign Creator,\n"
+                "and all related files.\n\nThis cannot be undone. Continue?",
+                icon="warning", parent=dlg): return
+            dlg.destroy()
+            for p in _shortcuts(): _rm(p)
+            _rm(bepinex_dir)
+            for f in ("winhttp.dll", "doorstop_config.ini"):
+                _rm(os.path.join(game_root, f))
+            messagebox.showinfo("Uninstalled",
+                "Full uninstall complete.\nClose the Campaign Creator — it will no longer work.")
+            try: root.after(500, root.destroy)
+            except Exception: pass
+
+        elif c == 2:
+            if not messagebox.askyesno(
+                "Uninstall mod / BepInEx",
+                "The mod DLL and BepInEx will be removed (game runs vanilla again).\n"
+                "Your campaign files and Campaign Creator are kept.\n\nContinue?",
+                parent=dlg): return
+            dlg.destroy()
+            _rm(mod_dll)
+            for sub in ("core", "cache", "interop", "patchers", "config"):
+                _rm(os.path.join(bepinex_dir, sub))
+            for f in ("winhttp.dll", "doorstop_config.ini"):
+                _rm(os.path.join(game_root, f))
+            messagebox.showinfo("Done",
+                "Mod and BepInEx removed.\nYour campaigns and Campaign Creator are intact.")
+
+        elif c == 3:
+            saves = glob.glob(os.path.join(CAMPAIGNS_DIR, "*", "save.txt"))
+            saves += glob.glob(os.path.join(CAMPAIGNS_DIR, "*", "*", "save.txt"))
+            if not saves:
+                messagebox.showinfo("Nothing to clear",
+                    "No save.txt files found in your campaigns folder.", parent=dlg)
+                return
+            if not messagebox.askyesno(
+                "Clear save data",
+                f"Delete {len(saves)} save.txt file(s)?\n\n"
+                + "\n".join(os.path.relpath(s, CAMPAIGNS_DIR) for s in saves[:8])
+                + ("\n..." if len(saves) > 8 else "")
+                + "\n\nCampaign configs, teams, and players are not affected.",
+                parent=dlg): return
+            dlg.destroy()
+            deleted = 0
+            for s in saves:
+                try: os.remove(s); deleted += 1
+                except Exception: pass
+            messagebox.showinfo("Done", f"Cleared {deleted} save file(s).")
+
+    btn_row = ttk.Frame(dlg)
+    btn_row.pack(pady=(0, 14))
+    ttk.Button(btn_row, text="Uninstall", command=_run).pack(side="left", padx=6)
+    ttk.Button(btn_row, text="Cancel", command=dlg.destroy).pack(side="left", padx=6)
+
+    dlg.update_idletasks()
 
 
 def _show_changelog(root, version, changelog, is_current=False):
@@ -6696,6 +6828,16 @@ class MainMenu(tk.Tk):
                   text="Browse downloads straight into your\ncampaigns folder. Share zips the active\ncampaign and uploads it anonymously.",
                   foreground="#777", font=("", 8), justify="left"
                   ).pack(padx=8, pady=(0, 4))
+
+        # Uninstall
+        uninstall_box = ttk.LabelFrame(right, text=" Uninstall ")
+        uninstall_box.pack(pady=(0, 10), fill="x")
+        ttk.Button(uninstall_box, text="🗑 Uninstall…",
+                   command=lambda: open_uninstaller(self), width=24).pack(padx=8, pady=(4, 2), anchor="w")
+        ttk.Label(uninstall_box,
+                  text="Remove the mod, BepInEx, or campaign save data.",
+                  foreground="#777", font=("", 8), wraplength=240, justify="left"
+                  ).pack(padx=8, pady=(0, 6), anchor="w")
 
         ttk.Label(home,
             text="Editors open as tabs — Ctrl+W closes current tab.",
