@@ -23,7 +23,7 @@ using Rogue.BenchSnapshots;
 
 namespace EndlessMode;
 
-[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.21")]
+[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.23")]
 public class Plugin : BasePlugin
 {
     internal static new ManualLogSource Log;
@@ -974,6 +974,10 @@ public class Plugin : BasePlugin
         if (lower == "hockey fc") return "Body/HockeyFC/HockeyFC";
         if (lower == "figure skaters") return "Body/Figure_Skaters/Figure_Skaters";
         if (lower == "referee") return "Body/Alumni/Ref_Alumni";
+        if (lower == "crusaders lancelov" || lower == "crusaders_lancelov") return "Body/Crusaders/Lancelov";
+        if (lower == "crusaders prince" || lower == "crusaders_prince") return "Body/Crusaders/Prince";
+        if (lower == "crusaders guretski" || lower == "crusaders_guretski") return "Body/Crusaders/Guretski";
+        if (lower == "crusaders galahad" || lower == "crusaders_galahad") return "Body/Crusaders/Galahad";
 
         // Bicep skins (fixed options with slot context)
         if (slotHint == "bicep" || slotHint == "bicep away")
@@ -1037,6 +1041,7 @@ public class Plugin : BasePlugin
         if (lower == "purple") return "Sticks/Purple";
         if (lower == "blue green" || lower == "bluegreen" || lower == "teal") return "Sticks/Bluegreen";
         if (lower == "red gold" || lower == "redgold") return "Sticks/Redgold";
+        if (lower == "curve") return "Sticks/Curve";
         if (lower == "sword") return "Sticks/Sword";
         if (lower == "golf" || lower == "golf iron") return "Sticks/Golf_Iron";
         if (lower == "colored stick" || lower == "team stick")
@@ -1071,7 +1076,15 @@ public class Plugin : BasePlugin
                 "Faces/Anyteam/Nasher", "Faces/Anyteam/Chickensneeze", "Faces/Anyteam/Onepunch",
                 "Faces/Anyteam/Bench_Kovalski", "Faces/Anyteam/Bench_Bench",
                 "Faces/Anyteam/Bench_Brewster", "Faces/Anyteam/Bench_Kirby",
-                "Faces/Anyteam/Bench_Buttface", "Faces/Anyteam/Bench_Stumple"
+                "Faces/Anyteam/Bench_Buttface", "Faces/Anyteam/Bench_Stumple",
+                "Faces/Anyteam/Bench_Stumple_Helmet", "Faces/Anyteam/Bench_Buttface_Angus",
+                "Faces/Anyteam/Bench_Buttface_Rambo", "Faces/Anyteam/Referee_Old",
+                "Faces/Figure_Skaters/Figure_Skater_Vanilla", "Faces/Figure_Skaters/FigureSkaterbig",
+                "Faces/Figure_Skaters/FigureSkatersmall",
+                "Faces/Angus_Events/Angus_Chad", "Faces/Angus_Events/Angus_Speed",
+                "Faces/Angus_Events/Angus_Trio", "Faces/Angus_Events/Angus_Bald",
+                "Faces/Knights/Lancelov_Helmless", "Faces/Knights/Red_Knight_Helmetless",
+                "Faces/Spark"
             };
 
             // "random" = special flag handled at apply time
@@ -1146,6 +1159,7 @@ public class Plugin : BasePlugin
             if (lower == "prisoners") return "Body/Prisoners";
             if (lower == "referees" || lower == "referee") return "Body/Referees";
             if (lower == "tycoons") return "Body/Tycoons";
+            if (lower == "mid cheese" || lower == "mid_cheese" || lower == "cheese") return "Body/Mid_Cheese";
         }
         if (slot == "glove")
         {

@@ -64,7 +64,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.21"
+APP_VERSION = "2.1.23"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -535,7 +535,10 @@ def check_for_updates_async(root, silent=True):
                 return
             if _parse_version(remote) <= _parse_version(local):
                 if not silent:
-                    root.after(0, lambda: _show_changelog(root, remote, changelog, is_current=True))
+                    root.after(0, lambda: messagebox.showinfo(
+                        "Up to date",
+                        f"You're on the latest version (v{local}).\n\n"
+                        f"Use the Changelog button to see what's in this release."))
                 return
             root.after(0, lambda: _prompt_update(root, local, remote, installer_url, changelog))
         except Exception as e:
@@ -547,54 +550,15 @@ def check_for_updates_async(root, silent=True):
 
 
 def _prompt_update(root, local, remote, installer_url=None, changelog=""):
-    """Show 'update available' dialog with version info + changelog, then
-    proceed to the download dialog if the user clicks Install."""
-    dlg = tk.Toplevel(root)
-    dlg.title(f"Update available — v{remote}")
-    dlg.transient(root)
-    dlg.resizable(True, True)
-    _fit_geometry(dlg, 560, 400)
-
-    ttk.Label(dlg, text=f"Custom Campaign Framework v{remote} is available",
-              font=("", 11, "bold"), anchor="w").pack(fill="x", padx=16, pady=(14, 2))
-    ttk.Label(dlg, text=f"Installed: v{local}    →    Available: v{remote}",
-              foreground="#555", anchor="w").pack(fill="x", padx=16, pady=(0, 8))
-
-    if changelog:
-        cl_frame = ttk.LabelFrame(dlg, text=" What's new ")
-        cl_frame.pack(fill="both", expand=True, padx=16, pady=(0, 8))
-        cl_text = tk.Text(cl_frame, wrap="word", font=("", 9),
-                          bg="#f8f8f8", bd=0, relief="flat", height=10)
-        cl_scroll = ttk.Scrollbar(cl_frame, command=cl_text.yview)
-        cl_text.configure(yscrollcommand=cl_scroll.set)
-        cl_scroll.pack(side="right", fill="y")
-        cl_text.pack(side="left", fill="both", expand=True, padx=6, pady=6)
-        cl_text.insert("1.0", changelog)
-        cl_text.configure(state="disabled")
-    else:
-        ttk.Label(dlg, text="(No changelog available for this release)",
-                  foreground="#888", anchor="w").pack(fill="x", padx=16, pady=(0, 8))
-
-    accepted = {"v": False}
-
-    def _install():
-        accepted["v"] = True
-        dlg.destroy()
-
-    def _skip():
-        dlg.destroy()
-
-    btn_row = ttk.Frame(dlg)
-    btn_row.pack(pady=(4, 14))
-    ttk.Button(btn_row, text="Install update",
-               command=_install).pack(side="left", padx=6)
-    ttk.Button(btn_row, text="Skip",
-               command=_skip).pack(side="left", padx=6)
-
-    dlg.update_idletasks()
-    dlg.wait_window()
-
-    if not accepted["v"]:
+    """Simple 'update available' prompt — install or skip.
+    Changelog is available via the Changelog button separately."""
+    if not messagebox.askyesno(
+        "Update available",
+        f"Custom Campaign Framework v{remote} is available.\n\n"
+        f"Installed: v{local}\n"
+        f"Available: v{remote}\n\n"
+        f"Install now?  (Use the Changelog button to see what's new.)",
+        parent=root):
         return
 
     import tempfile, threading as _t, webbrowser, time as _time
@@ -1010,17 +974,21 @@ except Exception:
 #   VALUE REGISTRIES (pulled from VALID_VALUES.txt / Plugin.cs)
 # ============================================================
 BODY_SKINS = [
-    "standard",         # colorable — takes jersey primary/secondary/accent
-    "tycoons",          # business suit (fixed look)
-    "princess",         # armored dress (fixed)
-    "golfers",          # polo shirt (fixed)
-    "prisoners",        # jumpsuit (fixed)
-    "mountaineers",     # lederhosen (fixed)
-    "mountaineers beer", # lederhosen + beer (fixed)
-    "hockey fc",        # soccer jersey (fixed)
-    "figure skaters",   # figure skater (fixed)
-    "referee",          # ref stripes (fixed)
-    "random body",      # random each game
+    "standard",              # colorable — takes jersey primary/secondary/accent
+    "tycoons",               # business suit (fixed look)
+    "princess",              # armored dress (fixed)
+    "golfers",               # polo shirt (fixed)
+    "prisoners",             # jumpsuit (fixed)
+    "mountaineers",          # lederhosen (fixed)
+    "mountaineers beer",     # lederhosen + beer (fixed)
+    "hockey fc",             # soccer jersey (fixed)
+    "figure skaters",        # figure skater (fixed)
+    "referee",               # ref stripes (fixed)
+    "crusaders lancelov",    # knights — Lancelov
+    "crusaders prince",      # knights — Prince
+    "crusaders guretski",    # knights — Guretski
+    "crusaders galahad",     # knights — Galahad
+    "random body",           # random each game
 ]
 HELMET_SKINS = [
     "team colors",      # colorable — takes helmet color fields
@@ -1029,7 +997,8 @@ HELMET_SKINS = [
     "random helmet",
 ]
 STICK_SKINS = [
-    "black", "gold", "red", "purple", "teal", "red gold",
+    "black", "gold", "red", "purple", "bluegreen", "red gold",
+    "curve",            # curved blade (new)
     "sword", "golf",
     "team stick",       # colorable — takes stick color
     "random stick",
@@ -1046,7 +1015,8 @@ PANTS_SKINS = [
 ]
 BICEP_SKINS = [
     "standard",         # colorable — takes bicep color
-    "crusaders", "figure_skaters",
+    "crusaders", "crusaders prince",
+    "figure_skaters",
     "golfers", "hockey_fc", "mountaineers_black", "mountaineers_white",
     "princess", "prisoners", "referees", "tycoons",
 ]
@@ -1075,7 +1045,7 @@ GOALIE_HELMET_SKINS = [
 ]
 GOALIE_BODY_SKINS = [
     "team colors", "figure_skaters", "golfers", "hockey_fc", "knights",
-    "mountaineers", "princess", "prisoners", "referees", "tycoons",
+    "mountaineers", "mid cheese", "princess", "prisoners", "referees", "tycoons",
 ]
 GOALIE_GLOVE_SKINS = ["team colors", "brown", "figure_skaters", "golfers", "hockey_fc", "knights", "tycoons"]
 GOALIE_BLOCKER_SKINS = ["team colors", "brown", "figure_skaters", "golfers", "knights", "tycoons"]
@@ -4495,6 +4465,14 @@ _FACE_FULL_PATHS = [
     "Faces/Anyteam/Bench_Kovalski", "Faces/Anyteam/Bench_Bench",
     "Faces/Anyteam/Bench_Brewster", "Faces/Anyteam/Bench_Kirby",
     "Faces/Anyteam/Bench_Buttface", "Faces/Anyteam/Bench_Stumple",
+    "Faces/Anyteam/Bench_Stumple_Helmet", "Faces/Anyteam/Bench_Buttface_Angus",
+    "Faces/Anyteam/Bench_Buttface_Rambo", "Faces/Anyteam/Referee_Old",
+    "Faces/Figure_Skaters/Figure_Skater_Vanilla", "Faces/Figure_Skaters/FigureSkaterbig",
+    "Faces/Figure_Skaters/FigureSkatersmall",
+    "Faces/Angus_Events/Angus_Chad", "Faces/Angus_Events/Angus_Speed",
+    "Faces/Angus_Events/Angus_Trio", "Faces/Angus_Events/Angus_Bald",
+    "Faces/Knights/Lancelov_Helmless", "Faces/Knights/Red_Knight_Helmetless",
+    "Faces/Spark",
 ]
 # Short-name → full path lookup (mirrors DLL ResolveSkin face table)
 _FACE_LOOKUP = {p.rsplit("/", 1)[1].lower(): p for p in _FACE_FULL_PATHS}
@@ -4583,20 +4561,33 @@ def _resolve_fwd_skin(val, slot="body"):
         return "Body/Customization/Customization_colors"
     if slot == "body":
         return {
-            "tycoons":          "Body/Tycoons/Tycoons",
-            "princess":         "Body/Princess/Princess",
-            "golfers":          "Body/Golfers/Golfers",
-            "prisoners":        "Body/Prisoners/Prisoners",
-            "mountaineers":     "Body/Mountaineers/Mountaineers",
-            "mountaineers beer":"Body/Mountaineers/Mountaineers_Beer",
-            "hockey fc":        "Body/HockeyFC/HockeyFC",
-            "figure skaters":   "Body/Figure_Skaters/Figure_Skaters",
-            "referee":          "Body/Alumni/Ref_Alumni",
+            "tycoons":              "Body/Tycoons/Tycoons",
+            "princess":             "Body/Princess/Princess",
+            "golfers":              "Body/Golfers/Golfers",
+            "prisoners":            "Body/Prisoners/Prisoners",
+            "mountaineers":         "Body/Mountaineers/Mountaineers",
+            "mountaineers beer":    "Body/Mountaineers/Mountaineers_Beer",
+            "hockey fc":            "Body/HockeyFC/HockeyFC",
+            "figure skaters":       "Body/Figure_Skaters/Figure_Skaters",
+            "referee":              "Body/Alumni/Ref_Alumni",
+            "crusaders lancelov":   "Body/Crusaders/Lancelov",
+            "crusaders prince":     "Body/Crusaders/Prince",
+            "crusaders guretski":   "Body/Crusaders/Guretski",
+            "crusaders galahad":    "Body/Crusaders/Galahad",
         }.get(lo, "Body/Customization/Customization_colors")
     if slot == "stick":
         return {
-            "sword": "Sticks/Sword",
-            "golf":  "Sticks/Golf_Iron",
+            "black":    "Sticks/Black",
+            "gold":     "Sticks/Gold",
+            "red":      "Sticks/Red",
+            "purple":   "Sticks/Purple",
+            "bluegreen":"Sticks/Bluegreen",
+            "teal":     "Sticks/Bluegreen",
+            "red gold": "Sticks/Redgold",
+            "redgold":  "Sticks/Redgold",
+            "curve":    "Sticks/Curve",
+            "sword":    "Sticks/Sword",
+            "golf":     "Sticks/Golf_Iron",
         }.get(lo, "Sticks/Customization/Customization_colors")
     return s
 
@@ -4653,6 +4644,9 @@ def _resolve_gk_skin(val, slot):
             "referees":      "Body/Referees",
             "referee":       "Body/Referees",
             "tycoons":       "Body/Tycoons",
+            "mid cheese":    "Body/Mid_Cheese",
+            "mid_cheese":    "Body/Mid_Cheese",
+            "cheese":        "Body/Mid_Cheese",
         }.get(lo, _defaults["body"])
     if slot == "glove":
         return {
