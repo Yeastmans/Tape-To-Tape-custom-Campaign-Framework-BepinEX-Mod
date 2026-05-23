@@ -7933,11 +7933,12 @@ public static class PatchEliteLaunchMatch
 // ============================================================
 // Log all relics, abilities, talents from repositories
 // ============================================================
-[HarmonyPatch(typeof(Team), nameof(Team.Initialize), new Type[] { typeof(TeamData) })]
+// Team.Initialize(TeamData) was removed in the post-May-2026 game update.
+// AutoDumpNameLists is now triggered from PatchSetCurrentAct via _pendingAutoDump.
 public static class LogRepositories
 {
-    [HarmonyPostfix]
-    public static void Postfix(Team __instance, TeamData teamData)
+    // Called directly by PatchSetCurrentAct — not a Harmony patch.
+    public static void OnTeamInitialized(Team __instance, TeamData teamData)
     {
         if (!Plugin.ReposLogged)
         {
@@ -9513,9 +9514,12 @@ public static class LogRepositories
 // ============================================================
 // DEBUG: Boost player team
 // ============================================================
-[HarmonyPatch(typeof(Team), nameof(Team.Initialize), new Type[] { typeof(TeamData) })]
+// Team.Initialize(TeamData) removed in post-May-2026 game update — patch disabled.
+[HarmonyPatch]
 public static class DebugTeamBoost
 {
+    static System.Reflection.MethodBase TargetMethod() => null;
+
     private static readonly HashSet<IntPtr> BoostedPtrs = new();
     private static readonly string[] PlayerPrefixes = { "Basic", "Defense", "Speed", "Trio" };
 
@@ -9597,6 +9601,8 @@ public static class PatchMatchInitForwards
             if (PatchPlayerTeamInit.IsPresetKey(key)) continue;
             if (name.StartsWith(key, StringComparison.OrdinalIgnoreCase)) { isCustom = true; break; }
         }
+        // Apply player team config here since Team.Initialize(TeamData) was removed.
+        PatchPlayerTeamInit.ApplyForTeamData(team);
         if (!isCustom) return;
         PatchPlayerTeamInit.ReconcileDraftedFAs(team, "MatchInit");
     }
@@ -9714,9 +9720,13 @@ public static class PatchTeamDataAddForwardToBench
 // ============================================================
 // Player Team Editor — apply player_teams.txt to player teams
 // ============================================================
-[HarmonyPatch(typeof(Team), nameof(Team.Initialize), new Type[] { typeof(TeamData) })]
+// Team.Initialize(TeamData) removed in post-May-2026 game update.
+// Postfix now called manually from PatchMatchInitForwards instead.
+[HarmonyPatch]
 public static class PatchPlayerTeamInit
 {
+    static System.Reflection.MethodBase TargetMethod() => null;
+
     private static readonly string[] PlayerPrefixes = { "Basic", "Defense", "Speed", "Trio" };
     private static readonly HashSet<IntPtr> AppliedTeamPtrs = new();
 
@@ -9725,6 +9735,12 @@ public static class PatchPlayerTeamInit
         if (string.IsNullOrEmpty(key)) return false;
         key = key.ToLowerInvariant();
         return key == "basic" || key == "defense" || key == "speed" || key == "trio";
+    }
+
+    // Called manually from PatchMatchInitForwards (Team.Initialize no longer exists).
+    public static void ApplyForTeamData(TeamData teamData)
+    {
+        Postfix(null, teamData);
     }
 
     [HarmonyPostfix]
