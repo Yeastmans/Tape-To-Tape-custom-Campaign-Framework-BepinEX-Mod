@@ -42,6 +42,17 @@ def _ensure_layout():
                           os.path.join(new_lib, item))
             os.rmdir(legacy_lib)
         except Exception: pass
+    # Legacy migration: rename old "(in-game editor)" library folders to cleaner names
+    lib = os.path.join(SCRIPT_DIR, "library")
+    for old_name, new_name in [
+        ("Custom Teams (in-game editor)", "Custom Teams"),
+        ("Custom Players (in-game editor)", "Custom Players"),
+    ]:
+        old_path = os.path.join(lib, old_name)
+        new_path = os.path.join(lib, new_name)
+        if os.path.isdir(old_path) and not os.path.exists(new_path):
+            try: os.rename(old_path, new_path)
+            except Exception: pass
     # Legacy migration: move any campaign-looking folder at SCRIPT_DIR root
     # (has campaign.txt or teams/) into campaigns/ subfolder.
     for name in list(os.listdir(SCRIPT_DIR)):
@@ -64,7 +75,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.23"
+APP_VERSION = "2.1.28"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -1214,8 +1225,10 @@ def write_kv(path, data, order=None, header=None):
 
 
 LIBRARY_SOURCE = "All Players"  # Pseudo-campaign that surfaces library/players/
-GAME_TEAM_NAMES_FILE = os.path.join(SCRIPT_DIR, "_game_team_names.txt")
+GAME_TEAM_NAMES_FILE   = os.path.join(SCRIPT_DIR, "_game_team_names.txt")
 GAME_PLAYER_NAMES_FILE = os.path.join(SCRIPT_DIR, "_game_player_names.txt")
+GAME_SKATER_NAMES_FILE = os.path.join(SCRIPT_DIR, "_game_skater_names.txt")
+GAME_GOALIE_NAMES_FILE = os.path.join(SCRIPT_DIR, "_game_goalie_names.txt")
 GAME_TEAM_LOGOS_FILE = os.path.join(SCRIPT_DIR, "_game_team_logos.txt")
 
 # Reward-pool files (written by the DLL to BepInEx/plugins/ each launch).
@@ -1233,8 +1246,9 @@ def _find_plugins_dir():
     return SCRIPT_DIR
 
 _PLUGINS_DIR = _find_plugins_dir()
-REWARD_RELICS_FILE = os.path.join(_PLUGINS_DIR, "_reward_relics.txt")
-REWARD_TALENTS_FILE = os.path.join(_PLUGINS_DIR, "_reward_talents.txt")
+_GUI_DATA_DIR = os.path.join(_PLUGINS_DIR, "T2T_Dumps", "_gui_data")
+REWARD_RELICS_FILE = os.path.join(_GUI_DATA_DIR, "_reward_relics.txt")
+REWARD_TALENTS_FILE = os.path.join(_GUI_DATA_DIR, "_reward_talents.txt")
 
 
 def load_reward_relic_list():
@@ -1325,18 +1339,25 @@ def get_game_team_names():
 
 
 def get_all_team_names():
-    """Return game team names + library team names + base game team names merged and sorted."""
+    """Return game team names + library team names + base game team names + player_teams squads."""
     names = set(get_game_team_names())
     if os.path.isdir(TEAM_LIBRARY_DIR):
         for d in os.listdir(TEAM_LIBRARY_DIR):
             if os.path.isdir(os.path.join(TEAM_LIBRARY_DIR, d)):
                 names.add(d)
-    for sub in ("Base Game Teams", "Custom Teams (in-game editor)"):
+    for sub in ("Base Game Teams", "Custom Teams"):
         bg_dir = os.path.join(LIBRARY_DIR, sub)
         if os.path.isdir(bg_dir):
             for d in os.listdir(bg_dir):
                 if os.path.isdir(os.path.join(bg_dir, d)):
                     names.add(d)
+    if os.path.isdir(CAMPAIGNS_DIR):
+        for camp in os.listdir(CAMPAIGNS_DIR):
+            pt = os.path.join(CAMPAIGNS_DIR, camp, "player_teams")
+            if os.path.isdir(pt):
+                for d in os.listdir(pt):
+                    if os.path.isdir(os.path.join(pt, d)) and d.lower() not in _PT_SKIP:
+                        names.add(d)
     return sorted(names)
 
 
@@ -1365,29 +1386,63 @@ def get_game_player_names():
     return names
 
 
-def get_all_player_names():
-    """Return game player names + library player names + base game player names merged and sorted."""
-    names = set(get_game_player_names())
-    # Library players
+def _read_name_file(path):
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            return [ln.strip() for ln in fh if ln.strip()]
+    except Exception:
+        return []
+
+
+def _scan_library_flat(goalie: bool):
+    """Return stem names from flat library folders, filtered by type (goalie prefix or not)."""
+    names = set()
+    for sub in ("Base Game Players", "Custom Players"):
+        d = os.path.join(LIBRARY_DIR, sub)
+        if os.path.isdir(d):
+            for f in os.listdir(d):
+                if not f.endswith(".txt") or f.startswith("_"):
+                    continue
+                is_g = f.startswith("Goalie - ")
+                if is_g == goalie:
+                    names.add(f[:-4])
     if os.path.isdir(PLAYER_LIBRARY_DIR):
         for f in os.listdir(PLAYER_LIBRARY_DIR):
-            if f.endswith(".txt"):
+            if not f.endswith(".txt") or f.startswith("_"):
+                continue
+            is_g = f.startswith("Goalie - ")
+            if is_g == goalie:
                 names.add(f[:-4])
-    # Auto-generated player folders
-    for sub in ("Base Game Players", "Custom Players (in-game editor)"):
-        bg_dir = os.path.join(LIBRARY_DIR, sub)
-        if os.path.isdir(bg_dir):
-            for f in os.listdir(bg_dir):
-                if f.endswith(".txt") and not f.startswith("_"):
-                    names.add(f[:-4])
+    return names
+
+
+def get_goalie_player_names():
+    """Names for the goalie Import Player dropdown — goalies only."""
+    names = set(f"Goalie - {n}" for n in _read_name_file(GAME_GOALIE_NAMES_FILE))
+    names |= _scan_library_flat(goalie=True)
     return sorted(names)
+
+
+def get_skater_player_names():
+    """Names for the skater Import Player dropdown — forwards only."""
+    names = set(_read_name_file(GAME_SKATER_NAMES_FILE))
+    # Fall back to old combined file if typed files don't exist yet
+    if not names:
+        names = set(_read_name_file(GAME_PLAYER_NAMES_FILE))
+    names |= _scan_library_flat(goalie=False)
+    return sorted(names)
+
+
+def get_all_player_names():
+    """All player names merged — kept for callers that don't care about type."""
+    return sorted(set(get_goalie_player_names()) | set(get_skater_player_names()))
 
 
 def resolve_library_player_path(filename):
     """Find a player file across all library subfolders. Returns full path or None."""
     for loc in [PLAYER_LIBRARY_DIR,
                 os.path.join(LIBRARY_DIR, "Base Game Players"),
-                os.path.join(LIBRARY_DIR, "Custom Players (in-game editor)")]:
+                os.path.join(LIBRARY_DIR, "Custom Players")]:
         p = os.path.join(loc, filename)
         if os.path.isfile(p):
             return p
@@ -1398,7 +1453,7 @@ def resolve_library_team_dir(team_name):
     """Find a team folder across all library subfolders. Returns full path or None."""
     for loc in [TEAM_LIBRARY_DIR,
                 os.path.join(LIBRARY_DIR, "Base Game Teams"),
-                os.path.join(LIBRARY_DIR, "Custom Teams (in-game editor)")]:
+                os.path.join(LIBRARY_DIR, "Custom Teams")]:
         p = os.path.join(loc, team_name)
         if os.path.isdir(p):
             return p
@@ -1409,7 +1464,7 @@ def is_base_game_path(path):
     """Return True if path is inside a read-only auto-generated subfolder."""
     norm = os.path.normpath(path).lower()
     for sub in ("base game teams", "base game players",
-                "custom teams (in-game editor)", "custom players (in-game editor)"):
+                "custom teams", "custom players"):
         if os.sep + sub.lower() + os.sep in norm or norm.endswith(os.sep + sub.lower()):
             return True
     return False
@@ -1556,25 +1611,49 @@ def list_campaigns():
     return out
 
 
+_PT_SKIP = {"draft_pool", "draft pool", "free_agents", "free agents", "superstars", "superstar"}
+
+
+def _campaign_team_path(campaign, team):
+    """Return full path to a team inside a campaign, checking teams/ then player_teams/."""
+    p = os.path.join(CAMPAIGNS_DIR, campaign, "teams", team)
+    if os.path.isdir(p):
+        return p
+    p2 = os.path.join(CAMPAIGNS_DIR, campaign, "player_teams", team)
+    if os.path.isdir(p2):
+        return p2
+    return p  # default fallback
+
+
 def list_teams(campaign):
-    """List team folder names in a campaign (or the library + base game + custom)."""
+    """List team folder names in a campaign (or the library + base game + custom).
+    Also includes player_teams/ squads for campaign sources."""
     if campaign == LIBRARY_SOURCE:
         names = set()
         if os.path.isdir(TEAM_LIBRARY_DIR):
             for d in os.listdir(TEAM_LIBRARY_DIR):
                 if os.path.isdir(os.path.join(TEAM_LIBRARY_DIR, d)):
                     names.add(d)
-        for sub in ("Base Game Teams", "Custom Teams (in-game editor)"):
+        for sub in ("Base Game Teams", "Custom Teams"):
             sd = os.path.join(LIBRARY_DIR, sub)
             if os.path.isdir(sd):
                 for d in os.listdir(sd):
                     if os.path.isdir(os.path.join(sd, d)):
                         names.add(d)
         return sorted(names)
+    names = []
     teams_dir = os.path.join(CAMPAIGNS_DIR, campaign, "teams")
-    if not os.path.isdir(teams_dir):
-        return []
-    return sorted([d for d in os.listdir(teams_dir) if os.path.isdir(os.path.join(teams_dir, d))])
+    if os.path.isdir(teams_dir):
+        names = sorted([d for d in os.listdir(teams_dir)
+                        if os.path.isdir(os.path.join(teams_dir, d))])
+    pt_dir = os.path.join(CAMPAIGNS_DIR, campaign, "player_teams")
+    if os.path.isdir(pt_dir):
+        seen = set(names)
+        for d in sorted(os.listdir(pt_dir)):
+            if os.path.isdir(os.path.join(pt_dir, d)) and d.lower() not in _PT_SKIP and d not in seen:
+                names.append(d)
+                seen.add(d)
+    return names
 
 
 def list_players(campaign, team):
@@ -1586,7 +1665,7 @@ def list_players(campaign, team):
             for f in os.listdir(PLAYER_LIBRARY_DIR):
                 if f.endswith(".txt"):
                     names.add(f)
-        for sub in ("Base Game Players", "Custom Players (in-game editor)"):
+        for sub in ("Base Game Players", "Custom Players"):
             sd = os.path.join(LIBRARY_DIR, sub)
             if os.path.isdir(sd):
                 for f in os.listdir(sd):
@@ -1764,7 +1843,7 @@ def _bulk_copy_from_random(editor, is_team=False):
     if is_team:
         for base in (TEAM_LIBRARY_DIR,
                      os.path.join(LIBRARY_DIR, "Base Game Teams"),
-                     os.path.join(LIBRARY_DIR, "Custom Teams (in-game editor)")):
+                     os.path.join(LIBRARY_DIR, "Custom Teams")):
             if os.path.isdir(base):
                 for d in os.listdir(base):
                     tp = os.path.join(base, d, "team.txt")
@@ -1773,7 +1852,7 @@ def _bulk_copy_from_random(editor, is_team=False):
         is_goalie = getattr(editor, "is_goalie", False)
         for base in (PLAYER_LIBRARY_DIR,
                      os.path.join(LIBRARY_DIR, "Base Game Players"),
-                     os.path.join(LIBRARY_DIR, "Custom Players (in-game editor)")):
+                     os.path.join(LIBRARY_DIR, "Custom Players")):
             if os.path.isdir(base):
                 for f in os.listdir(base):
                     if not f.endswith(".txt") or f.startswith("_"): continue
@@ -1946,7 +2025,6 @@ class ListPicker(ttk.Frame):
         super().__init__(parent)
         self.entries = entries or []
         self.options = options or []
-        self.supports_level = supports_level
         self.is_pool = is_pool
         # Build lookups by key and by display name (case-insensitive)
         self.entry_by_key = {e["key"]: e for e in self.entries}
@@ -1997,19 +2075,12 @@ class ListPicker(ttk.Frame):
         self._values = []
 
     def _display_for(self, raw):
-        """Build display string. 'raw' may be either a key or a friendly name."""
-        token = raw
-        suffix = ""
-        if ":" in raw:
-            token, lvl = raw.rsplit(":", 1)
-            suffix = f" (Lv{lvl})"
-        # Try match by key OR by name
-        entry = self.entry_by_key.get(token) or self.entry_by_name.get(token.lower())
+        """Build display string. 'raw' is a key or friendly name."""
+        entry = self.entry_by_key.get(raw) or self.entry_by_name.get(raw.lower())
         if entry:
-            # Show "Friendly Name — internal_key" for clarity
             if entry.get("name") and entry["name"] != entry["key"]:
-                return f"{entry['name']}{suffix}  —  {entry['key']}"
-            return f"{entry['key']}{suffix}"
+                return f"{entry['name']}  —  {entry['key']}"
+            return entry["key"]
         return raw
 
     def add_item(self):
@@ -2055,8 +2126,7 @@ class ListPicker(ttk.Frame):
                 for e in self.entries:
                     hay = (e["key"] + " " + e["name"] + " " + e.get("desc", "")).lower()
                     if needle in hay:
-                        lv2 = " (Lv2 avail)" if e.get("has_level2") else ""
-                        display = f"{e['name']}{lv2}  —  {e['key']}"
+                        display = f"{e['name']}  —  {e['key']}"
                         rows.append((display, e))
             else:
                 for opt in self.options:
@@ -2083,25 +2153,11 @@ class ListPicker(ttk.Frame):
             desc_text.configure(state="disabled")
         lst.bind("<<ListboxSelect>>", show_desc)
 
-        if self.supports_level:
-            lvl_frame = ttk.Frame(dlg)
-            lvl_frame.pack(anchor="w", padx=8, pady=2)
-            ttk.Label(lvl_frame, text="Level:").pack(side="left")
-            level_var = tk.StringVar(value="1")
-            ttk.Radiobutton(lvl_frame, text="1", variable=level_var, value="1").pack(side="left")
-            ttk.Radiobutton(lvl_frame, text="2 (if available)", variable=level_var, value="2").pack(side="left")
-        else:
-            level_var = None
-
         def do_pick():
             sel = lst.curselection()
             if not sel: return
             _, e = rows[sel[0]]
-            # Prefer the friendly display name for the config file.
-            # The mod's parser resolves both friendly names and internal keys.
             val = e["name"] if e.get("name") else e["key"]
-            if level_var and level_var.get() == "2":
-                val = val + ":2"
             self._values.append(val)
             self.listbox.insert("end", self._display_for(val))
             dlg.destroy()
@@ -2214,6 +2270,7 @@ class ActSequenceBuilder(ttk.Frame):
         self._on_change = on_change
         self._slots = []  # list of int (1/2/3)
         self._spartan_replace = {}  # map index → bool (only Act 1 maps)
+        self._gauntlet_mode = False  # hides Spartan checkboxes when True
         # var is exposed so trace_add (used by editor validation) keeps working
         self.var = tk.StringVar()
 
@@ -2308,8 +2365,8 @@ class ActSequenceBuilder(ttk.Frame):
                     self._render()
                 act_var.trace_add("write", on_pick)
 
-                # Act 1 maps: per-map Spartan replacement checkbox
-                if act == 1:
+                # Act 1 maps: per-map Spartan replacement checkbox (hidden in gauntlet mode)
+                if act == 1 and not self._gauntlet_mode:
                     sp_var = tk.BooleanVar(value=self._spartan_replace.get(i, False))
                     def on_sp_toggle(*a, idx=i, v=sp_var):
                         self._spartan_replace[idx] = v.get()
@@ -2354,16 +2411,24 @@ class ActSequenceBuilder(ttk.Frame):
             self._summary.configure(
                 text=f"Total maps: 1  (only the boss = 3 games, 3 teams).")
         else:
-            sp_note = ""
-            if a1_replaced > 0 and a1_default > 0:
-                sp_note = f"  ({a1_replaced} with Spartan→Elite, {a1_default} default)"
-            elif a1_replaced > 0:
-                sp_note = f"  (all Spartans→Elite)"
-            self._summary.configure(
-                text=f"Total maps: {total}  |  "
-                     f"Act 1 ×{len(a1_maps)}{sp_note} = {a1_games} games, "
-                     f"Act 2 ×{a2_count} = {a2_games}, Boss = {a3_games}  |  "
-                     f"Total: {total_games} teams needed")
+            if self._gauntlet_mode:
+                # Gauntlet mode: no Spartan replacements, use regular game count formula.
+                self._summary.configure(
+                    text=f"Gauntlet map: {total} maps  |  "
+                         f"Act 1 ×{len(a1_maps)} = {a1_games} games, "
+                         f"Act 2 ×{a2_count} = {a2_games}, Boss = {a3_games}  |  "
+                         f"Total: {total_games} teams needed  |  no Spartans")
+            else:
+                sp_note = ""
+                if a1_replaced > 0 and a1_default > 0:
+                    sp_note = f"  ({a1_replaced} with Spartan→Elite, {a1_default} default)"
+                elif a1_replaced > 0:
+                    sp_note = f"  (all Spartans→Elite)"
+                self._summary.configure(
+                    text=f"Total maps: {total}  |  "
+                         f"Act 1 ×{len(a1_maps)}{sp_note} = {a1_games} games, "
+                         f"Act 2 ×{a2_count} = {a2_games}, Boss = {a3_games}  |  "
+                         f"Total: {total_games} teams needed")
 
     def _normalize(self):
         """Enforce: Act 3 boss is ALWAYS the last slot, exactly once, and cannot be
@@ -2381,6 +2446,11 @@ class ActSequenceBuilder(ttk.Frame):
         if self._on_change:
             try: self._on_change()
             except Exception: pass
+
+    def set_gauntlet_mode(self, enabled):
+        """Hide/show per-map Spartan checkboxes. Call when Gauntlet Map toggle changes."""
+        self._gauntlet_mode = bool(enabled)
+        self._render()
 
     def _add(self, act):
         act = int(act)
@@ -2693,7 +2763,7 @@ PLAYER_FIELD_ORDER = [
 ]
 
 GOALIE_FIELD_ORDER = [
-    "Name", "Face",
+    "Name", "Left Handed",
     "Skill", "Catching", "Glove", "Blocker", "Five Hole",
     "Standing Speed", "Butterfly Speed", "Control", "Recovery",
     "Pass Power", "Shot Power", "Poke Check", "Depth", "Pass Read",
@@ -2701,9 +2771,7 @@ GOALIE_FIELD_ORDER = [
     "Helmet Skin", "Skin", "Skin Away", "Glove Skin", "Glove Away",
     "Blocker Skin", "Blocker Away", "Pads Skin", "Pads Away",
     "Stick Skin", "Stick Away", "Logo Skin",
-    "Jersey Color", "Helmet Color", "Gloves Color", "Pants Color",
-    "Skates Color", "Blade Color", "Laces Color",
-    "Socks Color", "Bicep Color", "Number Color",
+    "Jersey Color", "Helmet Color", "Gloves Color",
 ]
 
 
@@ -2768,20 +2836,17 @@ class PlayerEditor(ttk.Frame):
                 if w and not w.get():
                     w.set("(use team default)")
 
-        # Free-agent editing: lock the Name field because the DLL intentionally
-        # skips name assignment for draft-pool entries (renaming breaks the
-        # rest of the customization). Keep the field VISIBLE so the user can
-        # see which player they're editing, but disable typing into it.
+        # Starting Bench: the Name field IS editable now — the DLL renames the
+        # in-game bench player to whatever you type here. The file itself keeps
+        # its original filename (the stable match key for the vanilla bench slot
+        # this entry customizes), so renaming the display name doesn't break the
+        # match. Just add a hint explaining that.
         if self.is_draft_pool:
             name_w = self.widgets.get("Name")
-            if name_w is not None and hasattr(name_w, "entry"):
+            if name_w is not None:
                 try:
-                    name_w.entry.configure(state="readonly")
-                except Exception: pass
-                # Also drop a hint near the field explaining why it's locked.
-                try:
-                    ttk.Label(name_w, text="(locked — free-agent names can't be changed)",
-                              foreground="#aa5500", font=("", 8)).pack(side="left", padx=6)
+                    ttk.Label(name_w, text="(this renames the bench player in-game)",
+                              foreground="#557700", font=("", 8)).pack(side="left", padx=6)
                 except Exception: pass
 
         # Bulk color action toolbar under the validation banner
@@ -2823,14 +2888,19 @@ class PlayerEditor(ttk.Frame):
                 background="#fff3c4", foreground="#553300", font=("", 9, "bold"),
                 justify="left", anchor="w", padx=8, pady=4
             ).pack(fill="x", padx=4, pady=(0, 4))
-        # Import Player: combo populated from game dump + library players
-        player_names = get_all_player_names()
+        # Import Player: goalies see only goalies; skaters see only skaters
+        player_names = get_goalie_player_names() if self.is_goalie else get_skater_player_names()
         if player_names:
             self.add_combo(parent, "Import Player", ["random"] + player_names,
-                           "Pick a game or custom player, or 'random'")
+                           "Pick a player to clone from, or 'random'")
         else:
             self.add_entry(parent, "Import Player",
-                           "Player name or 'random' — run game once + create players to populate this list")
+                           "Player name or 'random' — run game once to populate this list")
+        # "Import" button — fills all fields NOW from the selected library player
+        _pimp_row = ttk.Frame(parent)
+        _pimp_row.pack(anchor="w", pady=(0, 4), padx=(210, 0))
+        ttk.Button(_pimp_row, text="Import stats & appearance from library player",
+                   command=self._do_import_player_fields, width=42).pack(side="left")
 
         section("Identity")
         # (Position is determined when assigning to a team — no preferred position field needed)
@@ -2841,10 +2911,6 @@ class PlayerEditor(ttk.Frame):
             # lets the game use its proper goalie head. Setting a skater face
             # (including "Helmet_Face") makes the goalie appear headless.
             self.add_combo(parent, "Left Handed", YESNO_RANDOM, "Determines stick hand")
-            self.add_combo(parent, "Skin Color", SKIN_COLORS, "light / dark / random")
-            self.add_combo(parent, "Size", SIZES, "Affects hitbox + jersey fit")
-            self.add_slider(parent, "Size Offset", min_val=0.5, max_val=2.0,
-                hint="Fine-tune scale (default 1.0)", is_float=True, count_in_overall=False)
         else:
             self.add_entry(parent, "Name", "Full name (First Last) — also used as filename")
             self.add_entry(parent, "Number", "Jersey number 1-99")
@@ -2970,9 +3036,7 @@ class PlayerEditor(ttk.Frame):
             "Number Color": "Jersey number color (main)",
             "Number Secondary Color": "Number outline/shadow",
         }
-        colors = (["Jersey Color", "Helmet Color", "Gloves Color", "Pants Color",
-                   "Skates Color", "Blade Color", "Laces Color",
-                   "Socks Color", "Bicep Color", "Number Color"]
+        colors = (["Jersey Color", "Helmet Color", "Gloves Color"]
                   if self.is_goalie else
                   ["Jersey Color", "Jersey Secondary Color", "Jersey Accent Color",
                    "Helmet Color", "Helmet Secondary Color", "Helmet Tertiary Color",
@@ -3147,12 +3211,50 @@ class PlayerEditor(ttk.Frame):
         if val == "standard":   return "team colors"
         return val
 
-    def save_file(self, team_path=None):
+    def _do_import_player_fields(self):
+        """Fill ALL editor fields (including Name and Number) from the selected library player."""
+        w = self.widgets.get("Import Player")
+        name = w.get().strip() if w else ""
+        if not name or name.lower() == "random":
+            messagebox.showwarning("Import", "Select a player name in the 'Import Player' dropdown first.")
+            return
+        src = resolve_library_player_path(name + ".txt")
+        if src is None:
+            messagebox.showwarning("Import",
+                f"No library file found for '{name}'.\n"
+                "Run the game once so it auto-dumps all players to the library.")
+            return
+        try:
+            data = read_kv(src)
+        except Exception as e:
+            messagebox.showerror("Import failed", str(e))
+            return
+        # Import everything, Name and Number included (user wants the imported
+        # player's identity, not the current one preserved). If the library file
+        # has no Name, fall back to the dropdown selection.
+        if not data.get("Name"):
+            data["Name"] = name
+        filled = 0
+        for field, val in data.items():
+            if not val:
+                continue
+            widget = self.widgets.get(field)
+            if widget:
+                try:
+                    widget.set(val)
+                    filled += 1
+                except Exception:
+                    pass
+        messagebox.showinfo("Imported",
+            f"Imported {filled} field(s) from '{name}' (including Name and Number).")
+
+    def save_file(self, team_path=None, skip_library=False):
         """Save the player.
 
-        ALWAYS writes to the library at library/players/<Name>.txt.
-        If team_path is given, ALSO writes a copy there (for the team's slot).
-        Returns (library_path, team_path_or_None). Raises ValueError if no Name.
+        Normally writes to library/players/<Name>.txt and optionally team_path.
+        When skip_library=True (draft pool context), writes ONLY to team_path so
+        the base-game library is never modified by campaign-specific edits.
+        Returns (written_path, team_path_or_None). Raises ValueError if no Name.
         """
         data = self.get_data()
         # Translate override aliases back to real config values
@@ -3179,10 +3281,23 @@ class PlayerEditor(ttk.Frame):
             raise ValueError(
                 "Can't save — need a Name (or an Import Player name to clone from).")
         safe = re.sub(r'[<>:"/\\|?*]', '_', lib_name).strip()
+
+        if skip_library:
+            # Campaign-only context (draft pool): write only to the campaign path.
+            # Never touch the shared library so base-game values stay pristine.
+            if not team_path:
+                raise ValueError("skip_library=True requires a team_path to write to.")
+            if is_base_game_path(team_path):
+                raise ValueError("Cannot save into a base-game/auto-generated folder.")
+            os.makedirs(os.path.dirname(team_path), exist_ok=True)
+            write_kv(team_path, data, order=order)
+            self.loaded_path = team_path
+            return team_path, team_path
+
         os.makedirs(PLAYER_LIBRARY_DIR, exist_ok=True)
         lib_path = os.path.join(PLAYER_LIBRARY_DIR, safe + ".txt")
 
-        # 1) Always write to library
+        # 1) Write to shared library
         write_kv(lib_path, data, order=order)
         self.loaded_path = lib_path
 
@@ -3340,40 +3455,29 @@ class TeamEditor(ttk.Frame):
             ttk.Label(parent, text=title, font=("", 10, "bold")).pack(anchor="w", pady=(10, 2))
 
         # === IMPORT FIRST (at the top — obvious shortcut) ===
-        ttk.Label(parent, text="Quick option: Import an existing in-game team",
+        ttk.Label(parent, text="Import Team",
                   font=("", 10, "bold")).pack(anchor="w", pady=(4, 2))
-        has_team_list = bool(get_game_team_names())
-        if has_team_list:
-            ttk.Label(parent,
-                text=(
-                    "Pick a team from the dropdown to pre-fill EVERYTHING — players, colors, logo,\n"
-                    "uniform skins, the whole team. This is the ONLY field you need for a clone.\n"
-                    "Leave everything else blank and click Save.\n"
-                    "Use 'RANDOM' for a random team, 'PLAYER' for the player's own team.\n"
-                    "Any field you fill in below will override the imported value.\n"
-                    "NOTE: Import is resolved when you LAUNCH THE GAME — save here, then play."
-                ),
-                foreground="#555", font=("", 8), justify="left", wraplength=700
-            ).pack(anchor="w", padx=4, pady=(0, 4))
-        else:
-            tk.Label(parent,
-                text=(
-                    "  Team list not yet available.\n"
-                    "  Launch Tape to Tape once with the mod installed — it auto-scans all teams.\n"
-                    "  Then reopen this editor and the dropdown will be populated.\n"
-                    "  (You can still type a name manually if you know it.)"
-                ),
-                background="#fff3c4", foreground="#553300", font=("", 9, "bold"),
-                justify="left", anchor="w", padx=8, pady=4
-            ).pack(fill="x", padx=4, pady=(0, 4))
+        ttk.Label(parent,
+            text=(
+                "Select a team to pre-fill all fields (colors, logo, uniform skins).\n"
+                "Use 'RANDOM' to pick a random team at runtime.\n"
+                "Any field you fill in below will override the imported value."
+            ),
+            foreground="#555", font=("", 8), justify="left", wraplength=700
+        ).pack(anchor="w", padx=4, pady=(0, 4))
         # Import Team: combo populated from game dump + library teams
         team_names = get_all_team_names()
         if team_names:
-            self.add_combo(parent, "Import Team", ["RANDOM", "PLAYER"] + team_names,
-                           "Pick a game or custom team, or RANDOM / PLAYER")
+            self.add_combo(parent, "Import Team", ["RANDOM"] + team_names,
+                           "Pick a game or custom team, or RANDOM")
         else:
             self.add_entry(parent, "Import Team",
-                           "Team name or RANDOM / PLAYER — run game once + create teams to populate this list")
+                           "Team name or RANDOM — run game once to populate this list")
+        # "Import" button — fills all fields + players from the selected library team
+        _imp_row = ttk.Frame(parent)
+        _imp_row.pack(anchor="w", pady=(0, 4), padx=(210, 0))
+        ttk.Button(_imp_row, text="Import fields & players from library",
+                   command=self._do_import_team_fields, width=36).pack(side="left")
 
         section("Identity")
         self.add_entry(parent, "Team Name")
@@ -3457,7 +3561,7 @@ class TeamEditor(ttk.Frame):
         section("Starting Relics + Random Talents")
         self.add_listpicker(parent, "Team Relics", RELICS,
             f"Click + Add to pick from {len(RELICS)} relics (with descriptions)",
-            supports_level=True)
+)
         self.add_combo(parent, "Team Random Talents",
             [str(n) for n in range(0, 11)],
             "Every player on this team gets N random talents (0 = none)")
@@ -3503,6 +3607,47 @@ class TeamEditor(ttk.Frame):
     def load_dir(self, team_dir):
         self.loaded_dir = team_dir
         self.set_data(read_kv(os.path.join(team_dir, "team.txt")))
+
+    def _do_import_team_fields(self):
+        """Fill all team fields + copy players from the selected library team."""
+        import shutil
+        name_widget = self.widgets.get("Import Team")
+        name = name_widget.get() if name_widget else ""
+        if not name or name.upper() in ("RANDOM", ""):
+            messagebox.showwarning("Import", "Select a team name in the 'Import Team' dropdown first.")
+            return
+        src = resolve_library_team_dir(name)
+        if src is None:
+            # Try base game teams
+            for sub in ("Base Game Teams", "Custom Teams"):
+                cand = os.path.join(LIBRARY_DIR, sub, name)
+                if os.path.isdir(cand): src = cand; break
+        if src is None or not os.path.isdir(src):
+            messagebox.showwarning("Import", f"Team '{name}' not found in the library.\n"
+                                   "It's only importable if it has been saved to the library first.")
+            return
+        team_file = os.path.join(src, "team.txt")
+        if os.path.isfile(team_file):
+            data = read_kv(team_file)
+            # Preserve the Import Team value the user had set
+            data["Import Team"] = name
+            self.set_data(data)
+        # Copy players folder if destination is known
+        if self.loaded_dir:
+            src_players = os.path.join(src, "players")
+            dst_players = os.path.join(self.loaded_dir, "players")
+            if os.path.isdir(src_players):
+                os.makedirs(dst_players, exist_ok=True)
+                for f in os.listdir(src_players):
+                    if f.endswith(".txt"):
+                        dst_file = os.path.join(dst_players, f)
+                        shutil.copy2(os.path.join(src_players, f), dst_file)
+                messagebox.showinfo("Import",
+                    f"Imported fields from '{name}'.\nPlayer files copied to players/ (existing overwritten).")
+            else:
+                messagebox.showinfo("Import", f"Imported fields from '{name}' (no players folder found).")
+        else:
+            messagebox.showinfo("Import", f"Imported fields from '{name}'.\nSave the team to also copy players.")
 
     def save_dir(self, team_dir):
         # Safety net: never write into a base game / auto-generated folder.
@@ -3610,6 +3755,18 @@ class CampaignEditor(ttk.Frame):
                 w.var.trace_add("write", lambda *a: self._refresh_live())
             except Exception: pass
 
+        gm_w = LabeledCheckbox(top, "Gauntlet Map",
+            "Forces the Gauntlet squad at the start of the run — players face every base-game team. "
+            "Spartans don't appear in Gauntlet mode so the Spartan toggles are hidden.")
+        gm_w.pack(anchor="w", pady=1)
+        self.widgets["Gauntlet Map"] = gm_w
+        try:
+            def _on_gauntlet_toggle(*a):
+                act_builder.set_gauntlet_mode(gm_w.get() == "yes")
+                self._refresh_live()
+            gm_w.var.trace_add("write", _on_gauntlet_toggle)
+        except Exception: pass
+
         # Live team-count readout that factors in Replace Challenges
         self._game_count_label = ttk.Label(top,
             text="Build the act sequence above to see how many teams you need.",
@@ -3643,60 +3800,97 @@ class CampaignEditor(ttk.Frame):
         ttk.Button(btns, text="Move Up", command=lambda: self.move_team(-1), width=14).pack(pady=2)
         ttk.Button(btns, text="Move Down", command=lambda: self.move_team(1), width=14).pack(pady=2)
 
-        # === PLAYER TEAMS SECTION (starting teams + draft pool) ===
-        pt_frame = ttk.LabelFrame(body, text=" Starting Teams (player picks at run start) ")
-        pt_frame.pack(fill="x", padx=4, pady=(10, 4))
+        # === STARTING SQUADS ===
+        sq_frame = ttk.LabelFrame(body, text=" Starting Squads ")
+        sq_frame.pack(fill="x", padx=4, pady=(10, 4))
 
-        ttk.Label(pt_frame,
-            text="Edit the 4 built-in starting teams (Defense, Speedy, Basic, Trios),\n"
-                 "OR add your own custom squads — each extra folder in player_teams/\n"
-                 "shows up as a 5th, 6th, … option in the campaign squad-select menu.\n"
-                 "Preset edits require 'Use Player Teams = yes' above; custom squads\n"
-                 "are always available (additive — they never overwrite vanilla teams).",
+        ttk.Label(sq_frame,
+            text="Custom squads appear as extra options in the Choose Your Squad screen at campaign start.\n"
+                 "Additive — these never overwrite the built-in Defense / Speedy / Basic / Trios squads.\n"
+                 "Enable 'Use Player Teams' above to also customise those built-in squads.",
             foreground="#555", font=("", 8), justify="left"
         ).pack(anchor="w", padx=8, pady=(4, 4))
 
-        pt_btns = ttk.Frame(pt_frame)
-        pt_btns.pack(fill="x", padx=8, pady=(0, 4))
-
-        STARTING_TEAMS = ["Defense", "Speedy", "Basic", "Trios"]
-        for team_name in STARTING_TEAMS:
-            ttk.Button(pt_btns, text=f"Edit {team_name}",
-                       command=lambda t=team_name: self._edit_player_team(t),
-                       width=14).pack(side="left", padx=2)
-
-        # Custom squads — list every non-preset folder under player_teams/,
-        # with an Add button to create a new one and per-entry Edit buttons.
-        custom_row = ttk.Frame(pt_frame)
-        custom_row.pack(fill="x", padx=8, pady=(4, 2))
-        ttk.Label(custom_row, text="Custom Squads:", font=("", 9, "bold")).pack(side="left")
+        custom_row = ttk.Frame(sq_frame)
+        custom_row.pack(fill="x", padx=8, pady=(4, 6))
         self._custom_squad_list = tk.Listbox(custom_row, height=5, width=40)
-        self._custom_squad_list.pack(side="left", padx=6, fill="x", expand=True)
+        self._custom_squad_list.pack(side="left", padx=(0, 6), fill="x", expand=True)
         cs_btns = ttk.Frame(custom_row)
         cs_btns.pack(side="left")
-        ttk.Button(cs_btns, text="Add", command=self._add_custom_squad, width=10).pack(pady=1)
-        ttk.Button(cs_btns, text="Edit", command=self._edit_custom_squad, width=10).pack(pady=1)
+        ttk.Button(cs_btns, text="Add",    command=self._add_custom_squad,    width=10).pack(pady=1)
+        ttk.Button(cs_btns, text="Import", command=self._import_custom_squad, width=10).pack(pady=1)
+        ttk.Button(cs_btns, text="Edit",   command=self._edit_custom_squad,   width=10).pack(pady=1)
         ttk.Button(cs_btns, text="Remove", command=self._remove_custom_squad, width=10).pack(pady=1)
 
-        # Draft pool
-        dp_row = ttk.Frame(pt_frame)
-        dp_row.pack(fill="x", padx=8, pady=(4, 4))
-        ttk.Label(dp_row, text="Draft Pool:", font=("", 9, "bold")).pack(side="left")
-        self._draft_list = tk.Listbox(dp_row, height=10, width=40)
-        self._draft_list.pack(side="left", padx=6, fill="x", expand=True)
+        # === STARTING BENCH (draft_pool) ===
+        bench_frame = ttk.LabelFrame(body, text=" Starting Bench ")
+        bench_frame.pack(fill="x", padx=4, pady=(6, 4))
+
+        ttk.Label(bench_frame,
+            text="These 7 players are your team's bench at the start of the campaign.\n"
+                 "They replace Stu Stumple, Maurice Cassoulet, Buster Brewster, etc.\n"
+                 "Edit each one's name, stats, appearance and ability. The roster is fixed\n"
+                 "at 7 — you can't add or remove, only edit. Renaming shows here and in-game.",
+            foreground="#555", font=("", 8), justify="left"
+        ).pack(anchor="w", padx=8, pady=(4, 4))
+
+        dp_row = ttk.Frame(bench_frame)
+        dp_row.pack(fill="x", padx=8, pady=(0, 6))
+        self._draft_list = tk.Listbox(dp_row, height=8, width=40)
+        self._draft_list.pack(side="left", padx=(0, 6), fill="x", expand=True)
 
         dp_btns = ttk.Frame(dp_row)
         dp_btns.pack(side="left")
-        # Free agents: the draft pool is fixed to the 7 vanilla free agents
-        # that the game spawns. Names can't be changed (the DLL intentionally
-        # skips name assignment for free agents so the rest of the mods
-        # apply), and you can't add or remove entries — only edit stats,
-        # skins, talents, and abilities on the existing 7.
-        ttk.Button(dp_btns, text="Edit", command=self._edit_draft_player, width=8).pack(pady=1)
-        ttk.Label(dp_btns,
-                  text="(locked: 7 free agents\nno add/remove/rename)",
-                  foreground="#aa5500", font=("", 8), justify="left"
-                  ).pack(pady=(4, 1))
+        ttk.Button(dp_btns, text="Edit",      command=self._edit_draft_player,   width=10).pack(pady=1)
+        ttk.Button(dp_btns, text="Reset",     command=self._reset_draft_player,  width=10).pack(pady=1)
+        ttk.Button(dp_btns, text="Reset All", command=self._reset_all_draft,     width=10).pack(pady=1)
+
+        # === FREE AGENT POOL (free_agents/) ===
+        fa_frame = ttk.LabelFrame(body, text=" Free Agent Pool ")
+        fa_frame.pack(fill="x", padx=4, pady=(6, 4))
+
+        ttk.Label(fa_frame,
+            text="These players replace the free agents offered at GM nodes ('pick a new player' stops on the map).\n"
+                 "Filled in order — slot 1 replaces the first GM-node offer, slot 2 the second, etc.\n"
+                 "Leave empty to keep the vanilla random free agents.",
+            foreground="#555", font=("", 8), justify="left"
+        ).pack(anchor="w", padx=8, pady=(4, 4))
+
+        fa_row = ttk.Frame(fa_frame)
+        fa_row.pack(fill="x", padx=8, pady=(0, 6))
+        self._fa_list = tk.Listbox(fa_row, height=6, width=40)
+        self._fa_list.pack(side="left", padx=(0, 6), fill="x", expand=True)
+
+        fa_btns = ttk.Frame(fa_row)
+        fa_btns.pack(side="left")
+        ttk.Button(fa_btns, text="Add",    command=self._add_fa_player,    width=10).pack(pady=1)
+        ttk.Button(fa_btns, text="Import", command=self._import_fa_player, width=10).pack(pady=1)
+        ttk.Button(fa_btns, text="Edit",   command=self._edit_fa_player,   width=10).pack(pady=1)
+        ttk.Button(fa_btns, text="Remove", command=self._remove_fa_player, width=10).pack(pady=1)
+
+        # === SUPERSTAR POOL (superstars/) ===
+        ss_frame = ttk.LabelFrame(body, text=" Superstar Pool ")
+        ss_frame.pack(fill="x", padx=4, pady=(6, 4))
+
+        ttk.Label(ss_frame,
+            text="These players replace the superstars offered on the 'pick a superstar' screen\n"
+                 "(shown right after you choose your squad, before the bench). The options there are\n"
+                 "filled from this list, cycling if you add fewer than the game shows.\n"
+                 "Leave empty to keep the vanilla superstars.",
+            foreground="#555", font=("", 8), justify="left"
+        ).pack(anchor="w", padx=8, pady=(4, 4))
+
+        ss_row = ttk.Frame(ss_frame)
+        ss_row.pack(fill="x", padx=8, pady=(0, 6))
+        self._ss_list = tk.Listbox(ss_row, height=6, width=40)
+        self._ss_list.pack(side="left", padx=(0, 6), fill="x", expand=True)
+
+        ss_btns = ttk.Frame(ss_row)
+        ss_btns.pack(side="left")
+        ttk.Button(ss_btns, text="Add",    command=self._add_ss_player,    width=10).pack(pady=1)
+        ttk.Button(ss_btns, text="Import", command=self._import_ss_player, width=10).pack(pady=1)
+        ttk.Button(ss_btns, text="Edit",   command=self._edit_ss_player,   width=10).pack(pady=1)
+        ttk.Button(ss_btns, text="Remove", command=self._remove_ss_player, width=10).pack(pady=1)
 
         self._refresh_live()
 
@@ -3833,7 +4027,7 @@ class CampaignEditor(ttk.Frame):
         else:
             issues.append("Act Sequence is empty — required to play the campaign.")
         # yes/no fields
-        for k in ("Replace Soccer Ball", "Replace Golf Ball", "Use Player Teams"):
+        for k in ("Replace Soccer Ball", "Replace Golf Ball", "Use Player Teams", "Gauntlet Map"):
             v = data.get(k, "").strip().lower()
             if v and v not in ("yes", "no"):
                 issues.append(f"{k} should be 'yes' or 'no' (got '{v}').")
@@ -3867,7 +4061,7 @@ class CampaignEditor(ttk.Frame):
             open_team_editor(td)
 
     # --- Custom squads (extra player-team folders that become 5th+ options) ---
-    _PRESET_SQUAD_KEYS = {"basic", "defense", "speedy", "speed", "trios", "trio", "draft_pool", "draft pool"}
+    _PRESET_SQUAD_KEYS = {"basic", "defense", "speedy", "speed", "trios", "trio", "draft_pool", "draft pool", "free_agents", "free agents", "superstars", "superstar"}
 
     def _refresh_custom_squads(self):
         if not hasattr(self, "_custom_squad_list"): return
@@ -3880,7 +4074,14 @@ class CampaignEditor(ttk.Frame):
             if name.lower() in self._PRESET_SQUAD_KEYS: continue
             self._custom_squad_list.insert("end", name)
 
+    # The 7 vanilla free agents that appear in the GM node draft pool.
+    _DEFAULT_FREE_AGENTS = [
+        "Stu Stumple", "Maurice Cassoulet", "Buster Brewster",
+        "Freddy Kovalski", "Ricky Kirby", "Boring Dude", "Mark Bench",
+    ]
+
     def _add_custom_squad(self):
+        import shutil
         pt = self._ensure_pt_dir()
         if not pt: return
         name = _prompt_string("New Custom Squad", "Squad folder name (no slashes):")
@@ -3895,12 +4096,60 @@ class CampaignEditor(ttk.Frame):
         if os.path.exists(target):
             messagebox.showwarning("Already exists", f"A squad folder named '{safe}' already exists.")
             return
-        os.makedirs(os.path.join(target, "players"), exist_ok=True)
-        write_kv(os.path.join(target, "team.txt"),
-                 {"Team Name": safe, "Import Team": "Greasy Lettuce"},
-                 order=TEAM_FIELD_ORDER)
+        # Use Basic squad as template if it exists, else create minimal scaffold
+        basic_src = os.path.join(pt, "Basic")
+        if os.path.isdir(basic_src):
+            shutil.copytree(basic_src, target)
+            # Update Team Name so it doesn't look like "Basic Squad"
+            team_file = os.path.join(target, "team.txt")
+            if os.path.isfile(team_file):
+                d = read_kv(team_file)
+                d["Team Name"] = safe
+                write_kv(team_file, d, order=TEAM_FIELD_ORDER)
+        else:
+            os.makedirs(os.path.join(target, "players"), exist_ok=True)
+            write_kv(os.path.join(target, "team.txt"),
+                     {"Team Name": safe, "Import Team": "Greasy Lettuce"},
+                     order=TEAM_FIELD_ORDER)
         self._refresh_custom_squads()
         open_team_editor(target)
+
+    def _import_custom_squad(self):
+        """Import a team from the library as a new custom squad."""
+        import shutil
+        pt = self._ensure_pt_dir()
+        if not pt: return
+
+        def _on_pick(picks):
+            imported = []
+            failed = []
+            for src_campaign, src_team in picks:
+                try:
+                    if src_campaign == LIBRARY_SOURCE:
+                        src = resolve_library_team_dir(src_team) or os.path.join(TEAM_LIBRARY_DIR, src_team)
+                    else:
+                        src = _campaign_team_path(src_campaign, src_team)
+                    if not os.path.isdir(src):
+                        failed.append(f"{src_team}: not found"); continue
+                    base_name = re.sub(r"^\d+\s+", "", src_team)
+                    safe = re.sub(r'[<>:"/\\|?*]', '_', base_name).strip()
+                    if safe.lower() in self._PRESET_SQUAD_KEYS:
+                        safe = safe + "_squad"
+                    dst = os.path.join(pt, safe)
+                    if os.path.exists(dst):
+                        safe = safe + "_imported"
+                        dst = os.path.join(pt, safe)
+                    shutil.copytree(src, dst)
+                    imported.append(safe)
+                except Exception as e:
+                    failed.append(f"{src_team}: {e}")
+            self._refresh_custom_squads()
+            msg = f"Imported {len(imported)} squad(s):\n  " + "\n  ".join(imported)
+            if failed:
+                msg += f"\n\nFailed:\n  " + "\n  ".join(failed)
+            messagebox.showinfo("Import Complete", msg)
+
+        open_multi_team_browser(on_pick=_on_pick)
 
     def _edit_custom_squad(self):
         sel = self._custom_squad_list.curselection()
@@ -3935,19 +4184,104 @@ class CampaignEditor(ttk.Frame):
         pt = self._pt_dir()
         if not pt: return
         dp = os.path.join(pt, "draft_pool")
-        if not os.path.isdir(dp): return
-        for f in sorted(os.listdir(dp)):
-            if f.endswith(".txt"):
-                self._draft_list.insert("end", f[:-4])
+        os.makedirs(dp, exist_ok=True)
+        # Only auto-seed defaults when the folder is brand new (completely empty).
+        # Once the user has added/removed agents we leave the folder alone.
+        existing = [f for f in os.listdir(dp) if f.endswith(".txt")]
+        if not existing:
+            import shutil
+            for agent_name in self._DEFAULT_FREE_AGENTS:
+                dest = os.path.join(dp, agent_name + ".txt")
+                src = resolve_library_player_path(agent_name + ".txt")
+                if src and os.path.isfile(src):
+                    try: shutil.copy2(src, dest)
+                    except Exception: pass
+                else:
+                    write_kv(dest, {"Name": agent_name}, order=PLAYER_FIELD_ORDER)
+            existing = [f for f in os.listdir(dp) if f.endswith(".txt")]
+        # Display each bench slot by its current (renamed) Name, falling back to
+        # the filename. Keep a parallel list of filenames as the stable edit key —
+        # the file is named for the vanilla bench player it customizes and never
+        # gets renamed, so the in-game DLL name-match still works.
+        self._draft_files = []
+        for f in sorted(existing):
+            fname = f[:-4]
+            display = fname
+            try:
+                d = read_kv(os.path.join(dp, f))
+                nm = (d.get("Name") or "").strip()
+                if nm and nm.lower() != fname.lower():
+                    display = f"{nm}  (was {fname})"
+                elif nm:
+                    display = nm
+            except Exception:
+                pass
+            self._draft_files.append(fname)
+            self._draft_list.insert("end", display)
+
+    def _draft_filename(self, idx):
+        """Map a listbox row to its stable filename (the vanilla bench key)."""
+        files = getattr(self, "_draft_files", None)
+        if files and 0 <= idx < len(files):
+            return files[idx]
+        # Fallback: strip any "  (was X)" suffix from the display text.
+        return self._draft_list.get(idx).split("  (was ")[0].strip()
 
     def _edit_draft_player(self):
         sel = self._draft_list.curselection()
         if not sel: return
-        name = self._draft_list.get(sel[0])
+        name = self._draft_filename(sel[0])
         pt = self._pt_dir()
         if not pt: return
         path = os.path.join(pt, "draft_pool", name + ".txt")
         open_player_editor(path, on_save=self._refresh_draft_list)
+
+    def _reset_draft_player(self):
+        sel = self._draft_list.curselection()
+        if not sel: return
+        name = self._draft_filename(sel[0])
+        src = resolve_library_player_path(name + ".txt")
+        if not src or not os.path.isfile(src):
+            messagebox.showwarning("Reset", f"No library default found for '{name}'.")
+            return
+        pt = self._pt_dir()
+        if not pt: return
+        dest = os.path.join(pt, "draft_pool", name + ".txt")
+        if not messagebox.askyesno("Reset Player",
+                f"Reset '{name}' to default stats?\nAny custom changes will be lost."):
+            return
+        import shutil
+        try:
+            shutil.copy2(src, dest)
+            self._refresh_draft_list()
+            messagebox.showinfo("Reset", f"'{name}' reset to default.")
+        except Exception as e:
+            messagebox.showerror("Reset failed", str(e))
+
+    def _reset_all_draft(self):
+        """Reset all default free agents to their library defaults."""
+        pt = self._pt_dir()
+        if not pt: return
+        if not messagebox.askyesno("Reset All Draft Players",
+                "Reset all default free agents to their default stats?\nAny custom changes will be lost."):
+            return
+        import shutil
+        dp = os.path.join(pt, "draft_pool")
+        os.makedirs(dp, exist_ok=True)
+        ok, fail = [], []
+        for name in self._DEFAULT_FREE_AGENTS:
+            src = resolve_library_player_path(name + ".txt")
+            if not src or not os.path.isfile(src):
+                fail.append(name); continue
+            try:
+                shutil.copy2(src, os.path.join(dp, name + ".txt"))
+                ok.append(name)
+            except Exception as e:
+                fail.append(f"{name} ({e})")
+        self._refresh_draft_list()
+        msg = f"Reset {len(ok)} players."
+        if fail: msg += f"\nFailed: {', '.join(fail)}"
+        messagebox.showinfo("Reset All", msg)
 
     def _add_draft_player(self):
         pt = self._ensure_pt_dir()
@@ -3962,6 +4296,39 @@ class CampaignEditor(ttk.Frame):
             write_kv(path, {"Name": name}, order=PLAYER_FIELD_ORDER)
         open_player_editor(path, on_save=self._refresh_draft_list)
 
+    def _import_draft_player(self):
+        """Import a player from the library into the draft pool."""
+        import shutil
+        pt = self._ensure_pt_dir()
+        if not pt: return
+        dp = os.path.join(pt, "draft_pool")
+        os.makedirs(dp, exist_ok=True)
+
+        def on_pick(src_camp, src_team, src_file):
+            if src_camp == LIBRARY_SOURCE:
+                src_path = resolve_library_player_path(src_file)
+                if not src_path:
+                    for sub in ("Base Game Players", "Custom Players"):
+                        p = os.path.join(LIBRARY_DIR, sub, src_file)
+                        if os.path.isfile(p): src_path = p; break
+            else:
+                src_path = os.path.join(CAMPAIGNS_DIR, src_camp, "teams", src_team, "players", src_file)
+            if not src_path or not os.path.isfile(src_path):
+                messagebox.showerror("Import Failed", f"Could not find '{src_file}'.")
+                return
+            base = os.path.splitext(src_file)[0]
+            dest = os.path.join(dp, base + ".txt")
+            if os.path.exists(dest):
+                if not messagebox.askyesno("Overwrite?", f"'{base}' already exists in draft pool. Overwrite?"):
+                    return
+            try:
+                shutil.copy2(src_path, dest)
+                self._refresh_draft_list()
+            except Exception as e:
+                messagebox.showerror("Import Failed", str(e))
+
+        open_player_browser(on_pick, button_label="Import")
+
     def _remove_draft_player(self):
         sel = self._draft_list.curselection()
         if not sel: return
@@ -3975,11 +4342,160 @@ class CampaignEditor(ttk.Frame):
         except Exception: pass
         self._refresh_draft_list()
 
+    # ---- Free Agent Pool (GM node free agents, player_teams/free_agents/) ----
+
+    def _fa_dir(self):
+        pt = self._pt_dir()
+        if not pt: return None
+        return os.path.join(pt, "free_agents")
+
+    def _refresh_fa_list(self):
+        if not hasattr(self, "_fa_list"): return
+        self._fa_list.delete(0, "end")
+        fa = self._fa_dir()
+        if not fa or not os.path.isdir(fa): return
+        for f in sorted(os.listdir(fa)):
+            if f.endswith(".txt"):
+                self._fa_list.insert("end", f[:-4])
+
+    def _add_fa_player(self):
+        pt = self._ensure_pt_dir()
+        if not pt: return
+        fa = os.path.join(pt, "free_agents")
+        os.makedirs(fa, exist_ok=True)
+        name = _prompt_string("New Free Agent", "Player name:")
+        if not name: return
+        safe = re.sub(r'[<>:"/\\|?*]', '_', name).strip()
+        path = os.path.join(fa, safe + ".txt")
+        if not os.path.exists(path):
+            write_kv(path, {"Name": name}, order=PLAYER_FIELD_ORDER)
+        open_player_editor(path, on_save=self._refresh_fa_list)
+
+    def _resolve_browser_player_path(self, src_camp, src_team, src_file):
+        """Resolve a (campaign, team, filename) browser pick to a source path."""
+        if src_camp == LIBRARY_SOURCE:
+            src_path = resolve_library_player_path(src_file)
+            if not src_path:
+                for sub in ("Base Game Players", "Custom Players"):
+                    p = os.path.join(LIBRARY_DIR, sub, src_file)
+                    if os.path.isfile(p):
+                        return p
+            return src_path
+        return os.path.join(CAMPAIGNS_DIR, src_camp, "teams", src_team, "players", src_file)
+
+    def _import_pool_multi(self, dest_dir, refresh_fn, pool_label):
+        """Multi-select import of players into a pool folder (free agents / superstars)."""
+        import shutil
+        os.makedirs(dest_dir, exist_ok=True)
+        def on_pick(picks):
+            imported, failed = 0, []
+            for (src_camp, src_team, src_file) in picks:
+                src_path = self._resolve_browser_player_path(src_camp, src_team, src_file)
+                base = os.path.splitext(src_file)[0]
+                if not src_path or not os.path.isfile(src_path):
+                    failed.append(base); continue
+                try:
+                    shutil.copy2(src_path, os.path.join(dest_dir, base + ".txt"))
+                    imported += 1
+                except Exception:
+                    failed.append(base)
+            refresh_fn()
+            msg = f"Imported {imported} player(s) into the {pool_label}."
+            if failed:
+                msg += "\nCouldn't import: " + ", ".join(failed)
+            messagebox.showinfo("Import", msg)
+        open_multi_player_browser(on_pick)
+
+    def _import_fa_player(self):
+        pt = self._ensure_pt_dir()
+        if not pt: return
+        self._import_pool_multi(os.path.join(pt, "free_agents"), self._refresh_fa_list, "free agent pool")
+
+    def _edit_fa_player(self):
+        sel = self._fa_list.curselection()
+        if not sel: return
+        name = self._fa_list.get(sel[0])
+        fa = self._fa_dir()
+        if not fa: return
+        path = os.path.join(fa, name + ".txt")
+        open_player_editor(path, on_save=self._refresh_fa_list)
+
+    def _remove_fa_player(self):
+        sel = self._fa_list.curselection()
+        if not sel: return
+        name = self._fa_list.get(sel[0])
+        if not messagebox.askyesno("Remove", f"Delete free agent '{name}' from the pool?"):
+            return
+        fa = self._fa_dir()
+        if not fa: return
+        path = os.path.join(fa, name + ".txt")
+        try: os.remove(path)
+        except Exception: pass
+        self._refresh_fa_list()
+
+    # ---- Superstar Pool (player_teams/superstars/) ----
+
+    def _ss_dir(self):
+        pt = self._pt_dir()
+        if not pt: return None
+        return os.path.join(pt, "superstars")
+
+    def _refresh_ss_list(self):
+        if not hasattr(self, "_ss_list"): return
+        self._ss_list.delete(0, "end")
+        ss = self._ss_dir()
+        if not ss or not os.path.isdir(ss): return
+        for f in sorted(os.listdir(ss)):
+            if f.endswith(".txt"):
+                self._ss_list.insert("end", f[:-4])
+
+    def _add_ss_player(self):
+        pt = self._ensure_pt_dir()
+        if not pt: return
+        ss = os.path.join(pt, "superstars")
+        os.makedirs(ss, exist_ok=True)
+        name = _prompt_string("New Superstar", "Player name:")
+        if not name: return
+        safe = re.sub(r'[<>:"/\\|?*]', '_', name).strip()
+        path = os.path.join(ss, safe + ".txt")
+        if not os.path.exists(path):
+            write_kv(path, {"Name": name}, order=PLAYER_FIELD_ORDER)
+        open_player_editor(path, on_save=self._refresh_ss_list)
+
+    def _import_ss_player(self):
+        pt = self._ensure_pt_dir()
+        if not pt: return
+        self._import_pool_multi(os.path.join(pt, "superstars"), self._refresh_ss_list, "superstar pool")
+
+    def _edit_ss_player(self):
+        sel = self._ss_list.curselection()
+        if not sel: return
+        name = self._ss_list.get(sel[0])
+        ss = self._ss_dir()
+        if not ss: return
+        path = os.path.join(ss, name + ".txt")
+        open_player_editor(path, on_save=self._refresh_ss_list)
+
+    def _remove_ss_player(self):
+        sel = self._ss_list.curselection()
+        if not sel: return
+        name = self._ss_list.get(sel[0])
+        if not messagebox.askyesno("Remove", f"Delete superstar '{name}' from the pool?"):
+            return
+        ss = self._ss_dir()
+        if not ss: return
+        path = os.path.join(ss, name + ".txt")
+        try: os.remove(path)
+        except Exception: pass
+        self._refresh_ss_list()
+
     def load_dir(self, campaign_dir):
         self.loaded_dir = campaign_dir
         self.set_data(read_kv(os.path.join(campaign_dir, "campaign.txt")))
         self.refresh_list()
         self._refresh_draft_list()
+        self._refresh_fa_list()
+        self._refresh_ss_list()
         self._refresh_custom_squads()
 
     def set_data(self, data):
@@ -4044,7 +4560,7 @@ class CampaignEditor(ttk.Frame):
                 if src_campaign == LIBRARY_SOURCE:
                     src = resolve_library_team_dir(src_team) or os.path.join(TEAM_LIBRARY_DIR, src_team)
                 else:
-                    src = os.path.join(CAMPAIGNS_DIR, src_campaign, "teams", src_team)
+                    src = _campaign_team_path(src_campaign, src_team)
                 if not os.path.isdir(src):
                     failed.append(f"{src_team}: not found"); continue
                 m = re.match(r"^\d+\s+(.*)$", src_team)
@@ -4117,7 +4633,7 @@ class CampaignEditor(ttk.Frame):
         with open(path, "w", encoding="utf-8") as f:
             f.write("# Campaign Settings\n")
             for k in ["Act Sequence", "Replace Challenges", "Replace Soccer Ball",
-                      "Replace Golf Ball", "Use Player Teams"]:
+                      "Replace Golf Ball", "Use Player Teams", "Gauntlet Map"]:
                 if k in data:
                     f.write(f"{k:24s}= {data[k]}\n")
         os.makedirs(os.path.join(campaign_dir, "teams"), exist_ok=True)
@@ -4326,7 +4842,7 @@ def _load_export_id_maps():
     """Parse _export_id_map.txt written by the DLL to get talent/ability GUIDs."""
     global _EXPORT_TALENT_MAP, _EXPORT_ABILITY_MAP
     talent_map, ability_map = {}, {}
-    path = os.path.join(_PLUGINS_DIR, "_export_id_map.txt")
+    path = os.path.join(_GUI_DATA_DIR, "_export_id_map.txt")
     if not os.path.isfile(path):
         _EXPORT_TALENT_MAP = talent_map
         _EXPORT_ABILITY_MAP = ability_map
@@ -4807,10 +5323,16 @@ def export_player_to_play_now(ed, is_goalie=False, parent=None):
         out_path = os.path.join(save_dir, f"{prefix}-{obj['id']}.json")
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(obj, f, separators=(",", ":"))
-        messagebox.showinfo("Exported",
-            f"Exported to Play Now as:\n{os.path.basename(out_path)}\n\n"
-            f"Restart the game — the player will appear in Play Now → Custom Players.\n"
-            f"Note: talents & abilities are not exported (they require in-game asset IDs).",
+        talent_map, ability_map = _get_export_maps()
+        has_ids = bool(talent_map or ability_map)
+        ability_line = ""
+        if not has_ids and (data.get("Ability") or data.get("Talents")):
+            ability_line = "\n\nNote: abilities/talents were not included — launch the game once to generate the ID map, then re-export."
+        messagebox.showinfo("Exported to Play Now",
+            f"Exported successfully!\n\n"
+            f"{os.path.basename(out_path)}\n\n"
+            f"Restart the game — your player will appear in\nPlay Now > Custom Players."
+            f"{ability_line}",
             parent=parent)
     except Exception as e:
         messagebox.showerror("Export failed", f"Could not write file:\n{e}", parent=parent)
@@ -4966,11 +5488,13 @@ def export_team_to_play_now(ed, team_dir, parent=None):
         with open(team_path, "w", encoding="utf-8") as f:
             json.dump(team_obj, f, separators=(",", ":"))
         exported.append(os.path.basename(team_path))
-        messagebox.showinfo("Exported",
-            f"Exported {len(exported)} files to Play Now:\n\n" + "\n".join(exported[-5:]) +
-            (f"\n(+{len(exported)-5} more)" if len(exported) > 5 else "") +
-            "\n\nRestart the game — the team will appear in Play Now → Custom Teams.\n"
-            "Talents & abilities are not exported (they need in-game GUIDs).",
+        talent_map, ability_map = _get_export_maps()
+        has_ids = bool(talent_map or ability_map)
+        ability_line = "" if has_ids else "\n\nNote: abilities/talents were not included — launch the game once to generate the ID map, then re-export."
+        messagebox.showinfo("Exported to Play Now",
+            f"Exported {len(exported)} files successfully!\n\n"
+            f"Restart the game — your team will appear in\nPlay Now > Custom Teams."
+            f"{ability_line}",
             parent=parent)
     except Exception as e:
         messagebox.showerror("Export failed", f"{e}", parent=parent)
@@ -5258,18 +5782,30 @@ def open_player_editor(path=None, is_goalie=None, on_save=None,
                            and os.path.normpath(os.path.dirname(path)) != os.path.normpath(PLAYER_LIBRARY_DIR)
                            and not is_base_game_path(path))
             # Draft pool: path is campaign/player_teams/draft_pool/<name>.txt
+            # Free agents: path is campaign/player_teams/free_agents/<name>.txt
             # Player team: path is campaign/player_teams/<Team>/players/<Position>.txt
             # In both cases, write back to the same path the user loaded from.
             norm_path = os.path.normpath(path)
             is_draft_ctx = (os.sep + "player_teams" + os.sep + "draft_pool" + os.sep) in norm_path
+            is_fa_ctx = (os.sep + "player_teams" + os.sep + "free_agents" + os.sep) in norm_path
+            is_ss_ctx = (os.sep + "player_teams" + os.sep + "superstars" + os.sep) in norm_path
             is_player_team_ctx = ((os.sep + "player_teams" + os.sep) in norm_path
-                                   and parent_dir == "players" and not is_draft_ctx)
+                                   and parent_dir == "players" and not is_draft_ctx and not is_fa_ctx and not is_ss_ctx)
 
             if is_draft_ctx:
-                # Overwrite the draft pool file — rename if user changed the Name field
+                # Starting Bench ONLY: the filename is the STABLE match key (the
+                # vanilla bench player this entry customizes). Keep it unchanged
+                # so renaming the in-game display Name doesn't break the DLL's
+                # name-match — only the Name field inside the file changes. This
+                # filename-stays / name-changes behavior is intentionally limited
+                # to the bench; everywhere else still renames the file to Name.
+                team_path = path
+            elif is_fa_ctx or is_ss_ctx:
+                # Free agents / superstars: rename the file to the Name field
+                # (filename = order/identity only; the DLL replaces by cycling,
+                # not by filename match, so renaming is safe here).
                 draft_dir = os.path.dirname(path)
                 team_path = os.path.join(draft_dir, safe + ".txt")
-                # If the name changed, delete the old file so we don't end up with duplicates
                 if os.path.normpath(team_path) != norm_path and os.path.isfile(path):
                     try: os.remove(path)
                     except Exception: pass
@@ -5297,16 +5833,20 @@ def open_player_editor(path=None, is_goalie=None, on_save=None,
                         try: os.remove(old)
                         except Exception: pass
 
-        # Confirm overwrite if library already has someone by this name
-        lib_path = os.path.join(PLAYER_LIBRARY_DIR, safe + ".txt")
-        if os.path.exists(lib_path) and os.path.normpath(lib_path) != os.path.normpath(ed.loaded_path or ""):
-            if not messagebox.askyesno("Overwrite library",
-                f"The All Players library already has '{safe}.txt'.\n"
-                f"Overwrite? (The existing library copy will be replaced with these settings.)"):
-                return
+        # For draft pool / free agent pool / superstar pool: skip the library —
+        # edits stay in the campaign folder. For normal players: confirm before
+        # overwriting an existing library entry.
+        _campaign_only_ctx = is_draft_ctx or is_fa_ctx or is_ss_ctx
+        if not _campaign_only_ctx:
+            lib_path = os.path.join(PLAYER_LIBRARY_DIR, safe + ".txt")
+            if os.path.exists(lib_path) and os.path.normpath(lib_path) != os.path.normpath(ed.loaded_path or ""):
+                if not messagebox.askyesno("Overwrite library",
+                    f"The All Players library already has '{safe}.txt'.\n"
+                    f"Overwrite? (The existing library copy will be replaced with these settings.)"):
+                    return
 
         try:
-            written_lib, written_team = ed.save_file(team_path=team_path)
+            written_lib, written_team = ed.save_file(team_path=team_path, skip_library=_campaign_only_ctx)
         except ValueError as e:
             messagebox.showwarning("Can't save", str(e))
             return
@@ -5314,9 +5854,16 @@ def open_player_editor(path=None, is_goalie=None, on_save=None,
             messagebox.showerror("Save failed", f"{type(e).__name__}: {e}")
             return
 
-        msg = f"Saved to library:\n{written_lib}"
-        if written_team:
-            msg += f"\n\nAlso copied into team slot:\n{written_team}"
+        if is_draft_ctx:
+            msg = f"Saved to campaign bench pool:\n{written_team}"
+        elif is_fa_ctx:
+            msg = f"Saved to campaign free agent pool:\n{written_team}"
+        elif is_ss_ctx:
+            msg = f"Saved to campaign superstar pool:\n{written_team}"
+        else:
+            msg = f"Saved to library:\n{written_lib}"
+            if written_team:
+                msg += f"\n\nAlso copied into team slot:\n{written_team}"
         messagebox.showinfo("Saved", msg)
         tracker.mark_clean()
         if on_save: on_save()
@@ -5692,6 +6239,35 @@ def open_team_editor(team_dir=None, on_save=None):
                                 team_colors=_get_team_colors())
         open_player_browser(on_pick, button_label="Import")
 
+    def _import_direct_at_slot(pos, is_goalie):
+        """Import a library/campaign player directly onto the roster — no editor opens."""
+        if not team_dir:
+            messagebox.showwarning("Save First", "Save the team first.")
+            return
+        def on_pick(src_camp, src_team, src_file):
+            if src_camp == LIBRARY_SOURCE:
+                src = os.path.join(PLAYER_LIBRARY_DIR, src_file)
+            else:
+                src = os.path.join(CAMPAIGNS_DIR, src_camp, "teams", src_team, "players", src_file)
+            try:
+                src_data = read_kv(src)
+                player_name = (src_data.get("Name") or "Player").strip()
+            except Exception as e:
+                messagebox.showerror("Import failed", str(e))
+                return
+            safe_name = re.sub(r'[<>:"/\\|?*]', '_', player_name).strip() or "Player"
+            dst_name = f"{pos} - {safe_name}.txt"
+            existing = _existing_slot_path(team_dir, pos)
+            if existing:
+                try: os.remove(existing)
+                except Exception: pass
+            dst = os.path.join(team_dir, "players", dst_name)
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            order = GOALIE_FIELD_ORDER if is_goalie else PLAYER_FIELD_ORDER
+            write_kv(dst, src_data, order=order)
+            refresh_players()
+        open_player_browser(on_pick, button_label="Import")
+
     def _duplicate_at_slot(fname):
         """Duplicate a player file into the library with an auto-incremented name."""
         src = os.path.join(team_dir, "players", fname)
@@ -5748,8 +6324,8 @@ def open_team_editor(team_dir=None, on_save=None):
         name_lbl.pack(anchor=pack_anchor)
 
         btn_row = ttk.Frame(cell)
-        btn_row.pack(anchor=pack_anchor, fill="x", padx=2, pady=2)
-        slot_btn = ttk.Button(btn_row, text="Click to edit",
+        btn_row.pack(anchor=pack_anchor, fill="x", padx=2, pady=(2, 0))
+        slot_btn = ttk.Button(btn_row, text="Edit",
                                command=lambda p=pos, g=is_g: _slot_click(p, g))
         slot_btn.pack(side="left", fill="x", expand=True)
         slot_btn.bind("<Button-3>",
@@ -5757,6 +6333,11 @@ def open_team_editor(team_dir=None, on_save=None):
         remove_btn = ttk.Button(btn_row, text="x", width=2,
                                  command=lambda p=pos: _remove_click(p))
         remove_btn.pack(side="left", padx=(2, 0))
+        btn_row2 = ttk.Frame(cell)
+        btn_row2.pack(anchor=pack_anchor, fill="x", padx=2, pady=(0, 2))
+        ttk.Button(btn_row2, text="Import Player",
+                   command=lambda p=pos, g=is_g: _import_direct_at_slot(p, g)
+                   ).pack(fill="x")
 
         info_lbl = ttk.Label(cell, text="", font=("", 7), foreground="#555",
                               wraplength=int(32 * _JERSEY_SCALE * 4),
@@ -5792,7 +6373,7 @@ def open_team_editor(team_dir=None, on_save=None):
         name_lbl = ttk.Label(cell, text="Empty", foreground="#999", font=("", 8))
         name_lbl.pack(anchor=pack_anchor)
         btn_row2 = ttk.Frame(cell)
-        btn_row2.pack(anchor=pack_anchor, fill="x", padx=2)
+        btn_row2.pack(anchor=pack_anchor, fill="x", padx=2, pady=(1, 0))
         slot_btn = ttk.Button(btn_row2, text="Edit",
                                command=lambda p=pos, g=is_g: _slot_click(p, g))
         slot_btn.pack(side="left", fill="x", expand=True)
@@ -5801,6 +6382,11 @@ def open_team_editor(team_dir=None, on_save=None):
         remove_btn2 = ttk.Button(btn_row2, text="x", width=2,
                                   command=lambda p=pos: _remove_click(p))
         remove_btn2.pack(side="left", padx=(2, 0))
+        imp_row2 = ttk.Frame(cell)
+        imp_row2.pack(anchor=pack_anchor, fill="x", padx=2, pady=(0, 1))
+        ttk.Button(imp_row2, text="Import Player",
+                   command=lambda p=pos, g=is_g: _import_direct_at_slot(p, g)
+                   ).pack(fill="x")
         info_lbl2 = ttk.Label(cell, text="", font=("", 7), foreground="#555",
                                wraplength=int(32 * _JERSEY_SCALE * 4),
                                justify="left")
@@ -6258,7 +6844,7 @@ def open_team_browser(current_campaign_dir, on_pick, button_label="Open"):
         if c == LIBRARY_SOURCE:
             tdir = resolve_library_team_dir(t) or os.path.join(TEAM_LIBRARY_DIR, t)
         else:
-            tdir = os.path.join(CAMPAIGNS_DIR, c, "teams", t)
+            tdir = _campaign_team_path(c, t)
         lines = [f"Folder: {t}"]
         try:
             td = read_kv(os.path.join(tdir, "team.txt"))
@@ -6929,22 +7515,13 @@ class MainMenu(tk.Tk):
         t.delete(*t.get_children())
         active = read_active_campaign()
 
-        # Library node
+        # Library node — 6 sections
         lib_root = t.insert("", "end",
             text="📚 Library  (shared players & teams, reusable across campaigns)",
             values=("library_root", ""), open=True)
-        # Library players
-        lib_players = t.insert(lib_root, "end", text="👤 All Players",
-            values=("lib_players_folder", ""), open=False)
-        if os.path.isdir(PLAYER_LIBRARY_DIR):
-            for f in sorted(os.listdir(PLAYER_LIBRARY_DIR)):
-                if f.endswith(".txt"):
-                    full = os.path.join(PLAYER_LIBRARY_DIR, f)
-                    t.insert(lib_players, "end",
-                        text=f[:-4],
-                        values=("player_file", full))
-        # Library teams
-        lib_teams = t.insert(lib_root, "end", text="🏒 All Teams",
+
+        # Section 1 — Custom Teams (editable, user-created via team editor)
+        lib_teams = t.insert(lib_root, "end", text="🏒 Custom Teams",
             values=("lib_teams_folder", ""), open=False)
         if os.path.isdir(TEAM_LIBRARY_DIR):
             for d in sorted(os.listdir(TEAM_LIBRARY_DIR)):
@@ -6954,16 +7531,26 @@ class MainMenu(tk.Tk):
                     values=("team_folder", tdir))
                 self._populate_team_players(tn, tdir)
 
-        # Auto-generated folders (base game + custom/in-game-editor) — READ-ONLY.
-        # Double-click auto-copies to library before opening the editor.
-        for folder_name, icon, label in [
-            ("Base Game Teams", "🔒", "Base Game Teams"),
-            ("Custom Teams (in-game editor)", "🔒", "Custom Teams (in-game editor)"),
+        # Section 2 — Custom Players (editable, user-created via player editor)
+        lib_players = t.insert(lib_root, "end", text="👤 Custom Players",
+            values=("lib_players_folder", ""), open=False)
+        if os.path.isdir(PLAYER_LIBRARY_DIR):
+            for f in sorted(os.listdir(PLAYER_LIBRARY_DIR)):
+                if f.endswith(".txt"):
+                    full = os.path.join(PLAYER_LIBRARY_DIR, f)
+                    t.insert(lib_players, "end",
+                        text=f[:-4],
+                        values=("player_file", full))
+
+        # Sections 3 & 4 — auto-dumped team folders (read-only)
+        for folder_name, label in [
+            ("Base Game Teams", "Base Game Teams"),
+            ("Custom Teams",    "In-Game Editor Teams"),
         ]:
             fdir = os.path.join(LIBRARY_DIR, folder_name)
             if os.path.isdir(fdir):
                 node = t.insert(lib_root, "end",
-                    text=f"{icon} {label}  (read-only — click to copy into your library)",
+                    text=f"🔒 {label}  (read-only — click to copy into Custom Teams)",
                     values=("lib_teams_folder", ""), open=False)
                 for d in sorted(os.listdir(fdir)):
                     tdir = os.path.join(fdir, d)
@@ -6972,14 +7559,15 @@ class MainMenu(tk.Tk):
                         values=("team_folder", tdir))
                     self._populate_team_players(tn, tdir, readonly=True)
 
-        for folder_name, icon, label in [
-            ("Base Game Players", "🔒", "Base Game Players"),
-            ("Custom Players (in-game editor)", "🔒", "Custom Players (in-game editor)"),
+        # Sections 5 & 6 — auto-dumped player folders (read-only)
+        for folder_name, label in [
+            ("Base Game Players", "Base Game Players"),
+            ("Custom Players",    "In-Game Editor Players"),
         ]:
             fdir = os.path.join(LIBRARY_DIR, folder_name)
             if os.path.isdir(fdir):
                 node = t.insert(lib_root, "end",
-                    text=f"{icon} {label}  (read-only — click to copy into your library)",
+                    text=f"🔒 {label}  (read-only — click to copy into Custom Players)",
                     values=("lib_players_folder", ""), open=False)
                 for f in sorted(os.listdir(fdir)):
                     if f.endswith(".txt") and not f.startswith("_"):
