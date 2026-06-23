@@ -23,7 +23,7 @@ using Rogue.BenchSnapshots;
 
 namespace EndlessMode;
 
-[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.28")]
+[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.30")]
 public class Plugin : BasePlugin
 {
     internal static new ManualLogSource Log;
@@ -582,6 +582,26 @@ public class Plugin : BasePlugin
         else if (key == "stick color") team.TeamStickColor = ParseRandomColor(val);
         else if (key == "number color") team.TeamNumberColor = ParseRandomColor(val);
         else if (key == "number secondary color" || key == "number color 2") team.TeamNumberSecondary = ParseRandomColor(val);
+        // Team equipment colors — AWAY variants (worn on the away jersey)
+        else if (key == "gloves away color" || key == "gloves color away") team.TeamGlovesColorAway = ParseRandomColor(val);
+        else if (key == "gloves away secondary color") team.TeamGlovesSecondaryAway = ParseRandomColor(val);
+        else if (key == "gloves away tertiary color") team.TeamGlovesTertiaryAway = ParseRandomColor(val);
+        else if (key == "helmet away color" || key == "helmet color away") team.TeamHelmetColorAway = ParseRandomColor(val);
+        else if (key == "helmet away secondary color") team.TeamHelmetSecondaryAway = ParseRandomColor(val);
+        else if (key == "helmet away tertiary color") team.TeamHelmetTertiaryAway = ParseRandomColor(val);
+        else if (key == "pants away color" || key == "pants color away") team.TeamPantsColorAway = ParseRandomColor(val);
+        else if (key == "pants away secondary color") team.TeamPantsSecondaryAway = ParseRandomColor(val);
+        else if (key == "pants away tertiary color") team.TeamPantsTertiaryAway = ParseRandomColor(val);
+        else if (key == "skates away color" || key == "skates color away") team.TeamSkatesColorAway = ParseRandomColor(val);
+        else if (key == "blade away color") team.TeamBladeColorAway = ParseRandomColor(val);
+        else if (key == "laces away color") team.TeamLacesColorAway = ParseRandomColor(val);
+        else if (key == "bicep away color" || key == "bicep color away") team.TeamBicepColorAway = ParseRandomColor(val);
+        else if (key == "socks away color" || key == "socks color away") team.TeamSocksColorAway = ParseRandomColor(val);
+        else if (key == "socks away secondary color") team.TeamSocksSecondaryAway = ParseRandomColor(val);
+        else if (key == "socks away tertiary color") team.TeamSocksTertiaryAway = ParseRandomColor(val);
+        else if (key == "stick away color") team.TeamStickColorAway = ParseRandomColor(val);
+        else if (key == "number away color") team.TeamNumberColorAway = ParseRandomColor(val);
+        else if (key == "number away secondary color") team.TeamNumberSecondaryAway = ParseRandomColor(val);
         // Gameplay
         else if (key == "bench size") team.BenchSize = ParseRandomInt(val);
         else if (key == "bench head") team.BenchHead = val;
@@ -2473,6 +2493,21 @@ public static class PatchChooseMetaUI
                     try { PatchPlayerTeamInit.ApplyPlayerTeamConfig(teamClone, cfg, null, firstApply: true); }
                     catch (Exception apEx) { Plugin.Log.LogWarning($"[CustomSquad] ApplyPlayerTeamConfig failed for '{key}': {apEx.Message}"); }
 
+                    // Bug fix: NEVER let Basic's Angus McShaggy survive into a
+                    // custom squad. Basic's startingTeam keeps exactly ONE forward
+                    // (cat=Angus @ slot 3) that the draft flow seats as your
+                    // starter. If the user configured the LD slot (Angus's slot)
+                    // ApplyPlayerTeamConfig already overwrote him; if they
+                    // configured a DIFFERENT position their player landed in
+                    // another slot and McShaggy stayed at slot 3 → "McShaggy
+                    // auto-added". Seat the user's primary forward at the Angus
+                    // keep-slot, open its old slot (Basic's 1-forward shape), and
+                    // repoint the squad's angusPlayer so no angus-based mechanic
+                    // (Mark Bench's quest) re-introduces McShaggy.
+                    bool starterAtAngus = false;
+                    try { starterAtAngus = SeatUserStarterAtAngusSlot(teamClone, clone, cfg); }
+                    catch (Exception anEx) { Plugin.Log.LogWarning($"[CustomSquad] Angus keep-slot: {anEx.Message}"); }
+
                     // Don't blank unconfigured slots — let the template's nulls
                     // (or game-supplied benchwarmers) stand so the run-start
                     // draft/superstar flow lands picks naturally without any
@@ -2516,7 +2551,11 @@ public static class PatchChooseMetaUI
                         // override cleanly, so pick a forward whenever any
                         // is configured.
                         Tape2Tape.Customization.UI.ESkaterPosition? picked = null;
-                        if (SlotIsConfigured(cfg.C)) picked = Tape2Tape.Customization.UI.ESkaterPosition.C;
+                        // After SeatUserStarterAtAngusSlot the user's starter
+                        // always sits in the Angus keep-slot (LD); point the tile
+                        // head there so it never resolves to a now-empty donor slot.
+                        if (starterAtAngus) picked = Tape2Tape.Customization.UI.ESkaterPosition.LD;
+                        else if (SlotIsConfigured(cfg.C)) picked = Tape2Tape.Customization.UI.ESkaterPosition.C;
                         else if (SlotIsConfigured(cfg.LW)) picked = Tape2Tape.Customization.UI.ESkaterPosition.LW;
                         else if (SlotIsConfigured(cfg.RW)) picked = Tape2Tape.Customization.UI.ESkaterPosition.RW;
                         else if (SlotIsConfigured(cfg.LD)) picked = Tape2Tape.Customization.UI.ESkaterPosition.LD;
@@ -2707,6 +2746,68 @@ public static class PatchChooseMetaUI
             || (pc.Talents != null && pc.Talents.Count > 0)
             || pc.Speed != 50 || pc.ShotPower != 50
             || pc.Accuracy != 50 || pc.Checking != 50;
+    }
+
+    // Ensure a custom squad never starts with Basic's Angus McShaggy. Basic's
+    // startingTeam keeps ONE forward in the cat=Angus keep-slot (forward index 3
+    // / LD position) which the run's draft flow seats as the starter. Our clone
+    // inherits McShaggy there. If the user configured the LD slot, the per-slot
+    // apply already overwrote him. Otherwise their configured forward landed in a
+    // different slot and McShaggy survived at slot 3 → he shows up uninvited.
+    //
+    // Move the user's PRIMARY configured forward into the Angus keep-slot (so the
+    // kept starter is theirs), null the donor slot so the squad starts with
+    // exactly one forward (Basic's proven shape — the native draft fills the
+    // rest), and repoint the squad's angusPlayer field away from McShaggy so the
+    // angus mechanic (Mark Bench's quest) can't re-add him either.
+    // Returns true if a user forward now occupies the keep-slot.
+    internal static bool SeatUserStarterAtAngusSlot(TeamData team, RunSquadScriptableObject clone, TeamConfig cfg)
+    {
+        var fwds = team?.forwards;
+        if (fwds == null || fwds.Count <= 3) return false;
+        const int angusIdx = 3; // Basic's cat=Angus keep-slot (LD position)
+
+        bool seated = false;
+        if (SlotIsConfigured(cfg?.LD) && fwds[angusIdx] != null)
+        {
+            // LD configured — ApplyPlayerTeamConfig already replaced McShaggy.
+            seated = true;
+        }
+        else
+        {
+            // Find the user's primary configured forward (priority C, LW, RW, RD).
+            var slots = new[] { cfg?.C, cfg?.LW, cfg?.RW, cfg?.RD };
+            var idxs  = new[] { 2, 0, 1, 4 };
+            int primaryIdx = -1;
+            for (int k = 0; k < slots.Length; k++)
+                if (SlotIsConfigured(slots[k]) && idxs[k] < fwds.Count && fwds[idxs[k]] != null)
+                { primaryIdx = idxs[k]; break; }
+
+            if (primaryIdx >= 0)
+            {
+                if (fwds[angusIdx] == null)
+                    fwds[angusIdx] = fwds[primaryIdx];
+                else
+                    PatchBossLaunchMatch.CopyPlayerData(fwds[primaryIdx], fwds[angusIdx]);
+                fwds[primaryIdx] = null; // open the donor slot for the draft
+                seated = true;
+                Plugin.Log.LogInfo($"[CustomSquad] Seated '{fwds[angusIdx].firstName} {fwds[angusIdx].lastName}' at Angus keep-slot (from slot {primaryIdx}); McShaggy removed");
+            }
+            else if (fwds[angusIdx] != null)
+            {
+                // Goalie-only squad: strip McShaggy's identity so he doesn't show.
+                var a = fwds[angusIdx];
+                try { a.firstName = "Draft"; a.lastName = "Pick"; } catch {}
+                try { a.powerups = new Il2CppSystem.Collections.Generic.List<Rogue.Talent>(); } catch {}
+                try { a.ability = null; } catch {}
+                Plugin.Log.LogInfo("[CustomSquad] No configured forward — neutralized McShaggy keep-slot to a generic draft pick");
+            }
+        }
+
+        try { if (fwds[angusIdx] != null) clone.angusPlayer = fwds[angusIdx]; }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] angusPlayer repoint: {ex.Message}"); }
+
+        return seated;
     }
 
     // Clear the five per-position "line-up creation locked" flags on a TeamData.
@@ -4819,11 +4920,54 @@ public static class PatchBossLaunchMatch
     private static readonly Dictionary<string, UnityEngine.Sprite> _customLogoCache =
         new Dictionary<string, UnityEngine.Sprite>(StringComparer.OrdinalIgnoreCase);
 
+    // The game's own logo repository (built-in logoSprites + custom logos loaded
+    // from CustomLogos/). Sprites it returns are RECOGNIZED by the engine — the
+    // Spine jersey pipeline only maps logos it recognizes, which is why a
+    // hand-made sprite shows in UI but never on jerseys. This is the asset the
+    // in-game editor's custom teams use.
+    private static UnityEngine.Object _logoRepo;
+    private static bool _logoRepoSearched;
+
+    private static string NormLogo(string s) =>
+        (s ?? "").Replace(" ", "").Replace("_", "").Replace(".png", "").ToLowerInvariant();
+
+    internal static UnityEngine.Sprite GetNativeLogo(string logoId)
+    {
+        try
+        {
+            if (_logoRepo == null && !_logoRepoSearched)
+            {
+                _logoRepoSearched = true;
+                var repos = UnityEngine.Resources.FindObjectsOfTypeAll<Tape2Tape.Customization.TeamAssetsRepositoryScriptableObject>();
+                if (repos != null && repos.Length > 0) _logoRepo = repos[0];
+                Plugin.Log.LogInfo($"[CustomLogo] TeamAssetsRepository: {(_logoRepo != null ? "found" : "NOT found")}");
+            }
+            var repo = _logoRepo as Tape2Tape.Customization.TeamAssetsRepositoryScriptableObject;
+            if (repo != null)
+            {
+                var s = repo.GetLogo(logoId);
+                string sn = "null"; try { sn = s != null ? s.name : "null"; } catch { }
+                Plugin.Log.LogInfo($"[CustomLogo] Native GetLogo('{logoId}') -> '{sn}'");
+                // Only trust it if the returned sprite actually matches the id —
+                // GetLogo falls back to a defaultLogo for unknown ids, which we
+                // must NOT mistake for the requested custom logo.
+                if (s != null && NormLogo(s.name) == NormLogo(logoId))
+                    return s;
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[CustomLogo] GetNativeLogo '{logoId}': {ex.Message}"); }
+        return null;
+    }
+
     internal static UnityEngine.Sprite LoadCustomLogoSprite(string name)
     {
         if (string.IsNullOrWhiteSpace(name)) return null;
         string key = name.Trim();
         if (_customLogoCache.TryGetValue(key, out var cached)) return cached;
+
+        // 1) Prefer the game's OWN recognized logo (so jerseys map it too).
+        var native = GetNativeLogo(key);
+        if (native != null) { _customLogoCache[key] = native; return native; }
 
         UnityEngine.Sprite sprite = null;
         try
@@ -4865,6 +5009,36 @@ public static class PatchBossLaunchMatch
 
         _customLogoCache[key] = sprite;   // cache misses too (null) to avoid re-tries
         return sprite;
+    }
+
+    // Make a team's jerseys show a CUSTOM logo the way the in-game team editor
+    // does: point every skater's logoSkin at the game's custom-logo Spine slot
+    // (Team_Logo/Custom_R for righties, _L for lefties). The game's skin/Spine
+    // pipeline (ApplySkin/SetLogo + SetLogoSkinUVsForCustomLogo) then UV-maps
+    // the team's custom logo texture (team.alternateBigLogo) onto that slot.
+    // Without flipping logoSkin to the custom slot the crest keeps its default
+    // (team-specific) slot and ignores the custom texture — which is why setting
+    // team.logo/alternateBigLogo alone left jerseys unchanged.
+    internal static void ApplyCustomLogoSkinToSkaters(TeamData team)
+    {
+        if (team == null) return;
+        try
+        {
+            int n = 0;
+            var fwds = team.forwards;
+            if (fwds != null)
+                for (int i = 0; i < fwds.Count; i++)
+                {
+                    var f = fwds[i];
+                    if (f == null) continue;
+                    bool lefty = false; try { lefty = f.isLefty; } catch { }
+                    try { f.logoSkin = lefty ? "Team_Logo/Custom_L" : "Team_Logo/Custom_R"; n++; } catch { }
+                }
+            if (team.goalie != null)
+                try { team.goalie.logoSkin = "Team_Logo/Custom_R"; n++; } catch { }
+            Plugin.Log.LogInfo($"[CustomLogo] Set custom logoSkin on {n} skater(s) of '{team.teamName}'");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[CustomLogo] logoSkin apply: {ex.Message}"); }
     }
 
     // Cache all teams for logo swapping
@@ -5623,44 +5797,50 @@ public static class PatchBossLaunchMatch
                     }
                 }
             }
-            var logoTeam = FindTeamByName(cfg.LogoFrom);
-            Plugin.Log.LogInfo($"[Config] Logo lookup '{cfg.LogoFrom}': {(logoTeam != null ? "FOUND '" + logoTeam.teamName + "'" : "NOT FOUND")}");
-            // Make sure we didn't find ourselves (the team we're currently modifying)
-            if (logoTeam == team)
+            // Prefer a custom PNG in CustomLogos/ (logo packs). The campaign's
+            // own team names collide with pack names (e.g. "Canucks (25-26)")
+            // and those campaign teams carry blank/placeholder logos, so
+            // resolving the team FIRST applied the wrong logo. PNG wins; only
+            // borrow an in-game team's sprite+colors when no PNG matches.
+            var customLogo = LoadCustomLogoSprite(cfg.LogoFrom);
+            if (customLogo != null)
             {
-                Plugin.Log.LogWarning($"[Config] Logo lookup returned the SAME team we're modifying! Searching for another match...");
-                logoTeam = null;
-                if (AllTeamCache != null)
-                {
-                    string search = cfg.LogoFrom.Trim();
-                    foreach (var t in AllTeamCache)
-                    {
-                        if (t != null && t != team && t.teamName != null && t.teamName.Trim().Equals(search, StringComparison.OrdinalIgnoreCase))
-                        { logoTeam = t; break; }
-                    }
-                }
-                Plugin.Log.LogInfo($"[Config] Second lookup: {(logoTeam != null ? "FOUND '" + logoTeam.teamName + "'" : "NOT FOUND")}");
-            }
-            if (logoTeam != null)
-            {
-                Plugin.Log.LogInfo($"[Config] Logo sprite: {(logoTeam.logo != null ? "YES" : "NULL")}, BigLogo: {(logoTeam.alternateBigLogo != null ? "YES" : "NULL")}, Nick: '{logoTeam.nickname}'");
-                team.logo = logoTeam.logo;
-                team.alternateBigLogo = logoTeam.alternateBigLogo;
-                if (logoTeam.homeColors != null) team.homeColors.CopyInPlace(logoTeam.homeColors);
-                if (logoTeam.awayColors != null) team.awayColors.CopyInPlace(logoTeam.awayColors);
-                team.primaryColorPlayer = logoTeam.primaryColorPlayer;
-                team.secondaryColorPlayer = logoTeam.secondaryColorPlayer;
-                if (logoTeam.nickname != null) team.nickname = logoTeam.nickname;
+                team.logo = customLogo;
+                team.alternateBigLogo = customLogo.texture;
+                try { team.hasBigLogo = true; } catch { }   // gate for rink/big-logo Texture surfaces
+                PatchBossLaunchMatch.ApplyCustomLogoSkinToSkaters(team);   // jerseys use the custom-logo Spine slot
+                Plugin.Log.LogInfo($"[Config] Applied CUSTOM logo '{cfg.LogoFrom}' (tex={(customLogo.texture != null ? customLogo.texture.width + "x" + customLogo.texture.height : "null")})");
             }
             else
             {
-                // Not a base-game team → treat it as a custom PNG in CustomLogos/.
-                var customLogo = LoadCustomLogoSprite(cfg.LogoFrom);
-                if (customLogo != null)
+                var logoTeam = FindTeamByName(cfg.LogoFrom);
+                Plugin.Log.LogInfo($"[Config] Logo lookup '{cfg.LogoFrom}': {(logoTeam != null ? "FOUND '" + logoTeam.teamName + "'" : "NOT FOUND")}");
+                // Make sure we didn't find ourselves (the team we're currently modifying)
+                if (logoTeam == team)
                 {
-                    team.logo = customLogo;
-                    team.alternateBigLogo = customLogo.texture;
-                    Plugin.Log.LogInfo($"[Config] Applied CUSTOM logo '{cfg.LogoFrom}'");
+                    Plugin.Log.LogWarning($"[Config] Logo lookup returned the SAME team we're modifying! Searching for another match...");
+                    logoTeam = null;
+                    if (AllTeamCache != null)
+                    {
+                        string search = cfg.LogoFrom.Trim();
+                        foreach (var t in AllTeamCache)
+                        {
+                            if (t != null && t != team && t.teamName != null && t.teamName.Trim().Equals(search, StringComparison.OrdinalIgnoreCase))
+                            { logoTeam = t; break; }
+                        }
+                    }
+                    Plugin.Log.LogInfo($"[Config] Second lookup: {(logoTeam != null ? "FOUND '" + logoTeam.teamName + "'" : "NOT FOUND")}");
+                }
+                if (logoTeam != null)
+                {
+                    Plugin.Log.LogInfo($"[Config] Logo sprite: {(logoTeam.logo != null ? "YES" : "NULL")}, BigLogo: {(logoTeam.alternateBigLogo != null ? "YES" : "NULL")}, Nick: '{logoTeam.nickname}'");
+                    team.logo = logoTeam.logo;
+                    team.alternateBigLogo = logoTeam.alternateBigLogo;
+                    if (logoTeam.homeColors != null) team.homeColors.CopyInPlace(logoTeam.homeColors);
+                    if (logoTeam.awayColors != null) team.awayColors.CopyInPlace(logoTeam.awayColors);
+                    team.primaryColorPlayer = logoTeam.primaryColorPlayer;
+                    team.secondaryColorPlayer = logoTeam.secondaryColorPlayer;
+                    if (logoTeam.nickname != null) team.nickname = logoTeam.nickname;
                 }
             }
         }
@@ -5825,10 +6005,33 @@ public static class PatchBossLaunchMatch
                 }
                 // Apply player config (skins, stats, talents — but NOT per-player colors yet)
                 ApplyPlayerConfig(fwds[i], pc, cfg.Uniform);
-                // Apply team-level equipment color defaults (pass team so jersey scheme is synced)
-                ApplyTeamEquipmentColors(fwds[i], cfg, team);
+                // Apply team-level equipment color defaults (pass team so jersey
+                // scheme is synced). Opponents are the VISITOR side → wear AWAY
+                // colors so the two teams don't both render their home jersey.
+                ApplyTeamEquipmentColors(fwds[i], cfg, team, useAway: true);
                 // Apply per-player color overrides (highest priority, overrides team defaults)
                 PatchBossLaunchMatch.ApplyPlayerColorOverrides(fwds[i], pc);
+            }
+        }
+
+        // Bug fix: base teams such as Hockey FC / Tycoons ship with MORE than 5
+        // forwards (a bench / second line). The per-position apply above only
+        // covers the 5 starters, so forwards[5..] keep the BASE team's identity
+        // (name, look, talents) and leak through as e.g. "Hockey FC bench / 2nd
+        // line". Repaint every extra forward as a copy of the matching configured
+        // starter so the whole roster reads as THIS team. Each keeps its own id,
+        // so any team.lines[] references stay valid. (isSoccerPlayer on every
+        // forward was already cleared above.)
+        if (fwds != null && fwds.Count > 5)
+        {
+            for (int i = 5; i < fwds.Count; i++)
+            {
+                if (fwds[i] == null) continue;
+                var src = fwds[i % 5];
+                if (src == null) continue;
+                CopyPlayerData(src, fwds[i]);
+                try { fwds[i].lastName = (src.lastName ?? "") + " II"; } catch {}
+                Plugin.Log.LogInfo($"[Config] Neutralized extra forward[{i}] -> copy of starter '{src.firstName} {src.lastName}'");
             }
         }
 
@@ -5885,7 +6088,8 @@ public static class PatchBossLaunchMatch
                     Plugin.Log.LogWarning($"[Config] Goalie '{cfg.Goalie.ImportPlayer}' not found for import");
             }
             ApplyGoalieConfig(team.goalie, cfg.Goalie);
-            ApplyTeamEquipmentColorsToGoalie(team.goalie, team, cfg);
+            // Opponent = visitor → away kit (see forward call above).
+            ApplyTeamEquipmentColorsToGoalie(team.goalie, team, cfg, useAway: true);
         }
 
         // Apply relics
@@ -5993,36 +6197,62 @@ public static class PatchBossLaunchMatch
         }
     }
 
-    internal static void ApplyTeamEquipmentColors(ForwardData f, TeamConfig cfg, TeamData team = null)
+    internal static void ApplyTeamEquipmentColors(ForwardData f, TeamConfig cfg, TeamData team = null, bool useAway = false)
     {
         if (f == null || cfg == null) return;
         try
         {
             if (f.colorSchemes == null) return;
 
-            // Sync jersey scheme from the team's fully-resolved homeColors so that
-            // Body/Customization_colors renders in team colors instead of black.
-            // This must happen before per-player Jersey Color overrides (applied later
-            // in ApplyPlayerColorOverrides), which will stomp these values if set.
-            if (team?.homeColors?.jerseyScheme != null)
+            // Sync the jersey scheme from the team's fully-resolved HOME or AWAY
+            // colors (away for the visitor/opponent side) so Body/Customization
+            // renders in the right kit instead of black AND the two teams don't
+            // both wear their home jersey. Falls back to home if away is unset so
+            // we never render black. Must run before per-player Jersey Color
+            // overrides (ApplyPlayerColorOverrides), which stomp these if set.
+            var srcColors = useAway ? team?.awayColors : team?.homeColors;
+            if (srcColors?.jerseyScheme == null) srcColors = team?.homeColors;
+            if (srcColors?.jerseyScheme != null)
             {
-                var jc = team.homeColors.jerseyScheme;
+                var jc = srcColors.jerseyScheme;
                 f.colorSchemes.jerseyScheme.primaryColor   = jc.primaryColor;
                 f.colorSchemes.jerseyScheme.secondaryColor = jc.secondaryColor;
                 f.colorSchemes.jerseyScheme.tertiaryColor  = jc.tertiaryColor;
             }
 
-            SetSchemeColor(f.colorSchemes.glovesScheme, cfg.TeamGlovesColor, cfg.TeamGlovesSecondary, cfg.TeamGlovesTertiary);
-            SetSchemeColor(f.colorSchemes.helmetScheme, cfg.TeamHelmetColor, cfg.TeamHelmetSecondary, cfg.TeamHelmetTertiary);
-            SetSchemeColor(f.colorSchemes.pantsScheme, cfg.TeamPantsColor, cfg.TeamPantsSecondary, cfg.TeamPantsTertiary);
-            SetSchemeColor(f.colorSchemes.skatesScheme, cfg.TeamSkatesColor, cfg.TeamBladeColor, cfg.TeamLacesColor);
-            SetSchemeColor(f.colorSchemes.socksScheme, cfg.TeamSocksColor, cfg.TeamSocksSecondary, cfg.TeamSocksTertiary);
-            SetSchemeColor(f.colorSchemes.numberScheme, cfg.TeamNumberColor, cfg.TeamNumberSecondary, null);
+            // Equipment colors: prefer the AWAY variant when wearing the away
+            // jersey, falling back (??) to the home value so unset away pieces
+            // still match the kit instead of going blank.
+            SetSchemeColor(f.colorSchemes.glovesScheme,
+                useAway ? (cfg.TeamGlovesColorAway ?? cfg.TeamGlovesColor) : cfg.TeamGlovesColor,
+                useAway ? (cfg.TeamGlovesSecondaryAway ?? cfg.TeamGlovesSecondary) : cfg.TeamGlovesSecondary,
+                useAway ? (cfg.TeamGlovesTertiaryAway ?? cfg.TeamGlovesTertiary) : cfg.TeamGlovesTertiary);
+            SetSchemeColor(f.colorSchemes.helmetScheme,
+                useAway ? (cfg.TeamHelmetColorAway ?? cfg.TeamHelmetColor) : cfg.TeamHelmetColor,
+                useAway ? (cfg.TeamHelmetSecondaryAway ?? cfg.TeamHelmetSecondary) : cfg.TeamHelmetSecondary,
+                useAway ? (cfg.TeamHelmetTertiaryAway ?? cfg.TeamHelmetTertiary) : cfg.TeamHelmetTertiary);
+            SetSchemeColor(f.colorSchemes.pantsScheme,
+                useAway ? (cfg.TeamPantsColorAway ?? cfg.TeamPantsColor) : cfg.TeamPantsColor,
+                useAway ? (cfg.TeamPantsSecondaryAway ?? cfg.TeamPantsSecondary) : cfg.TeamPantsSecondary,
+                useAway ? (cfg.TeamPantsTertiaryAway ?? cfg.TeamPantsTertiary) : cfg.TeamPantsTertiary);
+            SetSchemeColor(f.colorSchemes.skatesScheme,
+                useAway ? (cfg.TeamSkatesColorAway ?? cfg.TeamSkatesColor) : cfg.TeamSkatesColor,
+                useAway ? (cfg.TeamBladeColorAway ?? cfg.TeamBladeColor) : cfg.TeamBladeColor,
+                useAway ? (cfg.TeamLacesColorAway ?? cfg.TeamLacesColor) : cfg.TeamLacesColor);
+            SetSchemeColor(f.colorSchemes.socksScheme,
+                useAway ? (cfg.TeamSocksColorAway ?? cfg.TeamSocksColor) : cfg.TeamSocksColor,
+                useAway ? (cfg.TeamSocksSecondaryAway ?? cfg.TeamSocksSecondary) : cfg.TeamSocksSecondary,
+                useAway ? (cfg.TeamSocksTertiaryAway ?? cfg.TeamSocksTertiary) : cfg.TeamSocksTertiary);
+            SetSchemeColor(f.colorSchemes.numberScheme,
+                useAway ? (cfg.TeamNumberColorAway ?? cfg.TeamNumberColor) : cfg.TeamNumberColor,
+                useAway ? (cfg.TeamNumberSecondaryAway ?? cfg.TeamNumberSecondary) : cfg.TeamNumberSecondary, null);
 
-            if (cfg.TeamBicepColor != null)
-                f.colorSchemes.jerseyScheme.secondaryColor = new Color(cfg.TeamBicepColor[0]/255f, cfg.TeamBicepColor[1]/255f, cfg.TeamBicepColor[2]/255f);
-            if (cfg.TeamStickColor != null)
-                f.colorSchemes.stickScheme.primaryColor = new Color(cfg.TeamStickColor[0]/255f, cfg.TeamStickColor[1]/255f, cfg.TeamStickColor[2]/255f);
+            int[] bicep = useAway ? (cfg.TeamBicepColorAway ?? cfg.TeamBicepColor) : cfg.TeamBicepColor;
+            if (bicep != null)
+                f.colorSchemes.jerseyScheme.secondaryColor = new Color(bicep[0]/255f, bicep[1]/255f, bicep[2]/255f);
+            int[] stick = useAway ? (cfg.TeamStickColorAway ?? cfg.TeamStickColor) : cfg.TeamStickColor;
+            if (stick != null)
+                f.colorSchemes.stickScheme.primaryColor = new Color(stick[0]/255f, stick[1]/255f, stick[2]/255f);
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[Config] Team equipment color error: {ex.Message}"); }
     }
@@ -6033,33 +6263,48 @@ public static class PatchBossLaunchMatch
     /// Painting individual fields on g.colorSchemes.helmetScheme didn't stick —
     /// sharing the reference does.
     /// </summary>
-    internal static void ApplyTeamEquipmentColorsToGoalie(GoaltenderData g, TeamData team, TeamConfig cfg)
+    internal static void ApplyTeamEquipmentColorsToGoalie(GoaltenderData g, TeamData team, TeamConfig cfg, bool useAway = false)
     {
         if (g == null || team == null) return;
         try
         {
-            if (team.homeColors != null)
+            // Link the goalie to the team's HOME or AWAY color set (away for the
+            // visitor/opponent), falling back to home so the mask is never black.
+            var linked = useAway ? team.awayColors : team.homeColors;
+            if (linked == null) linked = team.homeColors;
+            if (linked != null)
             {
-                g.colorSchemes = team.homeColors;
-                Plugin.Log.LogInfo($"[Config] Goalie '{g.firstName} {g.lastName}' colorSchemes linked to team homeColors");
+                g.colorSchemes = linked;
+                Plugin.Log.LogInfo($"[Config] Goalie '{g.firstName} {g.lastName}' colorSchemes linked to team {(useAway ? "awayColors" : "homeColors")}");
             }
-            // Then still paint per-field cfg overrides on top (in case user
-            // set specific Helmet Color values for this team).
+            // Then paint per-field cfg overrides on top. Each piece prefers the
+            // away value (when wearing away) then the home value, so the mask has
+            // a sensible color even when only some fields are set.
             if (g.colorSchemes != null && cfg != null)
             {
-                // Helmet color fallback chain: explicit TeamHelmet* →
-                // jersey home colors → leave whatever the template had.
-                // Ensures the team-tinted goalie mask has SOME sensible
-                // color even when the user only set jersey colors.
-                int[] helmetPrimary = cfg.TeamHelmetColor ?? cfg.JerseyPrimary;
-                int[] helmetSecondary = cfg.TeamHelmetSecondary ?? cfg.JerseySecondary;
-                int[] helmetTertiary = cfg.TeamHelmetTertiary ?? cfg.JerseyAccent;
+                int[] helmetPrimary   = useAway ? (cfg.TeamHelmetColorAway     ?? cfg.TeamHelmetColor     ?? cfg.AwayPrimary   ?? cfg.JerseyPrimary)   : (cfg.TeamHelmetColor     ?? cfg.JerseyPrimary);
+                int[] helmetSecondary = useAway ? (cfg.TeamHelmetSecondaryAway ?? cfg.TeamHelmetSecondary ?? cfg.AwaySecondary ?? cfg.JerseySecondary) : (cfg.TeamHelmetSecondary ?? cfg.JerseySecondary);
+                int[] helmetTertiary  = useAway ? (cfg.TeamHelmetTertiaryAway  ?? cfg.TeamHelmetTertiary  ?? cfg.AwayAccent    ?? cfg.JerseyAccent)    : (cfg.TeamHelmetTertiary  ?? cfg.JerseyAccent);
                 SetSchemeColor(g.colorSchemes.helmetScheme, helmetPrimary, helmetSecondary, helmetTertiary);
-                SetSchemeColor(g.colorSchemes.glovesScheme, cfg.TeamGlovesColor, cfg.TeamGlovesSecondary, cfg.TeamGlovesTertiary);
-                SetSchemeColor(g.colorSchemes.pantsScheme, cfg.TeamPantsColor, cfg.TeamPantsSecondary, cfg.TeamPantsTertiary);
-                SetSchemeColor(g.colorSchemes.skatesScheme, cfg.TeamSkatesColor, cfg.TeamBladeColor, cfg.TeamLacesColor);
-                SetSchemeColor(g.colorSchemes.socksScheme, cfg.TeamSocksColor, cfg.TeamSocksSecondary, cfg.TeamSocksTertiary);
-                SetSchemeColor(g.colorSchemes.numberScheme, cfg.TeamNumberColor, cfg.TeamNumberSecondary, null);
+                SetSchemeColor(g.colorSchemes.glovesScheme,
+                    useAway ? (cfg.TeamGlovesColorAway ?? cfg.TeamGlovesColor) : cfg.TeamGlovesColor,
+                    useAway ? (cfg.TeamGlovesSecondaryAway ?? cfg.TeamGlovesSecondary) : cfg.TeamGlovesSecondary,
+                    useAway ? (cfg.TeamGlovesTertiaryAway ?? cfg.TeamGlovesTertiary) : cfg.TeamGlovesTertiary);
+                SetSchemeColor(g.colorSchemes.pantsScheme,
+                    useAway ? (cfg.TeamPantsColorAway ?? cfg.TeamPantsColor) : cfg.TeamPantsColor,
+                    useAway ? (cfg.TeamPantsSecondaryAway ?? cfg.TeamPantsSecondary) : cfg.TeamPantsSecondary,
+                    useAway ? (cfg.TeamPantsTertiaryAway ?? cfg.TeamPantsTertiary) : cfg.TeamPantsTertiary);
+                SetSchemeColor(g.colorSchemes.skatesScheme,
+                    useAway ? (cfg.TeamSkatesColorAway ?? cfg.TeamSkatesColor) : cfg.TeamSkatesColor,
+                    useAway ? (cfg.TeamBladeColorAway ?? cfg.TeamBladeColor) : cfg.TeamBladeColor,
+                    useAway ? (cfg.TeamLacesColorAway ?? cfg.TeamLacesColor) : cfg.TeamLacesColor);
+                SetSchemeColor(g.colorSchemes.socksScheme,
+                    useAway ? (cfg.TeamSocksColorAway ?? cfg.TeamSocksColor) : cfg.TeamSocksColor,
+                    useAway ? (cfg.TeamSocksSecondaryAway ?? cfg.TeamSocksSecondary) : cfg.TeamSocksSecondary,
+                    useAway ? (cfg.TeamSocksTertiaryAway ?? cfg.TeamSocksTertiary) : cfg.TeamSocksTertiary);
+                SetSchemeColor(g.colorSchemes.numberScheme,
+                    useAway ? (cfg.TeamNumberColorAway ?? cfg.TeamNumberColor) : cfg.TeamNumberColor,
+                    useAway ? (cfg.TeamNumberSecondaryAway ?? cfg.TeamNumberSecondary) : cfg.TeamNumberSecondary, null);
             }
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[Config] Goalie team equipment color error: {ex.Message}"); }
@@ -6489,7 +6734,7 @@ public static class PatchBossLaunchMatch
         }
     }
 
-    private static void CopyPlayerData(ForwardData src, ForwardData dst)
+    internal static void CopyPlayerData(ForwardData src, ForwardData dst)
     {
         // Copy stats
         dst.speed = src.speed; dst.shotPower = src.shotPower;
@@ -11486,26 +11731,31 @@ public static class PatchPlayerTeamInit
             catch (Exception ex) { Plugin.Log.LogWarning($"[PlayerTeam] New-run wipe: {ex.Message}"); }
         }
 
-        // Logo from another team
+        // Logo: prefer a custom PNG in CustomLogos/ (logo packs). Campaign team
+        // names collide with pack names (e.g. "Canucks (25-26)") and those
+        // campaign teams carry blank logos, so resolving the team first applied
+        // the wrong logo. PNG wins; borrow an in-game team's sprite only if no
+        // PNG matches.
         if (!string.IsNullOrEmpty(cfg.LogoFrom))
         {
-            var logoTeam = PatchBossLaunchMatch.FindTeamByName(cfg.LogoFrom);
-            if (logoTeam != null && logoTeam != team)
+            var customLogo = PatchBossLaunchMatch.LoadCustomLogoSprite(cfg.LogoFrom);
+            if (customLogo != null)
             {
-                team.logo = logoTeam.logo;
-                team.alternateBigLogo = logoTeam.alternateBigLogo;
-                if (logoTeam.nickname != null) team.nickname = logoTeam.nickname;
-                Plugin.Log.LogInfo($"[PlayerTeam] Applied logo from '{cfg.LogoFrom}'");
+                team.logo = customLogo;
+                team.alternateBigLogo = customLogo.texture;
+                try { team.hasBigLogo = true; } catch { }   // gate for rink/big-logo Texture surfaces
+                PatchBossLaunchMatch.ApplyCustomLogoSkinToSkaters(team);   // jerseys use the custom-logo Spine slot
+                Plugin.Log.LogInfo($"[PlayerTeam] Applied CUSTOM logo '{cfg.LogoFrom}' (tex={(customLogo.texture != null ? customLogo.texture.width + "x" + customLogo.texture.height : "null")})");
             }
             else
             {
-                // Not a base-game team → treat it as a custom PNG in CustomLogos/.
-                var customLogo = PatchBossLaunchMatch.LoadCustomLogoSprite(cfg.LogoFrom);
-                if (customLogo != null)
+                var logoTeam = PatchBossLaunchMatch.FindTeamByName(cfg.LogoFrom);
+                if (logoTeam != null && logoTeam != team)
                 {
-                    team.logo = customLogo;
-                    team.alternateBigLogo = customLogo.texture;
-                    Plugin.Log.LogInfo($"[PlayerTeam] Applied CUSTOM logo '{cfg.LogoFrom}'");
+                    team.logo = logoTeam.logo;
+                    team.alternateBigLogo = logoTeam.alternateBigLogo;
+                    if (logoTeam.nickname != null) team.nickname = logoTeam.nickname;
+                    Plugin.Log.LogInfo($"[PlayerTeam] Applied logo from team '{cfg.LogoFrom}'");
                 }
             }
         }
@@ -11585,7 +11835,21 @@ public static class PatchPlayerTeamInit
                 if (!hasAny) continue;
                 try { PatchBossLaunchMatch.ApplyPlayerConfig(fwds[i], pc, cfg.Uniform); }
                 catch (Exception ex) { Plugin.Log.LogWarning($"[PlayerTeam] slot {i} apply error: {ex.Message}"); }
-                Plugin.Log.LogInfo($"[PlayerTeam] Applied slot override: {pc.Name ?? pc.ImportPlayer}");
+                // Stat Scale (custom squads): multiply the configured player's
+                // freshly-set stats. ApplyPlayerConfig writes the config's
+                // ABSOLUTE stat values every apply, so scaling here is
+                // idempotent across re-applies (Spartan re-init etc.) — it never
+                // compounds. Drafted/superstar skaters sit in the OTHER slots and
+                // are skipped by the hasAny gate above, so they're left at their
+                // own (pool/native) stats and never double-scaled.
+                if (cfg.StatScale != 1.0f)
+                {
+                    fwds[i].speed = (int)(fwds[i].speed * cfg.StatScale);
+                    fwds[i].shotPower = (int)(fwds[i].shotPower * cfg.StatScale);
+                    fwds[i].shotAccuracy = (int)(fwds[i].shotAccuracy * cfg.StatScale);
+                    fwds[i].checking = (int)(fwds[i].checking * cfg.StatScale);
+                }
+                Plugin.Log.LogInfo($"[PlayerTeam] Applied slot override: {pc.Name ?? pc.ImportPlayer}{(cfg.StatScale != 1.0f ? $" (stats x{cfg.StatScale})" : "")}");
             }
         }
 
@@ -11602,6 +11866,25 @@ public static class PatchPlayerTeamInit
                 }
             }
             PatchBossLaunchMatch.ApplyGoalieConfig(team.goalie, cfg.Goalie);
+            // Stat Scale (custom squads): scale the goalie's freshly-set stats.
+            // ApplyGoalieConfig writes the config's absolute values, so this is
+            // idempotent across re-applies just like the forwards above.
+            if (cfg.StatScale != 1.0f)
+            {
+                var gg = team.goalie;
+                gg.skill = (int)(gg.skill * cfg.StatScale);
+                gg.catchingSkill = (int)(gg.catchingSkill * cfg.StatScale);
+                gg.gloveSkill = (int)(gg.gloveSkill * cfg.StatScale);
+                gg.blockerSkill = (int)(gg.blockerSkill * cfg.StatScale);
+                gg.fiveHoleSkill = (int)(gg.fiveHoleSkill * cfg.StatScale);
+                gg.standingSpeed = (int)(gg.standingSpeed * cfg.StatScale);
+                gg.butterflySpeed = (int)(gg.butterflySpeed * cfg.StatScale);
+                gg.controlSkill = (int)(gg.controlSkill * cfg.StatScale);
+                gg.recoverySkill = (int)(gg.recoverySkill * cfg.StatScale);
+                gg.pokecheckSkill = (int)(gg.pokecheckSkill * cfg.StatScale);
+                gg.depth = (int)(gg.depth * cfg.StatScale);
+                Plugin.Log.LogInfo($"[PlayerTeam] Goalie stats scaled x{cfg.StatScale}");
+            }
             PatchBossLaunchMatch.ApplyTeamEquipmentColorsToGoalie(team.goalie, team, cfg);
         }
 
@@ -12167,6 +12450,28 @@ public class TeamConfig
     public int[] TeamStickColor = null;
     public int[] TeamNumberColor = null;
     public int[] TeamNumberSecondary = null;
+    // Team-level AWAY equipment colors. Used when the team wears its away
+    // jersey (the opponent/visitor side, and the player team on away nights).
+    // Null = fall back to the matching home equipment color.
+    public int[] TeamGlovesColorAway = null;
+    public int[] TeamGlovesSecondaryAway = null;
+    public int[] TeamGlovesTertiaryAway = null;
+    public int[] TeamHelmetColorAway = null;
+    public int[] TeamHelmetSecondaryAway = null;
+    public int[] TeamHelmetTertiaryAway = null;
+    public int[] TeamPantsColorAway = null;
+    public int[] TeamPantsSecondaryAway = null;
+    public int[] TeamPantsTertiaryAway = null;
+    public int[] TeamSkatesColorAway = null;
+    public int[] TeamBladeColorAway = null;
+    public int[] TeamLacesColorAway = null;
+    public int[] TeamBicepColorAway = null;
+    public int[] TeamSocksColorAway = null;
+    public int[] TeamSocksSecondaryAway = null;
+    public int[] TeamSocksTertiaryAway = null;
+    public int[] TeamStickColorAway = null;
+    public int[] TeamNumberColorAway = null;
+    public int[] TeamNumberSecondaryAway = null;
     public int BenchSize = -1;
     public string BenchHead = "";
     public UniformConfig Uniform = new UniformConfig();

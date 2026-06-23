@@ -75,7 +75,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.28"
+APP_VERSION = "2.1.30"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -2008,8 +2008,30 @@ class LabeledCombo(ttk.Frame):
         self.combo = ttk.Combobox(self, textvariable=self.var, values=values,
                                    width=width, height=dropdown_height)
         self.combo.pack(side="left", padx=4)
+        # Stop the mouse wheel from CHANGING the selection while the user is just
+        # scrolling the form — a ttk.Combobox footgun that silently flips fields
+        # (e.g. "Bicep Away" to the adjacent "crusaders") as the page scrolls past
+        # the widget. Instead, forward the wheel to the nearest scrollable Canvas
+        # so the form still scrolls, and swallow it on the combo itself.
+        self.combo.bind("<MouseWheel>", self._redirect_wheel)
+        self.combo.bind("<Button-4>", self._redirect_wheel)
+        self.combo.bind("<Button-5>", self._redirect_wheel)
         if hint:
             ttk.Label(self, text=hint, foreground="#777", font=("", 8)).pack(side="left", padx=4)
+    def _redirect_wheel(self, e):
+        w = self.master
+        while w is not None and not isinstance(w, tk.Canvas):
+            w = getattr(w, "master", None)
+        if isinstance(w, tk.Canvas):
+            try:
+                num = getattr(e, "num", None)
+                if num == 4:     delta = -1
+                elif num == 5:   delta = 1
+                else:            delta = int(-1 * (e.delta / 120))
+                w.yview_scroll(delta, "units")
+            except Exception:
+                pass
+        return "break"  # prevent the combobox from cycling its value
     def get(self): return self.var.get().strip()
     def set(self, v): self.var.set(v or "")
 
@@ -3350,6 +3372,12 @@ TEAM_FIELD_ORDER = [
     "Skates Color", "Blade Color", "Laces Color",
     "Socks Color", "Socks Secondary Color", "Socks Tertiary Color",
     "Bicep Color", "Stick Color",
+    "Helmet Away Color", "Helmet Away Secondary Color", "Helmet Away Tertiary Color",
+    "Gloves Away Color", "Gloves Away Secondary Color", "Gloves Away Tertiary Color",
+    "Pants Away Color", "Pants Away Secondary Color", "Pants Away Tertiary Color",
+    "Skates Away Color", "Blade Away Color", "Laces Away Color",
+    "Socks Away Color", "Socks Away Secondary Color", "Socks Away Tertiary Color",
+    "Bicep Away Color", "Stick Away Color",
     "Transition Primary", "Transition Secondary", "Transition Tertiary",
     "Body", "Body Away", "Bicep", "Bicep Away",
     "Gloves", "Gloves Away", "Pants", "Pants Away",
@@ -3522,13 +3550,27 @@ class TeamEditor(ttk.Frame):
         self.add_color(parent, "Number Color Home")
         self.add_color(parent, "Number Color Away")
 
-        section("Equipment Colors")
+        section("Equipment Colors  (Home)")
         for c in ["Helmet Color", "Helmet Secondary Color", "Helmet Tertiary Color",
                   "Gloves Color", "Gloves Secondary Color", "Gloves Tertiary Color",
                   "Pants Color", "Pants Secondary Color", "Pants Tertiary Color",
                   "Skates Color", "Blade Color", "Laces Color",
                   "Socks Color", "Socks Secondary Color", "Socks Tertiary Color",
                   "Bicep Color", "Stick Color"]:
+            self.add_color(parent, c)
+
+        section("Equipment Colors  (Away — blank = same as Home)")
+        ttk.Label(parent,
+            text="Worn on the away jersey (the opponent/visitor side). Leave a piece\n"
+                 "   blank to reuse its Home color above.",
+            foreground="#777", font=("", 8), justify="left"
+        ).pack(anchor="w", padx=4, pady=(0, 4))
+        for c in ["Helmet Away Color", "Helmet Away Secondary Color", "Helmet Away Tertiary Color",
+                  "Gloves Away Color", "Gloves Away Secondary Color", "Gloves Away Tertiary Color",
+                  "Pants Away Color", "Pants Away Secondary Color", "Pants Away Tertiary Color",
+                  "Skates Away Color", "Blade Away Color", "Laces Away Color",
+                  "Socks Away Color", "Socks Away Secondary Color", "Socks Away Tertiary Color",
+                  "Bicep Away Color", "Stick Away Color"]:
             self.add_color(parent, c)
 
         section("Transition Colors (screen wipe)")
