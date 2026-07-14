@@ -23,7 +23,7 @@ using Rogue.BenchSnapshots;
 
 namespace EndlessMode;
 
-[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.30")]
+[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.31")]
 public class Plugin : BasePlugin
 {
     internal static new ManualLogSource Log;
@@ -306,6 +306,11 @@ public class Plugin : BasePlugin
     internal static bool ReplaceSoccerBall = true;
     internal static bool ReplaceGolfBall = true;
     internal static bool UseGauntletMap = false;
+    // "Maps = <squad>" in campaign.txt — play every run on this base squad's
+    // map layout (Basic, Defence, Speedy, Gauntlet, Solo, ...). Empty = each
+    // squad keeps its own maps. "Gauntlet Map = yes" is the legacy special
+    // case and behaves like Maps = Gauntlet (plus injecting all squads).
+    internal static string MapSourceSquad = "";
 
     // Reward-pool filters (populated from campaigns/<name>/reward_pools.txt).
     // IDs held here are filtered OUT of the game's random-reward picks at
@@ -417,6 +422,7 @@ public class Plugin : BasePlugin
             // Multi-folder format only. Campaign settings live in campaign.txt,
             // teams live in the teams/ subfolder.
             UseGauntletMap = false; // reset before parsing — absence of key means off
+            MapSourceSquad = "";    // reset — absence of key means each squad keeps its own maps
             if (File.Exists(ConfigPath))
             {
                 ParseKvFile(ConfigPath, (key, val) =>
@@ -468,6 +474,17 @@ public class Plugin : BasePlugin
                     else if (key == "replace golf ball") ReplaceGolfBall = val.ToLower() == "yes" || val.ToLower() == "true";
                     else if (key == "use player teams" || key == "custom player teams") UsePlayerTeams = val.ToLower() == "yes" || val.ToLower() == "true";
                     else if (key == "gauntlet map") UseGauntletMap = val.ToLower() == "yes" || val.ToLower() == "true";
+                    // Map selector: play every run on the map layout of a chosen
+                    // base squad (Basic / Defence / Speedy / Gauntlet / ...).
+                    // Generalizes "Gauntlet Map = yes" to any squad's maps.
+                    else if (key == "maps" || key == "map source" || key == "squad maps")
+                    {
+                        string mv = val.Trim();
+                        string mvl = mv.ToLowerInvariant();
+                        if (mvl.Length == 0 || mvl == "default" || mvl == "(default)" || mvl == "no" || mvl == "none"
+                            || mvl.StartsWith("(each squad")) MapSourceSquad = "";
+                        else MapSourceSquad = mv;
+                    }
                     else if (key == "dump data") DumpData = val.ToLower() == "yes" || val.ToLower() == "true";
                 });
             }
@@ -735,6 +752,28 @@ public class Plugin : BasePlugin
         else if (key == "socks color") p.SocksColor = ParseRandomColor(val);
         else if (key == "socks secondary color" || key == "socks color 2") p.SocksSecondaryColor = ParseRandomColor(val);
         else if (key == "socks tertiary color" || key == "socks color 3") p.SocksTertiaryColor = ParseRandomColor(val);
+        // Per-player AWAY color overrides (same naming convention as team-level)
+        else if (key == "jersey away color") p.JerseyColorAway = ParseRandomColor(val);
+        else if (key == "jersey away secondary color") p.JerseySecondaryColorAway = ParseRandomColor(val);
+        else if (key == "jersey away accent color") p.JerseyAccentColorAway = ParseRandomColor(val);
+        else if (key == "gloves away color") p.GlovesColorAway = ParseRandomColor(val);
+        else if (key == "gloves away secondary color") p.GlovesSecondaryColorAway = ParseRandomColor(val);
+        else if (key == "gloves away tertiary color") p.GlovesTertiaryColorAway = ParseRandomColor(val);
+        else if (key == "helmet away color") p.HelmetColorAway = ParseRandomColor(val);
+        else if (key == "helmet away secondary color") p.HelmetSecondaryColorAway = ParseRandomColor(val);
+        else if (key == "helmet away tertiary color") p.HelmetTertiaryColorAway = ParseRandomColor(val);
+        else if (key == "pants away color") p.PantsColorAway = ParseRandomColor(val);
+        else if (key == "pants away secondary color") p.PantsSecondaryColorAway = ParseRandomColor(val);
+        else if (key == "pants away tertiary color") p.PantsTertiaryColorAway = ParseRandomColor(val);
+        else if (key == "skates away color") p.SkatesColorAway = ParseRandomColor(val);
+        else if (key == "blade away color") p.BladeColorAway = ParseRandomColor(val);
+        else if (key == "laces away color") p.LacesColorAway = ParseRandomColor(val);
+        else if (key == "bicep away color") p.BicepColorAway = ParseRandomColor(val);
+        else if (key == "number away color") p.NumberColorAway = ParseRandomColor(val);
+        else if (key == "number away secondary color") p.NumberSecondaryColorAway = ParseRandomColor(val);
+        else if (key == "socks away color") p.SocksColorAway = ParseRandomColor(val);
+        else if (key == "socks away secondary color") p.SocksSecondaryColorAway = ParseRandomColor(val);
+        else if (key == "socks away tertiary color") p.SocksTertiaryColorAway = ParseRandomColor(val);
         // Goalie-specific skins
         else if (key == "skin") p.GoalieSkin = val;
         else if (key == "skin away") p.GoalieSkinAway = val;
@@ -1767,6 +1806,20 @@ public class Plugin : BasePlugin
             {
                 Log.LogWarning("Could not find ChooseMetaMenu.SetupMetas");
             }
+
+            // Jul-2026 update: SetupMetas only builds a tile when
+            // SquadIds.IsAvailableSquad(id) passes (hardcoded whitelist).
+            // Whitelist Custom_* ids or appended squads never render.
+            var isAvail = AccessTools.Method(typeof(State.SquadIds), "IsAvailableSquad", new Type[] { typeof(string) });
+            if (isAvail != null)
+            {
+                harmony.Patch(isAvail,
+                    postfix: new HarmonyMethod(typeof(PatchSquadIds), nameof(PatchSquadIds.Postfix)));
+                Log.LogInfo("Patched SquadIds.IsAvailableSquad — Custom_* squads pass the availability whitelist");
+            }
+            else
+                Log.LogWarning("[CustomSquad] SquadIds.IsAvailableSquad not found — custom squad tiles will not appear");
+
             // Keep the legacy ChooseMetaUI patch too (no-op if not used).
             var setupButtons = AccessTools.Method(typeof(Rogue.ChooseMetaUI), "SetupMetaTeamButtons");
             if (setupButtons != null)
@@ -2157,6 +2210,21 @@ public static class PatchPuckManager
 // cloned and renamed so PatchPlayerTeamInit's config-matching finds the
 // right PlayerTeamConfig entry when the player selects it.
 // ============================================================
+// Jul-2026 update (found by disassembling SetupMetas): every squad tile is
+// now gated behind SquadIds.IsAvailableSquad(id) — a hardcoded whitelist
+// (ONLY_ALLOW_AVAILABLE_SQUADS = true game-side). Custom_* ids can never be
+// on it, so appended squads silently stopped getting tiles (the game also
+// hides its own not-yet-released 'allangus' squad this way). Flip the check
+// for our ids only.
+public static class PatchSquadIds
+{
+    public static void Postfix(string id, ref bool __result)
+    {
+        if (!__result && id != null && id.StartsWith("Custom_"))
+            __result = true;
+    }
+}
+
 public static class PatchChooseMetaUI
 {
     // The actual in-game "Choose Your Squad" screen (screenshot with locked
@@ -2232,48 +2300,86 @@ public static class PatchChooseMetaUI
                         }
                         Plugin.Log.LogInfo($"[GauntletMap] Injected {added} additional squad(s) into gauntlet picker");
                     }
+                }
+                catch (Exception gex) { Plugin.Log.LogWarning($"[GauntletMap] squad inject: {gex.Message}"); }
+            }
 
-                    // Force gauntlet map for ANY picked squad while Gauntlet Map
-                    // is on. The game reads each squad's own .maps list to pick
-                    // the level — overwrite every squad's .maps with the Gauntlet
-                    // squad's so it doesn't matter which squad the player chooses.
-                    RunSquadScriptableObject gauntletSquad = null;
-                    for (int gi = 0; gi < cs.squads.Count; gi++)
-                    {
-                        var sq = cs.squads[gi];
-                        if (sq == null) continue;
-                        if ((sq.id != null && sq.id.Equals("gauntlet", StringComparison.OrdinalIgnoreCase))
-                         || (sq.squadName != null && sq.squadName.Equals("Gauntlet", StringComparison.OrdinalIgnoreCase)))
-                        { gauntletSquad = sq; break; }
-                    }
-                    if (gauntletSquad == null && allSO != null)
-                    {
-                        for (int gi = 0; gi < allSO.Length; gi++)
-                        {
-                            var sq = allSO[gi];
-                            if (sq != null && sq.id != null
-                                && sq.id.Equals("gauntlet", StringComparison.OrdinalIgnoreCase))
-                            { gauntletSquad = sq; break; }
-                        }
-                    }
-                    if (gauntletSquad != null && gauntletSquad.maps != null)
+            // Map selector: force every squad to play on the chosen base squad's
+            // map layout ("Maps = Speedy" etc. in campaign.txt). The game reads
+            // each squad's own .maps list to pick the level, so we overwrite all
+            // of them with the source squad's. "Gauntlet Map = yes" is the
+            // legacy spelling of Maps = Gauntlet.
+            string mapSource = EffectiveMapSource();
+            if (!string.IsNullOrEmpty(mapSource))
+            {
+                try
+                {
+                    var srcSquad = FindSquadByName(cs, mapSource);
+                    if (srcSquad != null && srcSquad.maps != null)
                     {
                         int overrode = 0;
                         for (int gi = 0; gi < cs.squads.Count; gi++)
                         {
                             var sq = cs.squads[gi];
-                            if (sq == null || sq == gauntletSquad) continue;
-                            try { sq.maps = gauntletSquad.maps; overrode++; } catch { }
+                            if (sq == null || sq == srcSquad) continue;
+                            try { sq.maps = srcSquad.maps; overrode++; } catch { }
                         }
-                        Plugin.Log.LogInfo($"[GauntletMap] Overrode .maps on {overrode} squad(s) → all picks load gauntlet map ({gauntletSquad.maps.Count} map(s))");
+                        Plugin.Log.LogInfo($"[MapSource] Overrode .maps on {overrode} squad(s) → all picks use '{srcSquad.squadName}' maps ({srcSquad.maps.Count} map(s))");
                     }
                     else
-                        Plugin.Log.LogWarning("[GauntletMap] Gauntlet squad not found — couldn't override squad maps");
+                        Plugin.Log.LogWarning($"[MapSource] Squad '{mapSource}' not found — couldn't override squad maps");
                 }
-                catch (Exception gex) { Plugin.Log.LogWarning($"[GauntletMap] squad inject: {gex.Message}"); }
+                catch (Exception gex) { Plugin.Log.LogWarning($"[MapSource] override: {gex.Message}"); }
             }
         }
         catch (Exception ex) { Plugin.Log.LogError($"[CustomSquad] PrefixMenu: {ex}"); }
+    }
+
+    // The squad whose maps every run should use: explicit "Maps = X" wins,
+    // legacy "Gauntlet Map = yes" means gauntlet, empty = no override.
+    internal static string EffectiveMapSource()
+    {
+        if (!string.IsNullOrEmpty(Plugin.MapSourceSquad)) return Plugin.MapSourceSquad;
+        if (Plugin.UseGauntletMap) return "gauntlet";
+        return "";
+    }
+
+    // Find a base squad by user-typed name. Tolerant: exact id → exact
+    // squadName → space-stripped equality → contains, case-insensitive, with
+    // common spelling aliases (Defence/Defense, General Manger typo). Searches
+    // cs.squads first, then all loaded squad assets.
+    internal static RunSquadScriptableObject FindSquadByName(State.CampaignState cs, string name)
+    {
+        if (string.IsNullOrEmpty(name)) return null;
+        string Norm(string s) => (s ?? "").Replace(" ", "").Replace("_", "").ToLowerInvariant();
+        string want = Norm(name);
+        if (want == "defence") want = "defense";
+        if (want == "generalmanger") want = "generalmanager";
+
+        var pools = new List<RunSquadScriptableObject>();
+        try { if (cs?.squads != null) for (int i = 0; i < cs.squads.Count; i++) if (cs.squads[i] != null) pools.Add(cs.squads[i]); } catch { }
+        try
+        {
+            var allSO = UnityEngine.Resources.FindObjectsOfTypeAll<RunSquadScriptableObject>();
+            if (allSO != null) foreach (var sq in allSO) if (sq != null) pools.Add(sq);
+        }
+        catch { }
+
+        // Pass 1: exact (normalized) id or squadName match.
+        foreach (var sq in pools)
+        {
+            string id = Norm(sq.id), nm = Norm(sq.squadName);
+            if (nm == "defence") nm = "defense";
+            if (id == want || nm == want) return sq;
+        }
+        // Pass 2: contains either way ("speedy" matches "Speedy Squad").
+        foreach (var sq in pools)
+        {
+            string id = Norm(sq.id), nm = Norm(sq.squadName);
+            if ((nm.Length > 0 && (nm.Contains(want) || want.Contains(nm)))
+             || (id.Length > 0 && (id.Contains(want) || want.Contains(id)))) return sq;
+        }
+        return null;
     }
 
     // TEMP DIAGNOSTIC (remove once append is confirmed working). Runs after
@@ -2308,6 +2414,34 @@ public static class PatchChooseMetaUI
                 try { if (!navNull) { var nbrs = nav.Neighbors; if (nbrs != null) neigh = nbrs.Length; } } catch { }
                 Plugin.Log.LogInfo($"[SquadDiag]   [{i}] id='{id}' unlocked={mti.IsUnlocked} nav={(navNull ? "NULL" : "ok")} isNavigable={isNav} canBeClicked={canClick} neighbors={neigh}");
             }
+
+            // Jul-2026 update: tiles no longer 1:1 with cs.squads. Dump both
+            // candidate sources so we can diff which list SetupMetas filters
+            // by (compare against the tile ids above).
+            try
+            {
+                var csField = t.GetField("m_CampaignState", bf);
+                var cs = csField?.GetValue(__instance)?.TryCast<State.CampaignState>();
+                if (cs?.squads != null)
+                {
+                    var sb = new System.Text.StringBuilder($"[SquadDiag] cs.squads ({cs.squads.Count}): ");
+                    for (int i = 0; i < cs.squads.Count; i++)
+                        sb.Append('\'').Append(cs.squads[i]?.id ?? "null").Append("' ");
+                    Plugin.Log.LogInfo(sb.ToString());
+                }
+                else Plugin.Log.LogInfo("[SquadDiag] m_CampaignState/.squads not readable via reflection");
+
+                var prof = ProfileData.Instance;
+                var ul = prof?.unlockedSquads;
+                if (ul != null)
+                {
+                    var sb2 = new System.Text.StringBuilder($"[SquadDiag] unlockedSquads ({ul.Count}): ");
+                    for (int i = 0; i < ul.Count; i++)
+                        sb2.Append('\'').Append(ul[i]).Append("' ");
+                    Plugin.Log.LogInfo(sb2.ToString());
+                }
+            }
+            catch (Exception dx) { Plugin.Log.LogWarning($"[SquadDiag] source diff: {dx.Message}"); }
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[SquadDiag] PostfixMenu: {ex.Message}"); }
     }
@@ -2408,7 +2542,7 @@ public static class PatchChooseMetaUI
             }
             if (alreadyPresent)
             {
-                try { profile?.UnlockSquad(customId); } catch { }
+                EnsureSquadUnlocked(profile, customId);
                 continue;
             }
 
@@ -2600,6 +2734,54 @@ public static class PatchChooseMetaUI
                                 }
                             }
                             catch (Exception hEx) { Plugin.Log.LogWarning($"[CustomSquad] SquadHead apply: {hEx.Message}"); }
+
+                            // Jul-2026 menu: the squad-tile head is squad.m_SmallTeamIcon
+                            // (disassembly of MetaTeamItem.Refresh: overrideSprite =
+                            // [squad+0x28]); the key player's Spine headSkin is no longer
+                            // consulted for the tile. Resolve a Sprite asset by the face's
+                            // name and stamp it on the clone (tile + zamboni head) — if no
+                            // sprite matches, the tile keeps the template's icon.
+                            try
+                            {
+                                string faceLeaf = cfg.SquadHead;
+                                int slash = faceLeaf.LastIndexOf('/');
+                                if (slash >= 0) faceLeaf = faceLeaf.Substring(slash + 1);
+                                var allSprites = UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.Sprite>();
+                                UnityEngine.Sprite pickSp = null;
+                                if (allSprites != null)
+                                {
+                                    foreach (var sp in allSprites)
+                                        if (sp != null && sp.name.Equals(faceLeaf, StringComparison.OrdinalIgnoreCase)) { pickSp = sp; break; }
+                                    if (pickSp == null)
+                                        foreach (var sp in allSprites)
+                                            if (sp != null && sp.name.IndexOf(faceLeaf, StringComparison.OrdinalIgnoreCase) >= 0) { pickSp = sp; break; }
+                                }
+                                if (pickSp != null)
+                                {
+                                    clone.m_SmallTeamIcon = pickSp;
+                                    clone.m_ZamboniSkaterHead = pickSp;
+                                    Plugin.Log.LogInfo($"[CustomSquad] Tile icon: sprite '{pickSp.name}' assigned for SquadHead '{cfg.SquadHead}'");
+                                }
+                                else
+                                {
+                                    // Log a few head-ish sprite names so the next log tells
+                                    // us what the icons are actually called.
+                                    var samples = new System.Text.StringBuilder();
+                                    int shown = 0;
+                                    if (allSprites != null)
+                                        foreach (var sp in allSprites)
+                                        {
+                                            if (sp == null) continue;
+                                            if (sp.name.IndexOf("head", StringComparison.OrdinalIgnoreCase) >= 0)
+                                            {
+                                                samples.Append('\'').Append(sp.name).Append("' ");
+                                                if (++shown >= 12) break;
+                                            }
+                                        }
+                                    Plugin.Log.LogInfo($"[CustomSquad] Tile icon: no Sprite named like '{faceLeaf}' ({allSprites?.Length ?? 0} sprites loaded) — tile keeps template icon. Head-ish sprites: {samples}");
+                                }
+                            }
+                            catch (Exception spEx) { Plugin.Log.LogWarning($"[CustomSquad] Tile icon sprite: {spEx.Message}"); }
                         }
                     }
                     catch (Exception kpEx) { Plugin.Log.LogWarning($"[CustomSquad] KeyPlayer: {kpEx.Message}"); }
@@ -2668,40 +2850,21 @@ public static class PatchChooseMetaUI
                 // picking the custom squad actually loads the gauntlet map. The
                 // game keys map selection off each squad's own .maps list — our
                 // clone of Basic otherwise inherits Basic's standard maps.
-                if (Plugin.UseGauntletMap)
+                string cloneMapSource = EffectiveMapSource();
+                if (!string.IsNullOrEmpty(cloneMapSource))
                 {
                     try
                     {
-                        RunSquadScriptableObject gauntletSquad = null;
-                        for (int gi = 0; gi < squads.Count; gi++)
+                        var srcSquad = FindSquadByName(cs, cloneMapSource);
+                        if (srcSquad != null && srcSquad.maps != null)
                         {
-                            var sq = squads[gi];
-                            if (sq == null) continue;
-                            if ((sq.id != null && sq.id.Equals("gauntlet", StringComparison.OrdinalIgnoreCase))
-                             || (sq.squadName != null && sq.squadName.Equals("Gauntlet", StringComparison.OrdinalIgnoreCase)))
-                            { gauntletSquad = sq; break; }
-                        }
-                        if (gauntletSquad == null)
-                        {
-                            var allSO = UnityEngine.Resources.FindObjectsOfTypeAll<RunSquadScriptableObject>();
-                            if (allSO != null)
-                                for (int gi = 0; gi < allSO.Length; gi++)
-                                {
-                                    var sq = allSO[gi];
-                                    if (sq != null && sq.id != null
-                                        && sq.id.Equals("gauntlet", StringComparison.OrdinalIgnoreCase))
-                                    { gauntletSquad = sq; break; }
-                                }
-                        }
-                        if (gauntletSquad != null && gauntletSquad.maps != null)
-                        {
-                            clone.maps = gauntletSquad.maps;
-                            Plugin.Log.LogInfo($"[GauntletMap] Copied {gauntletSquad.maps.Count} map(s) from Gauntlet squad to '{key}' — run will use gauntlet map");
+                            clone.maps = srcSquad.maps;
+                            Plugin.Log.LogInfo($"[MapSource] Copied {srcSquad.maps.Count} map(s) from '{srcSquad.squadName}' to '{key}'");
                         }
                         else
-                            Plugin.Log.LogWarning("[GauntletMap] Gauntlet squad not found — couldn't copy maps; custom squad will use Basic's maps");
+                            Plugin.Log.LogWarning($"[MapSource] Squad '{cloneMapSource}' not found — couldn't copy maps; custom squad will use Basic's maps");
                     }
-                    catch (Exception gex) { Plugin.Log.LogWarning($"[GauntletMap] map copy for '{key}': {gex.Message}"); }
+                    catch (Exception gex) { Plugin.Log.LogWarning($"[MapSource] map copy for '{key}': {gex.Message}"); }
                 }
 
                 // Append as a NEW entry so SetupMetas builds an additional
@@ -2720,15 +2883,72 @@ public static class PatchChooseMetaUI
 
                 // UnlockSquad writes to ProfileData.m_SquadTeamsData which is
                 // what IsValidMetaSelection reads via GetSquadTeamData(id).
-                try
-                {
-                    profile?.UnlockSquad(customId);
-                    Plugin.Log.LogInfo($"[CustomSquad] UnlockSquad('{customId}') called");
-                }
-                catch (Exception uex) { Plugin.Log.LogWarning($"[CustomSquad] UnlockSquad: {uex.Message}"); }
+                EnsureSquadUnlocked(profile, customId);
             }
             catch (Exception ex) { Plugin.Log.LogError($"[CustomSquad] inject '{key}': {ex}"); }
         }
+    }
+
+    // Jul-2026 update: SetupMetas no longer builds a tile for every entry in
+    // cs.squads (appending alone stopped producing a tile — 16 base squads,
+    // 15 tiles, our appended clone ignored). The menu filters by id against a
+    // profile string list, so make sure the custom id is REALLY in
+    // profile.unlockedSquads: call the game's UnlockSquad, then verify and
+    // append the raw list entry ourselves if it didn't land.
+    internal static void EnsureSquadUnlocked(ProfileData profile, string customId)
+    {
+        if (profile == null) return;
+        try { profile.UnlockSquad(customId); }
+        catch (Exception uex) { Plugin.Log.LogWarning($"[CustomSquad] UnlockSquad('{customId}'): {uex.Message}"); }
+        try
+        {
+            var ul = profile.unlockedSquads;
+            if (ul == null) { Plugin.Log.LogWarning("[CustomSquad] profile.unlockedSquads is null"); return; }
+            bool present = false;
+            for (int i = 0; i < ul.Count; i++)
+                if (ul[i] == customId) { present = true; break; }
+            if (!present)
+            {
+                ul.Add(customId);
+                Plugin.Log.LogInfo($"[CustomSquad] '{customId}' was NOT in unlockedSquads — added directly (count now {ul.Count})");
+            }
+            else
+                Plugin.Log.LogInfo($"[CustomSquad] '{customId}' already in unlockedSquads");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] EnsureSquadUnlocked: {ex.Message}"); }
+
+        // Jul-2026 menu builds tiles only for squads with a saved
+        // m_SquadTeamsData entry (the new locked All Angus squad has none and
+        // is hidden the same way ours is). UnlockSquad early-outs when the id
+        // is already in unlockedSquads — persisted from pre-update sessions —
+        // so it never creates the entry for our custom ids. Create it directly.
+        try
+        {
+            var pt = profile.GetIl2CppType();
+            var pbf = Il2CppSystem.Reflection.BindingFlags.NonPublic | Il2CppSystem.Reflection.BindingFlags.Instance | Il2CppSystem.Reflection.BindingFlags.Public;
+            var stf = pt.GetField("m_SquadTeamsData", pbf);
+            var stList = stf?.GetValue(profile)?.TryCast<Il2CppSystem.Collections.Generic.List<SquadTeamData>>();
+            if (stList == null) { Plugin.Log.LogWarning("[CustomSquad] m_SquadTeamsData not readable"); return; }
+            var sb = new System.Text.StringBuilder($"[CustomSquad] SquadTeamsData ({stList.Count}): ");
+            bool has = false;
+            for (int i = 0; i < stList.Count; i++)
+            {
+                var e = stList[i];
+                sb.Append('\'').Append(e.Id ?? "null").Append(e.Unlocked ? "'+ " : "'- ");
+                if (e.Id == customId)
+                {
+                    has = true;
+                    if (!e.Unlocked) { e.Unlocked = true; stList[i] = e; Plugin.Log.LogInfo($"[CustomSquad] SquadTeamData('{customId}') existed but locked — set Unlocked=true"); }
+                }
+            }
+            Plugin.Log.LogInfo(sb.ToString());
+            if (!has)
+            {
+                stList.Add(new SquadTeamData(customId, true));
+                Plugin.Log.LogInfo($"[CustomSquad] Added SquadTeamData('{customId}', unlocked) — list now {stList.Count}");
+            }
+        }
+        catch (Exception sx) { Plugin.Log.LogWarning($"[CustomSquad] SquadTeamData ensure: {sx.Message}"); }
     }
 
     // Any forward slot (0=LW,1=RW,2=C,3=LD,4=RD) that the user's custom
@@ -4570,8 +4790,21 @@ public static class PatchBossLaunchMatch
     {
         if (CachedTalentRepo == null)
         {
+            // Pick the MOST POPULATED instance, not [0]: early in a session
+            // (or after a scene unload) FindObjectsOfTypeAll can return a
+            // stale/empty repo first, and interop null-checks don't see
+            // Unity's fake-null — caching that one made every talent lookup
+            // fail forever ("Talent 'Status Extender' not found").
             var t = UnityEngine.Resources.FindObjectsOfTypeAll<TalentRepository>();
-            CachedTalentRepo = t != null && t.Length > 0 ? t[0] : null;
+            TalentRepository best = null; int bestCount = -1;
+            if (t != null)
+                foreach (var repo in t)
+                {
+                    int c = -1;
+                    try { c = repo?.talents?.Count ?? -1; } catch { }
+                    if (c > bestCount) { best = repo; bestCount = c; }
+                }
+            CachedTalentRepo = best;
         }
         if (CachedRelicRepo == null)
         {
@@ -4585,15 +4818,33 @@ public static class PatchBossLaunchMatch
     {
         { "Goalie Pass Propel", "Goalie Pass Proepl" },
         { "Goalie Pass Propell", "Goalie Pass Proepl" },
-        // X-Ray Shot: the asset is "xRay" but users write "XRay Shot" / "X-Ray Shot"
-        { "XRay Shot", "xRay" },
-        { "X-Ray Shot", "xRay" },
-        { "X Ray Shot", "xRay" },
-        { "XRay", "xRay" },
-        { "X-Ray", "xRay" },
+        // X-Ray Shot: the Level-1 "xRay" asset was REMOVED in the Jul-2026 game
+        // update — only "XRay Shot (Level 2)" remains in the skater talent repo
+        // (confirmed via T2T_Dumps/rewards/TALENTS_SKATER.txt). Map every user
+        // spelling (and the old asset name) to the surviving Level-2 asset so
+        // existing campaign configs keep working.
+        { "XRay Shot", "XRay Shot (Level 2)" },
+        { "X-Ray Shot", "XRay Shot (Level 2)" },
+        { "X Ray Shot", "XRay Shot (Level 2)" },
+        // NOTE: the comparer is OrdinalIgnoreCase — one entry covers every
+        // casing ("xRay", "XRAY", …); a second casing is a DUPLICATE KEY and
+        // crashes the type initializer, killing this whole class at runtime.
+        { "XRay", "XRay Shot (Level 2)" },
+        { "X-Ray", "XRay Shot (Level 2)" },
     };
 
     internal static Rogue.Talent FindTalent(string name)
+    {
+        var found = FindTalentOnce(name);
+        if (found != null) return found;
+        // Miss: the cached repo may have been grabbed before the game filled
+        // it (or belong to an unloaded scene). Re-resolve and retry once.
+        CachedTalentRepo = null;
+        EnsureRepos();
+        return FindTalentOnce(name);
+    }
+
+    private static Rogue.Talent FindTalentOnce(string name)
     {
         if (CachedTalentRepo?.talents == null) return null;
         // Check aliases first
@@ -4638,6 +4889,19 @@ public static class PatchBossLaunchMatch
 
     internal static Rogue.Relic[] AllRelicCache;
     internal static Rogue.Relic FindRelic(string nameContains, int level = 1)
+    {
+        var found = FindRelicOnce(nameContains, level);
+        if (found != null) return found;
+        // Miss: the cache may predate the game loading all relic assets
+        // (same early-lookup race as FindTalent). Rebuild and retry once.
+        AllRelicCache = null;
+        found = FindRelicOnce(nameContains, level);
+        if (found == null)
+            Plugin.Log.LogWarning($"[Remix] Relic '{nameContains}' level={level} not found in {AllRelicCache?.Length ?? 0} relics");
+        return found;
+    }
+
+    private static Rogue.Relic FindRelicOnce(string nameContains, int level = 1)
     {
         // Search ALL relics in memory, not just loaded repo lists
         if (AllRelicCache == null)
@@ -4698,7 +4962,6 @@ public static class PatchBossLaunchMatch
             if ((rn.Contains(search) || an.Contains(search) || tn.Contains(search)) && r.level == level)
                 return r;
         }
-        Plugin.Log.LogWarning($"[Remix] Relic '{nameContains}' level={level} not found in {AllRelicCache.Length} relics");
         return null;
     }
 
@@ -6009,8 +6272,9 @@ public static class PatchBossLaunchMatch
                 // scheme is synced). Opponents are the VISITOR side → wear AWAY
                 // colors so the two teams don't both render their home jersey.
                 ApplyTeamEquipmentColors(fwds[i], cfg, team, useAway: true);
-                // Apply per-player color overrides (highest priority, overrides team defaults)
-                PatchBossLaunchMatch.ApplyPlayerColorOverrides(fwds[i], pc);
+                // Apply per-player color overrides (highest priority, overrides team
+                // defaults). Opponent = visitor → away kit, so away overrides win.
+                PatchBossLaunchMatch.ApplyPlayerColorOverrides(fwds[i], pc, useAway: true);
             }
         }
 
@@ -6087,7 +6351,7 @@ public static class PatchBossLaunchMatch
                 else
                     Plugin.Log.LogWarning($"[Config] Goalie '{cfg.Goalie.ImportPlayer}' not found for import");
             }
-            ApplyGoalieConfig(team.goalie, cfg.Goalie);
+            ApplyGoalieConfig(team.goalie, cfg.Goalie, useAway: true);
             // Opponent = visitor → away kit (see forward call above).
             ApplyTeamEquipmentColorsToGoalie(team.goalie, team, cfg, useAway: true);
         }
@@ -6107,18 +6371,44 @@ public static class PatchBossLaunchMatch
         if (tertiary != null) scheme.tertiaryColor = new Color(tertiary[0]/255f, tertiary[1]/255f, tertiary[2]/255f);
     }
 
-    internal static void ApplyPlayerColorOverrides(ForwardData f, PlayerConfig pc)
+    internal static void ApplyPlayerColorOverrides(ForwardData f, PlayerConfig pc, bool useAway = false)
     {
         if (f == null || pc == null) return;
 
-        bool hasAnyColor = pc.JerseyColor != null || pc.JerseySecondaryColor != null ||
-            pc.JerseyAccentColor != null || pc.GlovesColor != null || pc.GlovesSecondaryColor != null ||
-            pc.GlovesTertiaryColor != null || pc.HelmetColor != null || pc.HelmetSecondaryColor != null ||
-            pc.HelmetTertiaryColor != null || pc.PantsColor != null || pc.PantsSecondaryColor != null ||
-            pc.PantsTertiaryColor != null || pc.SkatesColor != null || pc.BladeColor != null ||
-            pc.LacesColor != null || pc.BicepColor != null || pc.SocksColor != null ||
-            pc.SocksSecondaryColor != null || pc.SocksTertiaryColor != null;
-        if (!hasAnyColor && pc.NumberColor == null && pc.NumberSecondaryColor == null) return;
+        // Kit-aware pick: when the player's team wears its AWAY jersey the away
+        // override wins, falling back to the home override so away-only or
+        // home-only configs both behave sensibly.
+        int[] Pick(int[] home, int[] away) => useAway ? (away ?? home) : home;
+
+        int[] jerseyP = Pick(pc.JerseyColor, pc.JerseyColorAway);
+        int[] jerseyS = Pick(pc.JerseySecondaryColor, pc.JerseySecondaryColorAway);
+        int[] jerseyA = Pick(pc.JerseyAccentColor, pc.JerseyAccentColorAway);
+        int[] glovesP = Pick(pc.GlovesColor, pc.GlovesColorAway);
+        int[] glovesS = Pick(pc.GlovesSecondaryColor, pc.GlovesSecondaryColorAway);
+        int[] glovesT = Pick(pc.GlovesTertiaryColor, pc.GlovesTertiaryColorAway);
+        int[] helmetP = Pick(pc.HelmetColor, pc.HelmetColorAway);
+        int[] helmetS = Pick(pc.HelmetSecondaryColor, pc.HelmetSecondaryColorAway);
+        int[] helmetT = Pick(pc.HelmetTertiaryColor, pc.HelmetTertiaryColorAway);
+        int[] pantsP  = Pick(pc.PantsColor, pc.PantsColorAway);
+        int[] pantsS  = Pick(pc.PantsSecondaryColor, pc.PantsSecondaryColorAway);
+        int[] pantsT  = Pick(pc.PantsTertiaryColor, pc.PantsTertiaryColorAway);
+        int[] skates  = Pick(pc.SkatesColor, pc.SkatesColorAway);
+        int[] blade   = Pick(pc.BladeColor, pc.BladeColorAway);
+        int[] laces   = Pick(pc.LacesColor, pc.LacesColorAway);
+        int[] bicep   = Pick(pc.BicepColor, pc.BicepColorAway);
+        int[] number  = Pick(pc.NumberColor, pc.NumberColorAway);
+        int[] numberS = Pick(pc.NumberSecondaryColor, pc.NumberSecondaryColorAway);
+        int[] socksP  = Pick(pc.SocksColor, pc.SocksColorAway);
+        int[] socksS  = Pick(pc.SocksSecondaryColor, pc.SocksSecondaryColorAway);
+        int[] socksT  = Pick(pc.SocksTertiaryColor, pc.SocksTertiaryColorAway);
+
+        bool hasAnyColor = jerseyP != null || jerseyS != null || jerseyA != null ||
+            glovesP != null || glovesS != null || glovesT != null ||
+            helmetP != null || helmetS != null || helmetT != null ||
+            pantsP != null || pantsS != null || pantsT != null ||
+            skates != null || blade != null || laces != null ||
+            bicep != null || socksP != null || socksS != null || socksT != null;
+        if (!hasAnyColor && number == null && numberS == null) return;
 
         try
         {
@@ -6139,21 +6429,21 @@ public static class PatchBossLaunchMatch
                     // The shared-ref write IS what the game reads; bleed across the team was
                     // not observed in practice (likely because every player on the team shares
                     // team colors anyway, so "bleed" == "expected behavior" for unset fields).
-                    SetSchemeColor(f.colorSchemes.jerseyScheme, pc.JerseyColor, pc.JerseySecondaryColor, pc.JerseyAccentColor);
-                    SetSchemeColor(f.colorSchemes.glovesScheme, pc.GlovesColor, pc.GlovesSecondaryColor, pc.GlovesTertiaryColor);
-                    SetSchemeColor(f.colorSchemes.helmetScheme, pc.HelmetColor, pc.HelmetSecondaryColor, pc.HelmetTertiaryColor);
-                    SetSchemeColor(f.colorSchemes.pantsScheme, pc.PantsColor, pc.PantsSecondaryColor, pc.PantsTertiaryColor);
-                    SetSchemeColor(f.colorSchemes.skatesScheme, pc.SkatesColor, pc.BladeColor, pc.LacesColor);
-                    SetSchemeColor(f.colorSchemes.socksScheme, pc.SocksColor, pc.SocksSecondaryColor, pc.SocksTertiaryColor);
-                    SetSchemeColor(f.colorSchemes.numberScheme, pc.NumberColor, pc.NumberSecondaryColor, null);
-                    if (pc.BicepColor != null)
-                        f.colorSchemes.jerseyScheme.secondaryColor = new Color(pc.BicepColor[0]/255f, pc.BicepColor[1]/255f, pc.BicepColor[2]/255f);
-                    Plugin.Log.LogInfo($"[Color] Applied per-player overrides to {f.firstName} {f.lastName}");
+                    SetSchemeColor(f.colorSchemes.jerseyScheme, jerseyP, jerseyS, jerseyA);
+                    SetSchemeColor(f.colorSchemes.glovesScheme, glovesP, glovesS, glovesT);
+                    SetSchemeColor(f.colorSchemes.helmetScheme, helmetP, helmetS, helmetT);
+                    SetSchemeColor(f.colorSchemes.pantsScheme, pantsP, pantsS, pantsT);
+                    SetSchemeColor(f.colorSchemes.skatesScheme, skates, blade, laces);
+                    SetSchemeColor(f.colorSchemes.socksScheme, socksP, socksS, socksT);
+                    SetSchemeColor(f.colorSchemes.numberScheme, number, numberS, null);
+                    if (bicep != null)
+                        f.colorSchemes.jerseyScheme.secondaryColor = new Color(bicep[0]/255f, bicep[1]/255f, bicep[2]/255f);
+                    Plugin.Log.LogInfo($"[Color] Applied per-player overrides to {f.firstName} {f.lastName}{(useAway ? " (away kit)" : "")}");
                 }
             }
 
-            if (pc.NumberColor != null)
-                f.numberColorOverride = new Color(pc.NumberColor[0]/255f, pc.NumberColor[1]/255f, pc.NumberColor[2]/255f);
+            if (number != null)
+                f.numberColorOverride = new Color(number[0]/255f, number[1]/255f, number[2]/255f);
         }
         catch (Exception ex)
         {
@@ -6161,18 +6451,42 @@ public static class PatchBossLaunchMatch
         }
     }
 
-    internal static void ApplyGoalieColorOverrides(GoaltenderData g, PlayerConfig pc)
+    internal static void ApplyGoalieColorOverrides(GoaltenderData g, PlayerConfig pc, bool useAway = false)
     {
         if (g == null || pc == null) return;
 
-        bool hasAny = pc.JerseyColor != null || pc.JerseySecondaryColor != null ||
-            pc.JerseyAccentColor != null || pc.GlovesColor != null || pc.GlovesSecondaryColor != null ||
-            pc.GlovesTertiaryColor != null || pc.HelmetColor != null || pc.HelmetSecondaryColor != null ||
-            pc.HelmetTertiaryColor != null || pc.PantsColor != null || pc.PantsSecondaryColor != null ||
-            pc.PantsTertiaryColor != null || pc.SkatesColor != null || pc.BladeColor != null ||
-            pc.LacesColor != null || pc.BicepColor != null || pc.SocksColor != null ||
-            pc.SocksSecondaryColor != null || pc.SocksTertiaryColor != null ||
-            pc.NumberColor != null || pc.NumberSecondaryColor != null;
+        // Same kit-aware pick as the skater path: away override wins on the
+        // away kit, falling back to the home override.
+        int[] Pick(int[] home, int[] away) => useAway ? (away ?? home) : home;
+
+        int[] jerseyP = Pick(pc.JerseyColor, pc.JerseyColorAway);
+        int[] jerseyS = Pick(pc.JerseySecondaryColor, pc.JerseySecondaryColorAway);
+        int[] jerseyA = Pick(pc.JerseyAccentColor, pc.JerseyAccentColorAway);
+        int[] glovesP = Pick(pc.GlovesColor, pc.GlovesColorAway);
+        int[] glovesS = Pick(pc.GlovesSecondaryColor, pc.GlovesSecondaryColorAway);
+        int[] glovesT = Pick(pc.GlovesTertiaryColor, pc.GlovesTertiaryColorAway);
+        int[] helmetP = Pick(pc.HelmetColor, pc.HelmetColorAway);
+        int[] helmetS = Pick(pc.HelmetSecondaryColor, pc.HelmetSecondaryColorAway);
+        int[] helmetT = Pick(pc.HelmetTertiaryColor, pc.HelmetTertiaryColorAway);
+        int[] pantsP  = Pick(pc.PantsColor, pc.PantsColorAway);
+        int[] pantsS  = Pick(pc.PantsSecondaryColor, pc.PantsSecondaryColorAway);
+        int[] pantsT  = Pick(pc.PantsTertiaryColor, pc.PantsTertiaryColorAway);
+        int[] skates  = Pick(pc.SkatesColor, pc.SkatesColorAway);
+        int[] blade   = Pick(pc.BladeColor, pc.BladeColorAway);
+        int[] laces   = Pick(pc.LacesColor, pc.LacesColorAway);
+        int[] number  = Pick(pc.NumberColor, pc.NumberColorAway);
+        int[] numberS = Pick(pc.NumberSecondaryColor, pc.NumberSecondaryColorAway);
+        int[] socksP  = Pick(pc.SocksColor, pc.SocksColorAway);
+        int[] socksS  = Pick(pc.SocksSecondaryColor, pc.SocksSecondaryColorAway);
+        int[] socksT  = Pick(pc.SocksTertiaryColor, pc.SocksTertiaryColorAway);
+
+        bool hasAny = jerseyP != null || jerseyS != null || jerseyA != null ||
+            glovesP != null || glovesS != null || glovesT != null ||
+            helmetP != null || helmetS != null || helmetT != null ||
+            pantsP != null || pantsS != null || pantsT != null ||
+            skates != null || blade != null || laces != null ||
+            socksP != null || socksS != null || socksT != null ||
+            number != null || numberS != null;
         if (!hasAny) return;
 
         try
@@ -6180,14 +6494,14 @@ public static class PatchBossLaunchMatch
             // GoaltenderData has a colorSchemes field like ForwardData
             if (g.colorSchemes != null)
             {
-                SetSchemeColor(g.colorSchemes.jerseyScheme, pc.JerseyColor, pc.JerseySecondaryColor, pc.JerseyAccentColor);
-                SetSchemeColor(g.colorSchemes.glovesScheme, pc.GlovesColor, pc.GlovesSecondaryColor, pc.GlovesTertiaryColor);
-                SetSchemeColor(g.colorSchemes.helmetScheme, pc.HelmetColor, pc.HelmetSecondaryColor, pc.HelmetTertiaryColor);
-                SetSchemeColor(g.colorSchemes.pantsScheme, pc.PantsColor, pc.PantsSecondaryColor, pc.PantsTertiaryColor);
-                SetSchemeColor(g.colorSchemes.skatesScheme, pc.SkatesColor, pc.BladeColor, pc.LacesColor);
-                SetSchemeColor(g.colorSchemes.socksScheme, pc.SocksColor, pc.SocksSecondaryColor, pc.SocksTertiaryColor);
-                SetSchemeColor(g.colorSchemes.numberScheme, pc.NumberColor, pc.NumberSecondaryColor, null);
-                Plugin.Log.LogInfo($"[Color] Applied goalie color overrides to '{g.firstName} {g.lastName}'");
+                SetSchemeColor(g.colorSchemes.jerseyScheme, jerseyP, jerseyS, jerseyA);
+                SetSchemeColor(g.colorSchemes.glovesScheme, glovesP, glovesS, glovesT);
+                SetSchemeColor(g.colorSchemes.helmetScheme, helmetP, helmetS, helmetT);
+                SetSchemeColor(g.colorSchemes.pantsScheme, pantsP, pantsS, pantsT);
+                SetSchemeColor(g.colorSchemes.skatesScheme, skates, blade, laces);
+                SetSchemeColor(g.colorSchemes.socksScheme, socksP, socksS, socksT);
+                SetSchemeColor(g.colorSchemes.numberScheme, number, numberS, null);
+                Plugin.Log.LogInfo($"[Color] Applied goalie color overrides to '{g.firstName} {g.lastName}'{(useAway ? " (away kit)" : "")}");
             }
 
         }
@@ -6604,7 +6918,7 @@ public static class PatchBossLaunchMatch
         return null;
     }
 
-    internal static void ApplyGoalieConfig(GoaltenderData g, PlayerConfig pc)
+    internal static void ApplyGoalieConfig(GoaltenderData g, PlayerConfig pc, bool useAway = false)
     {
         if (g == null || pc == null) return;
 
@@ -6726,7 +7040,7 @@ public static class PatchBossLaunchMatch
                     if (!string.IsNullOrEmpty(t)) GiveGoalieTalent(g, t);
 
             // Per-goalie color overrides (override team colors on specific equipment)
-            ApplyGoalieColorOverrides(g, pc);
+            ApplyGoalieColorOverrides(g, pc, useAway);
         }
         catch (Exception ex)
         {
@@ -12393,6 +12707,30 @@ public class PlayerConfig
     public int[] SocksColor = null;
     public int[] SocksSecondaryColor = null;
     public int[] SocksTertiaryColor = null;
+    // Per-player AWAY color overrides (used when this player's team wears its
+    // away jersey — the opponent/visitor side). Null = fall back to the
+    // matching home override above, then to team colors.
+    public int[] JerseyColorAway = null;
+    public int[] JerseySecondaryColorAway = null;
+    public int[] JerseyAccentColorAway = null;
+    public int[] GlovesColorAway = null;
+    public int[] GlovesSecondaryColorAway = null;
+    public int[] GlovesTertiaryColorAway = null;
+    public int[] HelmetColorAway = null;
+    public int[] HelmetSecondaryColorAway = null;
+    public int[] HelmetTertiaryColorAway = null;
+    public int[] PantsColorAway = null;
+    public int[] PantsSecondaryColorAway = null;
+    public int[] PantsTertiaryColorAway = null;
+    public int[] SkatesColorAway = null;
+    public int[] BladeColorAway = null;
+    public int[] LacesColorAway = null;
+    public int[] BicepColorAway = null;
+    public int[] NumberColorAway = null;
+    public int[] NumberSecondaryColorAway = null;
+    public int[] SocksColorAway = null;
+    public int[] SocksSecondaryColorAway = null;
+    public int[] SocksTertiaryColorAway = null;
     // Goalie-specific skins
     public string GoalieSkin = null;
     public string GoalieSkinAway = null;

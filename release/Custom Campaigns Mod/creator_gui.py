@@ -75,7 +75,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.30"
+APP_VERSION = "2.1.31"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -1065,6 +1065,14 @@ GOALIE_STICK_SKINS = ["team colors", "figure_skaters", "tycoons"]
 # Legacy alias kept so old configs that wrote "standard" still resolve to
 # the same option when loaded (normalized to "team colors" on read).
 _GOALIE_LEGACY_STANDARD = "standard"
+# Base squads whose map layout a campaign can force via "Maps = <name>"
+# (the campaign editor's Maps dropdown). Default = Basic. Picking Gauntlet
+# is the old "Gauntlet Map" checkbox (also unlocks all base squads in the picker).
+MAP_SOURCE_SQUADS = [
+    "Basic", "Defence", "Speedy", "Trio", "Gauntlet", "Solo", "Bum",
+    "General Manager", "Slapshot", "Referee", "Tchel", "Speedrun", "Stats",
+    "Violence", "Oldschool",
+]
 SIZES = ["ExtraSmall", "Small", "Medium", "Big", "ExtraBig", "ExtraExtraBig", "random"]
 SKIN_COLORS = ["light", "dark", "random"]
 YESNO_RANDOM = ["no", "yes", "random"]
@@ -1112,6 +1120,18 @@ ABILITIES = [
     "yoyoShot",
     "zap",
 ]
+
+# Prefer the auto-generated ability list (regenerated from the game's own
+# dumps by _gen_game_data.py after every game update) over the inline
+# fallback above, so new abilities appear without hand-editing this file.
+try:
+    from _game_data import ABILITIES as _GEN_ABILITIES
+    if _GEN_ABILITIES:
+        ABILITIES = list(_GEN_ABILITIES)
+        if "none" not in ABILITIES:
+            ABILITIES.insert(0, "none")
+except Exception:
+    pass
 
 # Goalie talents pulled from dumped game data
 GOALIE_TALENTS_COMMON = [
@@ -2782,6 +2802,13 @@ PLAYER_FIELD_ORDER = [
     "Skates Color", "Blade Color", "Laces Color",
     "Socks Color", "Socks Secondary Color", "Socks Tertiary Color",
     "Bicep Color", "Number Color", "Number Secondary Color",
+    "Jersey Away Color", "Jersey Away Secondary Color", "Jersey Away Accent Color",
+    "Helmet Away Color", "Helmet Away Secondary Color", "Helmet Away Tertiary Color",
+    "Gloves Away Color", "Gloves Away Secondary Color", "Gloves Away Tertiary Color",
+    "Pants Away Color", "Pants Away Secondary Color", "Pants Away Tertiary Color",
+    "Skates Away Color", "Blade Away Color", "Laces Away Color",
+    "Socks Away Color", "Socks Away Secondary Color", "Socks Away Tertiary Color",
+    "Bicep Away Color", "Number Away Color", "Number Away Secondary Color",
 ]
 
 GOALIE_FIELD_ORDER = [
@@ -2794,6 +2821,7 @@ GOALIE_FIELD_ORDER = [
     "Blocker Skin", "Blocker Away", "Pads Skin", "Pads Away",
     "Stick Skin", "Stick Away", "Logo Skin",
     "Jersey Color", "Helmet Color", "Gloves Color",
+    "Jersey Away Color", "Helmet Away Color", "Gloves Away Color",
 ]
 
 
@@ -3069,6 +3097,24 @@ class PlayerEditor(ttk.Frame):
                    "Bicep Color", "Number Color", "Number Secondary Color"])
         for c in colors:
             self.add_color(parent, c, hint=color_hints.get(c))
+
+        section("Away Color Overrides (blank = same as home override above)")
+        ttk.Label(parent,
+            text="Used when this player's team wears its AWAY jersey. Leave a field\n"
+                 "blank to reuse the matching home override (or team colors).",
+            foreground="#555", font=("", 8), justify="left"
+        ).pack(anchor="w", padx=4, pady=2)
+        away_colors = (["Jersey Away Color", "Helmet Away Color", "Gloves Away Color"]
+                       if self.is_goalie else
+                       ["Jersey Away Color", "Jersey Away Secondary Color", "Jersey Away Accent Color",
+                        "Helmet Away Color", "Helmet Away Secondary Color", "Helmet Away Tertiary Color",
+                        "Gloves Away Color", "Gloves Away Secondary Color", "Gloves Away Tertiary Color",
+                        "Pants Away Color", "Pants Away Secondary Color", "Pants Away Tertiary Color",
+                        "Skates Away Color", "Blade Away Color", "Laces Away Color",
+                        "Socks Away Color", "Socks Away Secondary Color", "Socks Away Tertiary Color",
+                        "Bicep Away Color", "Number Away Color", "Number Away Secondary Color"])
+        for c in away_colors:
+            self.add_color(parent, c)
 
     def add_entry(self, parent, label, hint=None):
         w = LabeledEntry(parent, label, hint)
@@ -3797,16 +3843,23 @@ class CampaignEditor(ttk.Frame):
                 w.var.trace_add("write", lambda *a: self._refresh_live())
             except Exception: pass
 
-        gm_w = LabeledCheckbox(top, "Gauntlet Map",
-            "Forces the Gauntlet squad at the start of the run — players face every base-game team. "
-            "Spartans don't appear in Gauntlet mode so the Spartan toggles are hidden.")
-        gm_w.pack(anchor="w", pady=1)
-        self.widgets["Gauntlet Map"] = gm_w
+        # Map selector — every run plays on the chosen base squad's map layout,
+        # regardless of which squad the player picks. Written as "Maps = <name>"
+        # in campaign.txt. Gauntlet = the old "Gauntlet Map" checkbox: it also
+        # unlocks every base squad in the picker and hides the Spartan toggles
+        # (no Spartans in Gauntlet mode).
+        maps_w = LabeledCombo(top, "Maps", MAP_SOURCE_SQUADS,
+            "Play every run on this base squad's map layout (Gauntlet = face every base-game team)",
+            width=26)
+        maps_w.combo.state(["readonly"])
+        maps_w.set("Basic")
+        maps_w.pack(anchor="w", pady=1)
+        self.widgets["Maps"] = maps_w
         try:
-            def _on_gauntlet_toggle(*a):
-                act_builder.set_gauntlet_mode(gm_w.get() == "yes")
+            def _on_maps_change(*a):
+                act_builder.set_gauntlet_mode(maps_w.get().lower() == "gauntlet")
                 self._refresh_live()
-            gm_w.var.trace_add("write", _on_gauntlet_toggle)
+            maps_w.var.trace_add("write", _on_maps_change)
         except Exception: pass
 
         # Live team-count readout that factors in Replace Challenges
@@ -4069,7 +4122,7 @@ class CampaignEditor(ttk.Frame):
         else:
             issues.append("Act Sequence is empty — required to play the campaign.")
         # yes/no fields
-        for k in ("Replace Soccer Ball", "Replace Golf Ball", "Use Player Teams", "Gauntlet Map"):
+        for k in ("Replace Soccer Ball", "Replace Golf Ball", "Use Player Teams"):
             v = data.get(k, "").strip().lower()
             if v and v not in ("yes", "no"):
                 issues.append(f"{k} should be 'yes' or 'no' (got '{v}').")
@@ -4116,10 +4169,12 @@ class CampaignEditor(ttk.Frame):
             if name.lower() in self._PRESET_SQUAD_KEYS: continue
             self._custom_squad_list.insert("end", name)
 
-    # The 7 vanilla free agents that appear in the GM node draft pool.
+    # The vanilla bench players (benchwarmers). Sally Poppins and Johnny
+    # Faceless were added by the July 2026 game update as new unlocks.
     _DEFAULT_FREE_AGENTS = [
         "Stu Stumple", "Maurice Cassoulet", "Buster Brewster",
         "Freddy Kovalski", "Ricky Kirby", "Boring Dude", "Mark Bench",
+        "Sally Poppins", "Johnny Faceless",
     ]
 
     def _add_custom_squad(self):
@@ -4227,20 +4282,24 @@ class CampaignEditor(ttk.Frame):
         if not pt: return
         dp = os.path.join(pt, "draft_pool")
         os.makedirs(dp, exist_ok=True)
-        # Only auto-seed defaults when the folder is brand new (completely empty).
-        # Once the user has added/removed agents we leave the folder alone.
+        # Seed any MISSING vanilla bench file. The bench UI is edit-only (no
+        # Remove button), so a missing default means the campaign predates a
+        # newer game update's bench additions (e.g. Sally Poppins / Johnny
+        # Faceless, added July 2026) — not a user deletion. Seeding per-file
+        # lets existing campaigns pick up new bench slots automatically while
+        # leaving every already-customized file untouched.
+        existing_lower = {f.lower() for f in os.listdir(dp) if f.endswith(".txt")}
+        import shutil
+        for agent_name in self._DEFAULT_FREE_AGENTS:
+            if (agent_name + ".txt").lower() in existing_lower: continue
+            dest = os.path.join(dp, agent_name + ".txt")
+            src = resolve_library_player_path(agent_name + ".txt")
+            if src and os.path.isfile(src):
+                try: shutil.copy2(src, dest)
+                except Exception: pass
+            else:
+                write_kv(dest, {"Name": agent_name}, order=PLAYER_FIELD_ORDER)
         existing = [f for f in os.listdir(dp) if f.endswith(".txt")]
-        if not existing:
-            import shutil
-            for agent_name in self._DEFAULT_FREE_AGENTS:
-                dest = os.path.join(dp, agent_name + ".txt")
-                src = resolve_library_player_path(agent_name + ".txt")
-                if src and os.path.isfile(src):
-                    try: shutil.copy2(src, dest)
-                    except Exception: pass
-                else:
-                    write_kv(dest, {"Name": agent_name}, order=PLAYER_FIELD_ORDER)
-            existing = [f for f in os.listdir(dp) if f.endswith(".txt")]
         # Display each bench slot by its current (renamed) Name, falling back to
         # the filename. Keep a parallel list of filenames as the stable edit key —
         # the file is named for the vanilla bench player it customizes and never
@@ -4544,6 +4603,15 @@ class CampaignEditor(ttk.Frame):
         for k, w in self.widgets.items():
             if k in data:
                 w.set(data[k])
+        # Maps dropdown: migrate the legacy "Gauntlet Map = yes" checkbox,
+        # normalize hand-typed casing to a known squad, default to Basic.
+        maps_w = self.widgets.get("Maps")
+        if maps_w:
+            v = (data.get("Maps") or "").strip()
+            if not v and str(data.get("Gauntlet Map", "")).strip().lower() in ("yes", "true"):
+                v = "Gauntlet"
+            canon = next((s for s in MAP_SOURCE_SQUADS if s.lower() == v.lower()), None)
+            maps_w.set(canon or v or "Basic")
         self._refresh_live()
 
     def refresh_list(self):
@@ -4671,11 +4739,16 @@ class CampaignEditor(ttk.Frame):
         if not os.path.isdir(campaign_dir):
             raise OSError(f"Failed to create campaign folder: {campaign_dir}")
         data = {k: w.get() for k, w in self.widgets.items() if w.get()}
+        # Gauntlet in the Maps dropdown = the old "Gauntlet Map" checkbox; keep
+        # writing the legacy key so the DLL still injects all base squads into
+        # the gauntlet picker.
+        if data.get("Maps", "").strip().lower() == "gauntlet":
+            data["Gauntlet Map"] = "yes"
         path = os.path.join(campaign_dir, "campaign.txt")
         with open(path, "w", encoding="utf-8") as f:
             f.write("# Campaign Settings\n")
             for k in ["Act Sequence", "Replace Challenges", "Replace Soccer Ball",
-                      "Replace Golf Ball", "Use Player Teams", "Gauntlet Map"]:
+                      "Replace Golf Ball", "Use Player Teams", "Gauntlet Map", "Maps"]:
                 if k in data:
                     f.write(f"{k:24s}= {data[k]}\n")
         os.makedirs(os.path.join(campaign_dir, "teams"), exist_ok=True)
