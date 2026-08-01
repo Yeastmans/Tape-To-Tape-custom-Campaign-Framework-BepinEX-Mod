@@ -75,7 +75,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.33"
+APP_VERSION = "2.1.34"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -936,18 +936,132 @@ def _community_upload(zip_path, display_name, meta_json="", timeout=120):
     return resp.get("path", "")
 
 
-def _zip_campaign(campaign_dir, dest_zip, exclude=("save.txt",)):
-    """Zip a campaign folder (skipping listed names at any depth)."""
+# Shared campaigns carry the artwork they reference. Logos live OUTSIDE the
+# campaign folder — in the game's CustomLogos/ folder — so a plain zip of the
+# campaign arrived with every team pointing at a PNG the recipient did not have,
+# and the game silently fell back to its default crest. The referenced PNGs are
+# bundled under this folder INSIDE the campaign, which keeps the single
+# top-level folder that _extract_campaign_zip requires and is ignored by older
+# versions of the mod (the DLL only ever reads *.txt out of a campaign).
+LOGO_BUNDLE_DIR = "_logos"
+
+# (copied, skipped, dest) from the most recent _extract_campaign_zip, so the
+# import dialogs can tell the user what artwork arrived with the campaign.
+LAST_LOGO_INSTALL = (0, 0, None)
+
+# Keys whose value names a logo. "Logo From" is the team crest; "Squad Head" is
+# the squad tile icon, which also resolves against CustomLogos/.
+_LOGO_REF_KEYS = ("logo from", "squad head")
+
+
+def _campaign_referenced_logos(campaign_dir):
+    """Every logo name this campaign's files refer to."""
+    names = set()
+    for root, dirs, files in os.walk(campaign_dir):
+        if os.path.basename(root) == LOGO_BUNDLE_DIR:
+            continue
+        for fn in files:
+            if not fn.lower().endswith(".txt"):
+                continue
+            try:
+                with open(os.path.join(root, fn), encoding="utf-8", errors="ignore") as f:
+                    for line in f:
+                        if "=" not in line or line.lstrip().startswith("#"):
+                            continue
+                        k, v = line.split("=", 1)
+                        if k.strip().lower() in _LOGO_REF_KEYS:
+                            v = v.strip()
+                            if v and v.lower() not in ("none", "default"):
+                                names.add(v)
+            except Exception:
+                pass
+    return names
+
+
+def _resolve_campaign_logos(campaign_dir):
+    """Referenced logo name -> PNG path in CustomLogos/, for those that exist.
+
+    Names that are not PNGs are skipped rather than guessed at: "Logo From" may
+    legitimately name a base-game team instead of a custom file, and those need
+    nothing bundled.
+    """
+    out = {}
+    src = find_custom_logos_dir()
+    if not src:
+        return out
+    try:
+        on_disk = {os.path.splitext(f)[0].lower(): f
+                   for f in os.listdir(src) if f.lower().endswith(".png")}
+    except Exception:
+        return out
+    for name in _campaign_referenced_logos(campaign_dir):
+        fn = on_disk.get(name.lower())
+        if fn:
+            out[name] = os.path.join(src, fn)
+    return out
+
+
+def install_bundled_logos(campaign_root, overwrite=False):
+    """Copy a campaign's bundled _logos/*.png into the game's CustomLogos folder.
+
+    Returns (copied, skipped, dest). Existing files are kept by default — the
+    recipient's own artwork must never be silently replaced by an import, and a
+    name collision is far more likely to be the same logo than a different one.
+    """
+    import shutil
+    src = os.path.join(campaign_root, LOGO_BUNDLE_DIR)
+    if not os.path.isdir(src):
+        return (0, 0, None)
+    dest = find_custom_logos_dir()
+    if not dest:
+        return (0, 0, None)
+    copied = skipped = 0
+    try:
+        for fn in sorted(os.listdir(src)):
+            if not fn.lower().endswith(".png"):
+                continue
+            target = os.path.join(dest, fn)
+            if os.path.exists(target) and not overwrite:
+                skipped += 1
+                continue
+            try:
+                shutil.copy2(os.path.join(src, fn), target)
+                copied += 1
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return (copied, skipped, dest)
+
+
+def _zip_campaign(campaign_dir, dest_zip, exclude=("save.txt",), include_logos=True):
+    """Zip a campaign folder (skipping listed names at any depth).
+
+    Also bundles every CustomLogos PNG the campaign references, so the person who
+    installs it sees the same crests the author did.
+    """
     import zipfile
     base = os.path.dirname(campaign_dir)
+    top = os.path.basename(campaign_dir.rstrip("\\/"))
+    logos = _resolve_campaign_logos(campaign_dir) if include_logos else {}
     with zipfile.ZipFile(dest_zip, "w", zipfile.ZIP_DEFLATED) as zf:
         for root, dirs, files in os.walk(campaign_dir):
+            # Don't re-add a bundle left behind by a previous import; it is
+            # rebuilt below from what the campaign actually references now.
+            if os.path.basename(root) == LOGO_BUNDLE_DIR:
+                continue
             # Normalize excludes — applies to any file whose basename matches
             for fn in files:
                 if fn in exclude: continue
                 full = os.path.join(root, fn)
                 arc = os.path.relpath(full, base)
                 zf.write(full, arc)
+        for name, path in sorted(logos.items()):
+            try:
+                zf.write(path, "/".join([top, LOGO_BUNDLE_DIR, os.path.basename(path)]))
+            except Exception:
+                pass
+    return len(logos)
 
 
 def _extract_campaign_zip(zip_path, dest_campaigns_dir):
@@ -972,7 +1086,12 @@ def _extract_campaign_zip(zip_path, dest_campaigns_dir):
         if os.path.exists(target):
             raise FileExistsError(target)
         zf.extractall(dest_campaigns_dir)
-        return top
+    # Put any bundled artwork where the game looks for it. Done here rather than
+    # in each caller so every import route — community download, "import from
+    # file", drag-and-drop — gets it without having to remember.
+    global LAST_LOGO_INSTALL
+    LAST_LOGO_INSTALL = install_bundled_logos(target)
+    return top
 
 
 try:
@@ -8711,8 +8830,24 @@ class MainMenu(tk.Tk):
         _refresh()
 
     def _on_community_installed(self, folder_name, parent_dlg=None):
+        copied, skipped, dest = LAST_LOGO_INSTALL
+        logo_note = ""
+        if copied or skipped:
+            logo_note = f"\n\nLogos: {copied} installed"
+            if skipped:
+                # Never overwritten — a name you already have is kept as-is.
+                logo_note += f", {skipped} already present (kept yours)"
+            if dest:
+                logo_note += f"\n{dest}"
+        elif os.path.isdir(os.path.join(CAMPAIGNS_DIR, folder_name, LOGO_BUNDLE_DIR)):
+            # Artwork came with the campaign but we could not find where the game
+            # keeps its logos — say so instead of leaving the crests unexplained.
+            logo_note = ("\n\nThis campaign came with logo artwork, but the game's "
+                         "CustomLogos folder could not be found, so it was not "
+                         f"installed. It is in the campaign's {LOGO_BUNDLE_DIR}\\ folder.")
         messagebox.showinfo("Installed",
-            f"Campaign '{folder_name}' installed into:\n{CAMPAIGNS_DIR}\n\n"
+            f"Campaign '{folder_name}' installed into:\n{CAMPAIGNS_DIR}"
+            f"{logo_note}\n\n"
             f"Use Active campaign → Set Active to play it.",
             parent=parent_dlg or self)
         try: self._refresh_tree()
@@ -8760,6 +8895,11 @@ class MainMenu(tk.Tk):
                             os.makedirs(os.path.dirname(full), exist_ok=True)
                             with zf.open(m) as src, open(full, "wb") as dst:
                                 dst.write(src.read())
+                # This branch extracts by hand (it renames the top folder), so it
+                # bypasses _extract_campaign_zip and has to install the bundled
+                # artwork itself or the copy lands without its logos.
+                global LAST_LOGO_INSTALL
+                LAST_LOGO_INSTALL = install_bundled_logos(new_dir)
                 self._on_community_installed(new_name, parent_dlg)
             except Exception as e:
                 messagebox.showerror("Install failed", str(e), parent=parent_dlg)
@@ -8815,9 +8955,12 @@ class MainMenu(tk.Tk):
             try:
                 tmp_zip = os.path.join(tempfile.gettempdir(),
                                         f"t2t_{camp.replace(' ', '_')}.zip")
-                _zip_campaign(camp_dir, tmp_zip)
-                self.after(0, lambda: status.config(
-                    text=f"Uploading {os.path.getsize(tmp_zip)//1024:,} KB…"))
+                n_logos = _zip_campaign(camp_dir, tmp_zip)
+                kb = os.path.getsize(tmp_zip) // 1024
+                lbl = (f"Uploading {kb:,} KB "
+                       f"(incl. {n_logos} logo{'' if n_logos == 1 else 's'})…"
+                       if n_logos else f"Uploading {kb:,} KB…")
+                self.after(0, lambda: status.config(text=lbl))
                 display = f"{camp} - {author}"
                 path = _community_upload(tmp_zip, display_name=display,
                                           meta_json=meta)

@@ -1,5 +1,30 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## v2.1.34 — 2026-08-01
+
+### Shared campaigns now bring their logos with them
+
+Team logos live in the game's `CustomLogos/` folder, **outside** the campaign — so a
+shared campaign arrived with every team pointing at a PNG the recipient did not have,
+and the game quietly fell back to its default crest. The campaign looked broken
+through no fault of the person who made it.
+
+Sharing a campaign now bundles every logo it actually uses, and installing one puts
+that artwork where the game looks for it. This covers all of it — uploading to the
+community folder, downloading from it, and importing a zip from disk.
+
+* Both `Logo From` (team crest) and `Squad Head` (squad tile icon) are followed.
+* **Your own artwork is never overwritten.** If you already have a logo with the same
+  name, yours is kept and the install dialog tells you how many were skipped.
+* Names that aren't custom artwork are left alone — `Logo From` may legitimately name
+  a base-game team, and those need nothing bundled.
+* The upload dialog shows how many logos went along with the campaign.
+
+Logos travel inside the campaign as a `_logos/` folder, so nothing about the zip
+layout changes and older versions of the mod simply ignore it.
+
+---
+
 ## v2.1.33 — 2026-08-01
 
 ### Map Opponents — choose who you play at every node
