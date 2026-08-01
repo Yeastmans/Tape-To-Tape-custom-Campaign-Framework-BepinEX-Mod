@@ -75,7 +75,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.31"
+APP_VERSION = "2.1.32"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -85,14 +85,19 @@ UPDATE_RELEASES_PAGE = f"https://github.com/{UPDATE_REPO}/releases"
 
 
 def _read_local_version():
-    """Read installed VERSION.txt next to the exe; fall back to APP_VERSION."""
-    for p in (os.path.join(SCRIPT_DIR, "VERSION.txt"),
-              os.path.join(os.path.dirname(SCRIPT_DIR), "VERSION.txt")):
-        try:
-            with open(p, "r", encoding="utf-8") as f:
-                v = (f.read() or "").strip()
-                if v: return v
-        except Exception: pass
+    """The version of the build that is actually running.
+
+    This used to read a VERSION.txt sitting next to the exe. That file drifted
+    from the code three separate times — frozen at 2.1.23 so every install
+    re-prompted to update forever, and stuck at 2.1.31 while 2.1.32 was
+    deployed because nothing copied it. A version marker that ships beside the
+    code can always go stale relative to it; APP_VERSION is a literal in this
+    module, so it is compiled into the exe together with the code it describes
+    and cannot disagree with it.
+
+    Only the REMOTE version still comes from a file (UPDATE_VERSION_URL) —
+    that one is a published manifest on GitHub, not local state.
+    """
     return APP_VERSION
 
 
@@ -1214,6 +1219,91 @@ GLASSES_SKINS = [
 
 
 # ============================================================
+#   GAME-DUMPED SKIN VALUES
+# ============================================================
+# The lists above are curated friendly names ("standard", "team colors",
+# "golfers") that the DLL's ResolveSkin maps to real asset paths. They are
+# convenient but INCOMPLETE, and worse, ambiguous: one name like "golfers" cannot
+# express the game's five separate golfer faces, so picking it produced a player
+# with no head.
+#
+# _game_data.SKIN_FIELDS holds every value the game actually uses, dumped from its
+# own player data on each launch (DLL -> _game_skins.txt -> _gen_game_data.py).
+# Merge them in after the friendly names: common cases stay readable at the top of
+# each dropdown, and nothing real is missing below. Raw paths pass through
+# ResolveSkin untouched, so they are written to player files verbatim.
+try:
+    from _game_data import SKIN_FIELDS as _GEN_SKINS
+except Exception:
+    _GEN_SKINS = {}
+
+
+def _merge_skins(curated, *field_names):
+    """Curated names first, then every dumped value they don't already cover.
+
+    A curated name resolves by matching the LAST path segment, so
+    "Golfer_Elite" already covers "Faces/Golfers/Golfer_Elite" and listing both
+    is just noise. It only covers it when that segment is UNIQUE across the
+    dumped values though — when two assets share a last segment the short name is
+    ambiguous (exactly the bug that gave every golfer the same missing face), so
+    both full paths are listed and the author picks the one they mean.
+    """
+    dumped = []
+    for field in field_names:
+        for v in _GEN_SKINS.get(field, ()):
+            v = v.strip()
+            if v and v not in dumped:
+                dumped.append(v)
+
+    tail_counts = {}
+    for v in dumped:
+        tail = v.rsplit("/", 1)[-1].lower()
+        tail_counts[tail] = tail_counts.get(tail, 0) + 1
+
+    out = list(curated)
+    seen = {v.strip().lower() for v in out}
+    for v in dumped:
+        key = v.lower()
+        if key in seen:
+            continue
+        tail = v.rsplit("/", 1)[-1].lower()
+        # Covered by an unambiguous curated short name — skip the full path.
+        if tail_counts.get(tail, 0) == 1 and tail in seen:
+            continue
+        seen.add(key)
+        out.append(v)
+    return out
+
+
+if _GEN_SKINS:
+    FACES = _merge_skins(FACES, "Face")
+    BODY_SKINS = _merge_skins(BODY_SKINS, "Body", "Body Away")
+    BICEP_SKINS = _merge_skins(BICEP_SKINS, "Bicep", "Bicep Away")
+    GLOVES_SKINS = _merge_skins(GLOVES_SKINS, "Gloves", "Gloves Away")
+    PANTS_SKINS = _merge_skins(PANTS_SKINS, "Pants", "Pants Away")
+    SKATE_SKINS = _merge_skins(SKATE_SKINS, "Skates", "Skates Away")
+    STICK_SKINS = _merge_skins(STICK_SKINS, "Stick")
+    HELMET_SKINS = _merge_skins(HELMET_SKINS, "Helmet", "Helmet Away")
+    GLASSES_SKINS = _merge_skins(GLASSES_SKINS, "Glasses")
+    LOGO_SKINS = _merge_skins(LOGO_SKINS, "Logo")
+    NUMBER_SKINS = _merge_skins(NUMBER_SKINS, "Number")
+    GOALIE_HELMET_SKINS = _merge_skins(GOALIE_HELMET_SKINS, "Goalie Helmet")
+    GOALIE_BODY_SKINS = _merge_skins(GOALIE_BODY_SKINS, "Goalie Skin", "Goalie Skin Away")
+    GOALIE_GLOVE_SKINS = _merge_skins(GOALIE_GLOVE_SKINS, "Goalie Glove", "Goalie Glove Away")
+    GOALIE_BLOCKER_SKINS = _merge_skins(GOALIE_BLOCKER_SKINS, "Goalie Blocker", "Goalie Blocker Away")
+    GOALIE_PADS_SKINS = _merge_skins(GOALIE_PADS_SKINS, "Goalie Pads", "Goalie Pads Away")
+    GOALIE_STICK_SKINS = _merge_skins(GOALIE_STICK_SKINS, "Goalie Stick", "Goalie Stick Away")
+    # The OV_* player-override lists are built from the base lists further up, so
+    # they hold pre-merge snapshots. Rebuild them all, exactly as they were first
+    # defined, or overrides would still offer the old short lists.
+    OV_BODY_SKINS   = _override_list(BODY_SKINS)
+    OV_HELMET_SKINS = ["(use team default)"] + HELMET_SKINS
+    OV_STICK_SKINS  = ["(use team default)"] + STICK_SKINS
+    OV_SKATE_SKINS  = _override_list(SKATE_SKINS)
+    OV_BICEP_SKINS  = _override_list(BICEP_SKINS)
+
+
+# ============================================================
 #   FILE I/O
 # ============================================================
 def read_kv(path):
@@ -2016,13 +2106,43 @@ class StatSlider(ttk.Frame):
             return None
 
 
+def _short_display(values):
+    """Build (display_list, display -> real value) for a dropdown.
+
+    Asset paths are long and the leading folders carry no information for the
+    author — "Faces/Golfers/Golfer_Lady" reads better as just "Golfer_Lady". So
+    show the last segment, while the value WRITTEN to the config file stays the
+    full path.
+
+    A short label is only used when it is unambiguous within this dropdown. Two
+    assets sharing a last segment keep their full paths, because collapsing them
+    is precisely what made every golfer face resolve to nothing.
+    """
+    display, back = [], {}
+    for v in values:
+        tail = v.rsplit("/", 1)[-1] if "/" in v else v
+        # Ambiguous (or already taken by another entry) -> keep the full path.
+        d = v if (tail in back and back[tail] != v) else tail
+        if d in back and back[d] != v:
+            d = v
+        display.append(d)
+        back[d] = v
+    return display, back
+
+
 class LabeledCombo(ttk.Frame):
     """Combobox that accepts either a known value or free text (not strict).
-       Dropdown height scales with list length (up to 30 rows visible)."""
+       Dropdown height scales with list length (up to 30 rows visible).
+       Long asset paths are shown by their last segment only; get() still
+       returns the full path so configs keep unambiguous values."""
     def __init__(self, parent, label, values, hint=None, width=22):
         super().__init__(parent)
         ttk.Label(self, text=label, width=26, anchor="w").pack(side="left")
         self.var = tk.StringVar()
+        values, self._to_value = _short_display(list(values))
+        self._to_display = {}
+        for d, v in self._to_value.items():
+            self._to_display.setdefault(v, d)
         # Show up to 30 rows in the dropdown so long lists like faces don't get clipped
         dropdown_height = min(30, max(5, len(values)))
         self.combo = ttk.Combobox(self, textvariable=self.var, values=values,
@@ -2052,8 +2172,18 @@ class LabeledCombo(ttk.Frame):
             except Exception:
                 pass
         return "break"  # prevent the combobox from cycling its value
-    def get(self): return self.var.get().strip()
-    def set(self, v): self.var.set(v or "")
+
+    def get(self):
+        # Map the shortened label back to the real value. Free text the user
+        # typed themselves isn't in the map and passes through untouched.
+        t = self.var.get().strip()
+        return self._to_value.get(t, t)
+
+    def set(self, v):
+        # Existing configs hold full paths — show them shortened so the field
+        # matches what the dropdown offers.
+        v = v or ""
+        self.var.set(self._to_display.get(v, v))
 
 
 class ListPicker(ttk.Frame):
@@ -3563,8 +3693,20 @@ class TeamEditor(ttk.Frame):
             # campaign teams ignore them, so we only surface them here.
             self.add_entry(parent, "Description",
                            "Shown under the Zamboni in the Choose Your Squad menu")
-            self.add_combo(parent, "Squad Head", FACES,
-                           "Face for the key player shown on this squad's tile icon")
+            # Tile icon only — never touches a player. The DLL resolves this in
+            # order: Spine atlas region, loaded sprite name, then PNG in
+            # CustomLogos/. Faces are Spine SKIN names and the atlas does not
+            # carry their art under that name, so they never resolve; the two
+            # sources that do are the vanilla squad icons and CustomLogos art.
+            _squad_icons = ["Default", "Defense", "Speed", "Trio", "Butt", "Ref",
+                            "Slapshot", "Stats", "OldSchool", "Violence",
+                            "Tchell", "gm", "Solo", "Gauntlet"]
+            _logo_icons = get_custom_logo_names()
+            self.add_combo(parent, "Squad Head",
+                           ["", "none"] + _squad_icons + _logo_icons,
+                           f"Icon on this squad's tile — a vanilla squad icon or a "
+                           f"PNG from CustomLogos/ ({len(_logo_icons)} available). "
+                           f"Tile only; does not change any player.")
         # Logo From: union of (1) in-game team logos dumped by the DLL and
         # (2) any PNGs the user has added to the game's CustomLogos folder.
         # Fallback to the combined team list if the dump file is missing
@@ -3921,11 +4063,14 @@ class CampaignEditor(ttk.Frame):
         bench_frame = ttk.LabelFrame(body, text=" Starting Bench ")
         bench_frame.pack(fill="x", padx=4, pady=(6, 4))
 
+        # Count comes from _DEFAULT_FREE_AGENTS so the text can't drift when a
+        # game update adds bench slots (it said 7 after July 2026 made it 9).
+        _bench_n = len(self._DEFAULT_FREE_AGENTS)
         ttk.Label(bench_frame,
-            text="These 7 players are your team's bench at the start of the campaign.\n"
+            text=f"These {_bench_n} players are your team's bench at the start of the campaign.\n"
                  "They replace Stu Stumple, Maurice Cassoulet, Buster Brewster, etc.\n"
                  "Edit each one's name, stats, appearance and ability. The roster is fixed\n"
-                 "at 7 — you can't add or remove, only edit. Renaming shows here and in-game.",
+                 f"at {_bench_n} — you can't add or remove, only edit. Renaming shows here and in-game.",
             foreground="#555", font=("", 8), justify="left"
         ).pack(anchor="w", padx=8, pady=(4, 4))
 
@@ -4276,12 +4421,55 @@ class CampaignEditor(ttk.Frame):
             messagebox.showerror("Delete failed", str(e))
         self._refresh_custom_squads()
 
+    # Bench slots the game itself renamed between versions: old file name ->
+    # current one. The FILE NAME is the key the DLL matches against the in-game
+    # player, so a game-side rename leaves the old file inert and — because the
+    # seeding loop below only looks for the new name — grows a second file for
+    # the same bench slot. The user then sees a duplicate row and their edits to
+    # the old file silently stop applying in game. Migrated once, on load.
+    _LEGACY_BENCH_FILES = {"Stu Stumpl": "Stu Stumple"}
+
+    @staticmethod
+    def _is_untouched_seed(path, canon_name):
+        """True when `path` still matches its library default field-for-field —
+        i.e. it was auto-seeded and never edited, so it's safe to overwrite."""
+        src = resolve_library_player_path(canon_name + ".txt")
+        if not src or not os.path.isfile(src):
+            return False
+        try:
+            return read_kv(path) == read_kv(src)
+        except Exception:
+            return False
+
+    def _migrate_legacy_bench_files(self, dp):
+        for legacy, canon in self._LEGACY_BENCH_FILES.items():
+            old = os.path.join(dp, legacy + ".txt")
+            new = os.path.join(dp, canon + ".txt")
+            if not os.path.isfile(old):
+                continue
+            try:
+                if not os.path.exists(new):
+                    # Straight rename — whatever the user customized carries over.
+                    os.replace(old, new)
+                elif read_kv(old) == read_kv(new) or self._is_untouched_seed(new, canon):
+                    # Either the two hold the same thing, or the new name is only
+                    # there because this bug seeded it and nobody has touched it
+                    # since — the legacy file wins, since it holds the real edits.
+                    os.replace(old, new)
+                else:
+                    # Both edited — keep the one the game actually reads and park
+                    # the other next to it (.bak is ignored by the GUI and the DLL).
+                    os.replace(old, old + ".bak")
+            except Exception:
+                pass
+
     def _refresh_draft_list(self):
         self._draft_list.delete(0, "end")
         pt = self._pt_dir()
         if not pt: return
         dp = os.path.join(pt, "draft_pool")
         os.makedirs(dp, exist_ok=True)
+        self._migrate_legacy_bench_files(dp)
         # Seed any MISSING vanilla bench file. The bench UI is edit-only (no
         # Remove button), so a missing default means the campaign predates a
         # newer game update's bench additions (e.g. Sally Poppins / Johnny
@@ -4433,7 +4621,9 @@ class CampaignEditor(ttk.Frame):
     def _remove_draft_player(self):
         sel = self._draft_list.curselection()
         if not sel: return
-        name = self._draft_list.get(sel[0])
+        # Filename, not the display text — a renamed slot reads
+        # "New Name  (was File Name)" and would build a path that doesn't exist.
+        name = self._draft_filename(sel[0])
         if not messagebox.askyesno("Remove", f"Delete draft player '{name}'?"):
             return
         pt = self._pt_dir()

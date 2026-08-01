@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -23,7 +23,7 @@ using Rogue.BenchSnapshots;
 
 namespace EndlessMode;
 
-[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.31")]
+[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.32")]
 public class Plugin : BasePlugin
 {
     internal static new ManualLogSource Log;
@@ -114,6 +114,40 @@ public class Plugin : BasePlugin
     // get substituted with GeneralManager (team-upgrade) nodes.
     internal const int MaxFreeAgentNodes = 4;  // First 4 FA nodes kept, rest substituted with TeamTraining
     internal static int FreeAgentNodesPlaced = 0;
+
+    // ===== GM SQUAD =====
+    // The General Manager squad starts with an unfilled roster and depends on GM
+    // (free-agent) nodes to sign players. Its own RunSquadScriptableObject.maps put
+    // those nodes where they need to be — including one right at the start of map 1
+    // so the team can be filled before the first game.
+    //
+    // Two things break that in a custom campaign: the campaign can start on any act
+    // (so map 1's layout isn't the GM squad's map 1), and "Maps = X" overwrites
+    // EVERY squad's .maps with the chosen source squad's, wiping the GM layout
+    // outright. So capture the GM squad's original map list before that override
+    // runs, and re-impose its GM node layers on whatever map is actually generated.
+    //
+    // Only active when the player actually picked the GM squad.
+    internal static Il2CppSystem.Collections.Generic.List<MapConfig> GmSquadMaps = null;   // captured BEFORE the Maps override
+    internal static string GmSquadId = null;
+    internal static bool GmSquadActive = false;
+    // Layer index -> how many players that GM node lets you sign
+    // (MapLayerNodeType.gmSelectionCount). Converting a node's TYPE alone isn't
+    // enough: the selection count comes along with the node it replaced, so the
+    // node offered the wrong number of players. Both have to be set.
+    internal static readonly Dictionary<int, int> GmForcedLayers = new Dictionary<int, int>();
+    internal static readonly HashSet<int> GmLayersDone = new HashSet<int>();
+
+    // Fallback only, for when the GM squad's own layout can't be read — the real
+    // count from its MapConfig is always preferred.
+    internal const int GmDefaultSelectionCount = 5;
+
+    // The opening node of map 1 is overridden OUTRIGHT: type and selection count
+    // are both imposed even when the map already put a GM node there, because that
+    // existing node carries its own (smaller) count and the run needs enough picks
+    // to fill the roster before game 1. Every other forced layer keeps an existing
+    // GM node exactly as the map intended. -1 = no override this map.
+    internal static int GmOverrideLayer = -1;
     // Track which ForwardData instances we've already applied draft-pool
     // config to. Using pointers so re-apply is skipped for the same instance
     // but NEWLY-loaded free agents get picked up on subsequent Team.Initialize
@@ -1012,6 +1046,112 @@ public class Plugin : BasePlugin
             Log.LogWarning($"  [WARN] Game {gameNum} {pos}: All stats are 0 — intentional?");
     }
 
+    /// <summary>Is the run the player is on using the General Manager squad?
+    /// Read from RunData.squadId, which is the squad actually picked.</summary>
+    internal static void RefreshGmSquadActive()
+    {
+        bool was = GmSquadActive;
+        GmSquadActive = false;
+        try
+        {
+            if (string.IsNullOrEmpty(GmSquadId)) return;
+            var runManager = UnityEngine.Object.FindObjectOfType<RunManager>();
+            string squadId = runManager?.CampaignState?.runData?.squadId;
+            if (string.IsNullOrEmpty(squadId)) return;
+            GmSquadActive = string.Equals(squadId, GmSquadId, StringComparison.OrdinalIgnoreCase);
+            if (GmSquadActive != was)
+                Log.LogInfo($"[GmSquad] Run squad is '{squadId}' — GM node placement {(GmSquadActive ? "ON" : "off")}");
+        }
+        catch (Exception ex) { Log.LogWarning($"[GmSquad] RefreshGmSquadActive: {ex.Message}"); }
+    }
+
+    /// <summary>Work out which layers of the map about to be generated must carry a
+    /// GM node, by reading the GM squad's own layout for this map position.</summary>
+    internal static void ComputeGmForcedLayers()
+    {
+        GmForcedLayers.Clear();
+        GmLayersDone.Clear();
+        GmOverrideLayer = -1;
+        if (!GmSquadActive) return;
+
+        try
+        {
+            // Map 1 must open with a GM node so the roster can be filled before the
+            // first game — that's the whole point of the squad, and it has to hold
+            // whichever act the campaign actually starts on.
+            bool firstMap = ActsCompleted <= 0;
+            if (firstMap) GmOverrideLayer = 0;
+
+            if (GmSquadMaps == null || GmSquadMaps.Count == 0)
+            {
+                if (firstMap)
+                {
+                    GmForcedLayers[0] = GmDefaultSelectionCount;
+                    Log.LogWarning($"[GmSquad] No captured GM maps — forcing a GM node on layer 0 of map 1"
+                        + $" with the fallback selection count ({GmDefaultSelectionCount}).");
+                }
+                return;
+            }
+
+            int idx = ActsCompleted;
+            if (idx < 0) idx = 0;
+            if (idx >= GmSquadMaps.Count) idx = GmSquadMaps.Count - 1;
+            var cfg = GmSquadMaps[idx];
+            var templates = cfg != null ? cfg.mapTemplates : null;
+            if (templates == null || templates.Count == 0) return;
+
+            // Several templates per map are variants of the same layout; take the
+            // first so the result is deterministic rather than a union of all.
+            var tmpl = templates[0];
+            var layers = tmpl != null ? tmpl.layers : null;
+            if (layers == null) return;
+
+            for (int li = 0; li < layers.Count; li++)
+            {
+                var layer = layers[li];
+                var nodes = layer != null ? layer.nodes : null;
+                if (nodes == null) continue;
+                for (int ni = 0; ni < nodes.Count; ni++)
+                {
+                    var nd = nodes[ni];
+                    if (nd == null) continue;
+                    // NodeData.type is DAGG.Core.NodeType, a DIFFERENT enum from
+                    // STS.Map.NodeType — and they are not interchangeable:
+                    // GeneralManager is 8 in STS.Map but 9 in DAGG.Core, with Coach
+                    // holding the other value. Casting between them by int would
+                    // quietly turn Coach nodes into GM nodes. Compare in the enum
+                    // the field actually belongs to.
+                    if (nd.type == DAGG.Core.NodeType.GeneralManager)
+                    {
+                        // Carry the squad's own selection count across, not just the
+                        // node type — that count is what decides how many players
+                        // the node lets you sign.
+                        GmForcedLayers[layer.layerIndex] = nd.gmSelectionCount;
+                        break;
+                    }
+                }
+            }
+
+            // Guarantee the opening node on the first map, using the count from the
+            // GM squad's own first GM node rather than a made-up number.
+            if (firstMap && !GmForcedLayers.ContainsKey(0))
+            {
+                int count = GmDefaultSelectionCount;
+                foreach (var kv in GmForcedLayers) { count = kv.Value; break; }
+                if (count <= 0) count = GmDefaultSelectionCount;
+                GmForcedLayers[0] = count;
+                Log.LogInfo($"[GmSquad] Map 1 has no GM node on layer 0 in the squad's own layout — adding one (selection count {count}).");
+            }
+
+            var sb = new StringBuilder();
+            foreach (var kv in GmForcedLayers)
+                sb.Append(sb.Length == 0 ? "" : ", ").Append($"L{kv.Key}(pick {kv.Value})");
+            Log.LogInfo($"[GmSquad] Map {ActsCompleted + 1}: GM nodes required on [{sb}]"
+                + $" (from GM squad map {idx + 1} of {GmSquadMaps.Count}, {templates.Count} template(s))");
+        }
+        catch (Exception ex) { Log.LogWarning($"[GmSquad] ComputeGmForcedLayers: {ex.Message}"); }
+    }
+
     internal static void LogNextGame()
     {
         int next = GamesPlayed;
@@ -1354,13 +1494,28 @@ public class Plugin : BasePlugin
     internal static int ActsCompleted = 0;
     internal static int GamesPlayed = 0;
 
+    // GamesPlayed at the moment the CURRENT map was generated. Config teams are
+    // assigned to map nodes by match depth (see CampaignOpponents), and that
+    // assignment has to stay stable while the player walks the map — so it is
+    // anchored here rather than to the live GamesPlayed, which moves under it.
+    // Persisted so a quit/reload mid-map (LoadMap, not GenerateNewMap) doesn't
+    // silently re-anchor every node to 0.
+    internal static int MapStartGamesPlayed = 0;
+
+    // Diagnostic only: which kind of match node the player last interacted with,
+    // so the [RewardPool] lines can be read per node type. The user believes the
+    // reward pool differs by node, and GetRandomRelics IS category-scoped, so the
+    // "61 relics" figure recorded in SESSION_HANDOFF.md is probably per-call.
+    // Nothing branches on this — it is a log label.
+    internal static string LastMatchNodeKind = "?";
+
     internal static void SaveProgress()
     {
         try
         {
             if (!Directory.Exists(ModFolder))
                 Directory.CreateDirectory(ModFolder);
-            File.WriteAllText(SavePath, $"{ActsCompleted},{GamesPlayed}");
+            File.WriteAllText(SavePath, $"{ActsCompleted},{GamesPlayed},{MapStartGamesPlayed}");
         }
         catch { }
     }
@@ -1377,7 +1532,16 @@ public class Plugin : BasePlugin
                     ActsCompleted = ac;
                 if (parts.Length >= 2 && int.TryParse(parts[1], out int gp))
                     GamesPlayed = gp;
-                Log.LogInfo($"[Campaign] Loaded progress: ActsCompleted={ActsCompleted}, GamesPlayed={GamesPlayed}");
+                // 3rd field is newer than the 2.1.31 release. Saves written by
+                // older builds have only two — fall back to GamesPlayed, which is
+                // right for the common "quit on the map right after a match" case.
+                if (parts.Length >= 3 && int.TryParse(parts[2], out int ms))
+                    MapStartGamesPlayed = ms;
+                else
+                    MapStartGamesPlayed = GamesPlayed;
+                if (MapStartGamesPlayed > GamesPlayed || MapStartGamesPlayed < 0)
+                    MapStartGamesPlayed = GamesPlayed;
+                Log.LogInfo($"[Campaign] Loaded progress: ActsCompleted={ActsCompleted}, GamesPlayed={GamesPlayed}, MapStartGamesPlayed={MapStartGamesPlayed}");
 
                 // Auto-reset: if ANY campaign config file has been modified
                 // since save.txt was last written, treat this as a "fresh run"
@@ -1389,6 +1553,7 @@ public class Plugin : BasePlugin
                     Log.LogInfo($"[Campaign] Config files newer than save — resetting progress so edits apply");
                     ActsCompleted = 0;
                     GamesPlayed = 0;
+                    MapStartGamesPlayed = 0;
                     DraftPoolApplied = false;
         AppliedDraftPtrs.Clear();
         AppliedFreeAgentPtrs.Clear();
@@ -1489,13 +1654,33 @@ public class Plugin : BasePlugin
         if (hasPlayerImport)
             Log.LogInfo("[Config] PLAYER mirror match configured — will clone player team at runtime");
 
-        // Default mode = play vanilla base game. Skip ALL Harmony patches so
-        // no mod behavior sneaks in — team remixes, challenge-node replacement,
-        // save tracking, library dumping, etc. all stay off. The user can
-        // re-enable the mod from active.txt when they want campaign behavior.
+        // Default mode = play vanilla base game. Skip every Harmony patch that
+        // CHANGES anything — team remixes, challenge-node replacement, save
+        // tracking and so on all stay off — with one exception: the read-only data
+        // dumps still run.
+        //
+        // Those dumps (team/player/logo/skin lists and the team library) describe
+        // the GAME, not the campaign. The Creator needs them to populate its
+        // dropdowns, and refusing to write them while default is selected meant a
+        // user with no active campaign could never generate the lists the Creator
+        // needs to build one — a chicken-and-egg the mod put in its own way.
+        // Dumping mutates no game state, so vanilla play is still vanilla.
         if (IsDefaultMode)
         {
-            Log.LogInfo("[Campaign] DEFAULT MODE active — skipping Harmony patches. Game runs 100% vanilla.");
+            Log.LogInfo("[Campaign] DEFAULT MODE active — skipping gameplay patches. Game runs 100% vanilla.");
+            var dumpOnly = new Harmony("com.mods.customcampaign.dumponly");
+            try
+            {
+                var refreshCampaign = AccessTools.Method(typeof(TitleScreen), "RefreshCampaignData");
+                if (refreshCampaign != null)
+                {
+                    dumpOnly.Patch(refreshCampaign,
+                        postfix: new HarmonyMethod(typeof(PatchDefaultModeDump), nameof(PatchDefaultModeDump.Postfix)));
+                    Log.LogInfo("[Campaign] DEFAULT MODE: data dumps still active (TitleScreen.RefreshCampaignData)");
+                }
+                else Log.LogWarning("[Campaign] DEFAULT MODE: TitleScreen.RefreshCampaignData not found — no dumps this run");
+            }
+            catch (Exception ex) { Log.LogError($"[Campaign] DEFAULT MODE dump hook: {ex}"); }
             return;
         }
 
@@ -1600,10 +1785,89 @@ public class Plugin : BasePlugin
                 harmony.Patch(initMap,
                     postfix: new HarmonyMethod(typeof(PatchInitializeMapPost), nameof(PatchInitializeMapPost.Postfix)));
                 Log.LogInfo("Patched MapObject.InitializeMap — FA node post-sweep");
+
+                // Backup hook for the opponent pass below, in case SetOpponents is
+                // inlined. Registered after the FA sweep so challenge->elite and
+                // FA->training rewrites have settled before we classify nodes.
+                harmony.Patch(initMap,
+                    postfix: new HarmonyMethod(typeof(PatchMapOpponents), nameof(PatchMapOpponents.Postfix)));
+                Log.LogInfo("Patched MapObject.InitializeMap — campaign opponents (backup hook)");
             }
             else
             {
                 Log.LogWarning("Could not find MapObject.InitializeMap");
+            }
+
+            // Put the mascot skeleton back for the post-match explosion, which is
+            // drawn by the very skeleton we hide to get rid of the mascot.
+            try
+            {
+                var playExplosion = AccessTools.Method(typeof(STS.Map.MatchMapNode), "PlayExplosionAnim");
+                if (playExplosion != null)
+                {
+                    harmony.Patch(playExplosion,
+                        prefix: new HarmonyMethod(typeof(PatchPlayExplosionAnim), nameof(PatchPlayExplosionAnim.Prefix)));
+                    Log.LogInfo("Patched MatchMapNode.PlayExplosionAnim — explosion still plays with the mascot hidden");
+                }
+                else Log.LogWarning("Could not find MatchMapNode.PlayExplosionAnim — post-match explosion may not render");
+            }
+            catch (Exception ex) { Log.LogError($"Failed PlayExplosionAnim patch: {ex}"); }
+
+            // Late node probe — runs once the map is live, unlike the map-generation
+            // pass which sees a half-built node.
+            try
+            {
+                var refreshStates = AccessTools.Method(typeof(STS.Map.MapObject), "RefreshNodeStates");
+                if (refreshStates != null)
+                {
+                    harmony.Patch(refreshStates,
+                        postfix: new HarmonyMethod(typeof(PatchLateNodeProbe), nameof(PatchLateNodeProbe.Postfix)));
+                    Log.LogInfo("Patched MapObject.RefreshNodeStates — late node-art probe");
+                }
+                else Log.LogWarning("Could not find MapObject.RefreshNodeStates");
+            }
+            catch (Exception ex) { Log.LogError($"Failed late node probe patch: {ex}"); }
+
+            // Swap the per-team stadium animation for a neutral one, so the vanilla
+            // mascot never appears next to the custom team's logo. Must be a prefix
+            // on SetElite/SetBoss — the animation name is an argument to them.
+            try
+            {
+                var setElite = AccessTools.Method(typeof(EliteMapNode), nameof(EliteMapNode.SetElite));
+                if (setElite != null)
+                {
+                    harmony.Patch(setElite,
+                        prefix: new HarmonyMethod(typeof(PatchNodeStadiumAnimation), nameof(PatchNodeStadiumAnimation.ElitePrefix)));
+                    Log.LogInfo("Patched EliteMapNode.SetElite — neutral node stadium (no vanilla mascot)");
+                }
+                else Log.LogWarning("Could not find EliteMapNode.SetElite — elite nodes will keep the vanilla mascot");
+
+                var setBoss = AccessTools.Method(typeof(BossMapNode), nameof(BossMapNode.SetBoss));
+                if (setBoss != null)
+                {
+                    harmony.Patch(setBoss,
+                        prefix: new HarmonyMethod(typeof(PatchNodeStadiumAnimation), nameof(PatchNodeStadiumAnimation.BossPrefix)));
+                    Log.LogInfo("Patched BossMapNode.SetBoss — neutral node stadium (no vanilla mascot)");
+                }
+                else Log.LogWarning("Could not find BossMapNode.SetBoss — boss nodes will keep the vanilla mascot");
+            }
+            catch (Exception ex) { Log.LogError($"Failed node stadium animation patch: {ex}"); }
+
+            // Primary hook for assigning campaign teams to map nodes. SetOpponents
+            // is where the game fills MatchMapNode.opponent for every elite and
+            // boss node, so a postfix here is guaranteed to see a fully populated
+            // map — unlike InitializeMap, whose internals we can't verify from the
+            // signatures-only dump.
+            var setOpponents = AccessTools.Method(typeof(STS.Map.MapObject), "SetOpponents");
+            if (setOpponents != null)
+            {
+                harmony.Patch(setOpponents,
+                    postfix: new HarmonyMethod(typeof(PatchMapOpponents), nameof(PatchMapOpponents.AfterSetOpponents)));
+                Log.LogInfo("Patched MapObject.SetOpponents — campaign opponents assigned at map generation");
+            }
+            else
+            {
+                Log.LogWarning("Could not find MapObject.SetOpponents — falling back to the InitializeMap hook for map teams");
             }
         }
         catch (Exception ex) { Log.LogError($"Failed MapObject FA patches: {ex}"); }
@@ -1960,6 +2224,21 @@ public class Plugin : BasePlugin
         }
         catch (Exception ex) { Log.LogError($"Failed MapNode.SetupTooltip: {ex}"); }
 
+        // Pre-match preview screen shows the vanilla opponent (the campaign team
+        // is only applied at LaunchMatch), so correct the name + logo there.
+        try
+        {
+            var showMenu = AccessTools.Method(typeof(MatchPreviewMenu), "ShowMenu");
+            if (showMenu != null)
+            {
+                harmony.Patch(showMenu,
+                    postfix: new HarmonyMethod(typeof(PatchMatchPreviewMenu), nameof(PatchMatchPreviewMenu.Postfix)));
+                Log.LogInfo("Patched MatchPreviewMenu.ShowMenu — preview shows the custom opponent");
+            }
+            else Log.LogWarning("MatchPreviewMenu.ShowMenu not found — preview will show the vanilla opponent");
+        }
+        catch (Exception ex) { Log.LogError($"Failed MatchPreviewMenu.ShowMenu: {ex}"); }
+
         // Suppress GoalDenier (Bad Luck) completely
         try
         {
@@ -2055,6 +2334,7 @@ public static class PatchMatchGameEnd
         try { sysTypeName = __instance?.GetType()?.FullName ?? ""; } catch {}
         try { il2TypeName = __instance?.GetIl2CppType()?.FullName ?? ""; } catch {}
         Plugin.Log.LogInfo($"[Campaign] MatchMapNode.OnGameEnd(win=true) on type sys='{sysTypeName}' il2='{il2TypeName}'");
+        Plugin.LastMatchNodeKind = !string.IsNullOrEmpty(il2TypeName) ? il2TypeName : sysTypeName;
 
         // Robust non-regular-match detection. In IL2CPP the `is` operator can be
         // unreliable across proxy boundaries — also check the Il2Cpp type name
@@ -2136,6 +2416,8 @@ public static class PatchBossOnGameEnd
                 Plugin.BossJustBeaten = false;
                 Plugin.GamesPlayed = 0;
                 Plugin.ActsCompleted = 0;
+                Plugin.MapStartGamesPlayed = 0;
+                CampaignOpponents.ForgetAll("final boss beaten");
                 Plugin.SaveProgress();
                 Plugin.Log.LogInfo("[Campaign] FINAL BOSS WON! Victory screen, progress reset.");
             }
@@ -2227,6 +2509,170 @@ public static class PatchSquadIds
 
 public static class PatchChooseMetaUI
 {
+    // The Choose Your Squad tile head is RunSquadScriptableObject.m_SmallTeamIcon
+    // — a plain UI Sprite drawn by MetaTeamItem.m_KeyPlayerHead, NOT a Spine skin.
+    // That means a runtime-created Sprite renders fine here (unlike jersey logos),
+    // so a PNG is a valid source. Accepts either the name of a sprite the game
+    // already has loaded, or any PNG in CustomLogos/. Returns null when neither
+    // matches, so the caller can keep the template's icon.
+    internal static UnityEngine.Sprite ResolveTileIcon(string value, string squadKey)
+    {
+        string leaf = (value ?? "").Trim();
+        int slash = leaf.LastIndexOf('/');
+        if (slash >= 0) leaf = leaf.Substring(slash + 1);
+        if (leaf.Length == 0) return null;
+
+        // 1) A face — the normal case. Faces live in the Spine atlas, so this
+        //    has to go through FaceToSprite; they are NOT Unity Sprites.
+        var face = FaceToSprite(leaf);
+        if (face != null)
+        {
+            Plugin.Log.LogInfo($"[CustomSquad] Tile icon for '{squadKey}': face '{leaf}'");
+            return face;
+        }
+
+        // 2) A sprite the game already has loaded (vanilla tile icons).
+        var all = UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.Sprite>();
+        if (all != null)
+            foreach (var sp in all)
+                if (sp != null && sp.name.Equals(leaf, StringComparison.OrdinalIgnoreCase))
+                {
+                    Plugin.Log.LogInfo($"[CustomSquad] Tile icon for '{squadKey}': game sprite '{sp.name}'");
+                    return sp;
+                }
+
+        // 3) Last resort: a PNG in CustomLogos/, so custom artwork is possible.
+        var png = PatchBossLaunchMatch.LoadCustomLogoSprite(leaf);
+        if (png != null)
+        {
+            Plugin.Log.LogInfo($"[CustomSquad] Tile icon for '{squadKey}': CustomLogos PNG '{leaf}'");
+            return png;
+        }
+
+        Plugin.Log.LogWarning($"[CustomSquad] Tile icon for '{squadKey}': '{value}' matched no atlas face,"
+            + " no loaded sprite and no PNG in CustomLogos/ — tile keeps the template icon.");
+        return null;
+    }
+
+    // A face is a Spine ATLAS REGION, not a Unity Sprite. That is why the 2.1.31
+    // heuristic — scanning Resources for a Sprite named after the face — could
+    // never match, no matter which face was chosen. Cut the region out of its
+    // atlas page texture into a real Sprite the tile's UI Image can draw.
+    private static readonly Dictionary<string, UnityEngine.Sprite> _faceIconCache =
+        new Dictionary<string, UnityEngine.Sprite>(StringComparer.OrdinalIgnoreCase);
+
+    // One-shot: what the loaded atlases actually contain. FindRegion() is an
+    // exact-name match, so a miss can mean either "wrong name form" or "the
+    // atlas holding faces isn't loaded on this screen" — these two lists tell
+    // them apart instead of guessing again.
+    private static bool _atlasDumped;
+    private static void DumpAtlasRegions(
+        Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppArrayBase<Spine.Unity.AtlasAssetBase> assets,
+        string wanted)
+    {
+        if (_atlasDumped || assets == null) return;
+        _atlasDumped = true;
+        try
+        {
+            foreach (var a in assets)
+            {
+                if (a == null) continue;
+                Spine.Atlas atlas = null;
+                try { atlas = a.GetAtlas(false); } catch { }
+                if (atlas == null) { Plugin.Log.LogInfo($"[AtlasDump] '{a.name}': no atlas"); continue; }
+
+                var regions = atlas.Regions;
+                int n = regions != null ? regions.Count : 0;
+                var sample = new System.Text.StringBuilder();
+                var hits = new System.Text.StringBuilder();
+                for (int i = 0; i < n; i++)
+                {
+                    string rn = regions[i]?.name ?? "";
+                    if (i < 10) sample.Append('\'').Append(rn).Append("' ");
+                    if (rn.IndexOf(wanted, StringComparison.OrdinalIgnoreCase) >= 0)
+                        hits.Append('\'').Append(rn).Append("' ");
+                }
+                Plugin.Log.LogInfo($"[AtlasDump] '{a.name}': {n} region(s) | first: {sample}"
+                    + (hits.Length > 0 ? $"| MATCHING '{wanted}': {hits}" : $"| no region contains '{wanted}'"));
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[AtlasDump] {ex.Message}"); }
+    }
+
+    // Cut a named ATLAS REGION out of its page texture into a Sprite.
+    private static UnityEngine.Sprite RegionToSprite(string regionName, out string where)
+    {
+        where = "";
+        if (string.IsNullOrEmpty(regionName)) return null;
+        var assets = UnityEngine.Resources.FindObjectsOfTypeAll<Spine.Unity.AtlasAssetBase>();
+        if (assets == null) return null;
+        foreach (var a in assets)
+        {
+            if (a == null) continue;
+            Spine.Atlas atlas = null;
+            try { atlas = a.GetAtlas(false); } catch { continue; }
+            if (atlas == null) continue;
+
+            Spine.AtlasRegion region = null;
+            try { region = atlas.FindRegion(regionName); } catch { }
+            if (region == null || region.page == null) continue;
+
+            UnityEngine.Texture2D tex = null;
+            try
+            {
+                var mat = region.page.rendererObject?.TryCast<UnityEngine.Material>();
+                if (mat != null && mat.mainTexture != null)
+                    tex = mat.mainTexture.TryCast<UnityEngine.Texture2D>();
+            }
+            catch { }
+            if (tex == null) continue;
+
+            int w = region.packedWidth, h = region.packedHeight;
+            // Spine packs from the top-left; Unity's Rect origin is bottom-left.
+            float y = region.page.height - region.y - h;
+            var sp = UnityEngine.Sprite.Create(tex,
+                new UnityEngine.Rect(region.x, y, w, h),
+                new UnityEngine.Vector2(0.5f, 0.5f), 100f);
+            sp.hideFlags = UnityEngine.HideFlags.HideAndDontSave;
+            UnityEngine.Object.DontDestroyOnLoad(sp);
+            where = $"atlas '{a.name}' region '{regionName}' ({w}x{h})"
+                  + (region.rotate ? " — ROTATED in atlas, icon may appear turned" : "");
+            return sp;
+        }
+        return null;
+    }
+
+    internal static UnityEngine.Sprite FaceToSprite(string faceLeaf)
+    {
+        if (string.IsNullOrEmpty(faceLeaf)) return null;
+        if (_faceIconCache.TryGetValue(faceLeaf, out var cached)) return cached;
+
+        UnityEngine.Sprite made = null;
+        try
+        {
+            // A face in the GUI ('Mathieu') is a Spine SKIN name; the atlas holds
+            // the raw art under other names. Walking skin -> attachment to learn
+            // the real region name is the obvious next step, and it is
+            // DELIBERATELY NOT DONE HERE: Skin.Attachments is an Il2Cpp
+            // ICollection of non-blittable SkinEntry structs, and reading the
+            // boxed entries by IL2CPP reflection crashed the game outright —
+            // 0xC0000005 access violation at squad-clone time, killing the whole
+            // process. A direct region lookup is safe (it simply misses), so that
+            // is all we do. Anything revisiting this must find a route that never
+            // dereferences boxed Spine structs from managed code.
+            string where;
+            made = RegionToSprite(faceLeaf, out where);
+            if (made != null)
+                Plugin.Log.LogInfo($"[CustomSquad] Face '{faceLeaf}' resolved from {where}");
+            else
+                Plugin.Log.LogInfo($"[CustomSquad] Face '{faceLeaf}' has no atlas region of that name — tile keeps its icon");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] FaceToSprite '{faceLeaf}': {ex.Message}"); }
+
+        _faceIconCache[faceLeaf] = made;   // cache misses too
+        return made;
+    }
+
     // The actual in-game "Choose Your Squad" screen (screenshot with locked
     // "???" tiles). Injects custom squads by replacing locked slots in
     // CampaignState.squads BEFORE the menu instantiates its grid items.
@@ -2309,6 +2755,26 @@ public static class PatchChooseMetaUI
             // each squad's own .maps list to pick the level, so we overwrite all
             // of them with the source squad's. "Gauntlet Map = yes" is the
             // legacy spelling of Maps = Gauntlet.
+            // Capture the GM squad's OWN map layouts before the override below
+            // replaces them. This is the only record of where its free-agent nodes
+            // belong; once "Maps = X" has run, every squad points at the source
+            // squad's list and the GM layout is gone. We hold the original List
+            // reference — the override reassigns each squad's field rather than
+            // mutating the list, so ours stays intact.
+            try
+            {
+                var gmSquad = FindSquadByName(cs, "General Manager");
+                if (gmSquad != null)
+                {
+                    Plugin.GmSquadMaps = gmSquad.maps;
+                    Plugin.GmSquadId = gmSquad.id;
+                    Plugin.Log.LogInfo($"[GmSquad] Captured '{gmSquad.squadName}' (id='{gmSquad.id}') map layouts:"
+                        + $" {(gmSquad.maps != null ? gmSquad.maps.Count : 0)} map(s)");
+                }
+                else Plugin.Log.LogWarning("[GmSquad] General Manager squad not found — its free-agent nodes can't be restored");
+            }
+            catch (Exception gex) { Plugin.Log.LogWarning($"[GmSquad] capture: {gex.Message}"); }
+
             string mapSource = EffectiveMapSource();
             if (!string.IsNullOrEmpty(mapSource))
             {
@@ -2701,87 +3167,28 @@ public static class PatchChooseMetaUI
                             Plugin.Log.LogInfo($"[CustomSquad] KeyPlayer for '{key}' set to {picked.Value}");
                         }
 
-                        // Optional per-squad head override — user's "Squad Head"
-                        // field overwrites the key player's face for the tile icon.
+                        // "Squad Head" is TILE-ONLY: it sets the head icon on the
+                        // Choose Your Squad tile and must not touch any player.
+                        // (Until 2.1.31 it also wrote the key player's Spine
+                        // headSkin — a leftover from when the tile was rendered
+                        // from that skin. The Jul-2026 menu reads
+                        // squad.m_SmallTeamIcon instead, so all that did was
+                        // silently change a skater's face. Removed.)
                         if (!string.IsNullOrEmpty(cfg?.SquadHead)
                             && !cfg.SquadHead.Equals("none", StringComparison.OrdinalIgnoreCase))
                         {
                             try
                             {
-                                string faceSkin = Plugin.ResolveSkin(cfg.SquadHead, "face");
-                                int headIdx = picked == Tape2Tape.Customization.UI.ESkaterPosition.LW ? 0
-                                    : picked == Tape2Tape.Customization.UI.ESkaterPosition.RW ? 1
-                                    : picked == Tape2Tape.Customization.UI.ESkaterPosition.C ? 2
-                                    : picked == Tape2Tape.Customization.UI.ESkaterPosition.LD ? 3
-                                    : picked == Tape2Tape.Customization.UI.ESkaterPosition.RD ? 4 : -1;
-                                if (headIdx >= 0 && clone.startingTeam?.forwards != null
-                                    && headIdx < clone.startingTeam.forwards.Count
-                                    && clone.startingTeam.forwards[headIdx] != null)
+                                // Never assign null — that would wipe the template's
+                                // icon and leave the tile blank.
+                                var icon = ResolveTileIcon(cfg.SquadHead, key);
+                                if (icon != null)
                                 {
-                                    clone.startingTeam.forwards[headIdx].headSkin = faceSkin;
-                                    Plugin.Log.LogInfo($"[CustomSquad] SquadHead '{cfg.SquadHead}' -> '{faceSkin}' applied to {picked} slot");
-                                }
-                                else if (picked == Tape2Tape.Customization.UI.ESkaterPosition.Goalie
-                                         && clone.startingTeam?.goalie != null)
-                                {
-                                    // Forward face skins (Faces/Princess/Boni etc.) break
-                                    // goalie rendering — the goalie skeleton has a different
-                                    // slot layout and the head renders empty ("headless").
-                                    // Skip the override for goalie-only squads; they'll
-                                    // render with the standard bare-goalie face as vanilla
-                                    // NPC goalies do.
-                                    Plugin.Log.LogInfo($"[CustomSquad] SquadHead '{cfg.SquadHead}' skipped for goalie-only squad — forward faces render headless on goalies (vanilla goalies use empty headSkin)");
+                                    clone.m_SmallTeamIcon = icon;
+                                    clone.m_ZamboniSkaterHead = icon;
                                 }
                             }
-                            catch (Exception hEx) { Plugin.Log.LogWarning($"[CustomSquad] SquadHead apply: {hEx.Message}"); }
-
-                            // Jul-2026 menu: the squad-tile head is squad.m_SmallTeamIcon
-                            // (disassembly of MetaTeamItem.Refresh: overrideSprite =
-                            // [squad+0x28]); the key player's Spine headSkin is no longer
-                            // consulted for the tile. Resolve a Sprite asset by the face's
-                            // name and stamp it on the clone (tile + zamboni head) — if no
-                            // sprite matches, the tile keeps the template's icon.
-                            try
-                            {
-                                string faceLeaf = cfg.SquadHead;
-                                int slash = faceLeaf.LastIndexOf('/');
-                                if (slash >= 0) faceLeaf = faceLeaf.Substring(slash + 1);
-                                var allSprites = UnityEngine.Resources.FindObjectsOfTypeAll<UnityEngine.Sprite>();
-                                UnityEngine.Sprite pickSp = null;
-                                if (allSprites != null)
-                                {
-                                    foreach (var sp in allSprites)
-                                        if (sp != null && sp.name.Equals(faceLeaf, StringComparison.OrdinalIgnoreCase)) { pickSp = sp; break; }
-                                    if (pickSp == null)
-                                        foreach (var sp in allSprites)
-                                            if (sp != null && sp.name.IndexOf(faceLeaf, StringComparison.OrdinalIgnoreCase) >= 0) { pickSp = sp; break; }
-                                }
-                                if (pickSp != null)
-                                {
-                                    clone.m_SmallTeamIcon = pickSp;
-                                    clone.m_ZamboniSkaterHead = pickSp;
-                                    Plugin.Log.LogInfo($"[CustomSquad] Tile icon: sprite '{pickSp.name}' assigned for SquadHead '{cfg.SquadHead}'");
-                                }
-                                else
-                                {
-                                    // Log a few head-ish sprite names so the next log tells
-                                    // us what the icons are actually called.
-                                    var samples = new System.Text.StringBuilder();
-                                    int shown = 0;
-                                    if (allSprites != null)
-                                        foreach (var sp in allSprites)
-                                        {
-                                            if (sp == null) continue;
-                                            if (sp.name.IndexOf("head", StringComparison.OrdinalIgnoreCase) >= 0)
-                                            {
-                                                samples.Append('\'').Append(sp.name).Append("' ");
-                                                if (++shown >= 12) break;
-                                            }
-                                        }
-                                    Plugin.Log.LogInfo($"[CustomSquad] Tile icon: no Sprite named like '{faceLeaf}' ({allSprites?.Length ?? 0} sprites loaded) — tile keeps template icon. Head-ish sprites: {samples}");
-                                }
-                            }
-                            catch (Exception spEx) { Plugin.Log.LogWarning($"[CustomSquad] Tile icon sprite: {spEx.Message}"); }
+                            catch (Exception spEx) { Plugin.Log.LogWarning($"[CustomSquad] Tile icon: {spEx.Message}"); }
                         }
                     }
                     catch (Exception kpEx) { Plugin.Log.LogWarning($"[CustomSquad] KeyPlayer: {kpEx.Message}"); }
@@ -2976,11 +3383,32 @@ public static class PatchChooseMetaUI
     // different slot and McShaggy survived at slot 3 → he shows up uninvited.
     //
     // Move the user's PRIMARY configured forward into the Angus keep-slot (so the
-    // kept starter is theirs), null the donor slot so the squad starts with
-    // exactly one forward (Basic's proven shape — the native draft fills the
-    // rest), and repoint the squad's angusPlayer field away from McShaggy so the
-    // angus mechanic (Mark Bench's quest) can't re-add him either.
+    // kept starter is theirs), null the donor slot, and repoint the squad's
+    // angusPlayer field away from McShaggy so the angus mechanic (Mark Bench's
+    // quest) can't re-add him either.
     // Returns true if a user forward now occupies the keep-slot.
+    //
+    // ── WHAT THIS DOES *NOT* DO (corrected 2026-07-31) ──────────────────────
+    // An earlier version of this comment claimed the null-out leaves the squad
+    // "with exactly one forward (Basic's proven shape)". It does not. The only
+    // forward this function ever removes is McShaggy:
+    //   * LD configured    → early branch, nothing is nulled (the per-slot apply
+    //                        already overwrote him in the keep-slot).
+    //   * LD unconfigured  → the primary is copied INTO the keep-slot and its
+    //                        donor slot is nulled, so the count drops by one —
+    //                        and that one is McShaggy, not a user player.
+    // Either way the clone ends up holding exactly as many forwards as the user
+    // configured. "Exactly one forward" is only true for a 1-forward config.
+    //
+    // Consequence, reported and ACCEPTED by the user (2026-07-31): a squad that
+    // configures all five forward slots starts with a full lineup, leaving the
+    // run-start superstar pick nowhere to sit, and the superstar screen does not
+    // appear. Configure four or fewer forwards and it comes back. The user chose
+    // to keep this behaviour rather than have the mod drop one of their
+    // configured players to make room — that is exactly the reshuffling they
+    // have rejected before. DO NOT "fix" this by nulling a configured slot.
+    // (The game-side gate itself was never proven — dump.cs is signatures-only
+    // here — so if you ever need certainty, probe the run-start flow at runtime.)
     internal static bool SeatUserStarterAtAngusSlot(TeamData team, RunSquadScriptableObject clone, TeamConfig cfg)
     {
         var fwds = team?.forwards;
@@ -3614,6 +4042,41 @@ public static class PatchMetaTeamItemRefresh
         return int.MinValue;
     }
 
+    // One-shot per squad. The tile's head icon is MetaTeamItem.m_KeyPlayerHead
+    // (a UI Image); the 2.1.31 "Squad Head" heuristic searched every loaded
+    // Sprite for the configured FACE name and never matched, because face skins
+    // and these UI head sprites are different naming spaces. Log what vanilla
+    // squads actually carry so the real source field — and the real sprite
+    // names a Squad Head value could legally take — stop being guesswork.
+    private static readonly HashSet<string> _probedTiles = new HashSet<string>(StringComparer.Ordinal);
+    private static void ProbeTileIcon(Tape2Tape.Hockey.UI.MetaTeamItem item, RunSquadScriptableObject squad, string id)
+    {
+        try
+        {
+            string key = string.IsNullOrEmpty(id) ? (squad.name ?? "?") : id;
+            if (!_probedTiles.Add(key)) return;
+
+            string head = "null";
+            try
+            {
+                var it = item.GetIl2CppType();
+                var bf = Il2CppSystem.Reflection.BindingFlags.NonPublic | Il2CppSystem.Reflection.BindingFlags.Instance;
+                var imgObj = it.GetField("m_KeyPlayerHead", bf)?.GetValue(item);
+                var img = imgObj?.TryCast<UnityEngine.UI.Image>();
+                if (img == null) head = "(field missing)";
+                else if (img.sprite == null) head = "(image, no sprite)";
+                else head = img.sprite.name;
+            }
+            catch (Exception ex) { head = "err:" + ex.Message; }
+
+            string small = "null", zam = "null";
+            try { if (squad.SmallTeamIcon != null) small = squad.SmallTeamIcon.name; } catch { }
+            try { if (squad.ZamboniSkaterHead != null) zam = squad.ZamboniSkaterHead.name; } catch { }
+            Plugin.Log.LogInfo($"[TileIcon] '{key}' m_KeyPlayerHead='{head}' SmallTeamIcon='{small}' ZamboniSkaterHead='{zam}'");
+        }
+        catch { }
+    }
+
     // Fires immediately after Refresh — Toggle may not be wired yet.
     public static void Postfix(Tape2Tape.Hockey.UI.MetaTeamItem __instance, RunSquadScriptableObject __0)
     {
@@ -3622,6 +4085,7 @@ public static class PatchMetaTeamItemRefresh
             if (__0 == null || __instance == null) return;
             string id = __0.id;
             string uname = __0.name;
+            ProbeTileIcon(__instance, __0, id);   // vanilla squads too — that's the reference data
             bool isCustom = (!string.IsNullOrEmpty(id) && id.StartsWith("Custom_", StringComparison.Ordinal))
                          || (!string.IsNullOrEmpty(uname) && uname.StartsWith("CustomSquad_", StringComparison.Ordinal));
             if (!isCustom) return;
@@ -3883,6 +4347,8 @@ public static class PatchMapBlueprint
         try
         {
             if (type != STS.Map.NodeType.GeneralManager) return;
+            // The GM squad lives on these nodes — never cap them away.
+            if (Plugin.GmSquadActive) return;
             if (Plugin.FreeAgentNodesPlaced >= Plugin.MaxFreeAgentNodes)
             {
                 type = STS.Map.NodeType.TeamTraining;
@@ -3912,6 +4378,48 @@ public static class PatchCreateMapNodeFACap
         {
             if (node?.layerNodeType == null) return;
             var lnt = node.layerNodeType;
+
+            // GM squad: its free-agent nodes are the squad's whole mechanic, so they
+            // are placed where its own layout wants them and are NEVER capped. Done
+            // here rather than in a separate patch so there's no ordering race
+            // between forcing a node to GeneralManager and the cap swapping it away.
+            if (Plugin.GmSquadActive)
+            {
+                int layer = node.LayerIndex;
+                if (lnt.nodeType == STS.Map.NodeType.GeneralManager)
+                {
+                    // The opening node of map 1 is overridden even though it is
+                    // already a GM node: the one the map supplies carries its own
+                    // smaller selection count, and this is the node that has to fill
+                    // the roster before the first game.
+                    if (layer == Plugin.GmOverrideLayer && !Plugin.GmLayersDone.Contains(layer)
+                        && Plugin.GmForcedLayers.TryGetValue(layer, out int want) && want > 0)
+                    {
+                        int had = lnt.gmSelectionCount;
+                        lnt.gmSelectionCount = want;
+                        Plugin.GmLayersDone.Add(layer);
+                        Plugin.Log.LogInfo($"[GmSquad] Layer {layer} opening node: selection count {had} -> {want} (cap does not apply)");
+                        return;
+                    }
+                    // Any other layer keeps the GM node exactly as the map intended.
+                    Plugin.GmLayersDone.Add(layer);
+                    Plugin.Log.LogInfo($"[GmSquad] Layer {layer} already has a GM node offering"
+                        + $" {lnt.gmSelectionCount} player(s) — kept as-is (cap does not apply)");
+                    return;
+                }
+                if (Plugin.GmForcedLayers.TryGetValue(layer, out int picks) && !Plugin.GmLayersDone.Contains(layer))
+                {
+                    lnt.nodeType = STS.Map.NodeType.GeneralManager;
+                    // Set the selection count too. Without this the node keeps the
+                    // count belonging to whatever it replaced, and offers the wrong
+                    // number of players to sign.
+                    if (picks > 0) lnt.gmSelectionCount = picks;
+                    Plugin.GmLayersDone.Add(layer);
+                    Plugin.Log.LogInfo($"[GmSquad] Layer {layer}: node converted to a GM node offering {lnt.gmSelectionCount} player(s)");
+                }
+                return;
+            }
+
             if (lnt.nodeType != STS.Map.NodeType.GeneralManager) return;
             if (Plugin.FreeAgentNodesPlaced >= Plugin.MaxFreeAgentNodes)
             {
@@ -3941,6 +4449,8 @@ public static class PatchInitializeMapPost
         try
         {
             if (__instance == null) return;
+            // GM squad runs keep every GM node — see Plugin.GmSquadActive.
+            if (Plugin.GmSquadActive) return;
             var nodes = __instance.MapNodes;
             if (nodes == null) return;
             int swapped = 0;
@@ -3969,6 +4479,620 @@ public static class PatchInitializeMapPost
 }
 
 // ============================================================
+// Campaign opponents: which config team each match node stands for.
+//
+// Historically the config was applied to MatchMapNode.opponent inside
+// Boss/EliteMapNode.LaunchMatch — i.e. after the player had already seen the
+// map node, its tooltip and the pre-match preview, all of which read `opponent`
+// and therefore showed the VANILLA team. Now the whole map is configured up
+// front (PatchMapOpponents below) and the launch path only fills in what map
+// generation didn't manage to do.
+//
+// The apply itself is idempotent for the manual-config path — ApplyTeamFromConfig
+// wipes powerups / ability / relics before writing — and CurrentRemixBoost is 0,
+// so the one additive step (BoostTeam) is a no-op today. The bookkeeping below is
+// still worth having: it keeps the log honest about who configured what, and it
+// stops a re-entered map from redoing every node on every InitializeMap.
+// ============================================================
+public static class CampaignOpponents
+{
+    // TeamData instance id -> config game index most recently applied to it.
+    // Instance ids are the only identity we can read cheaply and safely here;
+    // deliberately NO reflection into the boxed struct fields of these objects
+    // (see the 0xC0000005 warning at PatchChooseMetaUI.FaceToSprite).
+    private static readonly Dictionary<int, int> _configured = new Dictionary<int, int>();
+
+    internal static void ForgetAll(string why)
+    {
+        if (_configured.Count > 0)
+            Plugin.Log.LogInfo($"[MapTeams] Forgetting {_configured.Count} configured opponent(s) — {why}");
+        _configured.Clear();
+    }
+
+    private static bool TryGetId(TeamData team, out int id)
+    {
+        id = 0;
+        if (team == null) return false;
+        try { id = team.GetInstanceID(); return true; }
+        catch { return false; }
+    }
+
+    /// <summary>Game index this TeamData was last configured for, or -1.</summary>
+    internal static int AppliedGameIndex(TeamData team)
+    {
+        if (!TryGetId(team, out int id)) return -1;
+        return _configured.TryGetValue(id, out int g) ? g : -1;
+    }
+
+    /// <summary>Apply the campaign config for <paramref name="gameIndex"/> to this
+    /// team unless that exact config is already on it. Returns true if it applied.</summary>
+    internal static bool Ensure(TeamData team, int gameIndex, string why)
+    {
+        try
+        {
+            if (team == null || Plugin.IsDefaultMode) return false;
+            if (gameIndex < 0) return false;
+            if (!TryGetId(team, out int id)) return false;
+
+            if (_configured.TryGetValue(id, out int applied) && applied == gameIndex)
+            {
+                Plugin.Log.LogInfo($"[MapTeams] {why}: '{team.teamName}' already configured for game {gameIndex + 1} — skipping re-apply");
+                return false;
+            }
+
+            PatchBossLaunchMatch.RemixTeamForGame(team, Plugin.CurrentRemixBoost, gameIndex);
+            _configured[id] = gameIndex;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.LogError($"[MapTeams] {why}: {ex}");
+            return false;
+        }
+    }
+}
+
+// ============================================================
+// Assign a config team to every campaign match node as soon as the map exists,
+// so the node icon, the tooltip, the pre-match preview (skaters and colours
+// included) and the match itself all read the same TeamData.
+//
+// Ordering is "sequential by match depth", per the user's decision: match nodes
+// are grouped by their layer, the layers holding match nodes are ranked in
+// ascending order, and the k-th such layer gets ConfigTeams[MapStartGamesPlayed + k].
+// Two match nodes on the same layer are both "the next game" on a branching map,
+// so they deliberately get the SAME team — picking a path never changes who you
+// play, exactly as before this change.
+//
+// Only Elite and Boss nodes take part. A Challenge node that the campaign is NOT
+// replacing doesn't consume a config team (PatchMatchGameEnd won't count its win),
+// so giving it one would desynchronise the whole sequence. Challenges the campaign
+// DOES replace have already been rewritten to Elite by PatchCreateMapNode, and so
+// arrive here as real EliteMapNodes.
+// ============================================================
+public static class PatchMapOpponents
+{
+    private static bool IsChallengeNode(STS.Map.MatchMapNode node)
+    {
+        // IL2CPP `is` is unreliable across proxy boundaries, so mirror the
+        // belt-and-braces detection PatchMatchGameEnd already uses.
+        try { if (node.TryCast<ChallengeMapNode>() != null) return true; } catch { }
+        string names = "";
+        try { names += node.GetType()?.FullName ?? ""; } catch { }
+        try { names += " " + (node.GetIl2CppType()?.FullName ?? ""); } catch { }
+        names = names.ToLowerInvariant();
+        return names.Contains("challenge") || names.Contains("spartan") || names.Contains("gauntlet");
+    }
+
+    // ---- node-visual probe -------------------------------------------------
+    // The map node still shows the VANILLA team ("Tycoons", "Team Canada") even
+    // though opponent is now our config team: EliteMapNode.SetElite(TeamData,
+    // string eliteSkin) takes its art from ActElite.stadiumAnimation, a Spine
+    // animation baked per vanilla elite, which has nothing to do with TeamData.
+    // A Spine skin cannot be built from a PNG (session 12) so the fix has to be a
+    // sprite renderer — this dumps the node hierarchy once per session so we can
+    // see which renderer to target instead of guessing. Read-only: names and
+    // sprite names, no Spine internals (walking Skin.Attachments hard-crashed the
+    // game — see PatchChooseMetaUI.FaceToSprite).
+    private static bool _probedNodeVisuals;
+
+    private static string PathOf(Transform t, Transform root)
+    {
+        var parts = new List<string>();
+        int guard = 0;
+        while (t != null && t != root && guard++ < 12)
+        {
+            parts.Insert(0, t.name);
+            t = t.parent;
+        }
+        return parts.Count > 0 ? string.Join("/", parts.ToArray()) : ".";
+    }
+
+    private static void ProbeNodeVisuals(STS.Map.MatchMapNode node, string vanillaName)
+    {
+        try
+        {
+            var go = node.gameObject;
+            if (go == null) return;
+            var root = go.transform;
+            Plugin.Log.LogInfo($"[NodeArt] --- node '{go.name}' (vanilla team '{vanillaName}') ---");
+
+            try
+            {
+                var srs = go.GetComponentsInChildren<SpriteRenderer>(true);
+                if (srs != null)
+                    foreach (var sr in srs)
+                    {
+                        if (sr == null) continue;
+                        string sprite = "null";
+                        try { sprite = sr.sprite != null ? sr.sprite.name : "null"; } catch { }
+                        Plugin.Log.LogInfo($"[NodeArt]   SpriteRenderer '{PathOf(sr.transform, root)}'"
+                            + $" sprite='{sprite}' enabled={sr.enabled} order={sr.sortingOrder}");
+                    }
+            }
+            catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt]   SpriteRenderer sweep: {ex.Message}"); }
+
+            try
+            {
+                var skel = node.skeletonSprite;
+                if (skel != null)
+                    Plugin.Log.LogInfo($"[NodeArt]   SkeletonAnimation on '{PathOf(skel.transform, root)}' name='{skel.name}'");
+                else
+                    Plugin.Log.LogInfo("[NodeArt]   SkeletonAnimation: none");
+            }
+            catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt]   skeletonSprite: {ex.Message}"); }
+
+            // m_Icon is a private SerializeField, but it's a reference type — the
+            // same kind of read PatchMapNodeTooltip already does for m_TooltipDesc.
+            try
+            {
+                var f = node.GetIl2CppType().GetField("m_Icon");
+                var icon = f != null ? f.GetValue(node) : null;
+                if (icon != null)
+                {
+                    var sr = icon.TryCast<SpriteRenderer>();
+                    string sprite = "unreadable";
+                    try { sprite = sr != null && sr.sprite != null ? sr.sprite.name : "null"; } catch { }
+                    Plugin.Log.LogInfo($"[NodeArt]   m_Icon sprite='{sprite}'");
+                }
+                else Plugin.Log.LogInfo("[NodeArt]   m_Icon: null");
+            }
+            catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt]   m_Icon: {ex.Message}"); }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt] probe: {ex.Message}"); }
+    }
+
+    // ---- node logo ---------------------------------------------------------
+    // Swap the node's vanilla team mascot (the maple leaf on a pole for Team
+    // Canada, etc.) for the campaign team's logo.
+    //
+    // The mascot is MapNode.skeletonSprite, a Spine SkeletonAnimation whose skin
+    // comes from EliteMapNode.SetElite(TeamData, string eliteSkin) — and eliteSkin
+    // is ActElite.stadiumAnimation, baked per vanilla elite. It has NOTHING to do
+    // with the TeamData we rewrite, which is why the node kept saying "Tycoons"
+    // after the pre-match preview started reading correctly.
+    //
+    // A Spine skin cannot be built from a PNG (session 12: no atlas region exists
+    // for one, and walking Skin.Attachments to fake it hard-crashed the game), so
+    // the logo goes on a plain SpriteRenderer parented to the mascot, auto-fitted
+    // to the mascot's rendered bounds, and the mascot's own renderer is switched
+    // off. Everything here is ordinary Unity API on reference types — no reflection
+    // into Spine internals.
+    private const string LogoChildName = "__CampaignNodeLogo";
+
+    // Placement, as a fraction of the node graphic's rendered bounds. The mascot
+    // sits on top of a pole above the stadium — measured off a screenshot, its
+    // centre is ~0.33 of the bounds height above the centre and it stands ~0.35 of
+    // the bounds height tall.
+    //
+    // The Flag anchor was tried and is WRONG: flag_base is planted on the dome, not
+    // at the top of the pole, so it put the logo across the stadium instead of
+    // where the mascot is. Its numbers are still logged for reference, but it is no
+    // longer used to position anything.
+    private const float MascotHeightFraction = 0.35f;
+    private const float MascotCentreOffset = 0.33f;   // upward, from bounds centre
+
+
+    // THE icon above the node is 'rewardIcon_image' — a uGUI Image, which is why
+    // every sweep so far missed it: Image is a Graphic on a CanvasRenderer, NOT a
+    // Renderer, so GetComponentsInChildren<Renderer> walks straight past it. That
+    // also explains the dead ends: it was never the NodeGraphic skeleton, never the
+    // explosionSkeleton, and never a Spine skin or animation.
+    //
+    // So don't hide anything and don't overlay anything — just point that Image at
+    // the campaign team's logo. One sprite assignment, the game's own object, in the
+    // game's own position and size.
+    //
+    // Set overrideSprite as well as sprite: the squad tile in session 12 needed
+    // exactly that, its `.sprite` staying at a placeholder while overrideSprite is
+    // what actually draws.
+    private const string RewardIconName = "rewardicon";
+    private static bool _loggedNodeImages;
+
+    internal static bool ReplaceRewardIcon(STS.Map.MatchMapNode node, TeamData team)
+    {
+        try
+        {
+            if (node == null || team == null) return false;
+            UnityEngine.Sprite sprite = null;
+            try { sprite = team.logo; } catch { }
+            if (sprite == null) return false;
+
+            var go = node.gameObject;
+            if (go == null) return false;
+
+            var images = go.GetComponentsInChildren<UnityEngine.UI.Image>(true);
+            if (images == null) return false;
+
+            // One-off inventory, so a rename or a second candidate is obvious from
+            // the log rather than needing another probe build.
+            if (!_loggedNodeImages)
+            {
+                _loggedNodeImages = true;
+                var sb = new StringBuilder();
+                foreach (var im in images)
+                {
+                    if (im == null) continue;
+                    string sp = "null";
+                    try { sp = im.sprite != null ? im.sprite.name : "null"; } catch { }
+                    sb.Append($"\n[NodeArt]   Image '{im.name}' sprite='{sp}' enabled={im.enabled}");
+                }
+                Plugin.Log.LogInfo($"[NodeArt] uGUI Images on '{go.name}':{sb}");
+            }
+
+            bool replaced = false;
+            foreach (var im in images)
+            {
+                if (im == null) continue;
+                string n = im.name ?? "";
+                if (n.IndexOf(RewardIconName, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                try
+                {
+                    im.sprite = sprite;
+                    im.overrideSprite = sprite;
+                    im.enabled = true;
+                    replaced = true;
+                    Plugin.Log.LogInfo($"[NodeArt] '{team.teamName}': set Image '{n}' to logo '{sprite.name}'.");
+                }
+                catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt] setting '{n}': {ex.Message}"); }
+            }
+            return replaced;
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt] ReplaceRewardIcon: {ex.Message}"); return false; }
+    }
+
+    // Late pass: the node is fully built by now, so this is where the swap is most
+    // likely to stick. Also retires our own overlay sprite once the real icon is
+    // carrying the logo, so the two can't both show.
+    internal static void EnsureNodeArt(STS.Map.MatchMapNode node)
+    {
+        try
+        {
+            if (node == null) return;
+            TeamData opp = null;
+            try { opp = node.opponent; } catch { }
+            if (opp == null) return;
+            if (!ReplaceRewardIcon(node, opp)) return;
+            RetireOverlay(node);
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt] EnsureNodeArt: {ex.Message}"); }
+    }
+
+    private static void RetireOverlay(STS.Map.MatchMapNode node)
+    {
+        try
+        {
+            var skel = node.skeletonSprite;
+            var t = skel != null ? skel.transform : null;
+            var existing = t != null ? t.Find(LogoChildName) : null;
+            if (existing == null) return;
+            var sr = existing.gameObject.GetComponent<SpriteRenderer>();
+            if (sr == null || !sr.enabled) return;
+            sr.enabled = false;
+            Plugin.Log.LogInfo("[NodeArt] retired the overlay sprite — the node's own icon now carries the logo.");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt] RetireOverlay: {ex.Message}"); }
+    }
+
+    private static void ApplyNodeLogo(STS.Map.MatchMapNode node, TeamData team)
+    {
+        try
+        {
+            if (node == null || team == null) return;
+
+            // Preferred route: the node's own 'rewardIcon_image'. If it's already
+            // present at map-generation time we're done — no overlay needed at all.
+            // If it isn't yet, the late pass (EnsureNodeArt) catches it, and the
+            // overlay below covers the gap meanwhile.
+            if (ReplaceRewardIcon(node, team)) { RetireOverlay(node); return; }
+
+            UnityEngine.Sprite sprite = null;
+            try { sprite = team.logo; } catch { }
+            if (sprite == null)
+            {
+                Plugin.Log.LogInfo($"[NodeArt] '{team.teamName}' has no logo sprite — leaving the vanilla mascot alone.");
+                return;
+            }
+
+            var skel = node.skeletonSprite;
+            if (skel == null) { Plugin.Log.LogInfo("[NodeArt] node has no skeletonSprite — nothing to replace."); return; }
+            var graphic = skel.gameObject;
+            var rend = graphic.GetComponent<Renderer>();
+            if (rend == null) { Plugin.Log.LogInfo("[NodeArt] node graphic has no Renderer — skipping."); return; }
+
+            // 'NodeGraphic' is ONE Spine skeleton drawing the whole node — stadium
+            // AND team mascot together. Disabling it (which an earlier build did)
+            // takes the stadium with it. The mascot cannot be separated out: that
+            // would mean Spine skin surgery, which is exactly what crashed the game
+            // in session 12. So the skeleton stays visible and the logo is placed
+            // over the mascot's patch of it. Self-heal anything the earlier build
+            // switched off.
+            if (!rend.enabled)
+            {
+                rend.enabled = true;
+                Plugin.Log.LogInfo($"[NodeArt] re-enabled node graphic '{graphic.name}' (an earlier build hid it).");
+            }
+
+            var b = rend.bounds;
+            if (b.size.y <= 0.0001f)
+            {
+                Plugin.Log.LogWarning($"[NodeArt] node graphic '{graphic.name}' has degenerate bounds — skipping.");
+                return;
+            }
+
+            // Where on the node does the team marker sit? The Flag object is the
+            // post-match banner and is planted at the same spot as the mascot, so
+            // its bounds are a far better anchor than anything we could estimate.
+            // Fall back to the top-centre of the skeleton, where the mascot is
+            // drawn, when the flag isn't measurable (it's hidden until the match
+            // is over, so this fallback is the common path).
+            Vector3 center;
+            float targetHeight;
+            string anchor;
+            Bounds flagBounds = default;
+            bool haveFlag = false;
+            try
+            {
+                var flag = node.transform.Find("Flag/Container/flag_base");
+                var fr = flag != null ? flag.GetComponent<Renderer>() : null;
+                if (fr != null)
+                {
+                    flagBounds = fr.bounds;
+                    haveFlag = flagBounds.size.y > 0.0001f;
+                }
+            }
+            catch { }
+
+            targetHeight = b.size.y * MascotHeightFraction;
+            center = new Vector3(b.center.x, b.center.y + b.size.y * MascotCentreOffset, b.center.z);
+            anchor = "mascot-estimate";
+
+            // Logged every time: if the logo lands in the wrong place these are the
+            // numbers to correct the two constants with, without another probe run.
+            Plugin.Log.LogInfo($"[NodeArt] anchor={anchor} graphic(centre={b.center} size={b.size})"
+                + $" flag(valid={haveFlag} centre={flagBounds.center} size={flagBounds.size})"
+                + $" -> logo centre={center} height={targetHeight:F2}");
+
+            var t = graphic.transform;
+            var existing = t.Find(LogoChildName);
+            GameObject go;
+            SpriteRenderer sr;
+            bool isNew = existing == null;
+            if (!isNew)
+            {
+                go = existing.gameObject;
+                sr = go.GetComponent<SpriteRenderer>();
+                if (sr == null) sr = go.AddComponent<SpriteRenderer>();
+            }
+            else
+            {
+                go = new GameObject(LogoChildName);
+                go.transform.SetParent(t, false);
+                sr = go.AddComponent<SpriteRenderer>();
+            }
+
+            sr.sprite = sprite;
+            try
+            {
+                sr.sortingLayerID = rend.sortingLayerID;
+                sr.sortingOrder = rend.sortingOrder + 5;   // in front of the mascot
+            }
+            catch { }
+
+            // Position and size ONCE, on the pass that creates the overlay. Hiding
+            // the mascot below shrinks the skeleton's bounds to just the stadium,
+            // so re-measuring on a later pass would walk the logo down the pole.
+            if (isNew)
+            {
+                // Match the mascot's on-screen height. Sprite PPU varies (custom
+                // PNGs are created at 100, repository logos are whatever the game
+                // shipped), so measure rather than assume.
+                float spriteHeight = 0f;
+                try { spriteHeight = sprite.bounds.size.y; } catch { }
+                float parentScale = 1f;
+                try { parentScale = t.lossyScale.y; } catch { }
+                if (spriteHeight > 0.0001f && parentScale > 0.0001f)
+                {
+                    float s = targetHeight / (spriteHeight * parentScale);
+                    go.transform.localScale = new Vector3(s, s, 1f);
+                }
+                go.transform.rotation = Quaternion.identity;
+                go.transform.position = center;
+            }
+
+
+            Plugin.Log.LogInfo($"[NodeArt] '{team.teamName}': logo '{sprite.name}' placed on"
+                + $" '{graphic.name}' via {anchor} anchor (height {targetHeight:F2}, order {sr.sortingOrder}).");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt] ApplyNodeLogo: {ex.Message}"); }
+    }
+
+    // Some configs cannot be resolved this early and must wait for the launch path.
+    // `Import Team = PLAYER` (mirror match) copies the player's team out of
+    // TeamSelection, which isn't populated while the map is being built — applying
+    // it here would find nothing, log "Import team 'PLAYER' not found", and then be
+    // skipped at launch because the node looked configured. Leave it vanilla on the
+    // map and let PatchBoss/EliteLaunchMatch do it, as before this change.
+    internal static bool MustWaitForLaunch(int gameIndex, out string reason)
+    {
+        reason = null;
+        if (gameIndex < 0 || gameIndex >= Plugin.ConfigTeams.Count) return false;
+        var cfg = Plugin.ConfigTeams[gameIndex];
+        if (cfg == null || !cfg.IsImport || string.IsNullOrEmpty(cfg.ImportTeam)) return false;
+        if (cfg.ImportTeam.Trim().Equals("PLAYER", StringComparison.OrdinalIgnoreCase))
+        {
+            reason = "mirror match (Import Team = PLAYER); the player's team isn't readable during map generation";
+            return true;
+        }
+        return false;
+    }
+
+    // Primary hook: MapObject.SetOpponents(int act) is by definition the point at
+    // which every elite and boss node has been given its TeamData, whoever called
+    // it. Preferred over InitializeMap, which we cannot prove from the dump does
+    // the assignment itself (its calls are indirect, so disassembly names nothing).
+    public static void AfterSetOpponents(STS.Map.MapObject __instance)
+    {
+        Run(__instance, "SetOpponents");
+    }
+
+    // Backup hook, in case SetOpponents got inlined and the patch above no-ops.
+    // Costs nothing when the primary already ran — every node reports as current.
+    public static void Postfix(STS.Map.MapObject __instance)
+    {
+        Run(__instance, "InitializeMap");
+    }
+
+    private static void Run(STS.Map.MapObject __instance, string why)
+    {
+        try
+        {
+            if (__instance == null || Plugin.IsDefaultMode) return;
+            var nodes = __instance.MapNodes;
+            if (nodes == null) return;
+
+            // Collect campaign match nodes with their layer.
+            var layers = new List<int>();
+            var byLayer = new Dictionary<int, List<STS.Map.MatchMapNode>>();
+            int challengesSkipped = 0;
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                var mn = nodes[i];
+                if (mn == null) continue;
+                STS.Map.MatchMapNode match = null;
+                try { match = mn.TryCast<STS.Map.MatchMapNode>(); } catch { }
+                if (match == null) continue;
+                if (IsChallengeNode(match)) { challengesSkipped++; continue; }
+
+                int layer;
+                try { layer = mn.Node != null ? mn.Node.LayerIndex : -1; } catch { layer = -1; }
+                if (layer < 0) continue;
+
+                if (!byLayer.TryGetValue(layer, out var list))
+                {
+                    list = new List<STS.Map.MatchMapNode>();
+                    byLayer[layer] = list;
+                    layers.Add(layer);
+                }
+                list.Add(match);
+            }
+
+            if (layers.Count == 0)
+            {
+                Plugin.Log.LogInfo($"[MapTeams] {why}: no campaign match nodes on this map (challenge nodes skipped: {challengesSkipped})");
+                return;
+            }
+            layers.Sort();
+
+            // Anchor to where the campaign stood when this map was generated, not
+            // to the live GamesPlayed — otherwise every return to the map (each
+            // InitializeMap) would shift every node forward by the match just won.
+            int baseGames = Plugin.MapStartGamesPlayed;
+            if (baseGames < 0 || baseGames > Plugin.GamesPlayed) baseGames = Plugin.GamesPlayed;
+
+            // Two nodes on DIFFERENT layers can only hold different teams if they
+            // hold different TeamData objects. ActElite.team / ActBoss.team are
+            // direct ScriptableObject references, so a repeat is possible; writing
+            // both would make the earlier node display the later node's team.
+            // First layer wins, and we say so loudly — the launch path still
+            // corrects the match itself when the player gets there.
+            var claimedBy = new Dictionary<int, int>();
+            int applied = 0, shared = 0, alreadyDone = 0, deferred = 0;
+            var summary = new StringBuilder();
+
+            for (int k = 0; k < layers.Count; k++)
+            {
+                int layer = layers[k];
+                int gameIndex = baseGames + k;
+                foreach (var node in byLayer[layer])
+                {
+                    TeamData opp = null;
+                    try { opp = node.opponent; } catch { }
+                    if (opp == null) continue;
+
+                    if (MustWaitForLaunch(gameIndex, out string wait))
+                    {
+                        deferred++;
+                        Plugin.Log.LogInfo($"[MapTeams] Layer {layer} (game {gameIndex + 1}) left vanilla on the map — {wait}.");
+                        continue;
+                    }
+
+                    int id;
+                    try { id = opp.GetInstanceID(); } catch { continue; }
+                    if (claimedBy.TryGetValue(id, out int ownerLayer) && ownerLayer != layer)
+                    {
+                        shared++;
+                        Plugin.Log.LogWarning($"[MapTeams] Layer {layer} shares its TeamData with layer {ownerLayer}"
+                            + $" — leaving it as game {baseGames + layers.IndexOf(ownerLayer) + 1}'s team."
+                            + " The match itself will still be corrected at launch.");
+                        continue;
+                    }
+                    claimedBy[id] = layer;
+
+                    // Capture the vanilla name BEFORE the config overwrites it —
+                    // it's how the node-art probe recognises team-specific art.
+                    string vanillaName = null;
+                    try { vanillaName = opp.teamName; } catch { }
+
+                    // Check before calling so a second pass over the same map (we
+                    // hook both SetOpponents and InitializeMap) stays quiet.
+                    if (CampaignOpponents.AppliedGameIndex(opp) == gameIndex) { alreadyDone++; continue; }
+
+                    if (!_probedNodeVisuals) ProbeNodeVisuals(node, vanillaName);
+
+                    if (CampaignOpponents.Ensure(opp, gameIndex, $"map gen (layer {layer})")) applied++;
+                    summary.Append($" L{layer}=>G{gameIndex + 1}('{opp.teamName}')");
+
+                    // opp.logo is populated by the apply above, so this covers both
+                    // custom PNGs and logos borrowed from another team.
+                    ApplyNodeLogo(node, opp);
+                }
+            }
+
+            // One map's worth of node-art detail is enough to work from; don't
+            // spam it on every map for the rest of the session.
+            if (applied > 0) _probedNodeVisuals = true;
+
+            // A pass that changed nothing is the normal second hook firing; only
+            // the first pass over a map should report applications.
+            if (applied > 0 || shared > 0)
+            {
+                Plugin.Log.LogInfo($"[MapTeams] Map configured from game {baseGames + 1} ({why}): {layers.Count} match layer(s),"
+                    + $" {applied} team(s) applied, {alreadyDone} already current, {shared} shared-TeamData conflict(s),"
+                    + $" {deferred} deferred to launch, {challengesSkipped} challenge node(s) left vanilla.");
+                if (summary.Length > 0)
+                    Plugin.Log.LogInfo($"[MapTeams]{summary}");
+            }
+            else
+            {
+                Plugin.Log.LogInfo($"[MapTeams] {why}: nothing to do — {alreadyDone} node(s) already hold their config team.");
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogError($"[MapTeams] {why} opponent pass: {ex}"); }
+    }
+}
+
+// ============================================================
 // Reward-pool filtering. Harmony postfixes on RelicRepository /
 // TalentRepository strip excluded IDs (loaded from reward_pools.txt) out
 // of the lists the game shows as random rewards. We mutate the returned
@@ -3977,22 +5101,102 @@ public static class PatchInitializeMapPost
 // ============================================================
 public static class PatchFilterRelicRewards
 {
+    private static int CountRelics(Il2CppSystem.Collections.Generic.List<Rogue.Relic> list)
+    {
+        try { return list != null ? list.Count : 0; } catch { return 0; }
+    }
+
+    // Per-category sizes, so a [RewardPool] line shows how big the pool for the
+    // category being asked for actually is (vs the ~325 entries the editor lists).
+    private static string DescribeCategories(RelicRepository repo)
+    {
+        try
+        {
+            return $"off={CountRelics(repo.offensiveRelics)} def={CountRelics(repo.defensiveRelics)}"
+                 + $" util={CountRelics(repo.utilityRelics)} spd={CountRelics(repo.speedRelics)}"
+                 + $" chk={CountRelics(repo.checkingRelics)} pwr={CountRelics(repo.powerRelics)}"
+                 + $" acc={CountRelics(repo.accuracyRelics)} chaos={CountRelics(repo.chaosRelics)}"
+                 + $" boss={CountRelics(repo.bossRelics)} goalie={CountRelics(repo.goalieRelics)}"
+                 + $" coach={CountRelics(repo.coachRelics)}";
+        }
+        catch { return "unreadable"; }
+    }
+
+    // Ids the prefilter actually managed to exclude on the most recent call.
+    // The postfix must strip ONLY these — using the full exclusion list there
+    // re-applies the ones the budget deliberately skipped and guts the result
+    // (seen as "3 -> 1"), which defeats the whole point of the budget.
+    internal static readonly HashSet<string> AppliedExclusions =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
     // PREFIX: add our excluded ids to the `excludedRelics` arg that the game
     // already passes in, so GetRandomRelics NEVER picks them in the first
     // place. Much safer than a postfix strip — the game would return empty
     // ("Rogue rewards have invalid data") if every picked relic got filtered.
     public static void Prefix(
         Il2CppSystem.Collections.Generic.List<Rogue.Relic> excludedRelics,
-        RelicRepository __instance)
+        RelicRepository __instance,
+        int numberOfRelics,
+        RelicCategory relicCategory,
+        bool mustBeInPool,
+        bool matchAnyCategory)
     {
         try
         {
+            // Diagnostic, runs even with no exclusions configured: GetRandomRelics
+            // is category-scoped, so the pool the game actually draws from is not
+            // the flat catalogue the reward-pool editor lists. Log what each call
+            // asks for, per node type, before deciding anything about that editor.
+            if (__instance != null)
+                Plugin.Log.LogInfo($"[RewardPool] GetRandomRelics: category={relicCategory}"
+                    + $" want={numberOfRelics} matchAny={matchAnyCategory} mustBeInPool={mustBeInPool}"
+                    + $" alreadyExcluded={(excludedRelics != null ? excludedRelics.Count : -1)}"
+                    + $" node='{Plugin.LastMatchNodeKind}' | repo totals: {DescribeCategories(__instance)}");
+
             if (Plugin.ExcludedRewardRelicIds.Count == 0) return;
             if (__instance == null || excludedRelics == null) return;
-            int added = 0;
+
+            // Never exclude the pool down to less than the game asked for. The
+            // game NREs on an empty/short result — a campaign that excludes 283
+            // of 304 relics froze the run at game end, because its own category
+            // and already-owned filters run on top of ours and emptied it. Honour
+            // as many exclusions as fit and drop the rest with a loud warning:
+            // a slightly wider reward pool beats a run that can't continue.
+            // GetAllRelics() returns an interop IReadOnlyList that exposes no
+            // Count and does not cast to IEnumerable — it counted 0, which made
+            // the budget below infinite and silently disabled this whole guard.
+            // The category lists are plain Il2Cpp Lists with a working Count,
+            // and are what the reward dump already walks.
+            int total = CountRelics(__instance.offensiveRelics)
+                      + CountRelics(__instance.defensiveRelics)
+                      + CountRelics(__instance.utilityRelics)
+                      + CountRelics(__instance.speedRelics)
+                      + CountRelics(__instance.checkingRelics)
+                      + CountRelics(__instance.powerRelics)
+                      + CountRelics(__instance.accuracyRelics)
+                      + CountRelics(__instance.chaosRelics)
+                      + CountRelics(__instance.bossRelics)
+                      + CountRelics(__instance.goalieRelics)
+                      + CountRelics(__instance.coachRelics);
+            // Keep a working margin above the request for the game's own filters.
+            int want = numberOfRelics > 0 ? numberOfRelics : 3;
+            int mustKeep = want + 6;
+            if (total <= 0)
+            {
+                // Can't size the pool — applying exclusions blind is what froze
+                // runs at game end, so skip filtering rather than risk it.
+                Plugin.Log.LogWarning("[RewardPool] Relic pool size unknown — skipping exclusions this call"
+                    + " so rewards can still be generated.");
+                return;
+            }
+            int budget = Math.Max(0, total - excludedRelics.Count - mustKeep);
+
+            AppliedExclusions.Clear();
+            int added = 0, skipped = 0;
             foreach (var id in Plugin.ExcludedRewardRelicIds)
             {
                 if (string.IsNullOrEmpty(id)) continue;
+                if (added >= budget) { skipped++; continue; }
                 try
                 {
                     var relic = __instance.GetRelic(id, false);
@@ -4001,10 +5205,15 @@ public static class PatchFilterRelicRewards
                     for (int j = 0; j < excludedRelics.Count; j++)
                         if (excludedRelics[j] != null && excludedRelics[j].id == id) { present = true; break; }
                     if (!present) { excludedRelics.Add(relic); added++; }
+                    AppliedExclusions.Add(id);
                 }
                 catch { }
             }
-            if (added > 0) Plugin.Log.LogInfo($"[RewardPool] Relic prefilter: added {added} exclusions to GetRandomRelics call");
+            if (added > 0) Plugin.Log.LogInfo($"[RewardPool] Relic prefilter: added {added} exclusions to GetRandomRelics call (pool {total}, asked for {want})");
+            if (skipped > 0)
+                Plugin.Log.LogWarning($"[RewardPool] {skipped} relic exclusion(s) IGNORED — the campaign excludes too many"
+                    + $" ({Plugin.ExcludedRewardRelicIds.Count} of {total}) to leave {want} pickable rewards."
+                    + " Re-enable some relics in the campaign's reward pool editor.");
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[RewardPool] Relic prefilter: {ex.Message}"); }
     }
@@ -4016,14 +5225,27 @@ public static class PatchFilterRelicRewards
     {
         try
         {
+            // Diagnostic companion to the prefix line — what the category-scoped
+            // call actually yielded.
+            try
+            {
+                var names = new StringBuilder();
+                if (__result != null)
+                    for (int i = 0; i < __result.Count && i < 12; i++)
+                        names.Append(i == 0 ? "" : ", ").Append(__result[i]?.id ?? "null");
+                Plugin.Log.LogInfo($"[RewardPool] GetRandomRelics returned {(__result != null ? __result.Count : -1)}: {names}");
+            }
+            catch { }
+
             if (__result == null || __result.Count == 0) return;
-            if (Plugin.ExcludedRewardRelicIds.Count == 0) return;
+            if (AppliedExclusions.Count == 0) return;
             int before = __result.Count;
             for (int i = __result.Count - 1; i >= 0 && __result.Count > 1; i--)
             {
                 var r = __result[i];
                 if (r == null) continue;
-                if (Plugin.ExcludedRewardRelicIds.Contains(r.id ?? ""))
+                // Only ids the prefilter actually honoured — see AppliedExclusions.
+                if (AppliedExclusions.Contains(r.id ?? ""))
                     __result.RemoveAt(i);
             }
             if (__result.Count != before)
@@ -4059,16 +5281,33 @@ public static class PatchFilterTalentRewards
 {
     public static void Prefix(
         Il2CppSystem.Collections.Generic.List<Rogue.Talent> excludedTalents,
-        TalentRepository __instance)
+        TalentRepository __instance,
+        int numberOfTalents)
     {
         try
         {
             if (Plugin.ExcludedRewardTalentIds.Count == 0) return;
             if (__instance == null || excludedTalents == null) return;
-            int added = 0;
+
+            // Same failure mode as relics: exclude the pool down past what the
+            // game asked for and it NREs on the empty result, freezing the run.
+            int total = 0;
+            try { total = __instance.talents != null ? __instance.talents.Count : 0; } catch { }
+            int want = numberOfTalents > 0 ? numberOfTalents : 3;
+            int mustKeep = want + 6;
+            if (total <= 0)
+            {
+                Plugin.Log.LogWarning("[RewardPool] Talent pool size unknown — skipping exclusions this call"
+                    + " so rewards can still be generated.");
+                return;
+            }
+            int budget = Math.Max(0, total - excludedTalents.Count - mustKeep);
+
+            int added = 0, skipped = 0;
             foreach (var id in Plugin.ExcludedRewardTalentIds)
             {
                 if (string.IsNullOrEmpty(id)) continue;
+                if (added >= budget) { skipped++; continue; }
                 try
                 {
                     var t = __instance.GetTalent(id, false);
@@ -4080,7 +5319,11 @@ public static class PatchFilterTalentRewards
                 }
                 catch { }
             }
-            if (added > 0) Plugin.Log.LogInfo($"[RewardPool] Talent prefilter: added {added} exclusions to GetRandomTalents call");
+            if (added > 0) Plugin.Log.LogInfo($"[RewardPool] Talent prefilter: added {added} exclusions to GetRandomTalents call (pool {total}, asked for {want})");
+            if (skipped > 0)
+                Plugin.Log.LogWarning($"[RewardPool] {skipped} talent exclusion(s) IGNORED — the campaign excludes too many"
+                    + $" ({Plugin.ExcludedRewardTalentIds.Count} of {total}) to leave {want} pickable rewards."
+                    + " Re-enable some talents in the campaign's reward pool editor.");
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[RewardPool] Talent prefilter: {ex.Message}"); }
     }
@@ -4423,6 +5666,90 @@ public static class PatchMapNodeTooltip
 }
 
 // ============================================================
+// The pre-match preview ("ELITE GAME vs MEATBALLS") is built from
+// MatchMapNode.opponent. Since PatchMapOpponents configures that TeamData at map
+// generation, the screen normally draws the right team on its own — name, logo,
+// skater models and colour swatches included, without this patch touching any of
+// them.
+//
+// Two jobs remain here:
+//  1. Last-chance correction. The previewed node is the match that is about to
+//     start, so its opponent must stand for ConfigTeams[GamesPlayed]. If the map
+//     pass mispredicted (a mixed layer where the player took a rest node instead
+//     of a match, so fewer games were played than match layers passed) this puts
+//     it right BEFORE the player commits, not at launch.
+//  2. Repaint name + logo. ShowMenu has already run by the time we get here, so a
+//     correction in (1) would otherwise not reach the widgets it already filled.
+//
+// Public fields only — no reflection into private members, no boxed structs
+// (see the 0xC0000005 warning at PatchChooseMetaUI.FaceToSprite).
+// ============================================================
+public static class PatchMatchPreviewMenu
+{
+    public static void Postfix(MatchPreviewMenu __instance)
+    {
+        try
+        {
+            if (__instance == null || Plugin.IsDefaultMode) return;
+            int next = Plugin.GamesPlayed;
+            if (next < 0) return;
+
+            // 1. Make sure the node we're previewing holds this game's team.
+            TeamData opp = null;
+            try
+            {
+                var node = __instance.currentMapNode;
+                var match = node != null ? node.TryCast<STS.Map.MatchMapNode>() : null;
+                if (match != null) opp = match.opponent;
+            }
+            catch { }
+            // A mirror match still has to wait for LaunchMatch — TeamSelection may
+            // not be readable yet, and a failed attempt here would mark the node
+            // configured and stop the launch path from doing it properly.
+            bool waitForLaunch = PatchMapOpponents.MustWaitForLaunch(next, out _);
+            if (opp != null && !waitForLaunch
+                && CampaignOpponents.Ensure(opp, next, "MatchPreviewMenu.ShowMenu"))
+                Plugin.Log.LogInfo($"[Preview] Corrected previewed opponent to game {next + 1} — map generation had it wrong");
+
+            // 2. Repaint the widgets ShowMenu already filled. Prefer the node's
+            //    own team so the text can never disagree with what will be played;
+            //    fall back to the config when the node isn't readable.
+            string shownName = waitForLaunch ? null : opp?.teamName;
+            string logoFrom = null;
+            if (next < Plugin.ConfigTeams.Count)
+            {
+                var cfg = Plugin.ConfigTeams[next];
+                if (cfg != null)
+                {
+                    if (string.IsNullOrEmpty(shownName))
+                        shownName = !string.IsNullOrEmpty(cfg.Name) ? cfg.Name : cfg.ImportTeam;
+                    logoFrom = cfg.LogoFrom;
+                }
+            }
+            if (string.IsNullOrEmpty(shownName)) return;
+            // "PLAYER"/"RANDOM" are directives, not team names — never show them.
+            if (shownName.Trim().Equals("PLAYER", StringComparison.OrdinalIgnoreCase)
+                || shownName.Trim().Equals("RANDOM", StringComparison.OrdinalIgnoreCase)) return;
+
+            if (__instance.teamName != null)
+                __instance.teamName.text = shownName;
+
+            if (!string.IsNullOrEmpty(logoFrom))
+            {
+                var sprite = PatchBossLaunchMatch.LoadCustomLogoSprite(logoFrom);
+                if (sprite != null)
+                {
+                    if (__instance.logo != null) __instance.logo.sprite = sprite;
+                    if (__instance.logoDropShadow != null) __instance.logoDropShadow.sprite = sprite;
+                }
+            }
+            Plugin.Log.LogInfo($"[Preview] Match preview -> '{shownName}' (game {next + 1}, logo '{logoFrom}')");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Preview] MatchPreviewMenu: {ex.Message}"); }
+    }
+}
+
+// ============================================================
 // Intercept OnRunFinished — block it entirely, let the game
 // show the stats screen (RunFailed path) and handle continue
 // ============================================================
@@ -4442,10 +5769,12 @@ public static class PatchOnRunFinished
         // permanently blocks edits on the new run's game 1.
         Plugin.ActsCompleted = 0;
         Plugin.GamesPlayed = 0;
+        Plugin.MapStartGamesPlayed = 0;
         Plugin.DraftPoolApplied = false;
         Plugin.AppliedDraftPtrs.Clear();
         Plugin.AppliedFreeAgentPtrs.Clear();
         Plugin.FreeAgentSignedConfigs.Clear();
+        CampaignOpponents.ForgetAll("run ended");
         Plugin.SaveProgress();
         Plugin.Log.LogInfo("[Campaign] Run ended — ActsCompleted + GamesPlayed reset to 0 for next run");
         return true;
@@ -4572,6 +5901,18 @@ public static class PatchGenerateNewMap
         else
             Plugin.Log.LogInfo($"[Campaign] GenerateNewMap: act={act}");
             Plugin.LogNextGame();
+
+        // Decide the GM-node layout for the map about to be built. Must happen
+        // before CreateMapNode starts, since node TYPE selects the prefab.
+        Plugin.RefreshGmSquadActive();
+        Plugin.ComputeGmForcedLayers();
+
+        // A brand-new map: anchor node->team assignment to where the campaign
+        // stands now, and drop what we knew about the old map's opponents (the
+        // same TeamData assets get reused, for different games this time).
+        Plugin.MapStartGamesPlayed = Plugin.GamesPlayed;
+        Plugin.SaveProgress();
+        CampaignOpponents.ForgetAll($"new map generated at game {Plugin.GamesPlayed + 1}");
     }
 }
 
@@ -4753,8 +6094,13 @@ public static class PatchBossLaunchMatch
 
             if (Plugin.IsRemixed)
             {
-                RemixTeam(opponent, Plugin.CurrentRemixBoost);
-                Plugin.Log.LogInfo($"[Remix] Boss '{opponent.teamName}' remixed with +{Plugin.CurrentRemixBoost} stats");
+                // Normally a no-op: PatchMapOpponents already configured this node
+                // at map generation. It still matters when the map-gen pass
+                // couldn't run (loaded map, node regenerated by a chaos effect) or
+                // when the node's predicted game index drifted from the real one —
+                // GamesPlayed is the authority for the match that is about to start.
+                if (CampaignOpponents.Ensure(opponent, Plugin.GamesPlayed, "BossMapNode.LaunchMatch"))
+                    Plugin.Log.LogInfo($"[Remix] Boss '{opponent.teamName}' configured at launch (game {Plugin.GamesPlayed + 1})");
             }
         }
         catch (Exception ex) { Plugin.Log.LogError($"[Remix] BossLaunch: {ex}"); }
@@ -5015,7 +6361,12 @@ public static class PatchBossLaunchMatch
         colors.skatesScheme.primaryColor = secondary;
     }
 
-    internal static void RemixTeam(TeamData team, int boost)
+    // Apply the campaign's config for game <paramref name="gameNum"/> to this team.
+    // Callers go through CampaignOpponents.Ensure rather than here directly, so the
+    // work already done at map generation isn't repeated at launch. Map generation
+    // configures nodes ahead of the player, which is why the game index is a
+    // parameter instead of being read from the live Plugin.GamesPlayed.
+    internal static void RemixTeamForGame(TeamData team, int boost, int gameNum)
     {
         if (Plugin.IsDefaultMode) return; // Default mode = no team modifications
         EnsureRepos();
@@ -5024,8 +6375,6 @@ public static class PatchBossLaunchMatch
 
         string origName = team.teamName ?? "";
 
-        // Dispatch by game number — config teams first, then hardcoded fallback
-        int gameNum = Plugin.GamesPlayed;
         Plugin.Log.LogInfo($"[Remix] Game #{gameNum + 1} (base team '{origName}')");
 
         bool configApplied = false;
@@ -5194,6 +6543,64 @@ public static class PatchBossLaunchMatch
     private static string NormLogo(string s) =>
         (s ?? "").Replace(" ", "").Replace("_", "").Replace(".png", "").ToLowerInvariant();
 
+    // One-time dump of what the game's logo repository actually holds.
+    // GetLogo() silently falls back to its defaultLogo for ids it doesn't know
+    // (that's the 'Teams_TapetoTape' we kept seeing), so a miss on its own says
+    // nothing about WHY. This lists every sprite in _allLogos — baked
+    // logoSprites plus the custom PNGs the game loads from CustomLogos/ — with
+    // the exact name form, which is the key GetLogo matches on.
+    private static bool _logoRepoDumped;
+    internal static void DumpLogoRepository(Tape2Tape.Customization.TeamAssetsRepositoryScriptableObject repo)
+    {
+        if (repo == null || _logoRepoDumped) return;
+        _logoRepoDumped = true;
+        try
+        {
+            var all = repo.GetAllLogos();
+            Plugin.Log.LogInfo($"[LogoDump] GetAllLogos() -> {(all != null ? all.Length : -1)} sprite(s)");
+            if (all != null)
+                for (int i = 0; i < all.Length; i++)
+                {
+                    string nm = "null"; int w = 0, h = 0;
+                    try
+                    {
+                        var sp = all[i];
+                        if (sp != null)
+                        {
+                            nm = sp.name;
+                            var t = sp.texture;
+                            if (t != null) { w = t.width; h = t.height; }
+                        }
+                    }
+                    catch { }
+                    Plugin.Log.LogInfo($"[LogoDump]   [{i}] '{nm}' {w}x{h}");
+                }
+            // What the game SHOULD have picked up, for comparison against the above.
+            try
+            {
+                string dir = Path.Combine(UnityEngine.Application.persistentDataPath, "CustomLogos");
+                if (Directory.Exists(dir))
+                    Plugin.Log.LogInfo($"[LogoDump] CustomLogos/ on disk: {Directory.GetFiles(dir, "*.png").Length} png");
+            }
+            catch { }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[LogoDump] failed: {ex.Message}"); }
+    }
+
+    // The game's own loader registers everything in CustomLogos/ under
+    // "custom_<file name>.png" — 'custom_Canucks (25-26).png', not
+    // 'Canucks (25-26)'. Asking by the bare pack/team name always missed and got
+    // handed defaultLogo ('Teams_TapetoTape'), which is why custom logos never
+    // rendered on any surface. Try the bare id first (that's the form baked team
+    // logos like 'Vancouver' use), then the custom form.
+    private static List<string> LogoIdCandidates(string logoId)
+    {
+        string bare = logoId.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+            ? logoId.Substring(0, logoId.Length - 4)
+            : logoId;
+        return new List<string> { logoId, "custom_" + bare + ".png" };
+    }
+
     internal static UnityEngine.Sprite GetNativeLogo(string logoId)
     {
         try
@@ -5208,14 +6615,23 @@ public static class PatchBossLaunchMatch
             var repo = _logoRepo as Tape2Tape.Customization.TeamAssetsRepositoryScriptableObject;
             if (repo != null)
             {
-                var s = repo.GetLogo(logoId);
-                string sn = "null"; try { sn = s != null ? s.name : "null"; } catch { }
-                Plugin.Log.LogInfo($"[CustomLogo] Native GetLogo('{logoId}') -> '{sn}'");
-                // Only trust it if the returned sprite actually matches the id —
-                // GetLogo falls back to a defaultLogo for unknown ids, which we
-                // must NOT mistake for the requested custom logo.
-                if (s != null && NormLogo(s.name) == NormLogo(logoId))
-                    return s;
+                foreach (var candidate in LogoIdCandidates(logoId))
+                {
+                    var s = repo.GetLogo(candidate);
+                    string sn = "null"; try { sn = s != null ? s.name : "null"; } catch { }
+                    // Only trust it if the returned sprite actually matches what we
+                    // asked for — GetLogo falls back to defaultLogo for unknown ids,
+                    // which we must NOT mistake for the requested logo.
+                    if (s != null && NormLogo(s.name) == NormLogo(candidate))
+                    {
+                        Plugin.Log.LogInfo($"[CustomLogo] Native GetLogo('{candidate}') -> '{sn}' (hit)");
+                        return s;
+                    }
+                }
+                // Nothing matched under any spelling — dump what the repository
+                // actually holds so the mismatch is diagnosable from the log.
+                Plugin.Log.LogWarning($"[CustomLogo] No repository logo for '{logoId}' (tried bare + custom_ form)");
+                DumpLogoRepository(repo);
             }
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[CustomLogo] GetNativeLogo '{logoId}': {ex.Message}"); }
@@ -5567,7 +6983,35 @@ public static class PatchBossLaunchMatch
         return $"{(int)(c.r * 255)}, {(int)(c.g * 255)}, {(int)(c.b * 255)}";
     }
 
-    internal static string ReverseSkinPath(string path, string slot)
+    /// <summary>Path -> friendly name for materialised team/player files, with a
+    /// guaranteed round trip: a friendly name is only used when it resolves back to
+    /// the exact path it came from. Otherwise the raw path is written.
+    ///
+    /// Without that check the mapping is LOSSY and silently changes a player's look.
+    /// The Golfers were the proof: the fallback below matches "golfers" anywhere in
+    /// a path, so Faces/Golfers/Golfer_Lady, Golfer_Ramirez, Golfer_Elite,
+    /// Golfer_Whacker and Golfer_Gillman all collapsed to "golfers" — a name that
+    /// resolves to no face at all. Every golfer came back with a missing head, and
+    /// the same trap applies to any team whose name appears in its own asset paths.
+    /// </summary>
+    internal static string ReverseSkinPath(string path, string slot, bool goalie = false)
+    {
+        string friendly = ReverseSkinPathRaw(path, slot);
+        if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(friendly)) return friendly;
+        // If it already IS the path, nothing to verify.
+        if (string.Equals(friendly, path, StringComparison.OrdinalIgnoreCase)) return friendly;
+        try
+        {
+            string back = goalie ? Plugin.ResolveGoalieSkin(friendly, slot) : Plugin.ResolveSkin(friendly, slot);
+            if (string.Equals(back, path, StringComparison.OrdinalIgnoreCase)) return friendly;
+            Plugin.Log.LogInfo($"[Materialize] '{friendly}' would not round-trip for {slot}"
+                + $" ('{path}' -> '{back}') — writing the full path instead.");
+        }
+        catch { }
+        return path;
+    }
+
+    private static string ReverseSkinPathRaw(string path, string slot)
     {
         if (string.IsNullOrEmpty(path)) return "";
         string lower = path.ToLower();
@@ -5979,36 +7423,8 @@ public static class PatchBossLaunchMatch
             // Goalie face intentionally skipped — vanilla goalies use empty headSkin.
             // Applying a skater face path to headSkin renders the goalie headless.
 
-            // Apply stat scale
-            if (cfg.StatScale != 1.0f)
-            {
-                var sf = team.forwards;
-                if (sf != null)
-                    for (int i = 0; i < sf.Count; i++)
-                    {
-                        if (sf[i] == null) continue;
-                        sf[i].speed = (int)(sf[i].speed * cfg.StatScale);
-                        sf[i].shotPower = (int)(sf[i].shotPower * cfg.StatScale);
-                        sf[i].shotAccuracy = (int)(sf[i].shotAccuracy * cfg.StatScale);
-                        sf[i].checking = (int)(sf[i].checking * cfg.StatScale);
-                    }
-                if (team.goalie != null)
-                {
-                    var gg = team.goalie;
-                    gg.skill = (int)(gg.skill * cfg.StatScale);
-                    gg.catchingSkill = (int)(gg.catchingSkill * cfg.StatScale);
-                    gg.gloveSkill = (int)(gg.gloveSkill * cfg.StatScale);
-                    gg.blockerSkill = (int)(gg.blockerSkill * cfg.StatScale);
-                    gg.fiveHoleSkill = (int)(gg.fiveHoleSkill * cfg.StatScale);
-                    gg.standingSpeed = (int)(gg.standingSpeed * cfg.StatScale);
-                    gg.butterflySpeed = (int)(gg.butterflySpeed * cfg.StatScale);
-                    gg.controlSkill = (int)(gg.controlSkill * cfg.StatScale);
-                    gg.recoverySkill = (int)(gg.recoverySkill * cfg.StatScale);
-                    gg.pokecheckSkill = (int)(gg.pokecheckSkill * cfg.StatScale);
-                    gg.depth = (int)(gg.depth * cfg.StatScale);
-                }
-                Plugin.Log.LogInfo($"[Config] Stats scaled by {cfg.StatScale}x");
-            }
+            // Apply stat scale (shared with the manual path — see ApplyStatScale).
+            ApplyStatScale(team, cfg);
 
             Plugin.Log.LogInfo($"[Config] Imported '{cfg.ImportTeam}' as '{team.teamName}'");
 
@@ -6232,6 +7648,13 @@ public static class PatchBossLaunchMatch
             }
 
         // Apply players
+        //
+        // NOTE: dropping unconfigured forwards from team.forwards to allow 1-4 man
+        // campaign teams was tried (2026-07-31) and REVERTED — it did not work in
+        // game. The removal itself was clean, so if this is attempted again the
+        // problem lies downstream (line/on-ice construction or the match's expected
+        // skater count), not in this loop. Blank slots therefore still keep the base
+        // team's player.
         PlayerConfig[] line1 = { cfg.LW, cfg.RW, cfg.C, cfg.LD, cfg.RD };
         if (fwds != null)
         {
@@ -6244,7 +7667,7 @@ public static class PatchBossLaunchMatch
                     if (pc.ImportPlayer.Trim().Equals("RANDOM", StringComparison.OrdinalIgnoreCase))
                     {
                         // Pick a random player from all available forwards
-                        var allFwds = UnityEngine.Resources.FindObjectsOfTypeAll<ForwardData>();
+                        var allFwds = EnsureForwardCache();
                         if (allFwds != null && allFwds.Length > 0)
                         {
                             var validFwds = new List<ForwardData>();
@@ -6356,11 +7779,57 @@ public static class PatchBossLaunchMatch
             ApplyTeamEquipmentColorsToGoalie(team.goalie, team, cfg, useAway: true);
         }
 
+        // Apply stat scale. This used to exist ONLY in the import branch above, so
+        // "Stat Scale = 1.5" silently did nothing on every hand-configured campaign
+        // team — the common case. Applied last, after every per-player stat has been
+        // written, so it scales the final values rather than being overwritten by
+        // them.
+        ApplyStatScale(team, cfg);
+
         // Apply relics
         foreach (var r in cfg.Relics)
             GiveRelic(team, r);
 
         Plugin.Log.LogInfo($"[Config] Applied manual team '{team.teamName}'");
+    }
+
+    /// <summary>Multiply every skater and goalie stat on the team by cfg.StatScale.
+    /// Shared by the import and manual paths so they can't drift apart again.</summary>
+    internal static void ApplyStatScale(TeamData team, TeamConfig cfg)
+    {
+        if (team == null || cfg == null) return;
+        if (cfg.StatScale == 1.0f) return;
+        try
+        {
+            float s = cfg.StatScale;
+            var sf = team.forwards;
+            if (sf != null)
+                for (int i = 0; i < sf.Count; i++)
+                {
+                    if (sf[i] == null) continue;
+                    sf[i].speed = (int)(sf[i].speed * s);
+                    sf[i].shotPower = (int)(sf[i].shotPower * s);
+                    sf[i].shotAccuracy = (int)(sf[i].shotAccuracy * s);
+                    sf[i].checking = (int)(sf[i].checking * s);
+                }
+            var gg = team.goalie;
+            if (gg != null)
+            {
+                gg.skill = (int)(gg.skill * s);
+                gg.catchingSkill = (int)(gg.catchingSkill * s);
+                gg.gloveSkill = (int)(gg.gloveSkill * s);
+                gg.blockerSkill = (int)(gg.blockerSkill * s);
+                gg.fiveHoleSkill = (int)(gg.fiveHoleSkill * s);
+                gg.standingSpeed = (int)(gg.standingSpeed * s);
+                gg.butterflySpeed = (int)(gg.butterflySpeed * s);
+                gg.controlSkill = (int)(gg.controlSkill * s);
+                gg.recoverySkill = (int)(gg.recoverySkill * s);
+                gg.pokecheckSkill = (int)(gg.pokecheckSkill * s);
+                gg.depth = (int)(gg.depth * s);
+            }
+            Plugin.Log.LogInfo($"[Config] '{team.teamName}': stats scaled by {s}x");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Config] ApplyStatScale: {ex.Message}"); }
     }
 
     internal static void SetSchemeColor(ColorScheme scheme, int[] primary, int[] secondary, int[] tertiary)
@@ -7113,9 +8582,32 @@ public static class PatchBossLaunchMatch
                 if (src.powerups[i] != null) dst.powerups.Add(src.powerups[i]);
     }
 
+    // Resources.FindObjectsOfTypeAll<ForwardData>() walks every loaded object and
+    // is not cheap. It used to run at most a handful of times per match; since
+    // opponents are configured for the WHOLE map at once (PatchMapOpponents) it
+    // can now run once per imported player per node in a single frame, so cache
+    // the sweep. A miss re-resolves and retries once, the same way FindTalent
+    // recovers from a repo that was grabbed before the game filled it.
+    internal static ForwardData[] AllForwardCache;
+
+    internal static ForwardData[] EnsureForwardCache()
+    {
+        if (AllForwardCache == null || AllForwardCache.Length == 0)
+            AllForwardCache = UnityEngine.Resources.FindObjectsOfTypeAll<ForwardData>();
+        return AllForwardCache;
+    }
+
     private static ForwardData FindPlayerByName(string name)
     {
-        var allForwards = UnityEngine.Resources.FindObjectsOfTypeAll<ForwardData>();
+        var found = FindPlayerByNameOnce(name, EnsureForwardCache());
+        if (found != null) return found;
+        // Miss — the cache may predate this player being loaded. Rescan once.
+        AllForwardCache = null;
+        return FindPlayerByNameOnce(name, EnsureForwardCache());
+    }
+
+    private static ForwardData FindPlayerByNameOnce(string name, ForwardData[] allForwards)
+    {
         if (allForwards == null) return null;
         foreach (var f in allForwards)
         {
@@ -9577,6 +11069,256 @@ public static class PatchBossLaunchMatch
     }
 }
 
+// ============================================================
+// Drop the vanilla team mascot from campaign match nodes.
+//
+// The node's 'NodeGraphic' skeleton has exactly ONE skin ("default") — confirmed
+// at runtime — so the mascot is not skin-driven. It comes from the ANIMATION:
+// the skeleton ships one animation per vanilla stadium (Stadium_Lettuce,
+// Stadium_Meatballs, Stadium_Cheese, Stadium_Princess, Stadium_Ref, ...), each
+// switching on that team's slots. Greasy Lettuce's animation turns on
+// 'Stadium_Lettuce_Flag' — the leaf on the pole that was still showing next to
+// our logo.
+//
+// Both SetElite and SetBoss take the animation name as an ARGUMENT, so the clean
+// fix is to hand them a neutral one instead of fighting the attachment timeline
+// frame by frame. 'Outside_Rink1' is a real animation on the same skeleton with
+// no team mascot attached, so every campaign node reads as a plain rink wearing
+// the custom team's logo.
+//
+// Only campaign nodes are touched: Default mode and unconfigured runs keep the
+// vanilla stadiums.
+// ============================================================
+// ============================================================
+// Late node probe. The map-generation probe ran before the node had finished
+// building itself — every Spine slot read attachment='none', and anything created
+// after map generation (very possibly a SEPARATE skeleton for the team mascot)
+// simply wasn't there to be found.
+//
+// MapObject.RefreshNodeStates runs once the map is live and again on navigation,
+// so by then the node is whole. Dumps every renderer AND every skeleton under the
+// node, with the animation each is playing, once per session.
+// ============================================================
+public static class PatchLateNodeProbe
+{
+    private static bool _done;
+
+    public static void Postfix(STS.Map.MapObject __instance)
+    {
+        try
+        {
+            if (__instance == null || Plugin.IsDefaultMode) return;
+            var nodes = __instance.MapNodes;
+            if (nodes == null) return;
+
+            // Point each node's own 'rewardIcon_image' at the campaign logo. Done
+            // here as well as at map generation because the node can still be
+            // half-built then — which is what made the first probe report every
+            // Spine slot as empty. Cheap and idempotent.
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                var mn = nodes[i];
+                if (mn == null) continue;
+                STS.Map.MatchMapNode m = null;
+                try { m = mn.TryCast<STS.Map.MatchMapNode>(); } catch { }
+                if (m != null) PatchMapOpponents.EnsureNodeArt(m);
+            }
+
+            if (_done) return;
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                var mn = nodes[i];
+                if (mn == null) continue;
+                STS.Map.MatchMapNode match = null;
+                try { match = mn.TryCast<STS.Map.MatchMapNode>(); } catch { }
+                if (match == null) continue;
+
+                var go = mn.gameObject;
+                if (go == null) continue;
+                var root = go.transform;
+                _done = true;
+
+                string opp = "?";
+                try { opp = match.opponent != null ? match.opponent.teamName : "null"; } catch { }
+                Plugin.Log.LogInfo($"[LateArt] === '{go.name}' opponent='{opp}' (fully built) ===");
+
+                // EVERY renderer, not just SpriteRenderers — the mascot may well be
+                // a mesh drawn by a second Spine skeleton.
+                try
+                {
+                    var rends = go.GetComponentsInChildren<Renderer>(true);
+                    if (rends != null)
+                        foreach (var r in rends)
+                        {
+                            if (r == null) continue;
+                            string extra = "";
+                            try
+                            {
+                                var sr = r.TryCast<SpriteRenderer>();
+                                if (sr != null) extra = $" sprite='{(sr.sprite != null ? sr.sprite.name : "null")}'";
+                            }
+                            catch { }
+                            string type = "?";
+                            try { type = r.GetIl2CppType().Name; } catch { }
+                            Plugin.Log.LogInfo($"[LateArt]   {type} '{PathOfT(r.transform, root)}'"
+                                + $" enabled={r.enabled} order={r.sortingOrder}{extra}");
+                        }
+                }
+                catch (Exception ex) { Plugin.Log.LogWarning($"[LateArt]   renderer sweep: {ex.Message}"); }
+
+                // Every skeleton under the node, and what it's playing. A second
+                // skeleton here is the most likely home of the mascot.
+                try
+                {
+                    var skels = go.GetComponentsInChildren<Spine.Unity.SkeletonAnimation>(true);
+                    Plugin.Log.LogInfo($"[LateArt]   skeletons found: {(skels != null ? skels.Length : 0)}");
+                    if (skels != null)
+                        foreach (var sk in skels)
+                        {
+                            if (sk == null) continue;
+                            string anim = "?", skinName = "?", dataName = "?";
+                            try
+                            {
+                                // No GetCurrent in this interop build — read track 0
+                                // straight off the exposed Tracks list.
+                                var st = sk.AnimationState;
+                                var tracks = st != null ? st.Tracks : null;
+                                var items = tracks != null ? tracks.Items : null;
+                                var cur = items != null && tracks.Count > 0 && items.Length > 0 ? items[0] : null;
+                                anim = cur != null && cur.Animation != null ? cur.Animation.Name : "none";
+                            }
+                            catch (Exception ex) { anim = "unreadable:" + ex.GetType().Name; }
+                            try
+                            {
+                                var sd = sk.Skeleton;
+                                if (sd != null)
+                                {
+                                    skinName = sd.Skin != null ? sd.Skin.Name : "null";
+                                    dataName = sd.Data != null ? sd.Data.Name : "null";
+                                }
+                            }
+                            catch { }
+                            Plugin.Log.LogInfo($"[LateArt]   Skeleton '{PathOfT(sk.transform, root)}'"
+                                + $" data='{dataName}' animation='{anim}' skin='{skinName}'");
+
+                            // Slots actually showing something, now that the node is built.
+                            try
+                            {
+                                var skeleton = sk.Skeleton;
+                                var data = skeleton != null ? skeleton.Data : null;
+                                var slots = data != null ? data.Slots : null;
+                                var items = slots != null ? slots.Items : null;
+                                int shown = 0;
+                                if (items != null)
+                                    for (int s = 0; s < slots.Count && s < items.Length; s++)
+                                    {
+                                        string slotName = null;
+                                        try { var sdta = items[s]; if (sdta != null) slotName = sdta.Name; } catch { }
+                                        if (string.IsNullOrEmpty(slotName)) continue;
+                                        try
+                                        {
+                                            var live = skeleton.FindSlot(slotName);
+                                            var a = live != null && live.Pose != null ? live.Pose.Attachment : null;
+                                            if (a != null)
+                                            {
+                                                Plugin.Log.LogInfo($"[LateArt]     VISIBLE slot '{slotName}' attachment='{a.Name}'");
+                                                shown++;
+                                            }
+                                        }
+                                        catch { }
+                                    }
+                                Plugin.Log.LogInfo($"[LateArt]     ({shown} visible slot(s))");
+                            }
+                            catch (Exception ex) { Plugin.Log.LogWarning($"[LateArt]     slot sweep: {ex.Message}"); }
+                        }
+                }
+                catch (Exception ex) { Plugin.Log.LogWarning($"[LateArt]   skeleton sweep: {ex.Message}"); }
+
+                break;   // one node is plenty
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[LateArt] probe: {ex.Message}"); }
+    }
+
+    private static string PathOfT(Transform t, Transform root)
+    {
+        var parts = new List<string>();
+        int guard = 0;
+        while (t != null && t != root && guard++ < 12) { parts.Insert(0, t.name); t = t.parent; }
+        return parts.Count > 0 ? string.Join("/", parts.ToArray()) : ".";
+    }
+}
+
+// ============================================================
+// Give the mascot skeleton back for the post-match explosion.
+//
+// We switch MatchMapNode.explosionSkeleton's renderer off to hide the vanilla team
+// mascot (see PatchMapOpponents.HideMascotSkeleton), but that same skeleton draws
+// the explosion played once the team is beaten. Re-enable it here so the explosion
+// still shows; by then the match is over and the mascot no longer matters.
+// ============================================================
+public static class PatchPlayExplosionAnim
+{
+    public static void Prefix(STS.Map.MatchMapNode __instance)
+    {
+        try
+        {
+            if (__instance == null) return;
+            var skel = __instance.explosionSkeleton;
+            var go = skel != null ? skel.gameObject : null;
+            var rend = go != null ? go.GetComponent<Renderer>() : null;
+            if (rend == null || rend.enabled) return;
+            rend.enabled = true;
+            Plugin.Log.LogInfo("[NodeArt] re-enabled the explosion skeleton for the post-match animation.");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt] PlayExplosionAnim: {ex.Message}"); }
+    }
+}
+
+public static class PatchNodeStadiumAnimation
+{
+    // Any animation on the node skeleton works here. The full list, read off a
+    // runtime probe, is: Campfire, Campfire_Act2, Challenge_Act2, Challenge_Act3,
+    // Chopper, Explosion, Explosion_Act1, Explosion_Act2, Outside_Rink1, Poisson,
+    // Rogue_Blademaster, Rogue_Chaos, Rogue_Coach, Rogue_Fan, Rogue_GM,
+    // Rogue_Infirmary, Rogue_Training, Ship_Flags, Smity, Smity_Act2,
+    // Stadium_Cheese, Stadium_Cultists, Stadium_Disco, Stadium_Golfers,
+    // Stadium_Knights, Stadium_Lettuce, Stadium_Meatballs, Stadium_Meatballs_Alt,
+    // Stadium_Mountaineers, Stadium_Princess, Stadium_Ref.
+    internal const string NeutralNodeAnimation = "Outside_Rink1";
+
+    // DISABLED. Swapping the stadium animation did NOT remove the mascot — it only
+    // made every campaign node share one rink, losing the variety of the vanilla
+    // stadiums for no gain. So the mascot is not driven by the stadium animation
+    // after all; it is set up somewhere we haven't looked yet (see the late probe
+    // in PatchLateNodeProbe — the early probe ran before the node finished
+    // building, which is why every slot read 'none').
+    //
+    // Kept, switched off, because the animation-name inventory in the comment above
+    // is hard-won and this is where it belongs if a neutral node look is ever
+    // wanted deliberately.
+    private const bool ReplaceStadiumAnimation = false;
+
+    private static bool ShouldReplace()
+    {
+        return ReplaceStadiumAnimation && !Plugin.IsDefaultMode && Plugin.ConfigTeams.Count > 0;
+    }
+
+    public static void ElitePrefix(ref string eliteSkin)
+    {
+        if (!ShouldReplace()) return;
+        Plugin.Log.LogInfo($"[NodeArt] SetElite: stadium animation '{eliteSkin}' -> '{NeutralNodeAnimation}' (drops the vanilla mascot)");
+        eliteSkin = NeutralNodeAnimation;
+    }
+
+    public static void BossPrefix(ref string bossSkin)
+    {
+        if (!ShouldReplace()) return;
+        Plugin.Log.LogInfo($"[NodeArt] SetBoss: stadium animation '{bossSkin}' -> '{NeutralNodeAnimation}' (drops the vanilla mascot)");
+        bossSkin = NeutralNodeAnimation;
+    }
+}
+
 [HarmonyPatch(typeof(EliteMapNode), nameof(EliteMapNode.LaunchMatch))]
 public static class PatchEliteLaunchMatch
 {
@@ -9590,8 +11332,10 @@ public static class PatchEliteLaunchMatch
 
             if (Plugin.IsRemixed)
             {
-                PatchBossLaunchMatch.RemixTeam(opponent, Plugin.CurrentRemixBoost);
-                Plugin.Log.LogInfo($"[Remix] Elite '{opponent.teamName}' remixed with +{Plugin.CurrentRemixBoost} stats");
+                // See PatchBossLaunchMatch.Prefix — normally already done at map
+                // generation; this is the correcting fallback.
+                if (CampaignOpponents.Ensure(opponent, Plugin.GamesPlayed, "EliteMapNode.LaunchMatch"))
+                    Plugin.Log.LogInfo($"[Remix] Elite '{opponent.teamName}' configured at launch (game {Plugin.GamesPlayed + 1})");
             }
         }
         catch (Exception ex) { Plugin.Log.LogError($"[Remix] EliteLaunch: {ex}"); }
@@ -9605,8 +11349,124 @@ public static class PatchEliteLaunchMatch
 // ============================================================
 // Team.Initialize(TeamData) was removed in the post-May-2026 game update.
 // AutoDumpNameLists is now triggered from PatchSetCurrentAct via _pendingAutoDump.
+//
+// DumpSkinFields writes _game_skins.txt: for every skin field, the complete set of
+// values the GAME itself uses, harvested from every loaded ForwardData and
+// GoaltenderData. The Creator's dropdowns are generated from this rather than from
+// hand-maintained lists, so a value can never be offered that the game doesn't have
+// — and, more importantly, no real value is missing.
+//
+// This is the fix for the Golfers: hand-written friendly names could not express
+// five distinct golfer faces, so they all collapsed to one name that resolved to
+// nothing. Real values, dumped from the game, have no such ambiguity.
+// ============================================================
+// DEFAULT MODE data dump. The only patch that runs when the mod is switched off
+// via active.txt — read-only, writes the game's team/player/logo/skin lists and
+// the team library so the Creator has something to work from. Changes no game
+// state, so "default" still plays as pure vanilla.
+// ============================================================
+public static class PatchDefaultModeDump
+{
+    public static void Postfix()
+    {
+        // No run-once flag of our own: AutoDumpNameLists gives up early when
+        // TeamData isn't loaded yet, so this hook has to keep trying on each
+        // refresh until it takes. Its own guards make repeat calls cheap.
+        if (LogRepositories.GuiListsDumped) return;
+        try
+        {
+            LogRepositories.AutoDumpNameLists();
+            if (LogRepositories.GuiListsDumped)
+                Plugin.Log.LogInfo("[Dump] DEFAULT MODE: game data + library written.");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] DEFAULT MODE dump failed: {ex.Message}"); }
+    }
+}
+
 public static class LogRepositories
 {
+    /// <summary>Collect every distinct value the game uses for each skin field and
+    /// write them to _game_skins.txt, grouped by field. _gen_game_data.py turns this
+    /// into the Creator's dropdown lists.</summary>
+    internal static void DumpSkinFields(string root, Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppArrayBase<ForwardData> skaters,
+                                        Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppArrayBase<GoaltenderData> goalies)
+    {
+        try
+        {
+            // Field name -> distinct values. Ordered so the file reads sensibly.
+            var fields = new List<string>
+            {
+                "Face", "Body", "Body Away", "Bicep", "Bicep Away", "Gloves", "Gloves Away",
+                "Pants", "Pants Away", "Skates", "Skates Away", "Stick", "Helmet", "Helmet Away",
+                "Glasses", "Number", "Logo",
+                "Goalie Helmet", "Goalie Skin", "Goalie Skin Away", "Goalie Glove", "Goalie Glove Away",
+                "Goalie Blocker", "Goalie Blocker Away", "Goalie Pads", "Goalie Pads Away",
+                "Goalie Stick", "Goalie Stick Away"
+            };
+            var values = new Dictionary<string, SortedSet<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var f in fields) values[f] = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            void Add(string field, string val)
+            {
+                if (string.IsNullOrWhiteSpace(val)) return;
+                if (values.TryGetValue(field, out var set)) set.Add(val.Trim());
+            }
+
+            if (skaters != null)
+                foreach (var p in skaters)
+                {
+                    if (p == null) continue;
+                    try
+                    {
+                        Add("Face", p.headSkin);
+                        Add("Body", p.bodySkin);       Add("Body Away", p.bodyAwaySkin);
+                        Add("Bicep", p.bicepSkin);     Add("Bicep Away", p.bicepAwaySkin);
+                        Add("Gloves", p.gloveSkin);    Add("Gloves Away", p.gloveAwaySkin);
+                        Add("Pants", p.pantsSkin);     Add("Pants Away", p.pantsAwaySkin);
+                        Add("Skates", p.skateSkin);    Add("Skates Away", p.skateAwaySkin);
+                        Add("Stick", p.stickSkin);
+                        Add("Helmet", p.helmetSkin);   Add("Helmet Away", p.helmetAwaySkin);
+                        Add("Glasses", p.glassesSkin);
+                        Add("Number", p.numberSkin);
+                        Add("Logo", p.logoSkin);
+                    }
+                    catch { }
+                }
+
+            if (goalies != null)
+                foreach (var g in goalies)
+                {
+                    if (g == null) continue;
+                    try
+                    {
+                        Add("Goalie Helmet", g.helmetSkin);
+                        Add("Goalie Skin", g.skin);           Add("Goalie Skin Away", g.awaySkin);
+                        Add("Goalie Glove", g.gloveSkin);     Add("Goalie Glove Away", g.awayGloveSkin);
+                        Add("Goalie Blocker", g.blockerSkin); Add("Goalie Blocker Away", g.awayBlockerSkin);
+                        Add("Goalie Pads", g.padsSkin);       Add("Goalie Pads Away", g.awayPadsSkin);
+                        Add("Goalie Stick", g.stickSkin);     Add("Goalie Stick Away", g.awayStickSkin);
+                    }
+                    catch { }
+                }
+
+            var sb = new StringBuilder();
+            sb.AppendLine("# Every value the GAME uses for each skin field, dumped from its own data.");
+            sb.AppendLine("# Generated automatically — do not hand-edit; it is overwritten on launch.");
+            sb.AppendLine("# Consumed by _gen_game_data.py to build the Creator's dropdowns.");
+            int total = 0;
+            foreach (var f in fields)
+            {
+                var set = values[f];
+                sb.AppendLine();
+                sb.AppendLine($"[{f}] ({set.Count})");
+                foreach (var v in set) { sb.AppendLine(v); total++; }
+            }
+            File.WriteAllText(Path.Combine(root, "_game_skins.txt"), sb.ToString());
+            Plugin.Log.LogInfo($"[Dump] Skin fields: {total} distinct value(s) across {fields.Count} field(s) -> _game_skins.txt");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Skin field dump failed: {ex.Message}"); }
+    }
+
     // Called directly by PatchSetCurrentAct — not a Harmony patch.
     public static void OnTeamInitialized(Team __instance, TeamData teamData)
     {
@@ -10222,6 +12082,198 @@ public static class LogRepositories
     }
 
     private static bool _guiListsDumped = false;
+
+    /// <summary>Write _game_maps.txt: the real layer/node layout of every map the
+    /// game ships, so the Creator can offer a per-NODE team editor instead of the
+    /// current "teams play in filename order" model.
+    ///
+    /// Everything the editor needs is already in the game's own data:
+    ///   RunSquadScriptableObject.maps → MapConfig (one per act)
+    ///     MapConfig.mapTemplates      → MapTemplateData (layout VARIANTS)
+    ///       MapTemplateData.layers    → LayerData.layerIndex + nodes
+    ///         NodeData: nodeIndex, type, gridPosition, outgoing (the branch graph),
+    ///                   eliteGroupId, eliteTeamId ("Force Elite Team"), rewards,
+    ///                   gmSelectionCount
+    ///
+    /// ALL templates are dumped, not just [0]. Whether the variants of one map share
+    /// a layer/branch shape decides whether a node is a stable thing a user can
+    /// assign a team to at all — if they differ, node identity is not stable across
+    /// runs and the mod would have to pin one template. The SHAPE= line and the
+    /// closing SUMMARY exist to answer exactly that question at a glance.
+    ///
+    /// Strictly read-only: it walks ScriptableObjects and writes a text file.</summary>
+    internal static void DumpMapLayouts(string root)
+    {
+        try
+        {
+            var squads = UnityEngine.Resources.FindObjectsOfTypeAll<RunSquadScriptableObject>();
+            if (squads == null || squads.Length == 0)
+            {
+                Plugin.Log.LogInfo("[Dump] Map layouts: no RunSquadScriptableObject loaded yet — skipping.");
+                return;
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine("# _game_maps.txt — map layouts read from the game. AUTO-GENERATED, do not edit.");
+            sb.AppendLine("# Regenerated every launch. Structure: SQUAD > MAP(act) > TEMPLATE > LAYER > NODE");
+            sb.AppendLine("# NODE: n=<nodeIndex> type=<NodeType> pos=<x>,<y> out=[<nodeIndex>,..]");
+            sb.AppendLine("#       group='<eliteGroupId>' team='<eliteTeamId>' gm=<n> talents=<n> relics=<n>");
+            sb.AppendLine("# SHAPE=[nodes per layer] — templates of one map with equal SHAPE are");
+            sb.AppendLine("# structurally interchangeable; see SUMMARY at the end.");
+            sb.AppendLine();
+
+            // squad -> act -> list of shape strings, for the summary at the end.
+            var shapeIndex = new List<string>();
+            int squadCount = 0, mapCount = 0, tmplCount = 0, nodeCount = 0;
+
+            foreach (var sq in squads)
+            {
+                if (sq == null) continue;
+                string sqName = null;
+                try { sqName = sq.squadName; } catch { }
+                if (string.IsNullOrEmpty(sqName)) sqName = "(unnamed)";
+
+                Il2CppSystem.Collections.Generic.List<MapConfig> maps = null;
+                try { maps = sq.maps; } catch { }
+                if (maps == null || maps.Count == 0) continue;
+
+                squadCount++;
+                sb.AppendLine($"SQUAD '{sqName}' maps={maps.Count}");
+
+                for (int mi = 0; mi < maps.Count; mi++)
+                {
+                    var cfg = maps[mi];
+                    if (cfg == null) continue;
+                    int act = 0;
+                    try { act = cfg.act; } catch { }
+                    Il2CppSystem.Collections.Generic.List<DAGG.Generation.Template.MapTemplateData> tmpls = null;
+                    try { tmpls = cfg.mapTemplates; } catch { }
+                    int tcount = tmpls != null ? tmpls.Count : 0;
+                    mapCount++;
+                    sb.AppendLine($"  MAP index={mi} act={act} templates={tcount}");
+                    if (tmpls == null) continue;
+
+                    var shapesForThisMap = new List<string>();
+
+                    for (int ti = 0; ti < tcount; ti++)
+                    {
+                        var tmpl = tmpls[ti];
+                        if (tmpl == null) continue;
+                        Il2CppSystem.Collections.Generic.List<DAGG.Generation.Template.LayerData> layers = null;
+                        try { layers = tmpl.layers; } catch { }
+                        if (layers == null) continue;
+
+                        // SHAPE is the per-layer node count — the cheapest signature
+                        // that reveals whether two variants branch the same way.
+                        var shape = new StringBuilder();
+                        for (int li = 0; li < layers.Count; li++)
+                        {
+                            var lay = layers[li];
+                            int n = 0;
+                            try { n = lay != null && lay.nodes != null ? lay.nodes.Count : 0; } catch { }
+                            shape.Append(shape.Length == 0 ? "" : ",").Append(n);
+                        }
+                        string shapeStr = "[" + shape.ToString() + "]";
+                        shapesForThisMap.Add(shapeStr);
+                        tmplCount++;
+
+                        string tname = null;
+                        try { tname = tmpl.name; } catch { }
+                        sb.AppendLine($"    TEMPLATE {ti} '{tname}' layers={layers.Count} SHAPE={shapeStr}");
+
+                        for (int li = 0; li < layers.Count; li++)
+                        {
+                            var lay = layers[li];
+                            if (lay == null) continue;
+                            int layerIndex = li;
+                            try { layerIndex = lay.layerIndex; } catch { }
+                            Il2CppSystem.Collections.Generic.List<DAGG.Generation.Template.NodeData> nodes = null;
+                            try { nodes = lay.nodes; } catch { }
+                            int ncount = nodes != null ? nodes.Count : 0;
+                            sb.AppendLine($"      LAYER {layerIndex} nodes={ncount}");
+                            if (nodes == null) continue;
+
+                            for (int ni = 0; ni < ncount; ni++)
+                            {
+                                var nd = nodes[ni];
+                                if (nd == null) continue;
+                                nodeCount++;
+
+                                int nodeIndex = ni;
+                                try { nodeIndex = nd.nodeIndex; } catch { }
+
+                                // DAGG.Core.NodeType — name it via the enum it really
+                                // belongs to. STS.Map.NodeType has DIFFERENT values for
+                                // the same names (GeneralManager 9 vs 8), so never
+                                // resolve this through the other enum.
+                                string typeName;
+                                try { typeName = nd.type.ToString(); }
+                                catch { try { typeName = ((int)nd.type).ToString(); } catch { typeName = "?"; } }
+
+                                string pos = "";
+                                try
+                                {
+                                    var gp = nd.gridPosition;   // Coordinate is a CLASS, not a boxed struct
+                                    if (gp != null) pos = $"{gp.x:0.##},{gp.y:0.##}";
+                                }
+                                catch { }
+
+                                var outs = new StringBuilder();
+                                try
+                                {
+                                    var og = nd.outgoing;
+                                    if (og != null)
+                                        for (int oi = 0; oi < og.Count; oi++)
+                                            outs.Append(outs.Length == 0 ? "" : ",").Append(og[oi]);
+                                }
+                                catch { }
+
+                                string grp = "", team = "";
+                                try { grp = nd.eliteGroupId ?? ""; } catch { }
+                                try { team = nd.eliteTeamId ?? ""; } catch { }
+                                int gm = 0, tal = 0, rel = 0;
+                                try { gm = nd.gmSelectionCount; } catch { }
+                                try { tal = nd.talentRewardCount; } catch { }
+                                try { rel = nd.relicRewardCount; } catch { }
+
+                                sb.AppendLine($"        NODE n={nodeIndex} type={typeName} pos={pos}"
+                                    + $" out=[{outs}] group='{grp}' team='{team}'"
+                                    + $" gm={gm} talents={tal} relics={rel}");
+                            }
+                        }
+                    }
+
+                    // Record whether this map's variants agree on structure.
+                    if (shapesForThisMap.Count > 0)
+                    {
+                        bool identical = true;
+                        for (int i = 1; i < shapesForThisMap.Count; i++)
+                            if (shapesForThisMap[i] != shapesForThisMap[0]) { identical = false; break; }
+                        shapeIndex.Add($"  '{sqName}' map {mi} (act {act}): {shapesForThisMap.Count} template(s) — "
+                            + (identical ? $"shapes IDENTICAL {shapesForThisMap[0]}"
+                                         : $"shapes DIFFER: {string.Join(" vs ", shapesForThisMap.ToArray())}"));
+                    }
+                }
+                sb.AppendLine();
+            }
+
+            sb.AppendLine("SUMMARY — do a map's template variants share a branch shape?");
+            sb.AppendLine("(If any line says DIFFER, a node is not a stable target across runs and the");
+            sb.AppendLine(" mod must pin one template before per-node team assignment can be offered.)");
+            foreach (var line in shapeIndex) sb.AppendLine(line);
+
+            File.WriteAllText(Path.Combine(root, "_game_maps.txt"), sb.ToString());
+            Plugin.Log.LogInfo($"[Dump] Map layouts: {squadCount} squad(s), {mapCount} map(s), "
+                + $"{tmplCount} template(s), {nodeCount} node(s) -> _game_maps.txt");
+        }
+        catch (Exception ex) { Plugin.Log.LogError($"[Dump] DumpMapLayouts failed: {ex}"); }
+    }
+
+    /// <summary>True once the GUI lists + library have actually been written.
+    /// AutoDumpNameLists gives up early if TeamData isn't loaded yet and expects to
+    /// be called again, so callers that fire once per event need this to know
+    /// whether to keep trying.</summary>
+    internal static bool GuiListsDumped => _guiListsDumped;
     public static void AutoDumpNameLists()
     {
         if (_guiListsDumped) return;
@@ -10249,6 +12301,10 @@ public static class LogRepositories
 
         // Mark done only AFTER we have team data so callers can retry if teams weren't ready.
         _guiListsDumped = true;
+
+        // Map layer/node layouts, for the per-node team editor. Read-only.
+        try { DumpMapLayouts(root); }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Map layouts: {ex.Message}"); }
 
         // 1. Name lists (for GUI dropdowns)
         try
@@ -10280,8 +12336,12 @@ public static class LogRepositories
             File.WriteAllLines(Path.Combine(root, "_game_skater_names.txt"), sortedS.ToArray());
             File.WriteAllLines(Path.Combine(root, "_game_goalie_names.txt"), sortedG.ToArray());
             Plugin.Log.LogInfo($"[Dump] Name lists: {teamNames.Count} teams, {sortedS.Count} skaters, {sortedG.Count} goalies");
+
+            DumpSkinFields(root, allPlayers, allGoalies);
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Name lists failed: {ex.Message}"); }
+
+        // (skin-field dump lives in DumpSkinFields, called above)
 
         // 1b. Dump every team logo as PNG into the game's CustomLogos folder.
         //     Makes the vanilla logos available to the in-game logo picker AND
@@ -10324,6 +12384,21 @@ public static class LogRepositories
 
         string customTeamsDir = Path.Combine(root, "library", "Custom Teams");
         string customPlayersDir = Path.Combine(root, "library", "Custom Players");
+
+        // Create all four up front. These used to be created near the END of this
+        // routine, AFTER the player files were written into them — which worked
+        // only because the folders already existed from a previous run. On a fresh
+        // or deleted library every player write failed with "Could not find a part
+        // of the path" and the dump reported "0 players", while teams (which make
+        // their own subfolder) came through fine. The later calls are idempotent.
+        try
+        {
+            Directory.CreateDirectory(baseGameDir);
+            Directory.CreateDirectory(basePlayersDir);
+            Directory.CreateDirectory(customTeamsDir);
+            Directory.CreateDirectory(customPlayersDir);
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Could not create library folders: {ex.Message}"); }
 
         Plugin.Log.LogInfo($"[Dump] Dumping all game teams + players to library...");
         int teamCount = 0;
@@ -10436,6 +12511,16 @@ public static class LogRepositories
             {
                 if (t == null || string.IsNullOrEmpty(t.teamName)) continue;
                 if (t.logo == null) continue;
+                // Never export the repository's fallback sprite. A team whose logo
+                // never resolved still carries defaultLogo ('Teams_TapetoTape'),
+                // and dumping that wrote the game's own house logo out under the
+                // team's name — 34 identical copies, which then shadowed the real
+                // artwork and looked like "custom logos don't work".
+                if (IsFallbackLogo(t.logo))
+                {
+                    Plugin.Log.LogDebug($"[Dump] Logo '{t.teamName}' is the fallback sprite — not exported");
+                    continue;
+                }
 
                 string safe = t.teamName;
                 foreach (char c in Path.GetInvalidFileNameChars()) safe = safe.Replace(c, '_');
@@ -10474,6 +12559,16 @@ public static class LogRepositories
             Plugin.Log.LogInfo($"[Dump] CustomLogos: wrote {wrote}, skipped {skipped} existing, failed {failed} -> {logoDir}");
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] CustomLogos failed: {ex.Message}"); }
+    }
+
+    // The sprite TeamAssetsRepositoryScriptableObject.GetLogo() hands back for
+    // ids it doesn't know. Its name is stable ('Teams_TapetoTape'), so match on
+    // that rather than on pixels.
+    internal static bool IsFallbackLogo(UnityEngine.Sprite s)
+    {
+        if (s == null) return false;
+        try { return (s.name ?? "").IndexOf("TapetoTape", StringComparison.OrdinalIgnoreCase) >= 0; }
+        catch { return false; }
     }
 
     private static byte[] SpriteToPng(UnityEngine.Sprite sprite)
@@ -10773,17 +12868,17 @@ public static class LogRepositories
             }
         } catch {}
         // Goalie skins
-        try { if (!string.IsNullOrEmpty(g.helmetSkin)) sb.AppendLine($"Helmet Skin             = {PatchBossLaunchMatch.ReverseSkinPath(g.helmetSkin, "helmet")}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.skin)) sb.AppendLine($"Skin                    = {PatchBossLaunchMatch.ReverseSkinPath(g.skin, "body")}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.awaySkin)) sb.AppendLine($"Skin Away               = {PatchBossLaunchMatch.ReverseSkinPath(g.awaySkin, "body")}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.gloveSkin)) sb.AppendLine($"Glove Skin              = {PatchBossLaunchMatch.ReverseSkinPath(g.gloveSkin, "glove")}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.awayGloveSkin)) sb.AppendLine($"Glove Away              = {PatchBossLaunchMatch.ReverseSkinPath(g.awayGloveSkin, "glove")}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.blockerSkin)) sb.AppendLine($"Blocker Skin            = {PatchBossLaunchMatch.ReverseSkinPath(g.blockerSkin, "blocker")}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.awayBlockerSkin)) sb.AppendLine($"Blocker Away            = {PatchBossLaunchMatch.ReverseSkinPath(g.awayBlockerSkin, "blocker")}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.padsSkin)) sb.AppendLine($"Pads Skin               = {PatchBossLaunchMatch.ReverseSkinPath(g.padsSkin, "pads")}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.awayPadsSkin)) sb.AppendLine($"Pads Away               = {PatchBossLaunchMatch.ReverseSkinPath(g.awayPadsSkin, "pads")}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.stickSkin)) sb.AppendLine($"Stick Skin              = {PatchBossLaunchMatch.ReverseSkinPath(g.stickSkin, "stick")}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.awayStickSkin)) sb.AppendLine($"Stick Away              = {PatchBossLaunchMatch.ReverseSkinPath(g.awayStickSkin, "stick")}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.helmetSkin)) sb.AppendLine($"Helmet Skin             = {PatchBossLaunchMatch.ReverseSkinPath(g.helmetSkin, "helmet", goalie: true)}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.skin)) sb.AppendLine($"Skin                    = {PatchBossLaunchMatch.ReverseSkinPath(g.skin, "body", goalie: true)}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.awaySkin)) sb.AppendLine($"Skin Away               = {PatchBossLaunchMatch.ReverseSkinPath(g.awaySkin, "body", goalie: true)}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.gloveSkin)) sb.AppendLine($"Glove Skin              = {PatchBossLaunchMatch.ReverseSkinPath(g.gloveSkin, "glove", goalie: true)}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.awayGloveSkin)) sb.AppendLine($"Glove Away              = {PatchBossLaunchMatch.ReverseSkinPath(g.awayGloveSkin, "glove", goalie: true)}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.blockerSkin)) sb.AppendLine($"Blocker Skin            = {PatchBossLaunchMatch.ReverseSkinPath(g.blockerSkin, "blocker", goalie: true)}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.awayBlockerSkin)) sb.AppendLine($"Blocker Away            = {PatchBossLaunchMatch.ReverseSkinPath(g.awayBlockerSkin, "blocker", goalie: true)}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.padsSkin)) sb.AppendLine($"Pads Skin               = {PatchBossLaunchMatch.ReverseSkinPath(g.padsSkin, "pads", goalie: true)}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.awayPadsSkin)) sb.AppendLine($"Pads Away               = {PatchBossLaunchMatch.ReverseSkinPath(g.awayPadsSkin, "pads", goalie: true)}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.stickSkin)) sb.AppendLine($"Stick Skin              = {PatchBossLaunchMatch.ReverseSkinPath(g.stickSkin, "stick", goalie: true)}"); } catch {}
+        try { if (!string.IsNullOrEmpty(g.awayStickSkin)) sb.AppendLine($"Stick Away              = {PatchBossLaunchMatch.ReverseSkinPath(g.awayStickSkin, "stick", goalie: true)}"); } catch {}
 
         string gfname = $"Goalie - {safe}.txt";
         File.WriteAllText(Path.Combine(playersDir, gfname), sb.ToString());

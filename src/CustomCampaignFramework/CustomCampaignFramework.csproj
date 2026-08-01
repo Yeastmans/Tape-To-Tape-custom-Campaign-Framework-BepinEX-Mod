@@ -47,6 +47,12 @@
       <HintPath>$(InteropDir)\UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <!-- MapTemplateData / LayerData / NodeData (DAGG.Generation.Template) — the
+         GM squad's map layouts, read to place its free-agent nodes. -->
+    <Reference Include="DAGG_assembly">
+      <HintPath>$(InteropDir)\DAGG_assembly.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="UnityEngine.AnimationModule">
       <HintPath>$(InteropDir)\UnityEngine.AnimationModule.dll</HintPath>
       <Private>false</Private>
@@ -69,6 +75,21 @@
     </Reference>
     <Reference Include="I2_assembly">
       <HintPath>$(InteropDir)\I2_assembly.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- MatchPreviewMenu.teamName is a TextMeshProUGUI. -->
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>$(InteropDir)\Unity.TextMeshPro.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- Faces are Spine atlas regions, not Unity Sprites — needed to cut a
+         squad-tile icon out of the atlas page. -->
+    <Reference Include="spine-csharp">
+      <HintPath>$(InteropDir)\spine-csharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="spine-unity">
+      <HintPath>$(InteropDir)\spine-unity.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
