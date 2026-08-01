@@ -75,7 +75,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.32"
+APP_VERSION = "2.1.33"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -1340,6 +1340,187 @@ GAME_PLAYER_NAMES_FILE = os.path.join(SCRIPT_DIR, "_game_player_names.txt")
 GAME_SKATER_NAMES_FILE = os.path.join(SCRIPT_DIR, "_game_skater_names.txt")
 GAME_GOALIE_NAMES_FILE = os.path.join(SCRIPT_DIR, "_game_goalie_names.txt")
 GAME_TEAM_LOGOS_FILE = os.path.join(SCRIPT_DIR, "_game_team_logos.txt")
+GAME_MAPS_FILE = os.path.join(SCRIPT_DIR, "_game_maps.txt")
+
+# ============================================================
+#   MAP LAYOUTS  (_game_maps.txt, written by the DLL every launch)
+# ============================================================
+# Read LIVE here rather than baked through _gen_game_data.py like the skin/talent
+# lists. Map layouts are per-install and change with the game, and a stale copy
+# would silently offer node coordinates that no longer exist — the same class of
+# bug VERSION.txt caused three times. Reading the file the DLL just wrote means
+# the editor can never disagree with the game that is actually installed.
+
+# The Maps dropdown shows friendly names; _game_maps.txt records real squad names.
+# Explicit aliases rather than fuzzy matching, because fuzzy gets it WRONG here:
+# "Speedy" prefix-matches both "Speed" and "Speedrun Squad", and "Defence" shares
+# no prefix with "Defense Squad" at all.
+_MAP_SQUAD_ALIASES = {
+    "basic": "Basic Squad",          "defence": "Defense Squad",
+    "speedy": "Speed",               "trio": "Trio Meta",
+    "gauntlet": "Gauntlet Meta",     "solo": "Solo Meta",
+    "bum": "Bum Squad",              "general manager": "General Manager",
+    "slapshot": "Slapshot Squad",    "referee": "Referee Squad",
+    "tchel": "Tchel",                "speedrun": "Speedrun Squad",
+    "stats": "Stats",                "violence": "Violence Squad",
+    "oldschool": "Old School",
+}
+
+# Node types that are real matches you can assign a team to. Challenge is
+# conditional — see assignable_nodes().
+_MATCH_NODE_TYPES = ("Elite", "Boss")
+
+_game_maps_cache = None
+
+def load_game_maps(force=False):
+    """Parse _game_maps.txt -> {squadName: {mapIndex: [node, ...]}}.
+
+    node = dict(layer, node, type, x, y). Returns {} when the file is missing,
+    which the UI reports as "launch the game once" rather than failing."""
+    global _game_maps_cache
+    if _game_maps_cache is not None and not force:
+        return _game_maps_cache
+    out = {}
+    try:
+        squad = None
+        mapidx = None
+        layer = None
+        with open(GAME_MAPS_FILE, encoding="utf-8") as f:
+            for raw in f:
+                s = raw.strip()
+                m = re.match(r"^SQUAD '(.+)' maps=", s)
+                if m:
+                    squad = m.group(1); mapidx = None; continue
+                if squad is None:
+                    continue
+                m = re.match(r"^MAP index=(\d+) act=(-?\d+)", s)
+                if m:
+                    mapidx = int(m.group(1))
+                    out.setdefault(squad, {}).setdefault(mapidx, [])
+                    continue
+                m = re.match(r"^LAYER (\d+) nodes=(\d+)", s)
+                if m:
+                    layer = int(m.group(1)); continue
+                m = re.match(r"^NODE n=(\d+) type=(\S+) pos=([-\d.]*),([-\d.]*)", s)
+                if m and squad is not None and mapidx is not None and layer is not None:
+                    try: x, y = float(m.group(3) or 0), float(m.group(4) or 0)
+                    except ValueError: x, y = 0.0, 0.0
+                    out[squad][mapidx].append({
+                        "layer": layer, "node": int(m.group(1)),
+                        "type": m.group(2), "x": x, "y": y,
+                    })
+    except Exception:
+        out = {}
+    _game_maps_cache = out
+    return out
+
+
+def resolve_map_squad(maps_value):
+    """Friendly Maps value -> squad name as it appears in _game_maps.txt."""
+    v = (maps_value or "Basic").strip()
+    alias = _MAP_SQUAD_ALIASES.get(v.lower())
+    data = load_game_maps()
+    if alias and alias in data:
+        return alias
+    for name in data:                      # exact, then case-insensitive
+        if name == v: return name
+    for name in data:
+        if name.lower() == v.lower(): return name
+    return alias or v
+
+
+def assignable_nodes(maps_value, map_index, replace_challenges=False):
+    """Nodes on one map that a team can be pinned to, grouped into games.
+
+    Returns [(layer, [node, ...]), ...] ordered by layer, siblings ordered by y
+    so the first is the one drawn at the TOP of the in-game map.
+
+    Challenge nodes count ONLY when the campaign replaces them: the DLL rewrites
+    those to Elite at generation, which is why layer 1 of a Basic map is a real
+    pair of match nodes in one campaign and untouchable in another. The template
+    alone cannot tell you this — it depends on campaign.txt.
+    """
+    data = load_game_maps()
+    squad = resolve_map_squad(maps_value)
+    nodes = (data.get(squad) or {}).get(map_index) or []
+    wanted = set(_MATCH_NODE_TYPES) | ({"Challenge"} if replace_challenges else set())
+    bylayer = {}
+    for n in nodes:
+        if n["type"] in wanted:
+            bylayer.setdefault(n["layer"], []).append(n)
+    return [(l, sorted(bylayer[l], key=lambda n: n["y"])) for l in sorted(bylayer)]
+
+
+# ---- assignments.txt read/write -------------------------------------------
+def read_assignments(campaign_dir):
+    """assignments.txt -> {(map_pos, layer, node): team_key}."""
+    out = {}
+    path = os.path.join(campaign_dir or "", "assignments.txt")
+    if not os.path.isfile(path):
+        return out
+    try:
+        with open(path, encoding="utf-8") as f:
+            for raw in f:
+                line = raw.strip()
+                if not line or line[0] in "#;" or "=" not in line:
+                    continue
+                lhs, team = line.split("=", 1)
+                team = team.strip()
+                if not team:
+                    continue
+                mp = lay = nod = None
+                for part in lhs.split("/"):
+                    bits = part.split()
+                    if len(bits) < 2:
+                        continue
+                    try: num = int(bits[-1])
+                    except ValueError: continue
+                    w = bits[0].lower()
+                    if w.startswith("map"): mp = num
+                    elif w.startswith("layer") or w == "l": lay = num
+                    elif w.startswith("node") or w == "n": nod = num
+                if mp is not None and lay is not None and nod is not None:
+                    out[(mp, lay, nod)] = team
+    except Exception:
+        pass
+    return out
+
+
+def write_assignments(campaign_dir, assignments):
+    """Write assignments.txt, or delete it when nothing is assigned.
+
+    Removing the file (rather than leaving an empty one) matters: the DLL treats
+    'no assignments' as 'use the original sequential order', so an emptied editor
+    restores the campaign's previous behaviour exactly."""
+    path = os.path.join(campaign_dir, "assignments.txt")
+    real = {k: v for k, v in (assignments or {}).items() if (v or "").strip()}
+    if not real:
+        try:
+            if os.path.isfile(path): os.remove(path)
+        except Exception: pass
+        return
+    lines = [
+        "# Per-node team assignments - written by the Campaign Creator.",
+        "#",
+        "#   Map <n> / Layer <l> / Node <i> = <teams/ folder name>",
+        "#",
+        "# Map is the 1-based position in this campaign's Act Sequence; Layer and",
+        "# Node are the map template's own coordinates (see _game_maps.txt).",
+        "# A node with no line here falls back to the sequential team order.",
+        "",
+    ]
+    last_map = None
+    for (mp, lay, nod) in sorted(real):
+        if mp != last_map:
+            lines.append(f"# ---- Map {mp} ----")
+            last_map = mp
+        lines.append(f"Map {mp} / Layer {lay} / Node {nod} = {real[(mp, lay, nod)]}")
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+    except Exception:
+        pass
+
 
 # Reward-pool files (written by the DLL to BepInEx/plugins/ each launch).
 # Used by the Reward Pools editor to populate per-relic / per-talent checkboxes.
@@ -3897,6 +4078,122 @@ class TeamEditor(ttk.Frame):
 # ============================================================
 #   CAMPAIGN EDITOR
 # ============================================================
+class MapNodeEditor(ttk.Frame):
+    """Pick the opponent for each elite/boss node, laid out like the chosen map.
+
+    The old model made a team's folder number its play order, so a branch layer
+    could only ever hold ONE team and a team could only be used once. This grids
+    the real nodes of the selected map instead: branch layers get one dropdown per
+    branch, and any team may be picked as many times as you like.
+
+    Rows come from _game_maps.txt (written by the game each launch), so the editor
+    always matches the installed game rather than a baked-in assumption.
+    """
+
+    BLANK = "(default order)"
+
+    def __init__(self, parent, on_change=None):
+        super().__init__(parent)
+        self.on_change = on_change
+        self._vars = {}        # (map_pos, layer, node) -> StringVar
+        self._assign = {}      # full assignment set, incl. rows not shown now
+        self._body = ttk.Frame(self)
+        self._body.pack(fill="x")
+        self._status = ttk.Label(self, text="", foreground="#888", font=("", 8))
+        self._status.pack(anchor="w", pady=(2, 0))
+
+    # ---- data in / out ----
+    def set_assignments(self, d):
+        self._assign = dict(d or {})
+        for k, var in self._vars.items():
+            var.set(self._assign.get(k, "") or self.BLANK)
+
+    def get_assignments(self):
+        # Start from the full set so assignments for maps not currently on screen
+        # (shorter Act Sequence, different Maps) survive a save instead of being
+        # silently thrown away. The DLL ignores coordinates that don't exist.
+        out = dict(self._assign)
+        for k, var in self._vars.items():
+            v = (var.get() or "").strip()
+            if v and v != self.BLANK:
+                out[k] = v
+            else:
+                out.pop(k, None)
+        return out
+
+    @staticmethod
+    def _replaces_challenges(rc_spec, map_pos):
+        s = (rc_spec or "").strip().lower()
+        if s in ("yes", "true"): return True
+        if s.startswith("maps:"):
+            try:
+                return map_pos in [int(x) for x in s[5:].split(",") if x.strip()]
+            except Exception:
+                return False
+        return False
+
+    def refresh(self, maps_value, acts, rc_spec, team_names):
+        """Rebuild the grid. acts = list of act numbers, one per campaign map."""
+        for w in self._body.winfo_children():
+            w.destroy()
+        self._vars.clear()
+
+        if not load_game_maps():
+            self._status.config(
+                text="Launch the game once with the mod installed — it writes "
+                     "_game_maps.txt, which this editor reads to learn each map's layout.",
+                foreground="#aa6600")
+            return
+
+        choices = [self.BLANK] + sorted(team_names or [])
+        squad = resolve_map_squad(maps_value)
+        total = 0
+
+        for pos, act in enumerate(acts or [], start=1):
+            # Act N is map index N-1 in the squad's own maps list.
+            groups = assignable_nodes(maps_value, max(0, act - 1),
+                                      self._replaces_challenges(rc_spec, pos))
+            box = ttk.LabelFrame(self._body, text=f"  Map {pos}  (Act {act})  ")
+            box.pack(fill="x", pady=3)
+            if not groups:
+                ttk.Label(box, text="No elite or boss nodes found for this map.",
+                          foreground="#888").pack(anchor="w", padx=6, pady=3)
+                continue
+
+            for gi, (layer, sibs) in enumerate(groups, start=1):
+                row = ttk.Frame(box)
+                row.pack(fill="x", padx=6, pady=1)
+                kind = sibs[0]["type"]
+                tag = "Boss" if kind == "Boss" else f"Game {gi}"
+                ttk.Label(row, text=f"{tag}", width=8,
+                          font=("", 9, "bold")).pack(side="left")
+
+                for si, n in enumerate(sibs):
+                    key = (pos, layer, n["node"])
+                    var = tk.StringVar(value=self._assign.get(key, "") or self.BLANK)
+                    self._vars[key] = var
+                    total += 1
+                    if len(sibs) > 1:
+                        # Siblings are sorted by y, which is how they are drawn on
+                        # the map — so "top"/"bottom" matches what the player sees.
+                        ttk.Label(row, text=("top" if si == 0 else
+                                             "bottom" if si == 1 else f"#{si+1}"),
+                                  width=7, foreground="#0066aa").pack(side="left")
+                    cb = ttk.Combobox(row, textvariable=var, values=choices,
+                                      state="readonly", width=26)
+                    cb.pack(side="left", padx=(2, 8))
+                    if self.on_change:
+                        cb.bind("<<ComboboxSelected>>", lambda e: self.on_change())
+                    if n["type"] == "Challenge":
+                        ttk.Label(row, text="(challenge → elite)",
+                                  foreground="#888", font=("", 8)).pack(side="left")
+
+        self._status.config(
+            text=f"{total} assignable node(s) from '{squad}'. "
+                 f"Left at “{self.BLANK}” a node keeps the old sequential team order.",
+            foreground="#888")
+
+
 class CampaignEditor(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
@@ -4036,6 +4333,19 @@ class CampaignEditor(ttk.Frame):
         ttk.Button(btns, text="Remove", command=self.remove_team, width=14).pack(pady=2)
         ttk.Button(btns, text="Move Up", command=lambda: self.move_team(-1), width=14).pack(pady=2)
         ttk.Button(btns, text="Move Down", command=lambda: self.move_team(1), width=14).pack(pady=2)
+
+        # === MAP OPPONENTS (per-node) ===
+        mo_frame = ttk.LabelFrame(body, text=" Map Opponents — set who you play at each node ")
+        mo_frame.pack(fill="x", padx=4, pady=(10, 4))
+        ttk.Label(mo_frame,
+            text="Pick the opponent for each elite and boss node of the map you selected above.\n"
+                 "Branch layers get one dropdown per branch, so the two paths can face different\n"
+                 "teams — and the same team may be used on as many nodes as you like.\n"
+                 "Anything left on “(default order)” falls back to the Teams list order above.",
+            foreground="#555", font=("", 8), justify="left"
+        ).pack(anchor="w", padx=8, pady=(4, 2))
+        self.map_nodes = MapNodeEditor(mo_frame, on_change=lambda: None)
+        self.map_nodes.pack(fill="x", padx=8, pady=(0, 6))
 
         # === STARTING SQUADS ===
         sq_frame = ttk.LabelFrame(body, text=" Starting Squads ")
@@ -4244,6 +4554,33 @@ class CampaignEditor(ttk.Frame):
             else:
                 sp_note = ""
             self._game_count_label.configure(text=sp_note)
+        except Exception: pass
+        # Act Sequence / Maps / Replace Challenges all change which nodes exist,
+        # so the per-node grid has to be rebuilt whenever any of them moves.
+        self._refresh_map_nodes()
+
+    def _campaign_team_names(self):
+        """teams/ folder names — what assignments.txt stores and the DLL matches."""
+        names = []
+        try:
+            td = os.path.join(self.loaded_dir or "", "teams")
+            if os.path.isdir(td):
+                names = sorted(d for d in os.listdir(td)
+                               if os.path.isdir(os.path.join(td, d)))
+        except Exception: pass
+        return names
+
+    def _refresh_map_nodes(self):
+        if not hasattr(self, "map_nodes"):
+            return
+        try:
+            seq = (self.widgets["Act Sequence"].get() or "").strip()
+            acts = [int(x) for x in seq.split(",") if x.strip().isdigit()]
+            maps_w = self.widgets.get("Maps")
+            maps_val = maps_w.get() if maps_w else "Basic"
+            ab = self.widgets.get("Act Sequence")
+            rc = ab.get_replace_challenges() if (ab and hasattr(ab, "get_replace_challenges")) else "no"
+            self.map_nodes.refresh(maps_val, acts, rc, self._campaign_team_names())
         except Exception: pass
 
     def _validate(self):
@@ -4782,8 +5119,16 @@ class CampaignEditor(ttk.Frame):
 
     def load_dir(self, campaign_dir):
         self.loaded_dir = campaign_dir
+        # Load assignments BEFORE set_data: set_data triggers _refresh_live, which
+        # rebuilds the node grid, and the grid needs the saved values already in
+        # hand or every dropdown renders blank on open.
+        try:
+            if hasattr(self, "map_nodes"):
+                self.map_nodes.set_assignments(read_assignments(campaign_dir))
+        except Exception: pass
         self.set_data(read_kv(os.path.join(campaign_dir, "campaign.txt")))
         self.refresh_list()
+        self._refresh_map_nodes()
         self._refresh_draft_list()
         self._refresh_fa_list()
         self._refresh_ss_list()
@@ -4943,6 +5288,12 @@ class CampaignEditor(ttk.Frame):
                     f.write(f"{k:24s}= {data[k]}\n")
         os.makedirs(os.path.join(campaign_dir, "teams"), exist_ok=True)
         self.loaded_dir = campaign_dir
+        # Per-node opponents. Writing nothing deletes the file, which is what puts
+        # the campaign back on the plain sequential order.
+        try:
+            if hasattr(self, "map_nodes"):
+                write_assignments(campaign_dir, self.map_nodes.get_assignments())
+        except Exception: pass
 
 
 # ============================================================

@@ -23,7 +23,7 @@ using Rogue.BenchSnapshots;
 
 namespace EndlessMode;
 
-[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.32")]
+[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.33")]
 public class Plugin : BasePlugin
 {
     internal static new ManualLogSource Log;
@@ -932,6 +932,113 @@ public class Plugin : BasePlugin
             Log.LogInfo($"  Loaded team: {Path.GetFileName(teamDir)} → {name}");
         }
         Log.LogInfo($"[Campaign] Multi-folder: {ConfigTeams.Count} teams loaded");
+
+        LoadNodeAssignments();
+    }
+
+    // ===== PER-NODE TEAM ASSIGNMENTS =====
+    //
+    // The original model keys teams to a linear game number: teams/ sorted by
+    // filename, ConfigTeams[n] plays game n. That cannot express two different
+    // opponents on one branch layer, and it cannot reuse a team on several nodes
+    // ("every elite is the soccer players"), because a folder IS its position.
+    //
+    // assignments.txt keys a team to a NODE instead:
+    //     Map 1 / Layer 2 / Node 0 = Meatballs
+    // where Map is 1-based over the campaign's Act Sequence and Layer/Node are the
+    // template's own layerIndex/nodeIndex, which _game_maps.txt lists. Every map
+    // ships exactly ONE template (verified: 51 maps, 51 templates), so those
+    // coordinates are stable across runs and a node is a real thing to point at.
+    //
+    // The value is a team KEY: a teams/ folder name, or a team's Name, or its
+    // Import Team. Several nodes may name the same team.
+    //
+    // Absent file = empty dictionary = every code path below falls through to the
+    // existing sequential behaviour, so campaigns that predate this stay identical.
+    internal static Dictionary<string, string> NodeAssignments =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    internal static string NodeKey(int mapPos, int layer, int node) => $"{mapPos}|{layer}|{node}";
+
+    internal static void LoadNodeAssignments()
+    {
+        NodeAssignments.Clear();
+        try
+        {
+            string path = Path.Combine(ModFolder, "assignments.txt");
+            if (!File.Exists(path)) return;
+
+            int parsed = 0, bad = 0;
+            foreach (var raw in File.ReadAllLines(path))
+            {
+                string line = (raw ?? "").Trim();
+                if (line.Length == 0 || line.StartsWith("#") || line.StartsWith(";")) continue;
+
+                int eq = line.IndexOf('=');
+                if (eq <= 0) { bad++; continue; }
+                string lhs = line.Substring(0, eq).Trim();
+                string team = line.Substring(eq + 1).Trim();
+                if (team.Length == 0) continue;   // blank value = "leave this node alone"
+
+                // "Map 1 / Layer 2 / Node 0" — tolerate any separator run and the
+                // words being cased however the GUI happens to write them.
+                int mapPos = -1, layer = -1, node = -1;
+                foreach (var partRaw in lhs.Split('/'))
+                {
+                    var part = partRaw.Trim();
+                    if (part.Length == 0) continue;
+                    var bits = part.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (bits.Length < 2) continue;
+                    if (!int.TryParse(bits[bits.Length - 1], out int num)) continue;
+                    string word = bits[0].ToLowerInvariant();
+                    if (word.StartsWith("map")) mapPos = num;
+                    else if (word.StartsWith("layer") || word == "l") layer = num;
+                    else if (word.StartsWith("node") || word == "n") node = num;
+                }
+
+                if (mapPos < 1 || layer < 0 || node < 0)
+                {
+                    bad++;
+                    Log.LogWarning($"[Assign] Could not read node coordinates from '{lhs}' — expected 'Map 1 / Layer 2 / Node 0'");
+                    continue;
+                }
+
+                NodeAssignments[NodeKey(mapPos, layer, node)] = team;
+                parsed++;
+            }
+
+            Log.LogInfo($"[Assign] assignments.txt: {parsed} node assignment(s) loaded"
+                + (bad > 0 ? $", {bad} unreadable line(s) ignored" : ""));
+        }
+        catch (Exception ex) { Log.LogWarning($"[Assign] assignments.txt: {ex.Message}"); }
+    }
+
+    /// <summary>Resolve an assignment's team key to a loaded TeamConfig. Matches a
+    /// teams/ folder name first (that is what the Creator writes and it is unique),
+    /// then a team's Name, then its Import Team. Returns null and warns if nothing
+    /// matches, so a typo leaves the node vanilla instead of silently playing the
+    /// wrong team.</summary>
+    internal static TeamConfig FindConfigTeamByKey(string key)
+    {
+        if (string.IsNullOrEmpty(key) || ConfigTeams == null) return null;
+        string want = key.Trim();
+
+        if (ConfigTeamDirs != null)
+            for (int i = 0; i < ConfigTeamDirs.Count && i < ConfigTeams.Count; i++)
+                if (string.Equals(Path.GetFileName(ConfigTeamDirs[i]), want, StringComparison.OrdinalIgnoreCase))
+                    return ConfigTeams[i];
+
+        for (int i = 0; i < ConfigTeams.Count; i++)
+            if (ConfigTeams[i] != null && !string.IsNullOrEmpty(ConfigTeams[i].Name)
+                && string.Equals(ConfigTeams[i].Name.Trim(), want, StringComparison.OrdinalIgnoreCase))
+                return ConfigTeams[i];
+
+        for (int i = 0; i < ConfigTeams.Count; i++)
+            if (ConfigTeams[i] != null && !string.IsNullOrEmpty(ConfigTeams[i].ImportTeam)
+                && string.Equals(ConfigTeams[i].ImportTeam.Trim(), want, StringComparison.OrdinalIgnoreCase))
+                return ConfigTeams[i];
+
+        return null;
     }
 
     internal static void LoadPlayerTeamsFolders(bool loadTeams, bool loadDraft)
@@ -4502,11 +4609,65 @@ public static class CampaignOpponents
     // (see the 0xC0000005 warning at PatchChooseMetaUI.FaceToSprite).
     private static readonly Dictionary<int, int> _configured = new Dictionary<int, int>();
 
+    // TeamData instance id -> the node key that claimed it (assignments.txt).
+    // Kept separate from _configured rather than folding both into one map: the
+    // sequential path is confirmed working and its four call sites stay untouched.
+    //
+    // This also has to OUTRANK the launch-time fallbacks. BossMapNode/EliteMapNode
+    // .LaunchMatch both call Ensure(opponent, GamesPlayed, ...) as a correcting
+    // fallback; without this, an assigned node would be configured correctly at map
+    // generation and then overwritten at launch by whatever team the linear game
+    // counter happened to point at.
+    private static readonly Dictionary<int, string> _assigned = new Dictionary<int, string>();
+
     internal static void ForgetAll(string why)
     {
-        if (_configured.Count > 0)
-            Plugin.Log.LogInfo($"[MapTeams] Forgetting {_configured.Count} configured opponent(s) — {why}");
+        if (_configured.Count > 0 || _assigned.Count > 0)
+            Plugin.Log.LogInfo($"[MapTeams] Forgetting {_configured.Count} configured + {_assigned.Count} assigned opponent(s) — {why}");
         _configured.Clear();
+        _assigned.Clear();
+    }
+
+    /// <summary>Node key that claimed this TeamData via assignments.txt, or null.</summary>
+    internal static string AssignedKey(TeamData team)
+    {
+        if (!TryGetId(team, out int id)) return null;
+        return _assigned.TryGetValue(id, out string k) ? k : null;
+    }
+
+    /// <summary>Apply a specific TeamConfig to this team on behalf of a node
+    /// assignment. Unlike <see cref="Ensure"/> the team is chosen by node, not by
+    /// game number, so nothing here reads Plugin.GamesPlayed.</summary>
+    internal static bool EnsureAssigned(TeamData team, TeamConfig cfg, string nodeKey, string why)
+    {
+        try
+        {
+            if (team == null || cfg == null || Plugin.IsDefaultMode) return false;
+            if (!TryGetId(team, out int id)) return false;
+
+            if (_assigned.TryGetValue(id, out string already) && already == nodeKey)
+                return false;   // same node, same team — silent, this is the second hook
+
+            // Same preamble RemixTeamForGame runs before ApplyTeamFromConfig; the
+            // apply depends on the repositories being resolved and on the
+            // cleared-player set being reset per team.
+            PatchBossLaunchMatch.EnsureRepos();
+            PatchBossLaunchMatch.ResetClearedPlayers();
+
+            // Deliberately NO BoostTeam here. It is additive, and a node assignment
+            // can legitimately be re-applied (two map hooks, plus the preview pass),
+            // which would compound the boost. CurrentRemixBoost is 0 today so the
+            // sequential path gets away with it; this path shouldn't rely on that.
+            PatchBossLaunchMatch.ApplyTeamFromConfig(team, cfg);
+            _assigned[id] = nodeKey;
+            _configured.Remove(id);   // a node assignment supersedes any game-index claim
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.LogError($"[Assign] {why}: {ex}");
+            return false;
+        }
     }
 
     private static bool TryGetId(TeamData team, out int id)
@@ -4533,6 +4694,15 @@ public static class CampaignOpponents
             if (team == null || Plugin.IsDefaultMode) return false;
             if (gameIndex < 0) return false;
             if (!TryGetId(team, out int id)) return false;
+
+            // A node assignment wins over the linear game counter. Without this the
+            // LaunchMatch fallbacks would undo it moments before the match starts.
+            if (_assigned.TryGetValue(id, out string pinnedBy))
+            {
+                Plugin.Log.LogInfo($"[Assign] {why}: '{team.teamName}' is pinned by assignments.txt"
+                    + $" (node {pinnedBy}) — leaving it as assigned");
+                return false;
+            }
 
             if (_configured.TryGetValue(id, out int applied) && applied == gameIndex)
             {
@@ -4937,7 +5107,15 @@ public static class PatchMapOpponents
     {
         reason = null;
         if (gameIndex < 0 || gameIndex >= Plugin.ConfigTeams.Count) return false;
-        var cfg = Plugin.ConfigTeams[gameIndex];
+        return MustWaitForLaunchConfig(Plugin.ConfigTeams[gameIndex], out reason);
+    }
+
+    /// <summary>The same test against a config chosen by node assignment, which has
+    /// no game index to look up. Node-assigned mirror matches have to defer for
+    /// exactly the same reason.</summary>
+    internal static bool MustWaitForLaunchConfig(TeamConfig cfg, out string reason)
+    {
+        reason = null;
         if (cfg == null || !cfg.IsImport || string.IsNullOrEmpty(cfg.ImportTeam)) return false;
         if (cfg.ImportTeam.Trim().Equals("PLAYER", StringComparison.OrdinalIgnoreCase))
         {
@@ -5029,6 +5207,54 @@ public static class PatchMapOpponents
                     TeamData opp = null;
                     try { opp = node.opponent; } catch { }
                     if (opp == null) continue;
+
+                    // ── Per-node assignment (assignments.txt) ──────────────────
+                    // Checked BEFORE the sequential path, and independently per
+                    // node, so two branch siblings on one layer can hold different
+                    // teams — the thing the game-numbered model could never express.
+                    //
+                    // Node coordinates come from the runtime node itself
+                    // (STS.Map.Node exposes LayerIndex and NodeIndex), which is what
+                    // _game_maps.txt lists, so the Creator and the game agree on
+                    // what "Layer 2 / Node 1" means without any position matching.
+                    if (Plugin.NodeAssignments.Count > 0)
+                    {
+                        int nodeIdx = -1;
+                        try { nodeIdx = node.Node != null ? node.Node.NodeIndex : -1; } catch { }
+                        if (nodeIdx >= 0)
+                        {
+                            string nkey = Plugin.NodeKey(Plugin.ActsCompleted + 1, layer, nodeIdx);
+                            if (Plugin.NodeAssignments.TryGetValue(nkey, out string teamKey))
+                            {
+                                var acfg = Plugin.FindConfigTeamByKey(teamKey);
+                                if (acfg == null)
+                                {
+                                    Plugin.Log.LogWarning($"[Assign] {nkey}: no team named '{teamKey}' in teams/"
+                                        + " — leaving this node vanilla rather than guessing.");
+                                }
+                                else if (MustWaitForLaunchConfig(acfg, out string awaitWhy))
+                                {
+                                    // Same PLAYER-import deferral the sequential path
+                                    // needs: TeamSelection isn't populated during map
+                                    // generation, so a mirror match must wait.
+                                    deferred++;
+                                    Plugin.Log.LogInfo($"[Assign] {nkey} left vanilla on the map — {awaitWhy}.");
+                                    continue;
+                                }
+                                else
+                                {
+                                    if (CampaignOpponents.EnsureAssigned(opp, acfg, nkey, $"map gen {nkey}"))
+                                    {
+                                        applied++;
+                                        summary.Append($" L{layer}.N{nodeIdx}=>'{opp.teamName}'");
+                                        ApplyNodeLogo(node, opp);
+                                    }
+                                    else alreadyDone++;
+                                    continue;   // assigned nodes never fall through
+                                }
+                            }
+                        }
+                    }
 
                     if (MustWaitForLaunch(gameIndex, out string wait))
                     {
@@ -12114,7 +12340,9 @@ public static class LogRepositories
             }
 
             var sb = new StringBuilder();
-            sb.AppendLine("# _game_maps.txt — map layouts read from the game. AUTO-GENERATED, do not edit.");
+            // Plain ASCII throughout this file: it gets parsed by _gen_game_data.py
+            // and the Creator, and an em-dash here only invites an encoding bug.
+            sb.AppendLine("# _game_maps.txt - map layouts read from the game. AUTO-GENERATED, do not edit.");
             sb.AppendLine("# Regenerated every launch. Structure: SQUAD > MAP(act) > TEMPLATE > LAYER > NODE");
             sb.AppendLine("# NODE: n=<nodeIndex> type=<NodeType> pos=<x>,<y> out=[<nodeIndex>,..]");
             sb.AppendLine("#       group='<eliteGroupId>' team='<eliteTeamId>' gm=<n> talents=<n> relics=<n>");
@@ -12257,10 +12485,36 @@ public static class LogRepositories
                 sb.AppendLine();
             }
 
-            sb.AppendLine("SUMMARY — do a map's template variants share a branch shape?");
+            sb.AppendLine("SUMMARY - do a map's template variants share a branch shape?");
             sb.AppendLine("(If any line says DIFFER, a node is not a stable target across runs and the");
             sb.AppendLine(" mod must pin one template before per-node team assignment can be offered.)");
             foreach (var line in shapeIndex) sb.AppendLine(line);
+
+            // NODE team='<guid>' is a TeamData.id — the game's own "Force Elite Team".
+            // The Gauntlet templates use it to pin a specific opponent per node, so
+            // these ids are the only way to tell which team a node ALREADY faces by
+            // default. Without this table those GUIDs are unreadable.
+            try
+            {
+                sb.AppendLine();
+                sb.AppendLine("TEAM IDS - resolves NODE team='<guid>' above (TeamData.id -> teamName)");
+                var seen = new HashSet<string>();
+                var rows = new List<string>();
+                var allTeams = UnityEngine.Resources.FindObjectsOfTypeAll<TeamData>();
+                if (allTeams != null)
+                    foreach (var t in allTeams)
+                    {
+                        if (t == null) continue;
+                        string tid = null, tn = null;
+                        try { tid = t.id; tn = t.teamName; } catch { }
+                        if (string.IsNullOrEmpty(tid) || !seen.Add(tid)) continue;
+                        rows.Add($"  {tid} = {tn}");
+                    }
+                rows.Sort(StringComparer.OrdinalIgnoreCase);
+                foreach (var r in rows) sb.AppendLine(r);
+                sb.AppendLine($"  ({rows.Count} team id(s))");
+            }
+            catch (Exception ex) { sb.AppendLine($"  (team id table failed: {ex.Message})"); }
 
             File.WriteAllText(Path.Combine(root, "_game_maps.txt"), sb.ToString());
             Plugin.Log.LogInfo($"[Dump] Map layouts: {squadCount} squad(s), {mapCount} map(s), "
