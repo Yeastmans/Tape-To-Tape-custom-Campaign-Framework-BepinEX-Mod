@@ -6,10 +6,23 @@ tkinter-based editor for players, teams, and campaigns. No typing needed
 for skins (dropdowns), colors (pickers with live swatch), or picking from
 existing campaigns (file browsers). All fields have inline hints.
 """
-import os, sys, re
+import os, sys, re, hashlib, time
 import tkinter as tk
 from tkinter import ttk, colorchooser, messagebox
 from tkinter.scrolledtext import ScrolledText
+
+from preview_cache import (LAYER_CHANNELS, PREVIEW_CACHE_VERSION,
+                           atomic_write_text, layer_relative_path,
+                           parse_preview_manifest)
+
+# Pillow drives the offline recolouring (base + sum(mask x colour)). Tk alone can
+# alpha-composite but cannot do per-pixel arithmetic. Absence is not fatal — the
+# panel falls back to the flat cached previews.
+try:
+    from PIL import Image, ImageChops, ImageTk
+    _HAVE_PIL = True
+except ImportError:
+    _HAVE_PIL = False
 
 # When running as a PyInstaller .exe, __file__ points to a temp extraction folder.
 # Use sys.executable's directory instead so we find campaigns/library/active.txt
@@ -75,7 +88,7 @@ _ensure_layout()
 # ============================================================
 #   AUTO-UPDATER (checks GitHub raw for newer VERSION.txt)
 # ============================================================
-APP_VERSION = "2.1.34"
+APP_VERSION = "2.1.35"
 UPDATE_REPO = "Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod"
 UPDATE_BRANCH = "main"
 UPDATE_RELEASES_API = f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest"
@@ -1173,6 +1186,8 @@ OV_HELMET_SKINS = ["(use team default)"] + HELMET_SKINS
 OV_STICK_SKINS  = ["(use team default)"] + STICK_SKINS
 OV_SKATE_SKINS  = _override_list(SKATE_SKINS)
 OV_BICEP_SKINS  = _override_list(BICEP_SKINS)
+OV_GLOVES_SKINS = _override_list(GLOVES_SKINS)
+OV_PANTS_SKINS  = _override_list(PANTS_SKINS)
 GOALIE_HELMET_SKINS = [
     "team colors", "canadians", "cheese", "cultists", "disco",
     "figure_skaters", "golfers", "hockey_fc", "knights", "meatballs",
@@ -1197,8 +1212,22 @@ MAP_SOURCE_SQUADS = [
     "General Manager", "Slapshot", "Referee", "Tchel", "Speedrun", "Stats",
     "Violence", "Oldschool",
 ]
+# Squads a custom squad can be CLONED from. Not the same question as Maps:
+# this decides the starting roster shape, relics and unlock state your squad
+# inherits, where Maps only picks the map layout. "Lines Meta"/two-line squads
+# are deliberately absent — they have ten forward slots and collide with the
+# single-line model the rest of the mod assumes (the DLL rejects them too).
+SQUAD_TEMPLATES = [
+    "Basic", "Defence", "Speedy", "Trio", "General Manager", "Slapshot",
+    "Referee", "Tchel", "Speedrun", "Stats", "Violence", "Oldschool", "Solo", "Bum",
+]
+# What happens when a skater is caught offside, when "Offside = yes". These are
+# the game's own OffsidePenalty options, in enum order. Leaving the campaign's
+# Offside Penalty unset keeps whatever the player chose in Advanced Settings.
+OFFSIDE_PENALTIES = ["(player's setting)", "Whistle", "Lose Puck", "Knockout"]
 SIZES = ["ExtraSmall", "Small", "Medium", "Big", "ExtraBig", "ExtraExtraBig", "random"]
-SKIN_COLORS = ["light", "dark", "random"]
+# SKIN_COLORS removed with the "Skin Color" dropdown — skin tone is baked into
+# the face skin, so the separate light/dark flag changed nothing on screen.
 YESNO_RANDOM = ["no", "yes", "random"]
 POSITIONS = ["Goalie", "Left Wing", "Right Wing", "Center", "Left Defense", "Right Defense"]
 LINE2_POSITIONS = ["Line 2 Left Wing", "Line 2 Right Wing", "Line 2 Center", "Line 2 Left Defense", "Line 2 Right Defense"]
@@ -1379,8 +1408,25 @@ def _merge_skins(curated, *field_names):
         tail = v.rsplit("/", 1)[-1].lower()
         tail_counts[tail] = tail_counts.get(tail, 0) + 1
 
-    out = list(curated)
-    seen = {v.strip().lower() for v in out}
+    by_tail = {}
+    for v in dumped:
+        by_tail.setdefault(v.rsplit("/", 1)[-1].lower(), []).append(v)
+
+    out = []
+    seen = set()
+    for friendly in curated:
+        key = friendly.strip().lower()
+        matches = by_tail.get(key, ())
+        if len(matches) == 1:
+            value = matches[0]
+        elif len(matches) > 1:
+            # An alias cannot identify which complete path was intended.
+            continue
+        else:
+            value = friendly
+        if value.lower() not in seen:
+            out.append(value)
+            seen.add(value.lower())
     for v in dumped:
         key = v.lower()
         if key in seen:
@@ -1394,8 +1440,55 @@ def _merge_skins(curated, *field_names):
     return out
 
 
+def _load_spine_faces():
+    """Every face skin the DLL read out of Spine itself, on this install.
+
+    Read live rather than baked through _gen_game_data.py, for the same reason
+    _game_maps.txt is: the set is per-install, and a stale baked copy would offer
+    faces this game does not have. Falls back to the curated list when absent.
+    """
+    path = os.path.join(SCRIPT_DIR, "_game_faces.txt")
+    try:
+        with open(path, "r", encoding="utf-8") as stream:
+            return [line.strip() for line in stream
+                    if line.strip() and not line.startswith("#")]
+    except (OSError, UnicodeError):
+        return []
+
+
+def _load_helmeted_faces():
+    """Faces the exporter measured as rendering with a helmet, by leaf name.
+
+    The skins ship in pairs — one head drawn wearing a helmet and one bare — and
+    both are offered. This only decides the ORDER: helmetless first, so the
+    dropdown opens on the heads most people want. Nothing is hidden; an earlier
+    build filtered the helmeted ones out and that left 25 faces of 232.
+    """
+    path = os.path.join(SCRIPT_DIR, "_game_faces.txt")
+    helmeted = set()
+    try:
+        with open(path, "r", encoding="utf-8") as stream:
+            for line in stream:
+                if not line.startswith("#helmeted\t"):
+                    continue
+                parts = line.rstrip("\n").split("\t")
+                if len(parts) >= 2 and parts[1]:
+                    helmeted.add(parts[1].rsplit("/", 1)[-1].lower())
+    except (OSError, UnicodeError):
+        pass
+    return helmeted
+
+
 if _GEN_SKINS:
     FACES = _merge_skins(FACES, "Face")
+
+_SPINE_FACES = _load_spine_faces()
+if _SPINE_FACES:
+    # The Spine dump is authoritative — it is every face the skeleton can wear,
+    # not just the ones some loaded player happened to use. Keep curated entries
+    # that it does not cover so nothing already saved becomes unselectable.
+    _known = {f.lower() for f in _SPINE_FACES}
+    FACES = _SPINE_FACES + [f for f in FACES if f.lower() not in _known]
     BODY_SKINS = _merge_skins(BODY_SKINS, "Body", "Body Away")
     BICEP_SKINS = _merge_skins(BICEP_SKINS, "Bicep", "Bicep Away")
     GLOVES_SKINS = _merge_skins(GLOVES_SKINS, "Gloves", "Gloves Away")
@@ -1420,6 +1513,61 @@ if _GEN_SKINS:
     OV_STICK_SKINS  = ["(use team default)"] + STICK_SKINS
     OV_SKATE_SKINS  = _override_list(SKATE_SKINS)
     OV_BICEP_SKINS  = _override_list(BICEP_SKINS)
+    OV_GLOVES_SKINS = _override_list(GLOVES_SKINS)
+    OV_PANTS_SKINS  = _override_list(PANTS_SKINS)
+
+
+# Helmet art lives under Faces/ in Spine but is NOT a face — it is the helmet
+# piece, picked from the Helmet dropdown. Listing it here let a player be given
+# a helmet as their head.
+FACES = [f for f in FACES if f != "Faces/Custom/Helmet_Colors"]
+
+_SENTINEL_FACES = ("none", "random")
+
+
+def _dedupe_faces(faces):
+    """Every face once — one ENTRY per skin, not one entry per character.
+
+    The Spine dump carries full paths ("Faces/Canadians/Captain") and the curated
+    list carries the short name ("Captain"): one skin, two labels, and the mod
+    resolves both to the same thing. The dump comes first in FACES, so the full
+    path is the one kept.
+
+    The bare/"_Helmet" pair is NOT deduplicated. Those are two different skins —
+    the same character drawn bare and drawn wearing a helmet — and collapsing
+    them is what threw away the bare half of every face before it was ever
+    rendered. Both are offered; _load_helmeted_faces only orders them.
+    """
+    out, seen = [], set()
+    for face in faces:
+        text = str(face)
+        key = text.lower()
+        if key in _SENTINEL_FACES:
+            if key not in seen:
+                seen.add(key)
+                out.append(text)
+            continue
+        tail = text.rsplit("/", 1)[-1].lower()
+        if tail in seen:
+            continue
+        seen.add(tail)
+        out.append(text)
+    return out
+
+
+FACES = _dedupe_faces(FACES)
+
+# Two groups, both offered: the heads that render bare come first, the ones that
+# render wearing a helmet after. Matched by leaf name so the curated short names
+# sort with their full paths. Sentinels ("none", "random") stay at the top.
+_HELMETED_FACES = _load_helmeted_faces()
+if _HELMETED_FACES:
+    def _face_group(face):
+        text = str(face)
+        if text.lower() in _SENTINEL_FACES:
+            return 0
+        return 2 if text.rsplit("/", 1)[-1].lower() in _HELMETED_FACES else 1
+    FACES = sorted(FACES, key=lambda f: (_face_group(f), str(f).lower()))
 
 
 # ============================================================
@@ -1634,6 +1782,79 @@ def write_assignments(campaign_dir, assignments):
             lines.append(f"# ---- Map {mp} ----")
             last_map = mp
         lines.append(f"Map {mp} / Layer {lay} / Node {nod} = {real[(mp, lay, nod)]}")
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+    except Exception:
+        pass
+
+
+def read_node_soccer(campaign_dir):
+    """node_soccer.txt -> {(map_pos, layer, node): True}.
+
+    Its own file rather than a column in assignments.txt: that parser is
+    load-bearing on both sides and there was no reason to reopen it.
+    """
+    out = {}
+    path = os.path.join(campaign_dir or "", "node_soccer.txt")
+    if not os.path.isfile(path):
+        return out
+    try:
+        with open(path, encoding="utf-8") as f:
+            for raw in f:
+                line = raw.strip()
+                if not line or line[0] in "#;" or "=" not in line:
+                    continue
+                lhs, value = line.split("=", 1)
+                if value.strip().lower() not in ("yes", "true", "on", "1"):
+                    continue
+                mp = lay = nod = None
+                for part in lhs.split("/"):
+                    bits = part.split()
+                    if len(bits) < 2:
+                        continue
+                    try: num = int(bits[-1])
+                    except ValueError: continue
+                    w = bits[0].lower()
+                    if w.startswith("map"): mp = num
+                    elif w.startswith("layer") or w == "l": lay = num
+                    elif w.startswith("node") or w == "n": nod = num
+                if mp is not None and lay is not None and nod is not None:
+                    out[(mp, lay, nod)] = True
+    except Exception:
+        pass
+    return out
+
+
+def write_node_soccer(campaign_dir, soccer):
+    """Write node_soccer.txt, or delete it when no node is set to soccer.
+
+    Deleting rather than writing an empty file, for the same reason
+    write_assignments does: absent means 'nothing to do' on the DLL side, so an
+    emptied editor restores the campaign exactly.
+    """
+    path = os.path.join(campaign_dir, "node_soccer.txt")
+    real = sorted(k for k, v in (soccer or {}).items() if v)
+    if not real:
+        try:
+            if os.path.isfile(path): os.remove(path)
+        except Exception: pass
+        return
+    lines = [
+        "# Per-node soccer games - written by the Campaign Creator.",
+        "#",
+        "#   Map <n> / Layer <l> / Node <i> = yes",
+        "#",
+        "# A node listed here is played with the soccer ball on the soccer field.",
+        "# Same coordinates as assignments.txt. Anything not listed plays normally.",
+        "",
+    ]
+    last_map = None
+    for (mp, lay, nod) in real:
+        if mp != last_map:
+            lines.append(f"# ---- Map {mp} ----")
+            last_map = mp
+        lines.append(f"Map {mp} / Layer {lay} / Node {nod} = yes")
     try:
         with open(path, "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
@@ -3087,6 +3308,10 @@ class JerseyPreview(ttk.Frame):
        Call update_colors(get_color) where get_color(label) -> rgb string or ''."""
     JERSEY_W = 90
     JERSEY_H = 130
+    # Was "#222". The dark box existed so the schematic drawing's light strokes
+    # read against something; a rendered player has its own alpha and just looked
+    # like it was sitting on a black square. Matches the roster tiles.
+    CANVAS_BG = "#f0f0f0"
 
     def __init__(self, parent, has_away=True):
         super().__init__(parent)
@@ -3099,7 +3324,7 @@ class JerseyPreview(ttk.Frame):
         home_frame.pack(pady=4)
         ttk.Label(home_frame, text="Home", font=("", 9, "bold")).pack()
         home_canvas = tk.Canvas(home_frame, width=self.JERSEY_W + 40,
-                                 height=self.JERSEY_H + 20, bg="#222",
+                                 height=self.JERSEY_H + 20, bg=self.CANVAS_BG,
                                  highlightthickness=0)
         home_canvas.pack()
         self._sides.append(("home", home_canvas))
@@ -3109,15 +3334,54 @@ class JerseyPreview(ttk.Frame):
             away_frame.pack(pady=4)
             ttk.Label(away_frame, text="Away", font=("", 9, "bold")).pack()
             away_canvas = tk.Canvas(away_frame, width=self.JERSEY_W + 40,
-                                     height=self.JERSEY_H + 20, bg="#222",
+                                     height=self.JERSEY_H + 20, bg=self.CANVAS_BG,
                                      highlightthickness=0)
             away_canvas.pack()
             self._sides.append(("away", away_canvas))
 
+    # Set by whichever editor owns this preview so it can composite a real
+    # skater. team_values supplies the colours; compose_values supplies the
+    # chosen pieces (None = the standard kit, which is what a team wants).
+    team_values = None
+    compose_values = None
+    compose_role = "skater"
+
     def update_colors(self, get_color):
         """get_color(label) -> 'R, G, B' string or '' / None."""
         for side, cv in self._sides:
-            self._draw_side(cv, side, get_color)
+            if self._draw_composed(cv, side):
+                continue
+            # No schematic fallback anywhere — the blocky drawing is gone. Until
+            # the game has been run once there is nothing rendered to show.
+            cv.delete("all")
+            cv.create_text((self.JERSEY_W + 40) // 2, (self.JERSEY_H + 20) // 2,
+                           text="run the game once\nto build previews",
+                           fill="#999", justify="center")
+
+    def _draw_composed(self, cv, side):
+        """Draw the real rendered kit. False when the layer cache cannot supply
+        it, which is the case until the game has been run once."""
+        if not _HAVE_PIL or self.team_values is None:
+            return False
+        try:
+            composer = PlayerComposer(self.compose_role, self.team_values)
+            values = self.compose_values
+            if values is None:
+                values = (GameAssetPreview._SILHOUETTE_GOALIE
+                          if self.compose_role == "goalie"
+                          else GameAssetPreview._SILHOUETTE_SKATER)
+            image = composer.image(values, side)
+            if image is None:
+                return False
+            photo = PlayerComposer.fit(image, self.JERSEY_W + 30, self.JERSEY_H + 10)
+            if photo is None:
+                return False
+            cv.delete("all")
+            cv._composed = photo   # Tk holds no reference; without this it blanks
+            cv.create_image((self.JERSEY_W + 40) // 2, (self.JERSEY_H + 20) // 2, image=photo)
+            return True
+        except Exception:
+            return False
 
     def _draw_side(self, cv, side, get_color):
         cv.delete("all")
@@ -3214,11 +3478,968 @@ class JerseyPreview(ttk.Frame):
                         fill=laces, width=1)
 
 
+class _SideAwareJersey(JerseyPreview):
+    """JerseyPreview that remembers which side it is drawing.
+
+    The base class asks for the same colour labels for home and away, so an
+    away-only override ('Helmet Away Color') could never be resolved by the
+    caller. Subclassing keeps the Team editor's use of JerseyPreview untouched.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.current_side = "home"
+        super().__init__(*args, **kwargs)
+
+    def _draw_side(self, cv, side, get_color):
+        self.current_side = side
+        super()._draw_side(cv, side, get_color)
+
+
+PREVIEW_CACHE_DIR = os.path.join(SCRIPT_DIR, "_preview_assets")
+PREVIEW_MANIFEST_PATH = os.path.join(PREVIEW_CACHE_DIR, "manifest.tsv")
+PREVIEW_STATUS_PATH = os.path.join(PREVIEW_CACHE_DIR, "status.tsv")
+PREVIEW_REQUEST_PATH = os.path.join(PREVIEW_CACHE_DIR, "request.tsv")
+PREVIEW_RESPONSE_PATH = os.path.join(PREVIEW_CACHE_DIR, "current", "response.tsv")
+
+
+class GameAssetPreview(ttk.Frame):
+    """PNG preview panel backed by the cache written by the game DLL."""
+
+    SKATER_FIELDS = {
+        "Face", "Glasses", "Stick", "Helmet", "Helmet Away",
+        "Body", "Body Away", "Bicep", "Bicep Away", "Gloves",
+        "Gloves Away", "Pants", "Pants Away", "Skates", "Skates Away",
+    }
+    GOALIE_FIELDS = {
+        "Face", "Helmet Skin", "Skin", "Skin Away", "Glove Skin", "Glove Away",
+        "Blocker Skin", "Blocker Away", "Pads Skin", "Pads Away",
+        "Stick Skin", "Stick Away", "Logo Skin",
+    }
+    GOALIE_SLOTS = {
+        "Helmet Skin": "helmet",
+        "Skin": "body", "Skin Away": "body",
+        "Glove Skin": "glove", "Glove Away": "glove",
+        "Blocker Skin": "blocker", "Blocker Away": "blocker",
+        "Pads Skin": "pads", "Pads Away": "pads",
+        "Stick Skin": "stick", "Stick Away": "stick",
+    }
+    FORWARD_STANDARD_PATHS = {
+        "Body": "Body/Customization/Customization_colors",
+        "Body Away": "Body/Customization/Customization_colors",
+        "Bicep": "Body_Bicep/Customization/Customization_colors",
+        "Bicep Away": "Body_Bicep/Customization/Customization_colors",
+        "Gloves": "Body_Gloves/Customization/Customization_colors",
+        "Gloves Away": "Body_Gloves/Customization/Customization_colors",
+        "Pants": "Body_Pants/Customization/Customization_colors",
+        "Pants Away": "Body_Pants/Customization/Customization_colors",
+        "Skates": "Body_Skates/Customization/Customization_colors",
+        "Skates Away": "Body_Skates/Customization/Customization_colors",
+        "Helmet": "Faces/Custom/Helmet_Colors",
+        "Helmet Away": "Faces/Custom/Helmet_Colors",
+        "Stick": "Sticks/Customization/Customization_colors",
+    }
+
+    def __init__(self, parent, is_goalie=False, team_values=None):
+        super().__init__(parent, width=332)
+        self.is_goalie = is_goalie
+        self.role = "goalie" if is_goalie else "skater"
+        self.team_values = dict(team_values or {})
+        self._manifest = parse_preview_manifest(PREVIEW_MANIFEST_PATH)
+        self._manifest_mtime = self._mtime(PREVIEW_MANIFEST_PATH)
+        self._fallback = None
+        self._request_id = None
+        self._request_after = None
+        self._photo = None
+        self._shown_signature = None
+        self._closed = False
+
+        image_box = ttk.Frame(self, width=320, height=300)
+        image_box.pack(fill="x", pady=(4, 2))
+        image_box.pack_propagate(False)
+        self.image_label = ttk.Label(
+            image_box, text="No game preview cached yet", anchor="center",
+            justify="center", foreground="#777")
+        self.image_label.pack(fill="both", expand=True)
+
+        self.status_label = ttk.Label(
+            self, text="Launch Tape to Tape once to build previews",
+            foreground="#555", font=("", 9, "bold"), justify="center",
+            wraplength=310)
+        self.status_label.pack(fill="x", padx=4, pady=(4, 2))
+        # Never let the panel imply an arbitrary combination was rendered for
+        # you. A cached PNG is one asset on a stand-in skater, nothing more.
+        self.mode_label = ttk.Label(
+            self, text="", foreground="#777", font=("", 8), justify="center",
+            wraplength=300)
+        self.mode_label.pack(fill="x", padx=6)
+
+        # Your colours, head to skates. The exported art has its palette baked in
+        # (the game colours through a _ColorScheme texture at draw time), so a
+        # cached PNG physically cannot be retinted — this shows the kit you
+        # configured next to the real asset instead of pretending otherwise.
+        ttk.Separator(self, orient="horizontal").pack(fill="x", pady=(6, 2))
+        ttk.Label(self, text="Your colours", font=("", 9, "bold")).pack(anchor="center")
+        self.colors = _SideAwareJersey(self, has_away=True)
+        self.colors.pack(fill="x")
+
+        self.bind("<Destroy>", self._on_destroy, add="+")
+        self.after(200, self._poll)
+
+    @staticmethod
+    def _mtime(path):
+        try:
+            return os.path.getmtime(path)
+        except OSError:
+            return None
+
+    @staticmethod
+    def _clean_tsv(value):
+        return str(value or "").replace("\t", " ").replace("\r", " ").replace("\n", " ")
+
+    @staticmethod
+    def _read_protocol(path):
+        data = {}
+        try:
+            with open(path, "r", encoding="utf-8") as stream:
+                for raw in stream:
+                    parts = raw.rstrip("\r\n").split("\t", 1)
+                    if len(parts) == 2:
+                        data[parts[0]] = parts[1]
+        except (OSError, UnicodeError):
+            pass
+        return data
+
+    def _on_destroy(self, event):
+        if event.widget is self:
+            self._closed = True
+            if self._request_after is not None:
+                try:
+                    self.after_cancel(self._request_after)
+                except Exception:
+                    pass
+
+    def update_player(self, player_values, changed_field=None):
+        """Debounce an exact live request and update the offline fallback."""
+        values = dict(player_values or {})
+        if not self.is_goalie:
+            for field_name in PlayerEditor._OVERRIDE_SKIN_FIELDS:
+                value = values.get(field_name)
+                if value == "(use team default)":
+                    values.pop(field_name, None)
+                elif value == "team colors":
+                    values[field_name] = "standard"
+            values.setdefault("Gloves", "standard")
+            values.setdefault("Pants", "standard")
+        else:
+            for field_name in self.GOALIE_FIELDS:
+                if values.get(field_name) == "team colors":
+                    values[field_name] = "standard"
+
+        asset_fields = self.GOALIE_FIELDS if self.is_goalie else self.SKATER_FIELDS
+        if changed_field in asset_fields:
+            value = values.get(changed_field, "")
+            if value and value != "(use team default)":
+                self._fallback = (changed_field, value)
+        elif self._fallback is None:
+            # Initial load: prefer the face, then the first configured asset.
+            ordered = ["Face"] + sorted(asset_fields)
+            for field_name in ordered:
+                value = values.get(field_name, "")
+                if value and value != "(use team default)":
+                    self._fallback = (field_name, value)
+                    break
+
+        player_rows = [
+            f"player\t{self._clean_tsv(k)}\t{self._clean_tsv(v)}"
+            for k, v in values.items() if v not in (None, "")
+        ]
+        # The caller provides the whole current team editor state, not only
+        # colors. That lets the DLL resolve team uniforms and imported teams too.
+        team_rows = [
+            f"team\t{self._clean_tsv(k)}\t{self._clean_tsv(v)}"
+            for k, v in self.team_values.items() if v not in (None, "")
+        ]
+        self._update_colors(values)
+
+        payload = "\n".join(sorted(player_rows) + sorted(team_rows))
+        focus_field = changed_field or (self._fallback[0] if self._fallback else "")
+        # The id is a pure function of the configuration — deliberately NOT
+        # time-based. The same player then always maps to the same PNG, so a
+        # combination rendered once stays viewable after the game is closed and
+        # never has to be rendered twice.
+        identity = f"{1 if self.is_goalie else 0}\n{payload}".encode("utf-8")
+        self._request_id = hashlib.sha256(identity).hexdigest()[:24]
+
+        self._last_values = values
+        # Rebuild from the layer masks first: it is the only preview that shows
+        # the colours this player is actually configured with. The live render
+        # below does NOT — see _show_exact.
+        if self._show_composed(values):
+            return
+        # No layers for these pieces yet, so fall back to the live render.
+        if self._show_exact(self._request_id):
+            return
+
+        request = (
+            f"version\t{PREVIEW_CACHE_VERSION}\n"
+            f"request_id\t{self._request_id}\n"
+            f"is_goalie\t{1 if self.is_goalie else 0}\n"
+            f"focus_field\t{self._clean_tsv(focus_field)}\n"
+            f"{payload}\n"
+        )
+        if self._request_after is not None:
+            try:
+                self.after_cancel(self._request_after)
+            except Exception:
+                pass
+        self._request_after = self.after(250, lambda text=request: self._write_request(text))
+        if not self._show_best_available():
+            self._show_silhouette()
+
+    # JerseyPreview asks for team-editor label names. Map them onto the player
+    # editor's equivalents, and fall through to the team's colour when this
+    # player leaves an override blank — which is exactly what the game does.
+    _COLOR_ALIASES = {
+        "Jersey Primary": ("Jersey Color",),
+        "Jersey Secondary": ("Jersey Secondary Color",),
+        "Jersey Accent": ("Jersey Accent Color",),
+        "Away Primary": ("Jersey Away Color", "Jersey Color"),
+        "Away Secondary": ("Jersey Away Secondary Color", "Jersey Secondary Color"),
+        "Away Accent": ("Jersey Away Accent Color", "Jersey Accent Color"),
+        "Number Color Home": ("Number Color",),
+        "Number Color Away": ("Number Away Color", "Number Color"),
+    }
+
+    @staticmethod
+    def _away_variant(label):
+        """'Socks Secondary Color' -> 'Socks Away Secondary Color'."""
+        parts = label.split(" ")
+        if len(parts) < 2 or "Away" in parts:
+            return None
+        return " ".join([parts[0], "Away"] + parts[1:])
+
+    def _update_colors(self, values):
+        """Draw the configured kit — player override first, then team colour."""
+        def get_color(label):
+            keys = list(self._COLOR_ALIASES.get(label, (label,)))
+            # On the away side, an away-specific override wins over the home one.
+            if getattr(self.colors, "current_side", "home") == "away":
+                away = self._away_variant(keys[0])
+                if away:
+                    keys.insert(0, away)
+            for key in keys:
+                value = values.get(key) or self.team_values.get(key)
+                if value:
+                    return value
+            return ""
+        try:
+            # Let the colour panel composite this player rather than draw the
+            # schematic: its colours come from the team plus this player's
+            # overrides, and its pieces are whatever the player has chosen.
+            self.colors.team_values = dict(self.team_values or {})
+            self.colors.compose_values = dict(values or {})
+            self.colors.compose_role = self.role
+        except Exception:
+            pass
+        try:
+            self.colors.update_colors(get_color)
+        except Exception:
+            pass
+
+    # Which colour fields drive each piece, in primary/secondary/tertiary order.
+    # Mirrors TeamColorsData's eight ColorSchemes on the game side.
+    _PIECE_COLORS = {
+        "Body": ("Jersey Color", "Jersey Secondary Color", "Jersey Accent Color"),
+        "Bicep": ("Jersey Color", "Jersey Secondary Color", "Jersey Accent Color"),
+        "Gloves": ("Gloves Color", "Gloves Secondary Color", "Gloves Tertiary Color"),
+        "Pants": ("Pants Color", "Pants Secondary Color", "Pants Tertiary Color"),
+        "Skates": ("Skates Color", "Blade Color", "Laces Color"),
+        "Stick": ("Jersey Color", "Jersey Secondary Color", "Jersey Accent Color"),
+        "Helmet": ("Helmet Color", "Helmet Secondary Color", "Helmet Tertiary Color"),
+        # Socks and the number are separate pieces with their own schemes — the
+        # game colours them by slot, not as part of the pants and jersey.
+        "Socks": ("Socks Color", "Socks Secondary Color", "Socks Tertiary Color"),
+        "Number": ("Number Color", "Number Color", "Number Color"),
+        "Glasses": ("Jersey Color", "Jersey Secondary Color", "Jersey Accent Color"),
+        "Skin": ("Jersey Color", "Jersey Secondary Color", "Jersey Accent Color"),
+        "Glove Skin": ("Gloves Color", "Gloves Secondary Color", "Gloves Tertiary Color"),
+        "Blocker Skin": ("Gloves Color", "Gloves Secondary Color", "Gloves Tertiary Color"),
+        "Pads Skin": ("Pants Color", "Pants Secondary Color", "Pants Tertiary Color"),
+        "Stick Skin": ("Jersey Color", "Jersey Secondary Color", "Jersey Accent Color"),
+        # The GOALIE helmet, unlike the skater's, really does take three.
+        "Helmet Skin": ("Helmet Color", "Helmet Secondary Color", "Helmet Tertiary Color"),
+        "Logo Skin": ("Jersey Color", "Jersey Secondary Color", "Jersey Accent Color"),
+    }
+    # Back to front, so the stick and gloves land on top of the body.
+    _PIECE_ORDER = ("Skates", "Socks", "Pants", "Body", "Number", "Face",
+                    "Skin", "Pads Skin", "Bicep",
+                    "Logo Skin", "Helmet", "Helmet Skin", "Glasses",
+                    "Gloves", "Glove Skin", "Blocker Skin", "Stick", "Stick Skin")
+
+    # Mirrors PreviewAssets.DerivedLayerFields — pieces with their own colour
+    # scheme but no field of their own in the editor.
+    _DERIVED_FROM = {"Socks": "Pants", "Number": "Body"}
+
+    # Values meaning "the player wears none of this" — the piece is drawn as
+    # nothing at all, not as a default and not as a grey stand-in.
+    _NO_DRAW_VALUES = {"none", "(none)", "no helmet"}
+
+    # Player-editor colour names mapped onto the team editor's name for the same
+    # colour. The two editors spell the jersey differently, so without this a
+    # player who overrides nothing resolves no jersey colour at all and the
+    # whole kit composites black.
+    _TEAM_EQUIVALENT = {
+        "Jersey Color": "Jersey Primary",
+        "Jersey Secondary Color": "Jersey Secondary",
+        "Jersey Accent Color": "Jersey Accent",
+        "Number Color": "Number Color Home",
+    }
+    _TEAM_EQUIVALENT_AWAY = {
+        "Jersey Color": "Away Primary",
+        "Jersey Secondary Color": "Away Secondary",
+        "Jersey Accent Color": "Away Accent",
+        "Number Color": "Number Color Away",
+    }
+
+    def _resolve_color(self, field, values, away):
+        """This player's override if it has one, else the team's colour.
+
+        Falling through to the team is what the game itself does, and it is what
+        makes a piece left on '(use team default)' still preview.
+        """
+        names = []
+        if away:
+            # An away-specific colour outranks the home one on the away side.
+            alt = self._away_variant(field)
+            if alt:
+                names.append(alt)
+            team_away = self._TEAM_EQUIVALENT_AWAY.get(field)
+            if team_away:
+                names.append(team_away)
+        names.append(field)
+        team = self._TEAM_EQUIVALENT.get(field)
+        if team:
+            names.append(team)
+        for name in names:
+            found = values.get(name) or self.team_values.get(name)
+            if found:
+                return found
+        return ""
+
+    def _piece_layers(self, field, value):
+        """Load a piece's four masks, or None when any is missing."""
+        images = []
+        for channel in LAYER_CHANNELS:
+            path = os.path.join(
+                PREVIEW_CACHE_DIR,
+                layer_relative_path(self.role, field, value, channel).replace("/", os.sep))
+            if not os.path.isfile(path):
+                return None
+            try:
+                images.append(Image.open(path).convert("RGBA"))
+            except (OSError, ValueError):
+                return None
+        return images
+
+    # SKATER helmet layers carry the donor's FACE in their base plate, because
+    # the helmet slots draw the head. The masks hold only the recolourable part —
+    # the helmet itself — so dropping the base gives a face-free helmet.
+    #
+    # The GOALIE is not the same shape of problem and must not be listed here:
+    # its mask is a complete head covering with no face in it, so its base plate
+    # is the mask art itself. Dropping it would throw away the cage and shading
+    # and leave a flat blob.
+    _MASKS_ONLY_FIELDS = ("Helmet", "Helmet Away")
+
+    def _recolor_piece(self, field, value, values):
+        """base + sum(mask x chosen colour) — the game's colouring, rebuilt.
+
+        The arithmetic runs on RGB only and the alpha comes from the base plate.
+        ImageChops.add/multiply operate on every band including alpha, so doing
+        this in RGBA would stack four alphas onto each pixel and turn every
+        anti-aliased edge hard. The exporter guarantees the base carries the
+        piece's true alpha everywhere, including where it blacked out a colour
+        key, so taking it from there is exact.
+        """
+        layers = self._piece_layers(field, value)
+        if layers is None:
+            return None
+        base, *masks = layers
+        bare = field.replace(" Away", "").strip()
+        # "Glove Away" is the same piece as "Glove Skin" — the goalie's away
+        # fields drop the suffix its home fields carry.
+        color_fields = self._PIECE_COLORS.get(bare) or self._PIECE_COLORS.get(bare + " Skin")
+
+        if field in self._MASKS_ONLY_FIELDS:
+            # Drop the base plate: it is the donor's face. The masks are the
+            # helmet alone, so this draws the helmet and nothing else.
+            return self._masks_only(masks, color_fields, values, "Away" in field)
+
+        alpha = base.getchannel("A")
+        rgb_result = base.convert("RGB")
+        if color_fields:
+            away = "Away" in field
+            for mask, color_field in zip(masks, color_fields):
+                rgb = _parse_rgb(self._resolve_color(color_field, values, away))
+                if not rgb:
+                    # No colour configured for this channel. The base keeps that
+                    # area black rather than punching a hole in the piece.
+                    continue
+                tint = Image.new("RGB", mask.size,
+                                 (int(rgb[1:3], 16), int(rgb[3:5], 16), int(rgb[5:7], 16)))
+                # Multiply the mask by the colour, then add it to what we have.
+                lit = ImageChops.multiply(mask.convert("RGB"), tint)
+                rgb_result = ImageChops.add(rgb_result, lit)
+        result = rgb_result.convert("RGBA")
+        result.putalpha(alpha)
+        return result
+
+    def _masks_only(self, masks, color_fields, values, away):
+        """The recolourable part of a piece, with its base plate discarded.
+
+        Used for helmets: the base is the donor's face, which must never appear
+        on someone else's player. The masks cover only the helmet, and their
+        combined coverage becomes the alpha so nothing else is drawn.
+        """
+        if not color_fields:
+            return None
+        size = masks[0].size
+        rgb_result = Image.new("RGB", size, (0, 0, 0))
+        coverage = None
+        for mask, color_field in zip(masks, color_fields):
+            grey = mask.convert("L")
+            coverage = grey if coverage is None else ImageChops.lighter(coverage, grey)
+            rgb = _parse_rgb(self._resolve_color(color_field, values, away))
+            if not rgb:
+                continue
+            tint = Image.new("RGB", size,
+                             (int(rgb[1:3], 16), int(rgb[3:5], 16), int(rgb[5:7], 16)))
+            rgb_result = ImageChops.add(rgb_result, ImageChops.multiply(mask.convert("RGB"), tint))
+        if coverage is None:
+            return None
+        # Anything the masks touch at all is fully part of the helmet; scaling
+        # alpha by mask strength would fade the shaded areas into transparency.
+        result = rgb_result.convert("RGBA")
+        result.putalpha(coverage.point(lambda v: 255 if v > 8 else 0))
+        return result
+
+    def _compose_player(self, values, side="home"):
+        """Stack every configured piece into one recoloured player.
+
+        ``side`` picks the home or away kit. The exporter renders the away
+        artwork as its own field ("Body Away"), but not every piece has one —
+        the stick, glasses and face are shared — so each piece falls back to its
+        home art.
+        """
+        if not _HAVE_PIL:
+            return None
+        away = (side == "away")
+        canvas = None
+        used = 0
+        drew_head = False
+        skipped = set()
+        # The game decides helmet visibility from the FACE, not from the helmet
+        # field: ForwardDataExtensions.HeadsWithoutHelmets, and face skins come
+        # in bare/_Helmet pairs. So "no helmet" means swapping to the bare
+        # variant — removing the helmet piece alone leaves the one baked into
+        # the face art, which is exactly what "none" appeared not to do.
+        helmet_field = "Helmet Skin" if self.is_goalie else "Helmet"
+        helmet_off = str(values.get(helmet_field, "")).strip().lower() in self._NO_DRAW_VALUES
+        for field in self._PIECE_ORDER:
+            # Face and Helmet isolate the SAME Spine slots (measured: the helmet
+            # slots are what draw the head), so compositing both puts two heads
+            # on the player. Whichever lands first wins.
+            piece = None
+            for name in ([field + " Away"] if away else []) + [field]:
+                value = values.get(name) or values.get(field)
+                # Socks and the number have no field of their own; they are
+                # drawn by the pants and jersey art and keyed by that value.
+                # Mirrors PreviewAssets.DerivedLayerFields.
+                resolve_as = field
+                if not value:
+                    source = self._DERIVED_FROM.get(field)
+                    if source:
+                        value = (values.get(source + " Away") if name.endswith(" Away") else None) \
+                                or values.get(source)
+                        # The value belongs to the source field, so "standard"
+                        # has to resolve against THAT field's real skin path.
+                        resolve_as = source
+                if not value or value == "(use team default)":
+                    continue
+                # "none" means the player wears none of this — a bare head for
+                # the helmet. Draw nothing at all: no art, no team default and
+                # no grey stand-in, or "no helmet" would still show a helmet.
+                if str(value).strip().lower() in self._NO_DRAW_VALUES:
+                    skipped.add(field)
+                    break
+                if field == "Face":
+                    # ALWAYS the bare twin, never the _Helmet one. The helmet
+                    # baked into a _Helmet face is raw key colour — a bright red
+                    # helmet — because Face is exported without colour masks, so
+                    # nothing ever recolours it. The helmet comes from the Helmet
+                    # piece, which is masked and takes the team's colour.
+                    value = self._bare_face(value)
+                for candidate in self._value_candidates(resolve_as, value):
+                    piece = self._recolor_piece(name, candidate, values)
+                    if piece is not None:
+                        break
+                if piece is not None:
+                    used += 1
+                    # Only a REAL chosen face suppresses the helmet. The grey
+                    # stand-in is a placeholder and must not cancel it, or the
+                    # helmet vanishes on every player without a face picked.
+                    if field == "Face":
+                        drew_head = True
+                    break
+
+            # Nothing chosen for this piece. Gear on "(use team default)" is not
+            # unset — the game draws the standard piece in the TEAM's colours —
+            # so render that rather than a grey blank. Only the head stays grey,
+            # because there is no default face to fall back to and a stand-in
+            # face would look like a choice the user never made.
+            if field in skipped:
+                continue
+            if piece is None and field != "Face":
+                fallback = self._default_value_for(field)
+                if fallback:
+                    # Socks/Number are keyed by the field that draws them, so
+                    # "standard" must resolve against THAT field's real path.
+                    fallback_as = self._DERIVED_FROM.get(field, field)
+                    for candidate in self._value_candidates(fallback_as, fallback):
+                        piece = self._recolor_piece(field, candidate, values)
+                        if piece is not None:
+                            used += 1
+                            break
+            # Grey stand-in per piece, so choosing a piece replaces exactly that
+            # piece and a smaller choice cannot leave the default shape poking
+            # out around it.
+            if piece is None:
+                piece = self._grey_piece(field)
+            if piece is None:
+                continue
+            canvas = piece if canvas is None else Image.alpha_composite(canvas, piece)
+        # No real choices at all is not a player — let the caller show the plain
+        # outline with its own wording instead of claiming these are your colours.
+        return canvas if used else None
+
+    @staticmethod
+    def _exact_path(request_id):
+        return os.path.join(PREVIEW_CACHE_DIR, "players", f"{request_id}.png")
+
+    def _show_exact(self, request_id):
+        """Show a previously rendered full-player PNG for this exact config.
+
+        The geometry is exact — every piece, assembled by the game itself — but
+        the COLOURS ARE NOT this player's. Measured 2026-08-02: a request asking
+        for a green jersey rendered red. The exporter captures with a replacement
+        UI/Default material because the game's Spine shader will not draw into a
+        foreign render target, and that material does not run the palette remap,
+        so what lands in the PNG is the raw key-coloured atlas art.
+
+        That cannot be corrected here: one global remap could not tell a red
+        jersey from red gloves, which is exactly what the per-piece layers exist
+        to solve. So this is the fallback, used only until the layers arrive.
+        """
+        if not request_id or not self._show_image(self._exact_path(request_id)):
+            return False
+        self.status_label.configure(text="Live render — stock colours")
+        self.mode_label.configure(
+            text="Every piece assembled by the game, but not yet in your colours")
+        return True
+
+    def _write_request(self, text):
+        self._request_after = None
+        if self._closed:
+            return
+        try:
+            atomic_write_text(PREVIEW_REQUEST_PATH, text)
+        except OSError:
+            # An installer/antivirus can briefly hold the directory. Polling and
+            # the next edit will retry; the editor itself must stay responsive.
+            pass
+
+    def _value_candidates(self, field_name, value):
+        candidates = [value]
+        try:
+            if not self.is_goalie and field_name == "Face":
+                candidates.append(_face_skin_path(value, value))
+            elif self.is_goalie and field_name in self.GOALIE_SLOTS:
+                candidates.append(_resolve_gk_skin(value, self.GOALIE_SLOTS[field_name]))
+            elif not self.is_goalie and field_name in ("Body", "Body Away"):
+                candidates.append(_resolve_fwd_skin(value, "body"))
+            elif not self.is_goalie and field_name == "Stick":
+                candidates.append(_resolve_fwd_skin(value, "stick"))
+        except Exception:
+            pass
+        lower = str(value).strip().lower()
+        if lower in ("standard", "team colors", "default", "team stick"):
+            standard = self.FORWARD_STANDARD_PATHS.get(field_name)
+            if standard:
+                candidates.append(standard)
+        return list(dict.fromkeys(candidates))
+
+    @staticmethod
+    def _normalized_leaf(value):
+        leaf = str(value).rsplit("/", 1)[-1].lower()
+        return re.sub(r"[^a-z0-9]", "", leaf)
+
+    def _find_fallback_path(self):
+        if not self._fallback or self._manifest.stale:
+            return None
+        field_name, value = self._fallback
+        for candidate in self._value_candidates(field_name, value):
+            path = self._manifest.entries.get((self.role, field_name, candidate))
+            if path:
+                return path
+        # Friendly aliases that are not in the explicit resolver can still match
+        # a unique final path segment. Never guess when duplicate leaves exist.
+        wanted = self._normalized_leaf(value)
+        matches = [path for (role, field, real), path in self._manifest.entries.items()
+                   if role == self.role and field == field_name
+                   and self._normalized_leaf(real) == wanted]
+        return matches[0] if len(matches) == 1 else None
+
+    BOX_W = 320
+    BOX_H = 340
+
+    def _show_image(self, path):
+        if not path or not os.path.isfile(path):
+            return False
+        signature = (path, self._mtime(path))
+        if signature == self._shown_signature:
+            return True
+        try:
+            photo = tk.PhotoImage(file=path)
+            # Head sprites come out at their native atlas size (up to ~360x470),
+            # which overflows the panel. subsample is integer-only but needs no
+            # Pillow, which the frozen Creator does not ship.
+            factor = max(-(-photo.width() // self.BOX_W),
+                         -(-photo.height() // self.BOX_H), 1)
+            if factor > 1:
+                photo = photo.subsample(factor, factor)
+            self._photo = photo
+            self._shown_signature = signature
+            self.image_label.configure(image=photo, text="")
+            return True
+        except (tk.TclError, OSError):
+            return False
+
+    # ON as of exporter v4. The exporter now renders each piece ONCE, isolated,
+    # and splits that capture into base + three masks using the key colours the
+    # atlas art already carries (red/yellow/magenta = primary/secondary/tertiary).
+    #
+    # The previous scheme rendered four passes and drove the game's ColorScheme
+    # per pass. That could not work: the capture draws with a replacement
+    # UI/Default material, which does not run the palette remap, so the scheme
+    # never reached the image and all four passes were the same skater.
+    _COMPOSITING_ENABLED = True
+
+    def _show_composed(self, values):
+        """Your pieces, in your colours, rebuilt from the layer masks offline."""
+        if not _HAVE_PIL or not self._COMPOSITING_ENABLED:
+            return False
+        try:
+            image = self._compose_player(values)
+            if image is None:
+                return False
+            image.thumbnail((self.BOX_W, self.BOX_H))
+            photo = ImageTk.PhotoImage(image)
+            self._photo = photo
+            self._shown_signature = ("composed", id(photo))
+            self.image_label.configure(image=photo, text="")
+            self.status_label.configure(text="Your player — rebuilt in your colours")
+            self.mode_label.configure(
+                text="Every configured piece, recoloured offline from the game's own art")
+            return True
+        except Exception:
+            return False
+
+    # A brand-new player has nothing configured, so there is nothing to compose
+    # and the panel would sit empty. These are the pieces every skater/goalie
+    # has regardless of choices — enough to draw the shape of one.
+    _SILHOUETTE_SKATER = {
+        "Skates": "standard", "Socks": "standard", "Pants": "standard",
+        "Body": "standard", "Bicep": "standard", "Helmet": "standard",
+        "Gloves": "standard", "Stick": "standard",
+    }
+    _SILHOUETTE_GOALIE = {
+        "Pads Skin": "standard", "Skin": "standard", "Helmet Skin": "standard",
+        "Glove Skin": "standard", "Blocker Skin": "standard", "Stick Skin": "standard",
+    }
+
+    @staticmethod
+    def _bare_face(value):
+        """The face to draw, which is now simply the face that was chosen.
+
+        This used to swap a chosen face for its "_Helmet" twin, to work around
+        face previews that came out wearing the donor skater's helmet in raw key
+        colour (a bright red helmet). The exporter suppresses the helmet while it
+        renders a face now — the game decides helmet visibility from the head
+        skin, via ForwardDataExtensions.HeadsWithoutHelmets — and collapses the
+        pairs onto the bare name, so there is no twin to swap to and nothing to
+        work around. Kept as a seam rather than inlined: every caller means "the
+        face art for this value", which is a question worth having a name for.
+        """
+        return str(value or "")
+
+    def _default_value_for(self, field):
+        """The value the game falls back to when a piece is on team default.
+
+        Derived pieces (Socks, Number) are keyed by the value of the field that
+        draws them, so they take that field's default.
+        """
+        defaults = self._SILHOUETTE_GOALIE if self.is_goalie else self._SILHOUETTE_SKATER
+        value = defaults.get(field)
+        if value:
+            return value
+        source = self._DERIVED_FROM.get(field)
+        return defaults.get(source) if source else None
+
+    def _default_piece_base(self, field):
+        """The base plate of a piece at its default value, or None.
+
+        This is the shape used for the grey stand-in, so each piece can be greyed
+        on its own and swapped out the moment that piece is chosen.
+        """
+        defaults = self._SILHOUETTE_GOALIE if self.is_goalie else self._SILHOUETTE_SKATER
+        if field == "Face":
+            # Face skins come in pairs (Angus_Bald / Angus_Bald_Helmet) with the
+            # helmet baked into the "_Helmet" variant. Prefer a BARE head, so the
+            # grey stand-in is a head and the team's coloured helmet — a separate
+            # piece drawn over it — stays visible.
+            # "helmet" anywhere, not just the _Helmet suffix: Faces/Custom/
+            # Helmet_Face is a helmeted head too. Requiring a path drops the UI
+            # sentinels ("none", "random") that are not skins at all.
+            real = [f for f in FACES if f and "/" in f]
+            bare = [f for f in real if "helmet" not in f.lower()]
+            for face in bare + [f for f in real if f not in bare]:
+                layers = self._piece_layers("Face", face)
+                if layers is not None:
+                    return layers[0]
+            return None
+        value = defaults.get(field)
+        if not value:
+            return None
+        # "standard" is a UI word, not a skin. The exporter keys layers by the
+        # real path (Body/Customization/...), so this MUST go through candidate
+        # resolution or every lookup misses.
+        for candidate in self._value_candidates(field, value):
+            layers = self._piece_layers(field, candidate)
+            if layers is not None:
+                return layers[0]
+        return None
+
+    GREY = (124, 128, 138, 255)
+
+    def _grey_piece(self, field):
+        """One piece, flat grey — the stand-in until that piece is chosen."""
+        base = self._default_piece_base(field)
+        if base is None:
+            return None
+        grey = Image.new("RGBA", base.size, self.GREY)
+        grey.putalpha(base.getchannel("A"))
+        return grey
+
+    def _silhouette_image(self):
+        """Flat grey outline of a whole player.
+
+        Drawn UNDER every composed player, so a piece left on 'standard' or
+        'team colors' still reads as part of a complete figure instead of a gap,
+        and anything configured simply paints over it. Built from the base plates
+        of the standard pieces, so it is the real skater outline rather than a
+        drawing, and it costs no extra assets.
+        """
+        if not _HAVE_PIL:
+            return None
+        try:
+            defaults = self._SILHOUETTE_GOALIE if self.is_goalie else self._SILHOUETTE_SKATER
+            canvas = None
+            for field in self._PIECE_ORDER:
+                piece = self._grey_piece(field)
+                if piece is None:
+                    continue
+                canvas = piece if canvas is None else Image.alpha_composite(canvas, piece)
+            return canvas
+        except Exception:
+            return None
+
+    def _show_silhouette(self):
+        """Display the grey outline on its own, when nothing is configured."""
+        image = self._silhouette_image()
+        if image is None:
+            return False
+        try:
+            image = image.copy()
+            image.thumbnail((self.BOX_W, self.BOX_H))
+            photo = ImageTk.PhotoImage(image)
+            self._photo = photo
+            self._shown_signature = ("silhouette", id(photo))
+            self.image_label.configure(image=photo, text="")
+            self.status_label.configure(text="Nothing configured yet")
+            self.mode_label.configure(
+                text="Pick a face and some gear and this fills in with your colours")
+            return True
+        except Exception:
+            return False
+
+    def _show_best_available(self):
+        path = self._find_fallback_path()
+        if self._show_image(path) and self._fallback:
+            field_name, value = self._fallback
+            leaf = str(value).rsplit("/", 1)[-1]
+            self.status_label.configure(text=f"Previewing {field_name} — {leaf}")
+            self.mode_label.configure(
+                text="Cached game asset — a stand-in skater, not your player")
+            return True
+        return False
+
+    def _poll(self):
+        if self._closed:
+            return
+        try:
+            manifest_mtime = self._mtime(PREVIEW_MANIFEST_PATH)
+            if manifest_mtime != self._manifest_mtime:
+                self._manifest_mtime = manifest_mtime
+                self._manifest = parse_preview_manifest(PREVIEW_MANIFEST_PATH)
+
+            # The composed image wins: it is the only one in this player's own
+            # colours. The live render has exact geometry but stock colours —
+            # see _show_exact — so it is the fallback, not the preference.
+            shown = self._show_composed(getattr(self, "_last_values", {}) or {})
+
+            if not shown:
+                shown = self._show_exact(self._request_id)
+
+            if not shown:
+                response = self._read_protocol(PREVIEW_RESPONSE_PATH)
+                if (self._request_id and response.get("version") == PREVIEW_CACHE_VERSION
+                        and response.get("request_id") == self._request_id):
+                    relative = response.get("file", "current/preview.png")
+                    exact_path = os.path.normpath(os.path.join(PREVIEW_CACHE_DIR,
+                                                               relative.replace("/", os.sep)))
+                    if self._show_image(exact_path):
+                        self.status_label.configure(text="Live render — stock colours")
+                        self.mode_label.configure(
+                            text="Every piece assembled by the game, but not yet in your colours")
+                        shown = True
+
+            exact = shown
+
+            if not exact:
+                showed_fallback = self._show_best_available() or self._show_silhouette()
+                status = self._read_protocol(PREVIEW_STATUS_PATH)
+                status_live = False
+                status_mtime = self._mtime(PREVIEW_STATUS_PATH)
+                if status_mtime is not None:
+                    status_live = (time.time() - status_mtime) < 5.0
+
+                if self._manifest.stale:
+                    self.status_label.configure(
+                        text="Preview cache is from an older exporter version")
+                    self.mode_label.configure(text="Launch the game once to rebuild it")
+                elif status_live and status.get("state") in ("building", "waiting_renderer"):
+                    self.status_label.configure(text="Building game asset previews…")
+                elif status_live:
+                    # Game is up but has not answered yet — say what is missing
+                    # rather than leaving a stale single-piece caption up.
+                    self.status_label.configure(text="Waiting for the game to render this player…")
+                    self.mode_label.configure(
+                        text="Open the game's squad/customization screen so it can draw")
+                elif not showed_fallback and self._manifest.version is None:
+                    self.status_label.configure(
+                        text="Launch Tape to Tape once to build previews")
+                    self.mode_label.configure(text="")
+                elif not showed_fallback:
+                    self.status_label.configure(text="No cached preview for this selection")
+                    self.mode_label.configure(text="")
+                elif showed_fallback:
+                    self.mode_label.configure(
+                        text="One piece on a stand-in — run the game for your full player")
+        finally:
+            if not self._closed:
+                self.after(350, self._poll)
+
+
+class PlayerComposer:
+    """Composites a player from the cached layer masks, outside the editor.
+
+    The team screen draws the same players as the player editor, so it must
+    assemble and colour them the same way. Rather than reimplement any of that,
+    this borrows GameAssetPreview's tables and methods unchanged — there stays
+    exactly one definition of how a player is put together.
+    """
+
+    def __init__(self, role, team_values):
+        self.role = role
+        self.is_goalie = (role == "goalie")
+        self.team_values = dict(team_values or {})
+
+    # The compositing implementation is borrowed WHOLESALE at the bottom of this
+    # class, not listed member by member. A hand-written list was maintained
+    # three times and forgotten three times — most recently _default_value_for,
+    # which made _compose_player raise AttributeError on any piece left on team
+    # default. image() caught it, returned None, and every preview fell back to
+    # "run the game once". A missing helper must not be able to look like a
+    # missing cache.
+
+    def image(self, values, side="home"):
+        """Composited player, or a grey outline, or None if nothing is cached."""
+        if not _HAVE_PIL:
+            return None
+        try:
+            composed = self._compose_player(dict(values or {}), side)
+            if composed is not None:
+                return composed
+            return self.silhouette()
+        except Exception as exc:
+            # Say so once. Swallowing this silently is what let a missing helper
+            # look exactly like an empty cache, and sent the whole UI to
+            # "run the game once" while the cache was fine.
+            if not PlayerComposer._warned:
+                PlayerComposer._warned = True
+                print(f"[preview] compose failed: {exc!r}", file=sys.stderr)
+            return None
+
+    _warned = False
+
+    def silhouette(self):
+        """Outline built from the standard pieces' base plates.
+
+        Same implementation as the editor's — borrowed, not copied, so the two
+        can never drift apart.
+        """
+        return self._silhouette_image()
+
+    @staticmethod
+    def fit(image, box_w, box_h):
+        """Trim the transparent margin, then scale into the box."""
+        if image is None:
+            return None
+        try:
+            bbox = image.getbbox()
+            if bbox:
+                image = image.crop(bbox)
+            image = image.copy()
+            image.thumbnail((box_w, box_h))
+            return ImageTk.PhotoImage(image)
+        except Exception:
+            return None
+
+
+# Borrow the compositing implementation wholesale instead of naming each member.
+# Everything the editor uses to assemble and colour a player works here too, and
+# this way a helper added there can never be missed here. Anything PlayerComposer
+# defines itself wins.
+for _borrowed, _member in list(vars(GameAssetPreview).items()):
+    if not _borrowed.startswith("__") and _borrowed not in vars(PlayerComposer):
+        setattr(PlayerComposer, _borrowed, _member)
+
+
 # ============================================================
 #   PLAYER EDITOR
 # ============================================================
 PLAYER_FIELD_ORDER = [
-    "Name", "Number", "Face", "Left Handed", "Skin Color", "Size", "Size Offset",
+    "Name", "Number", "Face", "Left Handed", "Size", "Size Offset",
     "Speed", "Shot Power", "Accuracy", "Checking",
     "Ability", "Talents", "Random Talents", "Random Pool",
     "Import Player",
@@ -3303,10 +4524,9 @@ class PlayerEditor(ttk.Frame):
         canvas.bind("<Enter>", lambda e, c=canvas: c.bind_all("<MouseWheel>", _on_wheel))
         canvas.bind("<Leave>", lambda e, c=canvas: c.unbind_all("<MouseWheel>"))
         ttk.Label(right, text="Preview", font=("", 9, "bold")).pack(anchor="w")
-        self.preview = JerseyPreview(right, has_away=True)
-        self.preview.pack()
-        ttk.Label(right, text="Updates as you pick colors",
-                  foreground="#777", font=("", 8)).pack(pady=(2, 0))
+        self.preview = GameAssetPreview(
+            right, is_goalie=self.is_goalie, team_values=self._team_colors)
+        self.preview.pack(fill="x")
 
         self.build_fields(scroll_frame)
         # Default override dropdowns to "(use team default)" so new players start clean
@@ -3397,7 +4617,10 @@ class PlayerEditor(ttk.Frame):
             self.add_combo(parent, "Face", FACES,
                            "Head/face — pick from the dropdown (86 options, grouped by team)")
             self.add_combo(parent, "Left Handed", YESNO_RANDOM, "yes / no / random")
-            self.add_combo(parent, "Skin Color", SKIN_COLORS, "light / dark / random")
+            # "Skin Color" (light/dark) removed — it had no visible effect. Skin
+            # tone is baked into the face skin itself, and there are 235 of those,
+            # so the separate isBlack flag has nothing left to change. The writer
+            # below still honours the key if an existing player file carries one.
             self.add_combo(parent, "Size", SIZES,
                            "ExtraSmall → ExtraExtraBig. Bigger = slower + harder hits")
             self.add_slider(parent, "Size Offset", min_val=0.5, max_val=2.0,
@@ -3450,6 +4673,10 @@ class PlayerEditor(ttk.Frame):
             foreground="#a05000", font=("", 8), justify="left"
         ).pack(anchor="w", padx=4, pady=(0, 4))
         if self.is_goalie:
+            # No Face dropdown here on purpose. A goalie given a skater face —
+            # "Helmet_Face" included — renders HEADLESS in game (noted at the
+            # Identity section). Goalie head art is still extracted and previewed;
+            # it is only the editable override that is unsafe.
             self.add_combo(parent, "Helmet Skin", GOALIE_HELMET_SKINS,
                 "The MASK. 'standard' = team colors; named options = fixed mask")
             self.add_combo(parent, "Skin", GOALIE_BODY_SKINS,
@@ -3479,10 +4706,12 @@ class PlayerEditor(ttk.Frame):
             self.add_combo(parent, "Bicep", OV_BICEP_SKINS,
                 "'(use team default)' keeps team's. 'team colors' = colorable.")
             self.add_combo(parent, "Bicep Away", OV_BICEP_SKINS)
-            # Gloves and Pants only have 'standard' — hardcoded at save time.
-            ttk.Label(parent,
-                text="Gloves & Pants: always 'standard' — set Gloves Color / Pants Color below",
-                foreground="#777", font=("", 8)).pack(anchor="w", padx=4, pady=2)
+            self.add_combo(parent, "Gloves", OV_GLOVES_SKINS,
+                "'(use team default)' keeps team's. 'team colors' = colorable.")
+            self.add_combo(parent, "Gloves Away", OV_GLOVES_SKINS)
+            self.add_combo(parent, "Pants", OV_PANTS_SKINS,
+                "'(use team default)' keeps team's. 'team colors' = colorable.")
+            self.add_combo(parent, "Pants Away", OV_PANTS_SKINS)
             self.add_combo(parent, "Skates", OV_SKATE_SKINS,
                 "'(use team default)' keeps team's. 'team colors' = colorable (3 channels).")
             self.add_combo(parent, "Skates Away", OV_SKATE_SKINS)
@@ -3603,52 +4832,22 @@ class PlayerEditor(ttk.Frame):
     def _install_live_updates(self):
         """Hook StringVar write-traces on all widgets so we re-validate + re-preview
            live as the user types / picks things."""
-        def hook(var):
+        def hook(field_name, var):
             try:
-                var.trace_add("write", lambda *a: self._refresh_live())
+                var.trace_add(
+                    "write", lambda *a, field=field_name: self._refresh_live(field))
             except Exception: pass
-        for w in self.widgets.values():
+        for field_name, w in self.widgets.items():
             if hasattr(w, "var") and isinstance(getattr(w, "var", None), tk.StringVar):
-                hook(w.var)
+                hook(field_name, w.var)
 
-    def _refresh_live(self):
-        """Called whenever any field changes. Updates banner + jersey preview."""
+    def _refresh_live(self, changed_field=None):
+        """Called whenever any field changes. Updates validation + game preview."""
         try:
             self.validation.set_issues(self._validate())
         except Exception: pass
         try:
-            # Preview uses player's color overrides first, falls back to team colors
-            def get_color(lbl):
-                if lbl in self.widgets:
-                    v = self.widgets[lbl].get()
-                    if v: return v
-                # Map player color fields to team color fields
-                team_map = {
-                    "Jersey Color": "Jersey Primary",
-                    "Jersey Secondary Color": "Jersey Secondary",
-                    "Jersey Accent Color": "Jersey Accent",
-                    "Helmet Color": "Helmet Color",
-                    "Helmet Secondary Color": "Helmet Secondary Color",
-                    "Helmet Tertiary Color": "Helmet Tertiary Color",
-                    "Gloves Color": "Gloves Color",
-                    "Gloves Secondary Color": "Gloves Secondary Color",
-                    "Gloves Tertiary Color": "Gloves Tertiary Color",
-                    "Pants Color": "Pants Color",
-                    "Pants Secondary Color": "Pants Secondary Color",
-                    "Pants Tertiary Color": "Pants Tertiary Color",
-                    "Skates Color": "Skates Color",
-                    "Blade Color": "Blade Color",
-                    "Laces Color": "Laces Color",
-                    "Socks Color": "Socks Color",
-                    "Socks Secondary Color": "Socks Secondary Color",
-                    "Socks Tertiary Color": "Socks Tertiary Color",
-                    "Bicep Color": "Bicep Color",
-                    "Number Color": "Number Color Home",
-                    "Number Secondary Color": "Number Color Away",
-                }
-                team_key = team_map.get(lbl, lbl)
-                return self._team_colors.get(team_key, "")
-            self.preview.update_colors(get_color)
+            self.preview.update_player(self.get_data(), changed_field)
         except Exception: pass
 
     def _validate(self):
@@ -3695,7 +4894,8 @@ class PlayerEditor(ttk.Frame):
 
     # Player-override fields that use the "(use team default)" + "team colors" aliases
     _OVERRIDE_SKIN_FIELDS = ("Stick", "Helmet", "Helmet Away", "Body", "Body Away",
-                              "Bicep", "Bicep Away", "Skates", "Skates Away")
+                              "Bicep", "Bicep Away", "Gloves", "Gloves Away",
+                              "Pants", "Pants Away", "Skates", "Skates Away")
 
     def _translate_override(self, val):
         """Convert UI alias back to config value."""
@@ -3935,6 +5135,9 @@ class TeamEditor(ttk.Frame):
             self.validation.set_issues(self._validate())
         except Exception: pass
         try:
+            # Hand the preview the real values so it can composite a skater in
+            # this team's colours rather than draw the schematic.
+            self.preview.team_values = {k: w.get() for k, w in self.widgets.items() if w.get()}
             self.preview.update_colors(lambda lbl: (self.widgets.get(lbl).get()
                                                      if lbl in self.widgets else ""))
         except Exception: pass
@@ -3969,7 +5172,11 @@ class TeamEditor(ttk.Frame):
             ),
             foreground="#555", font=("", 8), justify="left", wraplength=700
         ).pack(anchor="w", padx=4, pady=(0, 4))
-        # Import Team: combo populated from game dump + library teams
+        # Import Team: combo populated from game dump + library teams.
+        # NOTE: 'PLAYER' (mirror match) was REMOVED 2026-08-01 — see the removal
+        # note in Plugin.cs ApplyTeamFromConfig. Do not re-add it here without
+        # reinstating the DLL side, or campaigns will reference a directive the
+        # game no longer understands.
         team_names = get_all_team_names()
         if team_names:
             self.add_combo(parent, "Import Team", ["RANDOM"] + team_names,
@@ -4143,6 +5350,7 @@ class TeamEditor(ttk.Frame):
         import shutil
         name_widget = self.widgets.get("Import Team")
         name = name_widget.get() if name_widget else ""
+        # RANDOM is a runtime directive, not a team — nothing on disk to copy from.
         if not name or name.upper() in ("RANDOM", ""):
             messagebox.showwarning("Import", "Select a team name in the 'Import Team' dropdown first.")
             return
@@ -4216,6 +5424,8 @@ class MapNodeEditor(ttk.Frame):
         self.on_change = on_change
         self._vars = {}        # (map_pos, layer, node) -> StringVar
         self._assign = {}      # full assignment set, incl. rows not shown now
+        self._soccer_vars = {} # (map_pos, layer, node) -> BooleanVar
+        self._soccer = {}      # full soccer set, incl. rows not shown now
         self._body = ttk.Frame(self)
         self._body.pack(fill="x")
         self._status = ttk.Label(self, text="", foreground="#888", font=("", 8))
@@ -4226,6 +5436,22 @@ class MapNodeEditor(ttk.Frame):
         self._assign = dict(d or {})
         for k, var in self._vars.items():
             var.set(self._assign.get(k, "") or self.BLANK)
+
+    def set_soccer(self, d):
+        self._soccer = dict(d or {})
+        for k, var in self._soccer_vars.items():
+            var.set(bool(self._soccer.get(k)))
+
+    def get_soccer(self):
+        # Same reasoning as get_assignments: rows for maps not on screen right
+        # now must survive a save rather than be silently dropped.
+        out = dict(self._soccer)
+        for k, var in self._soccer_vars.items():
+            if var.get():
+                out[k] = True
+            else:
+                out.pop(k, None)
+        return out
 
     def get_assignments(self):
         # Start from the full set so assignments for maps not currently on screen
@@ -4256,6 +5482,7 @@ class MapNodeEditor(ttk.Frame):
         for w in self._body.winfo_children():
             w.destroy()
         self._vars.clear()
+        self._soccer_vars.clear()
 
         if not load_game_maps():
             self._status.config(
@@ -4303,6 +5530,16 @@ class MapNodeEditor(ttk.Frame):
                     cb.pack(side="left", padx=(2, 8))
                     if self.on_change:
                         cb.bind("<<ComboboxSelected>>", lambda e: self.on_change())
+
+                    # Per-node soccer. Sits with the opponent because it is the
+                    # same decision — what this particular game is.
+                    svar = tk.BooleanVar(value=bool(self._soccer.get(key)))
+                    self._soccer_vars[key] = svar
+                    scb = ttk.Checkbutton(row, text="Soccer", variable=svar)
+                    scb.pack(side="left", padx=(0, 8))
+                    if self.on_change:
+                        scb.configure(command=self.on_change)
+
                     if n["type"] == "Challenge":
                         ttk.Label(row, text="(challenge → elite)",
                                   foreground="#888", font=("", 8)).pack(side="left")
@@ -4413,6 +5650,34 @@ class CampaignEditor(ttk.Frame):
         maps_w.set("Basic")
         maps_w.pack(anchor="w", pady=1)
         self.widgets["Maps"] = maps_w
+
+        # Which squad your custom squads are cloned from. Written as
+        # "Squad Template = <name>". Basic is the default and is what every
+        # campaign used before this existed, so leaving it alone changes nothing.
+        tmpl_w = LabeledCombo(top, "Squad Template", SQUAD_TEMPLATES,
+            "Clone your custom squads from this base squad instead of Basic "
+            "(inherits its starting roster shape, relics and unlocks)",
+            width=26)
+        tmpl_w.combo.state(["readonly"])
+        tmpl_w.set("Basic")
+        tmpl_w.pack(anchor="w", pady=1)
+        self.widgets["Squad Template"] = tmpl_w
+
+        # Offside for the whole run. The game normally only offers this in Play
+        # Now's Advanced Settings; the mod forces it on per match using the same
+        # engine hook the Linesman talent uses, so nothing on disk is changed.
+        off_w = LabeledCheckbox(top, "Offside",
+            "Enforce the offside rule in every match of the run")
+        off_w.pack(anchor="w", pady=1)
+        self.widgets["Offside"] = off_w
+
+        offp_w = LabeledCombo(top, "Offside Penalty", OFFSIDE_PENALTIES,
+            "What happens to a skater caught offside", width=26)
+        offp_w.combo.state(["readonly"])
+        offp_w.set(OFFSIDE_PENALTIES[0])
+        offp_w.pack(anchor="w", pady=1)
+        self.widgets["Offside Penalty"] = offp_w
+
         try:
             def _on_maps_change(*a):
                 act_builder.set_gauntlet_mode(maps_w.get().lower() == "gauntlet")
@@ -4460,7 +5725,8 @@ class CampaignEditor(ttk.Frame):
             text="Pick the opponent for each elite and boss node of the map you selected above.\n"
                  "Branch layers get one dropdown per branch, so the two paths can face different\n"
                  "teams — and the same team may be used on as many nodes as you like.\n"
-                 "Anything left on “(default order)” falls back to the Teams list order above.",
+                 "Anything left on “(default order)” falls back to the Teams list order above.\n"
+                 "Tick “Soccer” on a node to play that one game with the soccer ball on the soccer field.",
             foreground="#555", font=("", 8), justify="left"
         ).pack(anchor="w", padx=8, pady=(4, 2))
         self.map_nodes = MapNodeEditor(mo_frame, on_change=lambda: None)
@@ -5244,6 +6510,7 @@ class CampaignEditor(ttk.Frame):
         try:
             if hasattr(self, "map_nodes"):
                 self.map_nodes.set_assignments(read_assignments(campaign_dir))
+                self.map_nodes.set_soccer(read_node_soccer(campaign_dir))
         except Exception: pass
         self.set_data(read_kv(os.path.join(campaign_dir, "campaign.txt")))
         self.refresh_list()
@@ -5266,6 +6533,18 @@ class CampaignEditor(ttk.Frame):
                 v = "Gauntlet"
             canon = next((s for s in MAP_SOURCE_SQUADS if s.lower() == v.lower()), None)
             maps_w.set(canon or v or "Basic")
+        tmpl_w = self.widgets.get("Squad Template")
+        if tmpl_w:
+            v = (data.get("Squad Template") or "").strip()
+            canon = next((s for s in SQUAD_TEMPLATES if s.lower() == v.lower()), None)
+            tmpl_w.set(canon or v or "Basic")
+        # An absent (or unrecognised) Offside Penalty is the "leave the player's
+        # own setting alone" case, which is the first entry in the dropdown.
+        offp_w = self.widgets.get("Offside Penalty")
+        if offp_w:
+            v = (data.get("Offside Penalty") or "").strip()
+            canon = next((s for s in OFFSIDE_PENALTIES if s.lower() == v.lower()), None)
+            offp_w.set(canon or OFFSIDE_PENALTIES[0])
         self._refresh_live()
 
     def refresh_list(self):
@@ -5398,11 +6677,17 @@ class CampaignEditor(ttk.Frame):
         # the gauntlet picker.
         if data.get("Maps", "").strip().lower() == "gauntlet":
             data["Gauntlet Map"] = "yes"
+        # "(player's setting)" means don't write the key at all — the DLL then
+        # leaves the player's own Advanced Settings choice untouched. Writing the
+        # sentinel through would just earn a "not a valid penalty" warning.
+        if data.get("Offside Penalty", "").strip().startswith("("):
+            data.pop("Offside Penalty", None)
         path = os.path.join(campaign_dir, "campaign.txt")
         with open(path, "w", encoding="utf-8") as f:
             f.write("# Campaign Settings\n")
             for k in ["Act Sequence", "Replace Challenges", "Replace Soccer Ball",
-                      "Replace Golf Ball", "Use Player Teams", "Gauntlet Map", "Maps"]:
+                      "Replace Golf Ball", "Use Player Teams", "Gauntlet Map", "Maps",
+                      "Squad Template", "Offside", "Offside Penalty"]:
                 if k in data:
                     f.write(f"{k:24s}= {data[k]}\n")
         os.makedirs(os.path.join(campaign_dir, "teams"), exist_ok=True)
@@ -5412,6 +6697,7 @@ class CampaignEditor(ttk.Frame):
         try:
             if hasattr(self, "map_nodes"):
                 write_assignments(campaign_dir, self.map_nodes.get_assignments())
+                write_node_soccer(campaign_dir, self.map_nodes.get_soccer())
         except Exception: pass
 
 
@@ -5612,15 +6898,17 @@ TEAM_LIBRARY_DIR = os.path.join(LIBRARY_DIR, "teams")
 
 _EXPORT_TALENT_MAP = None   # talent_key → guid
 _EXPORT_ABILITY_MAP = None  # ability_name → guid
+_EXPORT_RELIC_MAP = None    # relic display name → guid
 
 def _load_export_id_maps():
-    """Parse _export_id_map.txt written by the DLL to get talent/ability GUIDs."""
-    global _EXPORT_TALENT_MAP, _EXPORT_ABILITY_MAP
-    talent_map, ability_map = {}, {}
+    """Parse _export_id_map.txt written by the DLL to get talent/ability/relic GUIDs."""
+    global _EXPORT_TALENT_MAP, _EXPORT_ABILITY_MAP, _EXPORT_RELIC_MAP
+    talent_map, ability_map, relic_map = {}, {}, {}
     path = os.path.join(_GUI_DATA_DIR, "_export_id_map.txt")
     if not os.path.isfile(path):
         _EXPORT_TALENT_MAP = talent_map
         _EXPORT_ABILITY_MAP = ability_map
+        _EXPORT_RELIC_MAP = relic_map
         return
     try:
         section = None
@@ -5629,19 +6917,56 @@ def _load_export_id_maps():
                 line = line.strip()
                 if line == "[talents]":   section = "t"
                 elif line == "[abilities]": section = "a"
+                elif line == "[relics]":   section = "r"
                 elif "|" in line and section:
                     key, guid = line.split("|", 1)
                     key, guid = key.strip(), guid.strip()
                     if section == "t":  talent_map[key] = guid
                     elif section == "a": ability_map[key] = guid
+                    elif section == "r": relic_map[key.lower()] = guid
     except Exception: pass
     _EXPORT_TALENT_MAP = talent_map
     _EXPORT_ABILITY_MAP = ability_map
+    _EXPORT_RELIC_MAP = relic_map
 
 def _get_export_maps():
     if _EXPORT_TALENT_MAP is None:
         _load_export_id_maps()
     return _EXPORT_TALENT_MAP or {}, _EXPORT_ABILITY_MAP or {}
+
+
+def _relic_ids(relics_value):
+    """Turn a "Team Relics = A, B LVL2" line into the GUID list CustomTeam wants.
+
+    TeamDataModel.relics is a List<string> of relic ids. The Creator had no id
+    source, so every exported team wrote "relics":[] and arrived in Play Now with
+    none of the starting relics the team was built with."""
+    if _EXPORT_RELIC_MAP is None:
+        _load_export_id_maps()
+    table = _EXPORT_RELIC_MAP or {}
+    out = []
+    for part in (relics_value or "").split(","):
+        name = part.strip()
+        if not name:
+            continue
+        # "Name:2" is the config's explicit level syntax. The id table is keyed by
+        # DISPLAY name, and the game's level-2 display name is "<Name> LVL2", so
+        # translate before looking up — otherwise ":2" quietly exports the
+        # level-1 relic, which is the same class of bug as the DLL's old
+        # level-1-only lookup.
+        base, want2 = name, False
+        if ":" in name:
+            base, tail = name.split(":", 1)
+            base = base.strip()
+            want2 = tail.strip() == "2"
+        guid = None
+        if want2:
+            guid = table.get(f"{base} lvl2".lower()) or table.get(f"{base} (level 2)".lower())
+        if not guid:
+            guid = table.get(base.lower())
+        if guid and guid not in out:
+            out.append(guid)
+    return out
 
 
 def find_game_save_dir():
@@ -6069,6 +7394,107 @@ def _goalie_data_to_custom_goalie(data, import_id=None):
     }
 
 
+# ---- Play Now uniform sidecars -------------------------------------------
+#
+# The game's CustomForward JSON (Tape2Tape.Customization.ForwardDataModel) has
+# room for six look values: face, body, body away, stick, logo and number. The
+# editor offers eighteen. Helmet, glasses, bicep, gloves, pants, skates, every
+# away variant and all the colour overrides have nowhere to go, and the game
+# ignores JSON keys it doesn't know — so writing them into the same file does
+# nothing at all. That is why a player looked right in a campaign and wrong in
+# Play Now.
+#
+# Those fields are written here instead, in the mod folder, in the same
+# key=value format the campaign player files use, named by the exported id. The
+# DLL (PlayNowOverrides) reads them back and stamps them onto the ForwardData
+# after the game has built it from its own model.
+PLAY_NOW_OVERRIDE_DIR = os.path.join(SCRIPT_DIR, "play_now_overrides")
+
+# Fields the JSON cannot carry. Everything else in PLAYER_FIELD_ORDER round-trips
+# through the model and is deliberately left to it.
+_SIDECAR_SKATER_FIELDS = [
+    "Size Offset", "Glasses",
+    "Helmet", "Helmet Away", "Bicep", "Bicep Away", "Gloves", "Gloves Away",
+    "Pants", "Pants Away", "Skates", "Skates Away",
+]
+
+
+def _sidecar_fields(data, is_goalie):
+    """The subset of the editor's values that the Play Now save format drops.
+
+    A slot still on "standard" is skipped: that IS the game's own default, and
+    writing it would have the mod overriding a value with itself on every load."""
+    out = []
+    if not is_goalie:
+        for k in _SIDECAR_SKATER_FIELDS:
+            v = (data.get(k) or "").strip()
+            if not v or v.lower() in ("standard", "(standard)"):
+                continue
+            out.append((k, v))
+    # Colours are missing from BOTH models — ForwardDataModel and GoalieDataModel
+    # each stop short of colorSchemes.
+    order = GOALIE_FIELD_ORDER if is_goalie else PLAYER_FIELD_ORDER
+    for k in order:
+        if not k.endswith("Color"):
+            continue
+        v = (data.get(k) or "").strip()
+        if v:
+            out.append((k, v))
+    return out
+
+
+def _write_play_now_sidecar(obj_id, data, is_goalie, display_name):
+    """Write (or remove) the sidecar for one exported player. Returns the number
+    of fields carried, so the caller can say so."""
+    path = os.path.join(PLAY_NOW_OVERRIDE_DIR, f"{obj_id}.txt")
+    fields = _sidecar_fields(data, is_goalie)
+    if not fields:
+        # Nothing the JSON couldn't carry — leave no file rather than an empty
+        # one, so the DLL has nothing to apply and the game's defaults stand.
+        try:
+            if os.path.isfile(path):
+                os.remove(path)
+        except Exception:
+            pass
+        return 0
+    os.makedirs(PLAY_NOW_OVERRIDE_DIR, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(f"# Play Now uniform overrides for {display_name}\n")
+        f.write("# Written by the T2T Campaign Creator. Read by the mod DLL at\n")
+        f.write("# load time — the game's own save format has no room for these.\n")
+        for k, v in fields:
+            f.write(f"{k:28s}= {v}\n")
+    return len(fields)
+
+
+def prune_play_now_sidecars(save_dir):
+    """Drop sidecars whose custom player no longer exists in TeamDataModels.
+
+    Exports mint a fresh id each time, so without this the folder would grow a
+    file per export forever."""
+    try:
+        if not os.path.isdir(PLAY_NOW_OVERRIDE_DIR) or not save_dir:
+            return 0
+        live = set()
+        for f in os.listdir(save_dir):
+            for pre in ("CustomForward-", "CustomGoalie-"):
+                if f.startswith(pre) and f.endswith(".json"):
+                    live.add(f[len(pre):-len(".json")])
+        removed = 0
+        for f in os.listdir(PLAY_NOW_OVERRIDE_DIR):
+            if not f.endswith(".txt"):
+                continue
+            if os.path.splitext(f)[0] not in live:
+                try:
+                    os.remove(os.path.join(PLAY_NOW_OVERRIDE_DIR, f))
+                    removed += 1
+                except Exception:
+                    pass
+        return removed
+    except Exception:
+        return 0
+
+
 def export_player_to_play_now(ed, is_goalie=False, parent=None):
     """Write the current editor's player/goalie as a CustomForward or
     CustomGoalie JSON into the game's TeamDataModels folder so it shows
@@ -6098,16 +7524,26 @@ def export_player_to_play_now(ed, is_goalie=False, parent=None):
         out_path = os.path.join(save_dir, f"{prefix}-{obj['id']}.json")
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(obj, f, separators=(",", ":"))
+        # Everything the JSON has no field for — helmet, glasses, bicep, gloves,
+        # pants, skates, their away variants and every colour override.
+        extras = _write_play_now_sidecar(
+            obj["id"], data, is_goalie, (data.get("Name") or "").strip())
+        prune_play_now_sidecars(save_dir)
         talent_map, ability_map = _get_export_maps()
         has_ids = bool(talent_map or ability_map)
         ability_line = ""
         if not has_ids and (data.get("Ability") or data.get("Talents")):
             ability_line = "\n\nNote: abilities/talents were not included — launch the game once to generate the ID map, then re-export."
+        extras_line = ""
+        if extras:
+            extras_line = (f"\n\n{extras} uniform/colour override(s) the game's own save "
+                           "format can't store were written alongside it — the mod applies "
+                           "those at load time.")
         messagebox.showinfo("Exported to Play Now",
             f"Exported successfully!\n\n"
             f"{os.path.basename(out_path)}\n\n"
             f"Restart the game — your player will appear in\nPlay Now > Custom Players."
-            f"{ability_line}",
+            f"{extras_line}{ability_line}",
             parent=parent)
     except Exception as e:
         messagebox.showerror("Export failed", f"Could not write file:\n{e}", parent=parent)
@@ -6201,7 +7637,7 @@ def _team_data_to_custom_team(ed, player_data_list, goalie_data, team_id=None):
         "leftDefensemenId": get_fwd_id(3),
         "rightDefensemenId": get_fwd_id(4),
         "goalieId": goalie_data[1] if goalie_data else "",
-        "relics": [],
+        "relics": _relic_ids(data.get("Team Relics")),
     }
 
 
@@ -6247,6 +7683,7 @@ def export_team_to_play_now(ed, team_dir, parent=None):
                 out_path = os.path.join(save_dir, f"CustomGoalie-{gid}.json")
                 with open(out_path, "w", encoding="utf-8") as f:
                     json.dump(gobj, f, separators=(",", ":"))
+                _write_play_now_sidecar(gid, pdata, True, (pdata.get("Name") or "Goalie").strip())
                 goalie = (pdata, gid)
                 exported.append(os.path.basename(out_path))
             elif pos_raw in pos_slots:
@@ -6255,8 +7692,10 @@ def export_team_to_play_now(ed, team_dir, parent=None):
                 out_path = os.path.join(save_dir, f"CustomForward-{fid}.json")
                 with open(out_path, "w", encoding="utf-8") as f:
                     json.dump(fobj, f, separators=(",", ":"))
+                _write_play_now_sidecar(fid, pdata, False, (pdata.get("Name") or pos_raw).strip())
                 forwards[pos_slots[pos_raw]] = (pdata, fid)
                 exported.append(os.path.basename(out_path))
+        prune_play_now_sidecars(save_dir)
         team_obj = _team_data_to_custom_team(ed, forwards, goalie)
         tid = team_obj["Id"]
         team_path = os.path.join(save_dir, f"CustomTeam-{tid}.json")
@@ -6265,11 +7704,22 @@ def export_team_to_play_now(ed, team_dir, parent=None):
         exported.append(os.path.basename(team_path))
         talent_map, ability_map = _get_export_maps()
         has_ids = bool(talent_map or ability_map)
-        ability_line = "" if has_ids else "\n\nNote: abilities/talents were not included — launch the game once to generate the ID map, then re-export."
+        ability_line = "" if has_ids else "\n\nNote: abilities/talents/relics were not included — launch the game once to generate the ID map, then re-export."
+        # Say when relics were asked for but couldn't be resolved, rather than
+        # exporting a team that silently has none.
+        relic_line = ""
+        wanted = [r.strip() for r in (
+            {k: w.get() for k, w in ed.widgets.items() if hasattr(w, "get")}
+            .get("Team Relics") or "").split(",") if r.strip()]
+        if wanted:
+            got = len(team_obj.get("relics") or [])
+            relic_line = (f"\n\n{got} of {len(wanted)} team relic(s) carried over."
+                          if got < len(wanted) else
+                          f"\n\n{got} team relic(s) carried over.")
         messagebox.showinfo("Exported to Play Now",
             f"Exported {len(exported)} files successfully!\n\n"
             f"Restart the game — your team will appear in\nPlay Now > Custom Teams."
-            f"{ability_line}",
+            f"{relic_line}{ability_line}",
             parent=parent)
     except Exception as e:
         messagebox.showerror("Export failed", f"{e}", parent=parent)
@@ -6866,17 +8316,40 @@ def open_team_editor(team_dir=None, on_save=None):
         canvas.create_rectangle(X(5), Y(40), X(15), Y(43), fill=skates, outline="#333")
         canvas.create_rectangle(X(15), Y(40), X(25), Y(43), fill=skates, outline="#333")
 
-    def _draw_mini_jersey(canvas, colors):
-        """Draw home + away jerseys stacked vertically — scaled up per
-        _JERSEY_SCALE so the roster tiles actually use the column width."""
+    def _draw_mini_jersey(canvas, colors, pdata=None, is_goalie=False):
+        """Home + away, stacked. Uses the real rendered player when the layer
+        cache has it, and falls back to the schematic drawing when it does not —
+        a fresh install has no cache until the game has been run once."""
         canvas.delete("all")
         s = _JERSEY_SCALE
-        # Top-of-jersey labels scale with the drawing
         lbl_font = ("", max(5, int(6 * s)))
-        canvas.create_text(15 * s, 4 * s, text="H", fill="#666", font=lbl_font)
-        _draw_one_jersey(canvas, colors, 0, 8 * s, is_away=False, scale=s)
-        canvas.create_text(15 * s, 50 * s, text="A", fill="#666", font=lbl_font)
-        _draw_one_jersey(canvas, colors, 0, 54 * s, is_away=True, scale=s)
+
+        if _HAVE_PIL and pdata is not None:
+            try:
+                composer = PlayerComposer("goalie" if is_goalie else "skater", colors)
+                shots = []
+                for side in ("home", "away"):
+                    photo = PlayerComposer.fit(composer.image(pdata, side),
+                                               int(30 * s), int(42 * s))
+                    if photo is None:
+                        break
+                    shots.append((side, photo))
+                if len(shots) == 2:
+                    # Held on the widget: Tk keeps no reference of its own and a
+                    # garbage-collected PhotoImage renders as a blank tile.
+                    canvas._composed = [p for _, p in shots]
+                    canvas.create_text(15 * s, 4 * s, text="H", fill="#666", font=lbl_font)
+                    canvas.create_image(15 * s, 26 * s, image=shots[0][1])
+                    canvas.create_text(15 * s, 50 * s, text="A", fill="#666", font=lbl_font)
+                    canvas.create_image(15 * s, 72 * s, image=shots[1][1])
+                    return
+            except Exception:
+                pass
+
+        # No schematic fallback: the blocky drawing is gone. Until the game has
+        # been run once there is nothing rendered to show, so say so instead.
+        canvas.create_text(15 * s, 40 * s, text="run game\nto build\npreviews",
+                           fill="#999", font=("", max(6, int(6 * s))), justify="center")
 
     def refresh_players():
         team_cols = _get_team_colors()
@@ -6898,9 +8371,10 @@ def open_team_editor(team_dir=None, on_save=None):
                 player_path = os.path.join(team_dir, "players", fname)
                 merged = dict(team_cols)
                 info_parts = []
+                pdata = None
+                is_goalie_slot = (pos == "Goalie")
                 try:
                     pdata = read_kv(player_path)
-                    is_goalie_slot = (pos == "Goalie")
                     ovr = _compute_overall(pdata, is_goalie_slot)
                     if ovr: info_parts.append(f"OVR {ovr}")
                     ability = (pdata.get("Ability") or "").strip()
@@ -6923,7 +8397,7 @@ def open_team_editor(team_dir=None, on_save=None):
                             merged[tk_key] = pv
                             merged[pk] = pv
                 except Exception: pass
-                _draw_mini_jersey(mini_cv, merged)
+                _draw_mini_jersey(mini_cv, merged, pdata, is_goalie_slot)
                 try: info_lbl.configure(text="  |  ".join(info_parts) or "")
                 except Exception: pass
             else:

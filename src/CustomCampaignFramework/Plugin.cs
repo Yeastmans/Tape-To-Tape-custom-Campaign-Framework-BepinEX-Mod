@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -23,7 +23,7 @@ using Rogue.BenchSnapshots;
 
 namespace EndlessMode;
 
-[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.34")]
+[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.35")]
 public class Plugin : BasePlugin
 {
     internal static new ManualLogSource Log;
@@ -154,6 +154,9 @@ public class Plugin : BasePlugin
     // calls (they load lazily when the draft UI opens).
     internal static HashSet<IntPtr> AppliedDraftPtrs = new HashSet<IntPtr>();
     internal static bool UsePlayerTeams = false; // toggle from campaign settings
+    // Squad that custom squads are cloned from. Empty = Basic Squad, which is
+    // what every campaign did before this setting existed.
+    internal static string SquadTemplate = "";
     internal static bool _pendingAutoDump = false;
     internal static List<string> ConfigTeamDirs = new List<string>(); // parallel to ConfigTeams — folder path per team
 
@@ -346,6 +349,22 @@ public class Plugin : BasePlugin
     // case and behaves like Maps = Gauntlet (plus injecting all squads).
     internal static string MapSourceSquad = "";
 
+    // "Offside = yes" in campaign.txt — enforce the offside rule in every match
+    // of the run. This is the run-wide equivalent of giving one skater the
+    // Linesman talent, and it uses the same engine mechanism: OffsideController's
+    // static force-source list.
+    //
+    // Deliberately NOT GameplaySettings.Offside. That setter writes the value and
+    // then calls GameplaySettings.SaveSettings() (confirmed by disassembling
+    // set_Offside in the 2026-08-18 build), so using it would permanently flip the
+    // player's own Advanced Settings choice for Play Now and every other campaign.
+    internal static bool OffsideEnabled = false;
+    // "Offside Penalty = Whistle | Lose Puck | Knockout". Empty means "leave the
+    // player's own Advanced Settings choice alone" — that path touches nothing
+    // persistent. Setting it DOES persist (same SaveSettings call), so
+    // OffsideMatch saves the previous value and puts it back when the run ends.
+    internal static string OffsidePenaltyName = "";
+
     // Reward-pool filters (populated from campaigns/<name>/reward_pools.txt).
     // IDs held here are filtered OUT of the game's random-reward picks at
     // runtime via Harmony postfixes on RelicRepository / TalentRepository.
@@ -511,6 +530,17 @@ public class Plugin : BasePlugin
                     // Map selector: play every run on the map layout of a chosen
                     // base squad (Basic / Defence / Speedy / Gauntlet / ...).
                     // Generalizes "Gauntlet Map = yes" to any squad's maps.
+                    // Which squad the custom squads are CLONED from. Separate
+                    // from "Maps", which only picks the map layout: this decides
+                    // the starting roster shape, relics and unlock state your
+                    // squad inherits.
+                    else if (key == "squad template" || key == "template squad")
+                    {
+                        string tv = val.Trim();
+                        string tvl = tv.ToLowerInvariant();
+                        SquadTemplate = (tvl.Length == 0 || tvl == "default" || tvl == "(default)"
+                                         || tvl == "basic" || tvl == "basic squad") ? "" : tv;
+                    }
                     else if (key == "maps" || key == "map source" || key == "squad maps")
                     {
                         string mv = val.Trim();
@@ -520,6 +550,15 @@ public class Plugin : BasePlugin
                         else MapSourceSquad = mv;
                     }
                     else if (key == "dump data") DumpData = val.ToLower() == "yes" || val.ToLower() == "true";
+                    else if (key == "offside" || key == "offsides")
+                        OffsideEnabled = val.ToLower() == "yes" || val.ToLower() == "true";
+                    else if (key == "offside penalty" || key == "offsides penalty")
+                    {
+                        string pv = val.Trim();
+                        string pvl = pv.ToLowerInvariant();
+                        OffsidePenaltyName = (pvl.Length == 0 || pvl == "default" || pvl == "(default)"
+                                              || pvl == "no" || pvl == "none") ? "" : pv;
+                    }
                 });
             }
             else
@@ -845,7 +884,7 @@ public class Plugin : BasePlugin
         ParseKvFile(path, (k, v) => ApplyTeamField(team, k, v));
     }
 
-    private static void LoadPlayerFile(string path, PlayerConfig player)
+    internal static void LoadPlayerFile(string path, PlayerConfig player)
     {
         ParseKvFile(path, (k, v) => ApplyPlayerField(player, k, v));
     }
@@ -934,6 +973,7 @@ public class Plugin : BasePlugin
         Log.LogInfo($"[Campaign] Multi-folder: {ConfigTeams.Count} teams loaded");
 
         LoadNodeAssignments();
+        LoadNodeSoccer();
     }
 
     // ===== PER-NODE TEAM ASSIGNMENTS =====
@@ -960,6 +1000,67 @@ public class Plugin : BasePlugin
 
     internal static string NodeKey(int mapPos, int layer, int node) => $"{mapPos}|{layer}|{node}";
 
+    // Nodes whose match is played with the soccer ball on the soccer field.
+    // Same coordinate space as NodeAssignments, kept in its own file so the
+    // assignments parser — which is load-bearing and works — is not touched.
+    internal static HashSet<string> NodeSoccer =
+        new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    // Set by the launch patches, read by PatchPuckManager and SoccerMatch.
+    internal static bool SoccerThisMatch = false;
+
+    /// Read "Map 1 / Layer 2 / Node 0" into coordinates. Shared by both node
+    /// files so they can never disagree about what a coordinate means.
+    internal static bool TryReadNodeCoords(string lhs, out int mapPos, out int layer, out int node)
+    {
+        mapPos = -1; layer = -1; node = -1;
+        foreach (var partRaw in (lhs ?? "").Split('/'))
+        {
+            var part = partRaw.Trim();
+            if (part.Length == 0) continue;
+            var bits = part.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            if (bits.Length < 2) continue;
+            if (!int.TryParse(bits[bits.Length - 1], out int num)) continue;
+            string word = bits[0].ToLowerInvariant();
+            if (word.StartsWith("map")) mapPos = num;
+            else if (word.StartsWith("layer") || word == "l") layer = num;
+            else if (word.StartsWith("node") || word == "n") node = num;
+        }
+        return mapPos >= 1 && layer >= 0 && node >= 0;
+    }
+
+    internal static void LoadNodeSoccer()
+    {
+        NodeSoccer.Clear();
+        try
+        {
+            string path = Path.Combine(ModFolder, "node_soccer.txt");
+            if (!File.Exists(path)) return;
+
+            int parsed = 0;
+            foreach (var raw in File.ReadAllLines(path))
+            {
+                string line = (raw ?? "").Trim();
+                if (line.Length == 0 || line.StartsWith("#") || line.StartsWith(";")) continue;
+                int eq = line.IndexOf('=');
+                if (eq <= 0) continue;
+                string value = line.Substring(eq + 1).Trim().ToLowerInvariant();
+                // Only an explicit yes turns it on, so a "no" written by the
+                // Creator reads as off rather than as a marked node.
+                if (value != "yes" && value != "true" && value != "on" && value != "1") continue;
+                if (!TryReadNodeCoords(line.Substring(0, eq), out int mapPos, out int layer, out int node))
+                {
+                    Log.LogWarning($"[Soccer] Could not read node coordinates from '{line.Substring(0, eq).Trim()}'");
+                    continue;
+                }
+                NodeSoccer.Add(NodeKey(mapPos, layer, node));
+                parsed++;
+            }
+            if (parsed > 0) Log.LogInfo($"[Soccer] node_soccer.txt: {parsed} node(s) set to soccer");
+        }
+        catch (Exception ex) { Log.LogWarning($"[Soccer] node_soccer.txt: {ex.Message}"); }
+    }
+
     internal static void LoadNodeAssignments()
     {
         NodeAssignments.Clear();
@@ -982,21 +1083,7 @@ public class Plugin : BasePlugin
 
                 // "Map 1 / Layer 2 / Node 0" — tolerate any separator run and the
                 // words being cased however the GUI happens to write them.
-                int mapPos = -1, layer = -1, node = -1;
-                foreach (var partRaw in lhs.Split('/'))
-                {
-                    var part = partRaw.Trim();
-                    if (part.Length == 0) continue;
-                    var bits = part.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (bits.Length < 2) continue;
-                    if (!int.TryParse(bits[bits.Length - 1], out int num)) continue;
-                    string word = bits[0].ToLowerInvariant();
-                    if (word.StartsWith("map")) mapPos = num;
-                    else if (word.StartsWith("layer") || word == "l") layer = num;
-                    else if (word.StartsWith("node") || word == "n") node = num;
-                }
-
-                if (mapPos < 1 || layer < 0 || node < 0)
+                if (!TryReadNodeCoords(lhs, out int mapPos, out int layer, out int node))
                 {
                     bad++;
                     Log.LogWarning($"[Assign] Could not read node coordinates from '{lhs}' — expected 'Map 1 / Layer 2 / Node 0'");
@@ -1750,16 +1837,14 @@ public class Plugin : BasePlugin
         LoadConfig();
         LoadPlayerTeams();
         LoadProgress();
+        // Install before the DEFAULT MODE return: preview export is read-only.
+        PreviewAssets.Install();
+        // Also before it: a player exported to Play Now belongs to Play Now, not
+        // to a campaign, so their uniform must not blink out when the active
+        // campaign is "default".
+        PlayNowOverrides.Install(new Harmony("com.mods.customcampaign.playnow"));
         if (GamesPlayed > 0)
             LogNextGame();
-
-        // Check if PLAYER mirror match is possible
-        bool hasPlayerImport = false;
-        foreach (var t in ConfigTeams)
-            if (t != null && t.ImportTeam != null && t.ImportTeam.Trim().Equals("PLAYER", StringComparison.OrdinalIgnoreCase))
-            { hasPlayerImport = true; break; }
-        if (hasPlayerImport)
-            Log.LogInfo("[Config] PLAYER mirror match configured — will clone player team at runtime");
 
         // Default mode = play vanilla base game. Skip every Harmony patch that
         // CHANGES anything — team remixes, challenge-node replacement, save
@@ -2431,6 +2516,10 @@ public static class PatchMatchGameEnd
     [HarmonyPrefix]
     public static void Prefix(MatchMapNode __instance, bool isWinning)
     {
+        // Before the isWinning gate: a lost match ends the match just the same,
+        // and the offside force source must not survive it.
+        OffsideMatch.End();
+
         if (!isWinning) return;
 
         // Log the actual runtime type so we can diagnose what Spartan/challenge/etc.
@@ -2514,6 +2603,11 @@ public static class PatchBossOnGameEnd
     [HarmonyPrefix]
     public static void Prefix(bool isWinning)
     {
+        // BossMapNode OVERRIDES OnGameEnd, so the MatchMapNode patch that also
+        // calls this does not necessarily run for a boss. Win or lose, the
+        // offside force source has to come off at the end of the match.
+        OffsideMatch.End();
+
         if (isWinning)
         {
             Plugin.ActsCompleted++;
@@ -2579,15 +2673,387 @@ public static class PatchPuckManager
     {
         try
         {
-            if (__instance.regularPuck != null)
+            if (__instance.regularPuck == null) return;
+
+            // A node marked for soccer forces the ball for THIS match. The
+            // swap is the same trick as the replacements below, run the other
+            // way round: InitializePuckVisuals picks by team, so pointing
+            // regularPuck at the soccer ball makes every team use it. It has to
+            // win over "replace soccer ball", which is a campaign-wide default
+            // the node is deliberately overriding.
+            if (Plugin.SoccerThisMatch && __instance.soccerBall != null)
             {
-                if (Plugin.ReplaceSoccerBall)
-                    __instance.soccerBall = __instance.regularPuck;
-                if (Plugin.ReplaceGolfBall)
-                    __instance.golfBall = __instance.regularPuck;
+                __instance.regularPuck = __instance.soccerBall;
+                if (Plugin.ReplaceGolfBall) __instance.golfBall = __instance.soccerBall;
+                return;
             }
+
+            if (Plugin.ReplaceSoccerBall)
+                __instance.soccerBall = __instance.regularPuck;
+            if (Plugin.ReplaceGolfBall)
+                __instance.golfBall = __instance.regularPuck;
         }
         catch {}
+    }
+}
+
+// ============================================================
+// Soccer nodes — the ball and the field, per match
+// ============================================================
+//
+// The ball is handled in PatchPuckManager above. The field is a separate
+// switch: IceSetup owns the rink surface and exposes SwitchToSoccerIce() as a
+// UniTask. It is called once the match scene has an IceSetup in it, which is
+// why this polls rather than hooking a single point — IceSetup.Initialize runs
+// during scene load and switching from inside it fights the setup that is
+// already in flight.
+public static class SoccerMatch
+{
+    private static bool _fieldApplied;
+    private static float _nextTry;
+
+    /// <summary>Called when a map node launches. Decides the match, not the campaign.</summary>
+    internal static void BeginMatch(bool soccer, string why)
+    {
+        Plugin.SoccerThisMatch = soccer;
+        _fieldApplied = false;
+        _nextTry = 0f;
+        if (soccer) Plugin.Log.LogInfo($"[Soccer] {why}: this match uses the soccer ball and field");
+    }
+
+    /// <summary>Drive from the mod's existing per-frame tick.</summary>
+    internal static void Tick()
+    {
+        if (!Plugin.SoccerThisMatch || _fieldApplied) return;
+        if (UnityEngine.Time.unscaledTime < _nextTry) return;
+        _nextTry = UnityEngine.Time.unscaledTime + 0.5f;
+        try
+        {
+            var setups = UnityEngine.Resources.FindObjectsOfTypeAll<Arena.IceSetup>();
+            if (setups == null || setups.Length == 0) return;
+            for (int i = 0; i < setups.Length; i++)
+            {
+                var setup = setups[i];
+                if (setup == null) continue;
+                // Reflection, not a direct call: SwitchToSoccerIce returns a
+                // UniTask, and referencing that assembly just to discard the
+                // handle would add a version-matched dependency for nothing.
+                var method = setup.GetType().GetMethod("SwitchToSoccerIce",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                if (method == null)
+                {
+                    _fieldApplied = true;
+                    Plugin.Log.LogWarning("[Soccer] IceSetup.SwitchToSoccerIce not found — rink left as it is");
+                    return;
+                }
+                method.Invoke(setup, null);
+                _fieldApplied = true;
+                Plugin.Log.LogInfo("[Soccer] Rink switched to the soccer field");
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            // One failure is enough — retrying every half second for a whole
+            // match would fill the log with the same line.
+            _fieldApplied = true;
+            Plugin.Log.LogWarning($"[Soccer] Could not switch the rink to the soccer field: {ex.Message}");
+        }
+    }
+
+    /// <summary>The node's coordinates, or false when it is not a marked node.</summary>
+    internal static bool IsSoccerNode(STS.Map.MatchMapNode node)
+    {
+        if (node == null || Plugin.NodeSoccer.Count == 0) return false;
+        try
+        {
+            if (node.Node == null) return false;
+            string key = Plugin.NodeKey(Plugin.ActsCompleted + 1, node.Node.LayerIndex, node.Node.NodeIndex);
+            return Plugin.NodeSoccer.Contains(key);
+        }
+        catch { return false; }
+    }
+}
+
+// ============================================================
+// Play Now custom players — the half of a look the save format drops
+// ============================================================
+//
+// A Play Now custom skater is stored as Tape2Tape.Customization.ForwardDataModel
+// and that class has fields for exactly six look values: headSkin, bodySkin,
+// bodyAwaySkin, stickSkin, logoSkin and numberSkin. ForwardData — what actually
+// gets rendered — has eleven more: helmetSkin, helmetAwaySkin, glassesSkin,
+// bicepSkin, gloveSkin, pantsSkin, skateSkin and the away variant of each, plus
+// colorSchemes. None of them survive a save, and unknown JSON keys are ignored
+// on load, so no amount of writing from the Creator can carry them.
+//
+// So the Creator writes the editor's own player file next to the JSON, in
+// play_now_overrides/<id>.txt, and this stamps the missing fields back on after
+// the game has built the ForwardData from its model. Same key=value format and
+// the SAME parser the campaign side uses, which is the point: a player exported
+// to Play Now and the same player in a campaign now go through one set of
+// mappings instead of two that could disagree.
+//
+// Only the fields the model CANNOT carry are applied. Name, stats, number,
+// face, handedness, size, body, stick and logo all round-trip through the JSON
+// correctly, and re-applying them here would fight the game's own editor if the
+// player later tweaks them in-game.
+public static class PlayNowOverrides
+{
+    private static Dictionary<string, PlayerConfig> _byId;
+    private static string FolderPath => Path.Combine(Plugin.ModContentRoot, "play_now_overrides");
+
+    /// <summary>Read every sidecar once. Cheap enough to redo on demand: these
+    /// are a few hundred bytes each and only exist for exported players.</summary>
+    internal static void Reload()
+    {
+        var map = new Dictionary<string, PlayerConfig>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            if (Directory.Exists(FolderPath))
+                foreach (var file in Directory.GetFiles(FolderPath, "*.txt"))
+                {
+                    string id = Path.GetFileNameWithoutExtension(file);
+                    if (string.IsNullOrEmpty(id)) continue;
+                    var pc = new PlayerConfig();
+                    try { Plugin.LoadPlayerFile(file, pc); }
+                    catch (Exception ex) { Plugin.Log.LogWarning($"[PlayNow] '{Path.GetFileName(file)}': {ex.Message}"); continue; }
+                    map[id] = pc;
+                }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[PlayNow] Could not read {FolderPath}: {ex.Message}"); }
+        _byId = map;
+        if (map.Count > 0)
+            Plugin.Log.LogInfo($"[PlayNow] {map.Count} custom-player override file(s) loaded");
+    }
+
+    private static PlayerConfig Find(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return null;
+        if (_byId == null) Reload();
+        return _byId != null && _byId.TryGetValue(id, out var pc) ? pc : null;
+    }
+
+    /// <summary>Postfix on ForwardDataAdapter.ConvertToForwardData — runs once per
+    /// custom skater as the game loads it, with the model's id still in hand.</summary>
+    public static void ForwardPostfix(Tape2Tape.Customization.ForwardDataModel model, ForwardData __result)
+    {
+        if (__result == null || model == null) return;
+        try
+        {
+            var pc = Find(model.id);
+            if (pc == null) return;
+
+            // The same helper the campaign side uses for an appearance-only slot.
+            // Body and stick are in it too and will simply re-apply what the JSON
+            // already set — harmless, and it keeps one list of look fields rather
+            // than two that can drift apart.
+            //
+            // Home kit: a Play Now custom player has no away side of their own,
+            // the team they are dropped into supplies that.
+            PatchBossLaunchMatch.ApplyPlayerLookOnly(__result, pc, useAway: false);
+
+            Plugin.Log.LogInfo($"[PlayNow] Uniform overrides applied to '{__result.firstName} {__result.lastName}' ({model.id})");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[PlayNow] Forward '{model.id}': {ex.Message}"); }
+    }
+
+    /// <summary>Postfix on GoalieDataAdapter.ConvertToGoaltenderData. GoalieDataModel
+    /// already carries every goalie skin slot, so only the colours are missing.</summary>
+    public static void GoaliePostfix(Tape2Tape.Customization.GoalieDataModel model, GoaltenderData __result)
+    {
+        if (__result == null || model == null) return;
+        try
+        {
+            var pc = Find(model.id);
+            if (pc == null) return;
+            PatchBossLaunchMatch.ApplyGoalieColorOverrides(__result, pc);
+            Plugin.Log.LogInfo($"[PlayNow] Colour overrides applied to goalie '{__result.firstName} {__result.lastName}' ({model.id})");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[PlayNow] Goalie '{model.id}': {ex.Message}"); }
+    }
+
+    /// <summary>Registered before the DEFAULT MODE return in Plugin.Load: an
+    /// exported Play Now player is not part of any campaign, so their look must
+    /// not depend on which campaign happens to be active.</summary>
+    internal static void Install(Harmony h)
+    {
+        Reload();
+        try
+        {
+            var conv = AccessTools.Method(typeof(Tape2Tape.Customization.ForwardDataAdapter), "ConvertToForwardData");
+            if (conv != null)
+            {
+                h.Patch(conv, postfix: new HarmonyMethod(typeof(PlayNowOverrides), nameof(ForwardPostfix)));
+                Plugin.Log.LogInfo("[PlayNow] Patched ForwardDataAdapter.ConvertToForwardData");
+            }
+            else Plugin.Log.LogWarning("[PlayNow] ForwardDataAdapter.ConvertToForwardData not found — Play Now uniform overrides are off");
+        }
+        catch (Exception ex) { Plugin.Log.LogError($"[PlayNow] Forward hook: {ex}"); }
+        try
+        {
+            var convG = AccessTools.Method(typeof(Tape2Tape.Customization.GoalieDataAdapter), "ConvertToGoaltenderData");
+            if (convG != null)
+            {
+                h.Patch(convG, postfix: new HarmonyMethod(typeof(PlayNowOverrides), nameof(GoaliePostfix)));
+                Plugin.Log.LogInfo("[PlayNow] Patched GoalieDataAdapter.ConvertToGoaltenderData");
+            }
+            else Plugin.Log.LogWarning("[PlayNow] GoalieDataAdapter.ConvertToGoaltenderData not found — Play Now goalie colours are off");
+        }
+        catch (Exception ex) { Plugin.Log.LogError($"[PlayNow] Goalie hook: {ex}"); }
+    }
+}
+
+// ============================================================
+// Offside — "Offside = yes" in campaign.txt
+// ============================================================
+//
+// The engine already knows how to enforce offside; the only question is how to
+// switch it on for a run without vandalising the player's own settings.
+//
+// OffsideController keeps a STATIC HashSet of "force sources". Anything in that
+// set forces the rule on regardless of the Advanced Settings toggle, and it is
+// exactly what the Linesman talent uses (LinesmanController.AddEffect adds the
+// skater, RemoveEffect takes it out again). We add one token for the whole
+// match and take it out when the match ends. Nothing is written to disk.
+//
+// The alternative — GameplaySettings.Offside = true — was rejected: its setter
+// calls SaveSettings(), so it would rewrite GameplaySettings.es3 and leave
+// offside on in Play Now and every other campaign afterwards.
+//
+// Like SoccerMatch this polls, because OffsideController does not exist until
+// the match scene is loaded. Adding the token is safe before then (the set is
+// static), but Refresh() only has an effect once the controller is alive.
+public static class OffsideMatch
+{
+    // One cached token, reused for both add and remove, so the HashSet's
+    // reference equality matches even though we never see its hash contract.
+    private static Il2CppSystem.Object _token;
+    private static bool _added;
+    private static bool _refreshed;
+    private static float _nextTry;
+    // Set when we override the penalty so the run can put the player's own
+    // choice back — that setter persists, ours must not outlive the run.
+    private static int _savedPenalty = -1;
+
+    private static Il2CppSystem.Object Token
+    {
+        get
+        {
+            if (_token == null) _token = new Il2CppSystem.Object();
+            return _token;
+        }
+    }
+
+    /// <summary>Called when a map node launches, before the match scene loads.</summary>
+    internal static void BeginMatch(string why)
+    {
+        _refreshed = false;
+        _nextTry = 0f;
+        if (!Plugin.OffsideEnabled) { End(); return; }
+        if (_added) return;
+        try
+        {
+            OffsideController.AddForceSource(Token);
+            _added = true;
+            Plugin.Log.LogInfo($"[Offside] {why}: offside is enforced for this match");
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.LogWarning($"[Offside] Could not enable offside: {ex.Message}");
+        }
+        ApplyPenalty();
+    }
+
+    /// <summary>Drive from the mod's existing per-frame tick. Costs one bool
+    /// test per frame when the campaign doesn't ask for offside.</summary>
+    internal static void Tick()
+    {
+        if (!_added || _refreshed) return;
+        if (UnityEngine.Time.unscaledTime < _nextTry) return;
+        _nextTry = UnityEngine.Time.unscaledTime + 0.5f;
+        try
+        {
+            var controllers = UnityEngine.Resources.FindObjectsOfTypeAll<OffsideController>();
+            if (controllers == null || controllers.Length == 0) return;
+            OffsideController.Refresh();
+            _refreshed = true;
+            Plugin.Log.LogInfo($"[Offside] Rule armed for this match (active={OffsideController.IsActive})");
+        }
+        catch (Exception ex)
+        {
+            // One failure is enough — retrying twice a second for a whole match
+            // would fill the log with the same line.
+            _refreshed = true;
+            Plugin.Log.LogWarning($"[Offside] Could not arm the offside rule: {ex.Message}");
+        }
+    }
+
+    /// <summary>Drop the force source. Called when a match ends and when a run
+    /// finishes, so offside never leaks into Play Now or the next campaign.</summary>
+    internal static void End()
+    {
+        if (_added)
+        {
+            try { OffsideController.RemoveForceSource(Token); } catch {}
+            try { OffsideController.Refresh(); } catch {}
+            _added = false;
+            Plugin.Log.LogInfo("[Offside] Force source removed");
+        }
+        _refreshed = false;
+        RestorePenalty();
+    }
+
+    /// <summary>"Offside Penalty = Whistle|Lose Puck|Knockout". Only touched when
+    /// the campaign names one — otherwise the player's own choice stands.</summary>
+    private static void ApplyPenalty()
+    {
+        if (string.IsNullOrEmpty(Plugin.OffsidePenaltyName)) return;
+        int want = ParsePenalty(Plugin.OffsidePenaltyName);
+        if (want < 0)
+        {
+            Plugin.Log.LogWarning($"[Offside] Penalty '{Plugin.OffsidePenaltyName}' is not one of "
+                + "Whistle / Lose Puck / Knockout — the game's own setting is left alone");
+            return;
+        }
+        try
+        {
+            var gs = Settings.GameplaySettings.Instance;
+            if (gs == null) return;
+            int current = (int)gs.OffsidePenalty;
+            if (current == want) return;
+            if (_savedPenalty < 0) _savedPenalty = current;
+            gs.OffsidePenalty = (Settings.OffsidePenalty)want;
+            Plugin.Log.LogInfo($"[Offside] Penalty set to {(Settings.OffsidePenalty)want} (was {(Settings.OffsidePenalty)current})");
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Offside] Penalty: {ex.Message}"); }
+    }
+
+    private static void RestorePenalty()
+    {
+        if (_savedPenalty < 0) return;
+        try
+        {
+            var gs = Settings.GameplaySettings.Instance;
+            if (gs != null)
+            {
+                gs.OffsidePenalty = (Settings.OffsidePenalty)_savedPenalty;
+                Plugin.Log.LogInfo($"[Offside] Penalty restored to the player's own setting ({(Settings.OffsidePenalty)_savedPenalty})");
+            }
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Offside] Penalty restore: {ex.Message}"); }
+        _savedPenalty = -1;
+    }
+
+    private static int ParsePenalty(string s)
+    {
+        switch ((s ?? "").Trim().ToLowerInvariant().Replace("-", " ").Replace("_", " "))
+        {
+            case "whistle": case "0": return 0;
+            case "lose puck": case "losepuck": case "loose puck": case "1": return 1;
+            case "knockout": case "knock out": case "ko": case "2": return 2;
+            default: return -1;
+        }
     }
 }
 
@@ -3078,20 +3544,61 @@ public static class PatchChooseMetaUI
         RunSquadScriptableObject template = null;
         int templateIndex = -1;
 
-        for (int i = 0; i < squads.Count; i++)
+        // "Squad Template" in campaign.txt picks which squad is cloned. Default
+        // is still Basic Squad, so a campaign that does not set it behaves
+        // exactly as before. A campaign built around the General Manager map
+        // wants the GM squad's own starting state instead.
+        string wanted = string.IsNullOrWhiteSpace(Plugin.SquadTemplate)
+            ? "Basic Squad" : Plugin.SquadTemplate.Trim();
+
+        for (int pass = 0; pass < 2 && template == null; pass++)
         {
-            var sq = squads[i];
-            if (sq == null) continue;
-            if (sq.squadName != null && sq.squadName.Equals("Basic Squad", StringComparison.OrdinalIgnoreCase))
+            // Pass 0 looks for what was asked for; pass 1 falls back to Basic so
+            // a typo or a squad this install does not have cannot leave the
+            // campaign with no custom squads at all.
+            string want = pass == 0 ? wanted : "Basic Squad";
+            if (pass == 1 && want.Equals(wanted, StringComparison.OrdinalIgnoreCase)) break;
+
+            for (int i = 0; i < squads.Count; i++)
             {
+                var sq = squads[i];
+                if (sq == null || sq.squadName == null) continue;
+                // Tolerate "General Manager" for "General Manager Squad": the
+                // Creator lists the names the game dumps, which do not all carry
+                // the "Squad" suffix.
+                bool hit = sq.squadName.Equals(want, StringComparison.OrdinalIgnoreCase)
+                        || sq.squadName.Equals(want + " Squad", StringComparison.OrdinalIgnoreCase)
+                        || want.Equals(sq.squadName + " Squad", StringComparison.OrdinalIgnoreCase);
+                if (!hit) continue;
+
+                // The 5-slot rule is not negotiable — "Lines Meta"/TwoLines has
+                // ten forward slots (line 1 at 0-4, line 2 at 5-9) and its layout
+                // collides with the single-line model everything else assumes.
+                int slots = 0;
+                try { slots = sq.startingTeam?.forwards?.Count ?? 0; } catch { }
+                if (slots > 5)
+                {
+                    Plugin.Log.LogWarning(
+                        $"[CustomSquad] Squad Template '{sq.squadName}' has {slots} forward slots (two lines); " +
+                        "it cannot be used as a template. Falling back to Basic Squad.");
+                    continue;
+                }
+
                 template = sq;
                 templateIndex = i;
-                Plugin.Log.LogInfo($"[CustomSquad] Found Basic Squad at index {i}");
+                if (pass == 1)
+                    Plugin.Log.LogWarning($"[CustomSquad] Squad Template '{wanted}' not found — using Basic Squad");
+                else
+                    Plugin.Log.LogInfo($"[CustomSquad] Squad Template '{sq.squadName}' found at index {i}");
                 break;
             }
         }
 
-        if (template == null) { Plugin.Log.LogWarning("[CustomSquad] Basic Squad not found"); return; }
+        if (template == null)
+        {
+            Plugin.Log.LogWarning($"[CustomSquad] No usable squad template (wanted '{wanted}')");
+            return;
+        }
         Plugin.Log.LogInfo($"[CustomSquad] Chose template '{template.squadName}' at index {templateIndex}");
 
         for (int i = 0; i < customKeys.Count; i++)
@@ -3335,10 +3842,14 @@ public static class PatchChooseMetaUI
                             int writeIdx = 0;
                             for (int r = 0; r < relicsToApply.Count; r++)
                             {
-                                var relic = PatchBossLaunchMatch.FindRelic(relicsToApply[r]);
+                                // Same level parsing as GiveRelic — a squad's
+                                // starting "Steel Mitts LVL2" is a level-2 asset
+                                // and is invisible to a level-1 lookup.
+                                int rLevel = PatchBossLaunchMatch.LevelFromRelicName(relicsToApply[r], out string rName);
+                                var relic = PatchBossLaunchMatch.FindRelic(rName, rLevel);
                                 if (relic == null)
                                 {
-                                    Plugin.Log.LogWarning($"[CustomSquad] Relic '{relicsToApply[r]}' not found for '{key}'");
+                                    Plugin.Log.LogWarning($"[CustomSquad] Relic '{relicsToApply[r]}' (level {rLevel}) not found for '{key}'");
                                     continue;
                                 }
                                 var entry = new State.SquadRelicData();
@@ -3519,23 +4030,62 @@ public static class PatchChooseMetaUI
     internal static bool SeatUserStarterAtAngusSlot(TeamData team, RunSquadScriptableObject clone, TeamConfig cfg)
     {
         var fwds = team?.forwards;
-        if (fwds == null || fwds.Count <= 3) return false;
-        const int angusIdx = 3; // Basic's cat=Angus keep-slot (LD position)
+        if (fwds == null || fwds.Count == 0) return false;
+
+        // FIND the keep-slot, do not assume it. This was hardcoded to 3 —
+        // Basic Squad's Angus sits at index 3 — and that assumption is exactly
+        // what broke the "Squad Template" setting: the General Manager squad
+        // keeps its Angus ("General McShaggy") at index 0, so nothing here ever
+        // saw him, he survived into the run, and the user's players were never
+        // seated. Measured in the log: forwards.Count=5 with fwd[0]=General
+        // McShaggy and 1-4 null.
+        int angusIdx = -1;
+        for (int i = 0; i < fwds.Count; i++)
+        {
+            Data.ForwardData f = null; try { f = fwds[i]; } catch { }
+            if (f == null) continue;
+            bool isAngus = false;
+            try { isAngus = f.skaterCategory.ToString().IndexOf("Angus", StringComparison.OrdinalIgnoreCase) >= 0; }
+            catch { }
+            if (isAngus) { angusIdx = i; break; }
+        }
+        if (angusIdx < 0)
+        {
+            // No Angus category: the keep-slot is whichever single forward the
+            // template ships with, which is the one the draft flow seats.
+            for (int i = 0; i < fwds.Count; i++)
+            {
+                Data.ForwardData f = null; try { f = fwds[i]; } catch { }
+                if (f == null) continue;
+                if (angusIdx >= 0) { angusIdx = -1; break; } // more than one — not a keep-slot shape
+                angusIdx = i;
+            }
+        }
+        if (angusIdx < 0) return false;
+        if (angusIdx != 3)
+            Plugin.Log.LogInfo($"[CustomSquad] Template keep-slot is forward index {angusIdx} (Basic's is 3)");
+
+        // forward index -> the config slot that owns it.
+        var slotForIndex = new[] { cfg?.LW, cfg?.RW, cfg?.C, cfg?.LD, cfg?.RD };
 
         bool seated = false;
-        if (SlotIsConfigured(cfg?.LD) && fwds[angusIdx] != null)
+        if (angusIdx < slotForIndex.Length && SlotIsConfigured(slotForIndex[angusIdx])
+            && fwds[angusIdx] != null)
         {
-            // LD configured — ApplyPlayerTeamConfig already replaced McShaggy.
+            // The keep-slot's own position is configured — ApplyPlayerTeamConfig
+            // already replaced the template's Angus with the user's player.
             seated = true;
         }
         else
         {
-            // Find the user's primary configured forward (priority C, LW, RW, RD).
-            var slots = new[] { cfg?.C, cfg?.LW, cfg?.RW, cfg?.RD };
-            var idxs  = new[] { 2, 0, 1, 4 };
+            // Find the user's primary configured forward (priority C, LW, RW, RD),
+            // skipping the keep-slot itself.
+            var slots = new[] { cfg?.C, cfg?.LW, cfg?.RW, cfg?.LD, cfg?.RD };
+            var idxs  = new[] { 2, 0, 1, 3, 4 };
             int primaryIdx = -1;
             for (int k = 0; k < slots.Length; k++)
-                if (SlotIsConfigured(slots[k]) && idxs[k] < fwds.Count && fwds[idxs[k]] != null)
+                if (idxs[k] != angusIdx && SlotIsConfigured(slots[k])
+                    && idxs[k] < fwds.Count && fwds[idxs[k]] != null)
                 { primaryIdx = idxs[k]; break; }
 
             if (primaryIdx >= 0)
@@ -5097,33 +5647,11 @@ public static class PatchMapOpponents
         catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt] ApplyNodeLogo: {ex.Message}"); }
     }
 
-    // Some configs cannot be resolved this early and must wait for the launch path.
-    // `Import Team = PLAYER` (mirror match) copies the player's team out of
-    // TeamSelection, which isn't populated while the map is being built — applying
-    // it here would find nothing, log "Import team 'PLAYER' not found", and then be
-    // skipped at launch because the node looked configured. Leave it vanilla on the
-    // map and let PatchBoss/EliteLaunchMatch do it, as before this change.
-    internal static bool MustWaitForLaunch(int gameIndex, out string reason)
-    {
-        reason = null;
-        if (gameIndex < 0 || gameIndex >= Plugin.ConfigTeams.Count) return false;
-        return MustWaitForLaunchConfig(Plugin.ConfigTeams[gameIndex], out reason);
-    }
-
-    /// <summary>The same test against a config chosen by node assignment, which has
-    /// no game index to look up. Node-assigned mirror matches have to defer for
-    /// exactly the same reason.</summary>
-    internal static bool MustWaitForLaunchConfig(TeamConfig cfg, out string reason)
-    {
-        reason = null;
-        if (cfg == null || !cfg.IsImport || string.IsNullOrEmpty(cfg.ImportTeam)) return false;
-        if (cfg.ImportTeam.Trim().Equals("PLAYER", StringComparison.OrdinalIgnoreCase))
-        {
-            reason = "mirror match (Import Team = PLAYER); the player's team isn't readable during map generation";
-            return true;
-        }
-        return false;
-    }
+    // NOTE (2026-08-01): the launch-deferral machinery that used to live here
+    // existed ONLY for `Import Team = PLAYER` (mirror match), which has been
+    // removed — see the removal note on ApplyTeamFromConfig. Every remaining
+    // config resolves fine at map generation, so nothing needs deferring and the
+    // map pass applies teams in one go.
 
     // Primary hook: MapObject.SetOpponents(int act) is by definition the point at
     // which every elite and boss node has been given its TeamData, whoever called
@@ -5195,7 +5723,7 @@ public static class PatchMapOpponents
             // First layer wins, and we say so loudly — the launch path still
             // corrects the match itself when the player gets there.
             var claimedBy = new Dictionary<int, int>();
-            int applied = 0, shared = 0, alreadyDone = 0, deferred = 0;
+            int applied = 0, shared = 0, alreadyDone = 0;
             var summary = new StringBuilder();
 
             for (int k = 0; k < layers.Count; k++)
@@ -5232,15 +5760,6 @@ public static class PatchMapOpponents
                                     Plugin.Log.LogWarning($"[Assign] {nkey}: no team named '{teamKey}' in teams/"
                                         + " — leaving this node vanilla rather than guessing.");
                                 }
-                                else if (MustWaitForLaunchConfig(acfg, out string awaitWhy))
-                                {
-                                    // Same PLAYER-import deferral the sequential path
-                                    // needs: TeamSelection isn't populated during map
-                                    // generation, so a mirror match must wait.
-                                    deferred++;
-                                    Plugin.Log.LogInfo($"[Assign] {nkey} left vanilla on the map — {awaitWhy}.");
-                                    continue;
-                                }
                                 else
                                 {
                                     if (CampaignOpponents.EnsureAssigned(opp, acfg, nkey, $"map gen {nkey}"))
@@ -5254,13 +5773,6 @@ public static class PatchMapOpponents
                                 }
                             }
                         }
-                    }
-
-                    if (MustWaitForLaunch(gameIndex, out string wait))
-                    {
-                        deferred++;
-                        Plugin.Log.LogInfo($"[MapTeams] Layer {layer} (game {gameIndex + 1}) left vanilla on the map — {wait}.");
-                        continue;
                     }
 
                     int id;
@@ -5305,7 +5817,7 @@ public static class PatchMapOpponents
             {
                 Plugin.Log.LogInfo($"[MapTeams] Map configured from game {baseGames + 1} ({why}): {layers.Count} match layer(s),"
                     + $" {applied} team(s) applied, {alreadyDone} already current, {shared} shared-TeamData conflict(s),"
-                    + $" {deferred} deferred to launch, {challengesSkipped} challenge node(s) left vanilla.");
+                    + $" {challengesSkipped} challenge node(s) left vanilla.");
                 if (summary.Length > 0)
                     Plugin.Log.LogInfo($"[MapTeams]{summary}");
             }
@@ -5929,18 +6441,13 @@ public static class PatchMatchPreviewMenu
                 if (match != null) opp = match.opponent;
             }
             catch { }
-            // A mirror match still has to wait for LaunchMatch — TeamSelection may
-            // not be readable yet, and a failed attempt here would mark the node
-            // configured and stop the launch path from doing it properly.
-            bool waitForLaunch = PatchMapOpponents.MustWaitForLaunch(next, out _);
-            if (opp != null && !waitForLaunch
-                && CampaignOpponents.Ensure(opp, next, "MatchPreviewMenu.ShowMenu"))
+            if (opp != null && CampaignOpponents.Ensure(opp, next, "MatchPreviewMenu.ShowMenu"))
                 Plugin.Log.LogInfo($"[Preview] Corrected previewed opponent to game {next + 1} — map generation had it wrong");
 
             // 2. Repaint the widgets ShowMenu already filled. Prefer the node's
             //    own team so the text can never disagree with what will be played;
             //    fall back to the config when the node isn't readable.
-            string shownName = waitForLaunch ? null : opp?.teamName;
+            string shownName = opp?.teamName;
             string logoFrom = null;
             if (next < Plugin.ConfigTeams.Count)
             {
@@ -5953,9 +6460,8 @@ public static class PatchMatchPreviewMenu
                 }
             }
             if (string.IsNullOrEmpty(shownName)) return;
-            // "PLAYER"/"RANDOM" are directives, not team names — never show them.
-            if (shownName.Trim().Equals("PLAYER", StringComparison.OrdinalIgnoreCase)
-                || shownName.Trim().Equals("RANDOM", StringComparison.OrdinalIgnoreCase)) return;
+            // "RANDOM" is a directive, not a team name — never show it.
+            if (shownName.Trim().Equals("RANDOM", StringComparison.OrdinalIgnoreCase)) return;
 
             if (__instance.teamName != null)
                 __instance.teamName.text = shownName;
@@ -6000,6 +6506,9 @@ public static class PatchOnRunFinished
         Plugin.AppliedDraftPtrs.Clear();
         Plugin.AppliedFreeAgentPtrs.Clear();
         Plugin.FreeAgentSignedConfigs.Clear();
+        // Belt and braces alongside the per-match End(): a run that ends without
+        // a clean match end must still put the player's penalty setting back.
+        OffsideMatch.End();
         CampaignOpponents.ForgetAll("run ended");
         Plugin.SaveProgress();
         Plugin.Log.LogInfo("[Campaign] Run ended — ActsCompleted + GamesPlayed reset to 0 for next run");
@@ -6315,6 +6824,9 @@ public static class PatchBossLaunchMatch
     {
         try
         {
+            SoccerMatch.BeginMatch(SoccerMatch.IsSoccerNode(__instance), "Boss node");
+            OffsideMatch.BeginMatch("Boss node");
+
             var opponent = __instance.opponent;
             if (opponent == null) return;
 
@@ -6405,6 +6917,10 @@ public static class PatchBossLaunchMatch
         { "X-Ray", "XRay Shot (Level 2)" },
     };
 
+    // Every Talent asset loaded in the process, not just the ones the repo
+    // lists. See step 4 of FindTalentOnce for why this exists.
+    internal static Rogue.Talent[] AllTalentCache;
+
     internal static Rogue.Talent FindTalent(string name)
     {
         var found = FindTalentOnce(name);
@@ -6412,6 +6928,7 @@ public static class PatchBossLaunchMatch
         // Miss: the cached repo may have been grabbed before the game filled
         // it (or belong to an unloaded scene). Re-resolve and retry once.
         CachedTalentRepo = null;
+        AllTalentCache = null;
         EnsureRepos();
         return FindTalentOnce(name);
     }
@@ -6456,7 +6973,99 @@ public static class PatchBossLaunchMatch
             catch {}
         }
 
+        // 4) Last resort: EVERY Talent asset in memory, not just the repo's
+        //    curated `talents` list. That list is the pool the game draws
+        //    random rewards from, so a perfectly real talent can be absent
+        //    from it and still be grantable — Linesman (the offside talent) is
+        //    exactly that case, and the removed Level-1 "xRay" was another.
+        //    FindRelic below has always searched all assets this way; talents
+        //    now match it, so "Talent 'X' not found" means the asset genuinely
+        //    isn't loaded rather than merely un-pooled.
+        if (AllTalentCache == null)
+            try { AllTalentCache = UnityEngine.Resources.FindObjectsOfTypeAll<Rogue.Talent>(); } catch {}
+        if (AllTalentCache != null)
+        {
+            // Exact asset name first — that also skips "<name>(Clone)" copies,
+            // which are per-skater instances, not the shared asset.
+            foreach (var t in AllTalentCache)
+                if (t != null && t.name == name)
+                    return LogAssetFallback(t, name);
+            foreach (var t in AllTalentCache)
+                if (t != null && t.name != null &&
+                    t.name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                    return LogAssetFallback(t, name);
+            // Clone-stripped: only clones of this talent are loaded.
+            foreach (var t in AllTalentCache)
+            {
+                if (t?.name == null) continue;
+                string bare = t.name.EndsWith("(Clone)", StringComparison.Ordinal)
+                    ? t.name.Substring(0, t.name.Length - 7).TrimEnd() : t.name;
+                if (bare.Equals(name, StringComparison.OrdinalIgnoreCase))
+                    return LogAssetFallback(t, name);
+            }
+            // Localized display name, same order as the repo pass above.
+            foreach (var t in AllTalentCache)
+            {
+                if (t == null) continue;
+                try
+                {
+                    string key = t.powerupName;
+                    if (string.IsNullOrEmpty(key)) continue;
+                    string display = LocalizationManager.GetTranslation(key, true, 0, true, false, null, null, true);
+                    if (!string.IsNullOrEmpty(display) &&
+                        display.Equals(name, StringComparison.OrdinalIgnoreCase))
+                        return LogAssetFallback(t, name);
+                }
+                catch {}
+            }
+        }
+
         return null;
+    }
+
+    /// <summary>Say so when a talent came from the all-assets sweep rather than
+    /// the repo — it means the talent is real but outside the reward pool, which
+    /// is worth knowing when a campaign's talents behave unexpectedly.</summary>
+    private static Rogue.Talent LogAssetFallback(Rogue.Talent t, string asked)
+    {
+        try { Plugin.Log.LogInfo($"[Remix] Talent '{asked}' resolved as asset '{t.name}' (not in the repo's pool list)"); } catch {}
+        return t;
+    }
+
+    /// <summary>Work out which level of a relic a config line is asking for.
+    ///
+    /// FindRelic filters on level, so getting this wrong means the relic silently
+    /// never applies. Two spellings reach us:
+    ///
+    ///   "Steel Mitts:2"    — the explicit syntax, name and level separated.
+    ///   "Steel Mitts LVL2" — what the Creator's picker actually writes, because
+    ///                        the game's own DISPLAY NAME for the upgraded relic
+    ///                        ends in LVL2 and the picker lists relics by display
+    ///                        name. Read as level 1 (the old behaviour), every
+    ///                        upgraded relic in every campaign was dropped.
+    ///
+    /// The LVL2 suffix is kept on the name — it is part of the display name the
+    /// lookup matches against, not decoration.</summary>
+    internal static int LevelFromRelicName(string raw, out string name)
+    {
+        name = raw ?? "";
+        int level = 1;
+        int colon = name.IndexOf(':');
+        if (colon >= 0)
+        {
+            string tail = name.Substring(colon + 1).Trim();
+            name = name.Substring(0, colon).Trim();
+            if (!int.TryParse(tail, out level) || level < 1 || level > 2) level = 1;
+            return level;
+        }
+        string t = name.Trim();
+        if (t.EndsWith("LVL2", StringComparison.OrdinalIgnoreCase)
+            || t.EndsWith("(Level 2)", StringComparison.OrdinalIgnoreCase)
+            || t.EndsWith("Lv2", StringComparison.OrdinalIgnoreCase)
+            || t.EndsWith("Level 2", StringComparison.OrdinalIgnoreCase))
+            level = 2;
+        name = t;
+        return level;
     }
 
     internal static Rogue.Relic[] AllRelicCache;
@@ -6556,13 +7165,7 @@ public static class PatchBossLaunchMatch
 
     internal static void GiveRelic(TeamData team, string relicName)
     {
-        int level = 1;
-        if (relicName.Contains(":"))
-        {
-            var parts = relicName.Split(':');
-            relicName = parts[0];
-            int.TryParse(parts[1], out level);
-        }
+        int level = LevelFromRelicName(relicName, out relicName);
         var relic = FindRelic(relicName, level);
         if (relic == null) { Plugin.Log.LogWarning($"[Remix] Relic '{relicName}' level={level} not found"); return; }
         if (team.relics == null)
@@ -7484,6 +8087,22 @@ public static class PatchBossLaunchMatch
             CopyDirectory(dir, Path.Combine(dst, Path.GetFileName(dir)));
     }
 
+    // ── REMOVED 2026-08-01: `Import Team = PLAYER` (mirror match) ──────────────
+    // It cloned "the player's team" by scanning Resources.FindObjectsOfTypeAll
+    // <TeamSelection> and taking a homeTeam. That is not a reliable source: at the
+    // pre-match preview TeamSelection still holds STALE menu values, so the mirror
+    // cloned the wrong team entirely. Observed on 2026-08-01 with a custom squad —
+    // the player was 'Wacky Squad' but TeamSelection[0] read
+    // home='Greasy Lettuce' visitor='Calaveras', and 'Greasy Lettuce' (merely what
+    // that squad imports FROM) got cloned. Preferring a fully-populated
+    // TeamSelection made it worse, because the stale entry is the complete-looking
+    // one.
+    //
+    // The whole launch-deferral mechanism existed only to serve this, and went with
+    // it. If it is ever revived, do NOT go through TeamSelection: take the player's
+    // team from the match-init path, which genuinely knows it (see the
+    // [DUMP/MatchInit-PRE(native)] hook, whose `team` argument is the real squad),
+    // and apply the mirror there rather than at map generation or preview.
     internal static void ApplyTeamFromConfig(TeamData team, TeamConfig cfg)
     {
         Plugin.Log.LogInfo($"[Config] Applying team: '{cfg.Name}' (import={cfg.IsImport})");
@@ -7509,67 +8128,6 @@ public static class PatchBossLaunchMatch
                         Plugin.Log.LogInfo($"[Config] RANDOM team import picked: '{picked.teamName}'");
                     }
                 }
-            }
-
-            // Special: "PLAYER" imports the player's current team (mirror match with away colors)
-            if (cfg.ImportTeam.Trim().Equals("PLAYER", StringComparison.OrdinalIgnoreCase))
-            {
-                try
-                {
-                    // Find the player's team via TeamSelection
-                    var teamSels = UnityEngine.Resources.FindObjectsOfTypeAll<TeamSelection>();
-                    Plugin.Log.LogInfo($"[Config] PLAYER: Found {teamSels?.Length ?? 0} TeamSelection objects");
-                    TeamData playerTeam = null;
-                    if (teamSels != null)
-                    {
-                        for (int tsi = 0; tsi < teamSels.Length; tsi++)
-                        {
-                            var ts = teamSels[tsi];
-                            if (ts == null) continue;
-                            Plugin.Log.LogInfo($"[Config] PLAYER: TeamSelection[{tsi}] home='{ts.homeTeam?.teamName ?? "null"}' visitor='{ts.visitorTeam?.teamName ?? "null"}'");
-                            if (ts.homeTeam != null && playerTeam == null)
-                                playerTeam = ts.homeTeam;
-                        }
-                    }
-                    if (playerTeam != null)
-                    {
-                        Plugin.Log.LogInfo($"[Config] PLAYER MIRROR: Cloning player team '{playerTeam.teamName}'");
-                        // Copy logo
-                        team.logo = playerTeam.logo;
-                        team.alternateBigLogo = playerTeam.alternateBigLogo;
-                        team.nickname = playerTeam.nickname;
-                        // Use away colors as home (so they wear away jerseys)
-                        if (playerTeam.awayColors != null) team.homeColors.CopyInPlace(playerTeam.awayColors);
-                        if (playerTeam.homeColors != null) team.awayColors.CopyInPlace(playerTeam.homeColors);
-                        team.primaryColorPlayer = playerTeam.secondaryColorPlayer;
-                        team.secondaryColorPlayer = playerTeam.primaryColorPlayer;
-                        // Copy players field by field
-                        var pSrcFwd = playerTeam.forwards;
-                        var pDstFwd = team.forwards;
-                        if (pSrcFwd != null && pDstFwd != null)
-                        {
-                            int cnt = Math.Min(pSrcFwd.Count, pDstFwd.Count);
-                            for (int pi = 0; pi < cnt; pi++)
-                                if (pSrcFwd[pi] != null && pDstFwd[pi] != null)
-                                    CopyPlayerData(pSrcFwd[pi], pDstFwd[pi]);
-                        }
-                        if (playerTeam.goalie != null && team.goalie != null)
-                            CopyGoalieData(playerTeam.goalie, team.goalie);
-                        // Copy relics
-                        NukeRelics(team);
-                        if (playerTeam.relics != null)
-                            for (int ri = 0; ri < playerTeam.relics.Count; ri++)
-                                if (playerTeam.relics[ri] != null)
-                                    team.relics.Add(playerTeam.relics[ri]);
-                        // Set display name
-                        team.teamName = !string.IsNullOrEmpty(cfg.Name) ? cfg.Name : playerTeam.teamName + " (Mirror)";
-                        team.city = !string.IsNullOrEmpty(cfg.City) ? cfg.City : playerTeam.city;
-                        Plugin.Log.LogInfo($"[Config] Mirror match: '{team.teamName}' with away colors");
-                        return;
-                    }
-                    Plugin.Log.LogWarning("[Config] PLAYER team not found — falling back");
-                }
-                catch (Exception ex) { Plugin.Log.LogError($"[Config] PLAYER mirror error: {ex.Message}"); }
             }
 
             // Import mode — find team by name and copy everything
@@ -8317,6 +8875,78 @@ public static class PatchBossLaunchMatch
             }
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[Config] Goalie team equipment color error: {ex.Message}"); }
+    }
+
+    /// <summary>Does this config say anything about how the player LOOKS, as
+    /// opposed to who they are and how good they are?</summary>
+    internal static bool HasAppearanceOverride(PlayerConfig pc)
+    {
+        if (pc == null) return false;
+        if (!string.IsNullOrEmpty(pc.Glasses)) return true;
+        if (pc.StickOverride != null || pc.HelmetOverride != null || pc.HelmetAwayOverride != null
+            || pc.BodyOverride != null || pc.BodyAwayOverride != null
+            || pc.BicepOverride != null || pc.BicepAwayOverride != null
+            || pc.GlovesOverride != null || pc.GlovesAwayOverride != null
+            || pc.PantsOverride != null || pc.PantsAwayOverride != null
+            || pc.SkatesOverride != null || pc.SkatesAwayOverride != null) return true;
+        if (pc.SizeOffset > 0) return true;
+        return HasColorOverride(pc);
+    }
+
+    /// <summary>True when any per-player colour is set, home or away.</summary>
+    internal static bool HasColorOverride(PlayerConfig pc)
+    {
+        if (pc == null) return false;
+        int[][] all =
+        {
+            pc.JerseyColor, pc.JerseySecondaryColor, pc.JerseyAccentColor,
+            pc.GlovesColor, pc.GlovesSecondaryColor, pc.GlovesTertiaryColor,
+            pc.HelmetColor, pc.HelmetSecondaryColor, pc.HelmetTertiaryColor,
+            pc.PantsColor, pc.PantsSecondaryColor, pc.PantsTertiaryColor,
+            pc.SkatesColor, pc.BladeColor, pc.LacesColor, pc.BicepColor,
+            pc.NumberColor, pc.NumberSecondaryColor,
+            pc.SocksColor, pc.SocksSecondaryColor, pc.SocksTertiaryColor,
+            pc.JerseyColorAway, pc.JerseySecondaryColorAway, pc.JerseyAccentColorAway,
+            pc.GlovesColorAway, pc.GlovesSecondaryColorAway, pc.GlovesTertiaryColorAway,
+            pc.HelmetColorAway, pc.HelmetSecondaryColorAway, pc.HelmetTertiaryColorAway,
+            pc.PantsColorAway, pc.PantsSecondaryColorAway, pc.PantsTertiaryColorAway,
+            pc.SkatesColorAway, pc.BladeColorAway, pc.LacesColorAway, pc.BicepColorAway,
+            pc.NumberColorAway, pc.NumberSecondaryColorAway,
+            pc.SocksColorAway, pc.SocksSecondaryColorAway, pc.SocksTertiaryColorAway,
+        };
+        foreach (var c in all) if (c != null) return true;
+        return false;
+    }
+
+    /// <summary>Apply ONLY the per-player look: equipment skins, glasses and
+    /// colours. Name, stats, face, number, talents and ability are left exactly
+    /// as they are.
+    ///
+    /// Two callers want precisely this and nothing more: a custom-squad slot
+    /// configured for looks alone (the occupant is a draft pick whose stats must
+    /// survive), and a Play Now custom player (whose identity and stats already
+    /// round-trip through the game's own save file).</summary>
+    internal static void ApplyPlayerLookOnly(ForwardData f, PlayerConfig pc, bool useAway = false)
+    {
+        if (f == null || pc == null) return;
+        if (!string.IsNullOrEmpty(pc.Glasses)) f.glassesSkin = pc.Glasses;
+        if (pc.StickOverride != null)       f.stickSkin      = pc.StickOverride;
+        if (pc.HelmetOverride != null)      f.helmetSkin     = pc.HelmetOverride;
+        if (pc.HelmetAwayOverride != null)  f.helmetAwaySkin = pc.HelmetAwayOverride;
+        if (pc.BodyOverride != null)        f.bodySkin       = pc.BodyOverride;
+        if (pc.BodyAwayOverride != null)    f.bodyAwaySkin   = pc.BodyAwayOverride;
+        if (pc.BicepOverride != null)       f.bicepSkin      = pc.BicepOverride;
+        if (pc.BicepAwayOverride != null)   f.bicepAwaySkin  = pc.BicepAwayOverride;
+        if (pc.GlovesOverride != null)      f.gloveSkin      = pc.GlovesOverride;
+        if (pc.GlovesAwayOverride != null)  f.gloveAwaySkin  = pc.GlovesAwayOverride;
+        if (pc.PantsOverride != null)       f.pantsSkin      = pc.PantsOverride;
+        if (pc.PantsAwayOverride != null)   f.pantsAwaySkin  = pc.PantsAwayOverride;
+        if (pc.SkatesOverride != null)      f.skateSkin      = pc.SkatesOverride;
+        if (pc.SkatesAwayOverride != null)  f.skateAwaySkin  = pc.SkatesAwayOverride;
+        if (pc.SizeOffset > 0)              f.sizeOffsetPercentage = pc.SizeOffset;
+        // "Helmet = none" is two things, not one — see HandleNoHelmetSentinel.
+        PatchPlayerTeamInit.HandleNoHelmetSentinel(f);
+        ApplyPlayerColorOverrides(f, pc, useAway);
     }
 
     internal static void ApplyPlayerConfig(ForwardData f, PlayerConfig pc, UniformConfig uniform)
@@ -11553,6 +12183,9 @@ public static class PatchEliteLaunchMatch
     {
         try
         {
+            SoccerMatch.BeginMatch(SoccerMatch.IsSoccerNode(__instance), "Elite node");
+            OffsideMatch.BeginMatch("Elite node");
+
             var opponent = __instance.opponent;
             if (opponent == null) return;
 
@@ -12825,7 +13458,7 @@ public static class LogRepositories
         catch { return false; }
     }
 
-    private static byte[] SpriteToPng(UnityEngine.Sprite sprite)
+    internal static byte[] SpriteToPng(UnityEngine.Sprite sprite)
     {
         if (sprite == null || sprite.texture == null) return null;
         var src = sprite.texture;
@@ -13522,6 +14155,40 @@ public static class LogRepositories
                         for (int i = 0; i < tList3.Count; i++)
                         { var t = tList3[i]; if (t != null && !string.IsNullOrEmpty(t.id) && !string.IsNullOrEmpty(t.name)) sbMap.AppendLine($"{t.name}|{t.id}"); }
                 }
+                // Relic GUIDs, so the Creator can fill CustomTeam.relics — the
+                // Play Now team format stores relics by id and the Creator had no
+                // way to resolve one, so it wrote an empty list every time and
+                // exported teams arrived with no starting relics at all.
+                //
+                // Keyed by DISPLAY NAME, because that is what the Creator's relic
+                // picker lists and what campaign team.txt files contain. The
+                // level-2 display name already ends in "LVL2", so upgraded relics
+                // key distinctly without any extra encoding.
+                try
+                {
+                    var allRelics = UnityEngine.Resources.FindObjectsOfTypeAll<Rogue.Relic>();
+                    if (allRelics != null && allRelics.Length > 0)
+                    {
+                        sbMap.AppendLine("[relics]");
+                        var seenRelic = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                        foreach (var r in allRelics)
+                        {
+                            if (r == null || string.IsNullOrEmpty(r.id)) continue;
+                            string nameKey = "";
+                            try
+                            {
+                                string d = r.description ?? "";
+                                if (d.EndsWith("/description")) nameKey = d.Replace("/description", "/name");
+                            }
+                            catch {}
+                            string display = ResolveI2(nameKey);
+                            if (string.IsNullOrEmpty(display) || display.StartsWith("[missing:")) display = r.relicName;
+                            if (string.IsNullOrEmpty(display) || !seenRelic.Add(display)) continue;
+                            sbMap.AppendLine($"{display}|{r.id}");
+                        }
+                    }
+                }
+                catch (Exception rex) { Plugin.Log.LogWarning($"[Dump] relic id map: {rex.Message}"); }
                 File.WriteAllText(Path.Combine(dirGui, "_export_id_map.txt"), sbMap.ToString());
                 Plugin.Log.LogInfo("[Dump] _gui_data/_export_id_map.txt");
             }
@@ -14495,7 +15162,30 @@ public static class PatchPlayerTeamInit
                                || pc.Accuracy != 50 || pc.Checking != 50
                                || (pc.Talents != null && pc.Talents.Count > 0)
                                || !string.IsNullOrEmpty(pc.Ability);
-                if (!hasAny) continue;
+                if (!hasAny)
+                {
+                    // A slot configured PURELY for looks — a helmet, a pair of
+                    // gloves, a jersey colour and nothing else — matches none of
+                    // the tests above and used to be skipped outright, which is
+                    // why uniform overrides on a custom squad appeared to do
+                    // nothing. Apply just the look.
+                    //
+                    // NOT the full ApplyPlayerConfig: that writes the config's
+                    // absolute stats, and an appearance-only file leaves those at
+                    // 50, which would flatten whichever draft pick or superstar
+                    // the game seated here.
+                    if (PatchBossLaunchMatch.HasAppearanceOverride(pc))
+                    {
+                        try
+                        {
+                            PatchBossLaunchMatch.ApplyPlayerLookOnly(fwds[i], pc);
+                            Plugin.Log.LogInfo($"[PlayerTeam] slot {i}: appearance-only override applied to "
+                                + $"'{fwds[i].firstName} {fwds[i].lastName}' (stats and talents left alone)");
+                        }
+                        catch (Exception ex) { Plugin.Log.LogWarning($"[PlayerTeam] slot {i} look apply error: {ex.Message}"); }
+                    }
+                    continue;
+                }
                 try { PatchBossLaunchMatch.ApplyPlayerConfig(fwds[i], pc, cfg.Uniform); }
                 catch (Exception ex) { Plugin.Log.LogWarning($"[PlayerTeam] slot {i} apply error: {ex.Message}"); }
                 // Stat Scale (custom squads): multiply the configured player's

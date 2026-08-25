@@ -47,6 +47,10 @@
       <HintPath>$(InteropDir)\UnityEngine.UI.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(InteropDir)\UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <!-- MapTemplateData / LayerData / NodeData (DAGG.Generation.Template) — the
          GM squad's map layouts, read to place its free-agent nodes. -->
     <Reference Include="DAGG_assembly">

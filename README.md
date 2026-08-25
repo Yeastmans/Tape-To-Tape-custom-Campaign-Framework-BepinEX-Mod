@@ -80,14 +80,14 @@ previews, and jersey rendering.
 | Tab / Section | What it does |
 |---------------|-------------|
 | **Home** | Tree of all campaigns, teams, players, goalies. Double-click to edit. Right-click for delete / duplicate / rename. Set the active campaign. |
-| **Campaign editor** | Act sequence, Spartan/minigame toggles, reward pools (which relics and talents can appear in random reward nodes). |
+| **Campaign editor** | Act sequence, Spartan/minigame toggles, reward pools (which relics and talents can appear in random reward nodes), map layout, squad template, offside. |
 | **Team editor** | Name, abbreviation, city, logo, jersey colors (with live swatch + jersey preview), uniform skins, team relics, goalie, 5-skater lineup, optional Line 2. |
 | **Player editor** | Face, size, handedness, skin tone, all 4 stats, ability, talents, per-player uniform and color overrides. |
 | **Goalie editor** | Face, all 14 stats, pad/blocker/glove/mask skins. |
 | **Player-team creator** | Build the squad the player picks in *Choose Your Squad*. Starting relics, starting head override, full lineup. |
 | **Library** | Shared players and teams reusable across any campaign. Import from game, dump in-game teams to library. |
 | **Import from game** | One-click import of any in-game team's full roster. |
-| **Export to Play Now** | Writes your custom player to the game's save folder for use in Play Now and online. |
+| **Export to Play Now** | Writes your custom player to the game's save folder for use in Play Now and online. Uniform and colour overrides the game's save format has no room for ride along in `play_now_overrides/` and are applied by the mod. |
 | **Auto-updater** | Checks GitHub on startup and via *Check for updates*. Downloads and relaunches the installer automatically. |
 | **Changelog** | Shows the full release history fetched from GitHub. |
 | **Uninstaller** | Three options: full uninstall / mod + BepInEx only / clear save data. |
@@ -122,6 +122,22 @@ Examples: `1, 2, 3` = 10 games · `1, 1, 2, 2, 3` = 17–19 games
 Teams play in the order they appear in the campaign. Team 1 = game 1, Team 2 = game 2, etc.
 
 **The last game on each map is the boss.** Everything else is an elite.
+
+### Offside
+
+The base game only offers offside in Play Now's Advanced Settings. A campaign
+can turn it on for a whole run with the **Offside** checkbox in the campaign
+editor, or by hand in `campaign.txt`:
+
+```
+Offside                 = yes
+Offside Penalty         = Whistle
+```
+
+`Offside Penalty` is optional — `Whistle`, `Lose Puck` or `Knockout`. Leave it
+out and whatever the player chose in Advanced Settings is used. The rule is
+forced on per match, the same way the *Linesman* talent does it, so your own
+saved settings are never rewritten.
 
 ### Included campaigns
 

@@ -1,5 +1,54 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## v2.1.35 — 2026-08-19
+
+Rebuilt for the **2026-08-18 game update**. If the mod stopped loading after that
+update, that is why — the update removes part of BepInEx, and reinstalling puts it
+back.
+
+### Offside, for a whole run
+
+The base game only offers offside in Play Now's Advanced Settings. A campaign can
+now turn it on for every match of a run — new **Offside** checkbox in the campaign
+editor, with an optional **Offside Penalty** of *Whistle*, *Lose Puck* or
+*Knockout*.
+
+Leave the penalty on *(player's setting)* and whatever you picked in Advanced
+Settings is used. **Your own saved settings are never rewritten** — the rule is
+forced on for the match and released when it ends, the same way the *Linesman*
+talent does it.
+
+### Fixed
+
+* **Talents that exist but were reported "not found".** Talent lookup only ever
+  searched the pool the game draws random rewards from, so a real talent outside
+  that pool — *Linesman*, the offside one — could not be given to a player at all.
+  Every loaded talent is now searched.
+
+* **Uniform and colour overrides did nothing on players exported to Play Now.**
+  The game's save format for a custom skater has room for six parts of a look:
+  face, jersey, away jersey, stick, logo and number. The editor offers eighteen.
+  Helmet, glasses, bicep, gloves, pants, skates, every away variant and all the
+  colour overrides had nowhere to be stored, so they were silently lost on the way
+  out — which is why a player could look right in a campaign and wrong in Play Now.
+  Those parts now travel alongside the export and are applied by the mod, through
+  the same code the campaign side uses.
+
+* **Upgraded (LVL2) relics never applied.** Picking one gave you nothing, with no
+  error anywhere — the relic was looked up at level 1 and the level-2 version was
+  filtered out. Affects both team relics and a custom squad's starting relics.
+
+* **Teams exported to Play Now arrived with no starting relics.** The team file
+  stores relics by id and the Creator had no way to look one up, so it wrote an
+  empty list every time.
+
+* **Custom squad slots set up for looks only were ignored.** A lineup slot given a
+  helmet, gloves or a jersey colour and nothing else was treated as unconfigured
+  and skipped entirely. It now gets its look, while whoever you drafted into that
+  slot keeps their own stats and talents.
+
+---
+
 ## v2.1.34 — 2026-08-01
 
 ### Shared campaigns now bring their logos with them
