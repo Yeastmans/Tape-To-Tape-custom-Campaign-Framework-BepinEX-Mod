@@ -13,9 +13,9 @@ internal static class Program
         {
             try
             {
-                if(args.Length!=3) throw new ArgumentException("Expected game folder and result JSON path.");
+                if(args.Length is not (2 or 3)) throw new ArgumentException("Expected game folder and optional result JSON path.");
                 var result=ModCompatibility.CompatibilityUpdater.Ensure(Path.GetFullPath(args[1]),Path.Combine(AppContext.BaseDirectory,"mod-runtime"));
-                File.WriteAllText(Path.GetFullPath(args[2]),System.Text.Json.JsonSerializer.Serialize(result));
+                if(args.Length==3) File.WriteAllText(Path.GetFullPath(args[2]),System.Text.Json.JsonSerializer.Serialize(result));
                 return result.State is "Current" or "Updated" ? 0 : 1;
             }
             catch(Exception ex) { Console.Error.WriteLine(ex.Message);return 1; }

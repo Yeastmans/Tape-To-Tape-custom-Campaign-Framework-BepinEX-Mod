@@ -291,13 +291,11 @@ var
   Plugins: String;
 begin
   if CurStep <> ssPostInstall then Exit;
-  if not ExecAsOriginalUser(ExpandConstant('{app}\{#ExeName}'), '--clean-upgrade-content', '', SW_HIDE, ewWaitUntilTerminated, ExitCode) then
-    RaiseException('Could not clean migrated content. Old game content folders were not removed.')
-  else if ExitCode <> 0 then
-    RaiseException('Content cleanup failed. Old game content folders were not removed.');
+  // Migration copies authored content without rewriting it. An installer update must
+  // not strip fields, imported equipment or custom heads from existing campaigns.
   // Refresh an older profile immediately; opening Studio is not required to finish the repair.
   if not ExecAsOriginalUser(ExpandConstant('{app}\{#ExeName}'),
-    '--update-mod-compatibility "' + GameDirectory('') + '" "' + ExpandConstant('{tmp}\mod-compatibility-result.json') + '"',
+    '--update-mod-compatibility "' + GameDirectory('') + '"',
     '', SW_HIDE, ewWaitUntilTerminated, ExitCode) or (ExitCode <> 0) then
     MsgBox('Studio and the mod are installed, but this game build still needs compatibility attention. Open Studio to check for a repaired release.', mbInformation, MB_OK);
   // These exact product-owned paths were copied and checked by PrepareToInstall.
