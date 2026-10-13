@@ -13,3 +13,4 @@
 - Upload, download and play custom campaigns.
 - Use visual previews, built-in help and a searchable editor guide.
 - Install Campaign Studio and the mod together with one Windows installer.
+- Find and install Studio and mod updates from within the editor.

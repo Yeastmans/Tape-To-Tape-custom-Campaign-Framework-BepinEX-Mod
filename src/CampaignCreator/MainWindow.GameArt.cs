@@ -21,7 +21,7 @@ public sealed partial class MainWindow
     {
         if (readingGameArt) return;
         readingGameArt = true;
-        try { await EnsureModCompatibility(force); await ReadGameArt(force); if(compatibilityStatus.Length>0) status.Text=compatibilityStatus; }
+        try { await EnsureModCompatibility(force); if(updateInstallerStarted || !IsVisible) return; await ReadGameArt(force); if(compatibilityStatus.Length>0) status.Text=compatibilityStatus; }
         finally { readingGameArt = false; }
     }
 

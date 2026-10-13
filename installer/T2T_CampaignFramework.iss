@@ -65,11 +65,33 @@ Name: "{commonprograms}\{#AppName}\{#AppName}"; Filename: "{app}\{#ExeName}"; Wo
 Name: "{commondesktop}\{#AppName}"; Filename: "{app}\{#ExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#ExeName}"; WorkingDir: "{app}"; Description: "Launch Campaign Studio"; Flags: postinstall nowait skipifsilent unchecked runasoriginaluser
+Filename: "{app}\{#ExeName}"; WorkingDir: "{app}"; Description: "Launch Campaign Studio"; Flags: postinstall nowait skipifsilent unchecked runasoriginaluser; Check: not IsStudioUpdate
+Filename: "{app}\{#ExeName}"; WorkingDir: "{app}"; Flags: nowait runasoriginaluser; Check: IsStudioUpdate
 
 [Code]
 var
   GamePage: TInputDirWizardPage;
+
+function IsStudioUpdate(): Boolean;
+begin
+  Result := ExpandConstant('{param:STUDIOUPDATE|0}') = '1';
+end;
+
+function GameIsRunning(): Boolean;
+var
+  Locator, Services, Processes: Variant;
+begin
+  // Do not let Restart Manager close a player's active game to perform an update.
+  Result := True;
+  try
+    Locator := CreateOleObject('WbemScripting.SWbemLocator');
+    Services := Locator.ConnectServer('', 'root\CIMV2');
+    Processes := Services.ExecQuery('SELECT ProcessId FROM Win32_Process WHERE Name = ''Tape to Tape.exe''');
+    Result := Processes.Count > 0;
+  except
+    Log('Could not determine whether Tape to Tape is running. Installation postponed.');
+  end;
+end;
 
 function GameDirectory(Param: String): String;
 begin
@@ -224,6 +246,10 @@ begin
   Result := '';
   Result := ValidateAppDirectory();
   if Result <> '' then Exit;
+  if GameIsRunning() then begin
+    Result := 'Close Tape to Tape before installing or updating Campaign Studio, then retry.';
+    Exit;
+  end;
   if not FileExists(GameDirectory('') + '\Tape to Tape.exe') then begin
     Result := 'Select the game folder containing Tape to Tape.exe.';
     Exit;
@@ -269,6 +295,11 @@ begin
     RaiseException('Could not clean migrated content. Old game content folders were not removed.')
   else if ExitCode <> 0 then
     RaiseException('Content cleanup failed. Old game content folders were not removed.');
+  // Refresh an older profile immediately; opening Studio is not required to finish the repair.
+  if not ExecAsOriginalUser(ExpandConstant('{app}\{#ExeName}'),
+    '--update-mod-compatibility "' + GameDirectory('') + '" "' + ExpandConstant('{tmp}\mod-compatibility-result.json') + '"',
+    '', SW_HIDE, ewWaitUntilTerminated, ExitCode) or (ExitCode <> 0) then
+    MsgBox('Studio and the mod are installed, but this game build still needs compatibility attention. Open Studio to check for a repaired release.', mbInformation, MB_OK);
   // These exact product-owned paths were copied and checked by PrepareToInstall.
   Plugins := ExpandFileName(GameDirectory('')) + '\BepInEx\plugins\';
   // Preserve trailing spaces in legacy generated folder names during removal too.

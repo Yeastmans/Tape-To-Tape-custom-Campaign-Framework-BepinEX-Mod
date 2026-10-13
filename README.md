@@ -40,7 +40,8 @@
 4. Run Setup from the Windows account you use to play and accept its administrator prompt. Choose the **Studio application folder**, then the separate **Tape to Tape game folder** containing `Tape to Tape.exe`. Steam's **Manage → Browse local files** opens the game folder.
 5. Finish Setup and open **T2T Campaign Studio** from its Start menu entry or optional desktop shortcut. Read the beta notice and choose **I understand · Open Studio**. Setup installs the editor separately from the game's loader and mod files.
 6. On Home, choose **Read game artwork**. If asked, select your game folder. Studio reads previews and base-game catalogs from your installed game; the game does not need to be running.
-7. Check the compatibility message at the bottom of Home. **Update mod compatibility** retries the check. If it reports an unsupported build or an error, resolve that before starting a custom run.
+7. Studio checks GitHub for updates on every startup, after the beta notice. When a newer Studio and mod bundle is available, it asks before downloading and opening Setup. **Check for updates** on Home retries this at any time. Close the game and save your edits before installing. Existing versions without this button need one manual installer update to gain automatic checks.
+8. **Update mod compatibility** verifies the installed mod against your game files. If a repair is needed, Studio also checks GitHub for a newer bundle. **Launch Tape to Tape** checks for releases and verifies compatibility before opening the game through Steam. An unavailable network check leaves editing available; it does not mean the release is current.
 
 > [!TIP]
 > **Two different folders:** Studio normally lives in `C:\Program Files\T2T Campaign Studio`. Your campaigns and library live in `%LOCALAPPDATA%\T2T Campaign Studio`. The game folder receives BepInEx and the mod, not your working Studio projects.
@@ -232,7 +233,7 @@ The Studio uninstaller retains AppData content and the shared BepInEx runtime. *
 | The interface does not match this README | Check that you installed the new **Campaign Studio** release. The v2.1.x Python creator is different. |
 | `roguelite` is missing in Steam | The branch requires access. Confirm you have it before installing this release; do not substitute the old `experimental` instructions. |
 | Pictures or base-game import lists are missing | Use **Read game artwork**, select the correct game installation and let the read finish. Repeat after a game update if prompted. |
-| The mod stops working after an update | Close the game, open Studio and check **Update mod compatibility**. Read the result; unsupported changes may require a newer release. Check `BepInEx/LogOutput.log` if the loader does not start. |
+| The mod stops working after an update | Close the game and open Studio. It checks GitHub at startup and offers newer Studio/mod installers, including beta releases. Use **Check for updates** to retry. **Update mod compatibility** checks the files already installed; if the latest bundle still reports an unsupported game build, a further mod repair is needed. Check `BepInEx/LogOutput.log` if the loader does not start. |
 | My campaign does not appear in game | Save it, select it on Home and restart Tape to Tape. For map or starting-roster changes, choose **New Run**. |
 | My custom opponent never appears | Assign it to a Match/Boss node and save. Use **Needs attention → Assign** from the overview. |
 | My custom squad is missing | Check **Use player teams**, the campaign's own team list, and the game's Custom Squads page. A library copy alone is not a campaign assignment. |

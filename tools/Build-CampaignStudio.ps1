@@ -6,6 +6,7 @@ param(
     [string]$PythonPath = '',
     [string]$IsccPath = '',
     [string]$SevenZipPath = '',
+    [ValidatePattern('^[a-zA-Z0-9][a-zA-Z0-9._-]{0,80}$')][string]$ReleaseTag = 'beta-1.0-r2',
     [ValidatePattern('^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$')][string]$StageName = 'CampaignStudio'
 )
 $ErrorActionPreference = 'Stop'
@@ -153,17 +154,26 @@ foreach ($file in $sourceSeams) { Same-Hash $file.FullName (Join-Path $seamOutpu
 $installerOutput = Join-Path $buildRoot 'installer'
 Assert-PlainPath $installerOutput
 [IO.Directory]::CreateDirectory($installerOutput) | Out-Null
+$label = ([regex]::Match((Get-Content -Raw -LiteralPath (Join-Path $repository 'installer/T2T_CampaignFramework.iss')), '#define AppVersion "([^"]+)"')).Groups[1].Value
+$buildId = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+$identity = [ordered]@{ schema=1; buildId=$buildId; label=$label; platform='win-x64' }
+[IO.File]::WriteAllText((Join-Path $stage 'studio-build.json'), ($identity | ConvertTo-Json) + [Environment]::NewLine)
 Run-Tool $iscc @(('/DStudioDir=' + $stage), ('/O' + $installerOutput), (Join-Path $repository 'installer/T2T_CampaignFramework.iss')) 'Installer compilation'
 $installer = Join-Path $installerOutput 'T2T_Custom_Campaign_Framework_Setup.exe'
 if (!(Test-Path -LiteralPath $installer -PathType Leaf)) { throw 'Inno Setup did not produce the expected installer.' }
-$label = ([regex]::Match((Get-Content -Raw -LiteralPath (Join-Path $repository 'installer/T2T_CampaignFramework.iss')), '#define AppVersion "([^"]+)"')).Groups[1].Value
 $receipt = [ordered]@{
-    release = $label; builtUtc = [DateTime]::UtcNow.ToString('o'); gameBuild = $nativeProfile.Build
+    release = $label; buildId = $buildId; releaseTag = $ReleaseTag; builtUtc = [DateTime]::UtcNow.ToString('o'); gameBuild = $nativeProfile.Build
     gameHash = $nativeProfile.GameHash; metadataHash = $nativeProfile.MetadataHash; baselineId = $nativeProfile.BaselineId
     modSha256 = $modHash; studioSha256 = (Get-FileHash -LiteralPath (Join-Path $stage 'T2T Campaign Studio.dll')).Hash
     installerSha256 = (Get-FileHash -LiteralPath $installer).Hash
     stage = $stage; installer = $installer; validation = 'Package structure, input artwork/brand-icon allowlist, seams, dependency and runtime hashes; no gameplay or installer execution.'
 }
 [IO.File]::WriteAllText((Join-Path $installerOutput 'build-receipt.json'), ($receipt | ConvertTo-Json) + [Environment]::NewLine)
+$update = [ordered]@{
+    schema=1; buildId=$buildId; label=$label; platform='win-x64'; releaseTag=$ReleaseTag
+    installerName=[IO.Path]::GetFileName($installer); installerSize=(Get-Item -LiteralPath $installer).Length
+    installerSha256=$receipt.installerSha256; studioSha256=$receipt.studioSha256; modSha256=$modHash
+}
+[IO.File]::WriteAllText((Join-Path $installerOutput 'campaign-studio-update.json'), ($update | ConvertTo-Json) + [Environment]::NewLine)
 Write-Output "Built $label installer: $installer"
 Write-Output 'No game files, user content, installed applications or published releases were changed.'

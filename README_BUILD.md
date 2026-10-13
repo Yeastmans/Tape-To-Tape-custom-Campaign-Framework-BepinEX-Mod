@@ -79,7 +79,7 @@ Replace the example game path with your own installation:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Build-CampaignStudio.ps1 -GameDirectory 'D:\SteamLibrary\steamapps\common\Tape to Tape'
 ```
 
-Optional parameters are `-DotnetPath`, `-PythonPath`, `-IsccPath`,
+Optional parameters are `-ReleaseTag` (default `beta-1.0-r2`), `-DotnetPath`, `-PythonPath`, `-IsccPath`,
 `-SevenZipPath` and `-StageName`. Tool paths must name executables. The wrapper
 passes the supplied game's interop directory to MSBuild; it does not depend
 on the historical default path inside the mod project.
@@ -97,6 +97,8 @@ built mod and compatibility baseline. No test project is required.
 | `build/CampaignStudio` | Published Studio application. |
 | `build/installer/T2T_Custom_Campaign_Framework_Setup.exe` | Windows installer to upload as a release asset. |
 | `build/installer/build-receipt.json` | Game, mod, Studio and installer identity/checksums. |
+| `build/installer/campaign-studio-update.json` | Update metadata to publish alongside that exact installer. |
+| `build/CampaignStudio/studio-build.json` | Installed build identity; a fresh build number also identifies same-version repairs. |
 | `release/CustomCampaignFramework.dll` | Built mod input consumed by Studio and Inno Setup. |
 
 The wrapper cleans only its own marked stage under this checkout's `build`
@@ -104,6 +106,16 @@ folder on later builds, and refuses to replace a running Studio stage. An
 unmarked existing folder is preserved; use another `-StageName` or move it
 yourself. Dependency cache and installer outputs are retained. Source build
 outputs also appear under ordinary `src/*/bin` and `src/*/obj` folders.
+
+When publishing, upload the installer first, then `campaign-studio-update.json`
+from the same build. The manifest's tag must match the release tag. Studio reads
+the official repository's release list (including prereleases), compares build
+numbers and verifies GitHub's SHA-256 digests, the manifest and the downloaded
+installer before opening Setup. Keep the manifest paired with its exact installer;
+a partial or mismatched upload is reported as unavailable, never as up to date.
+Existing releases without an update manifest remain manual downloads. Rebuilt
+Beta 1.0 revision 2 installers must link their exact source commit in the release
+description because the original tag's source archive remains unchanged.
 
 Package validation is technical evidence. It does not confirm live gameplay,
 native trigger timing, successful installer migration or save/Continue behavior.

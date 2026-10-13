@@ -119,7 +119,7 @@ public sealed partial class MainWindow : Window
         LoadCampaigns();
         ShowHome();
         InitializePageHelp();
-        Opened += async (_, _) => { StartCompatibilityUpdates(); if (BuildGameArtOnStart) await EnsureGameArt(); await PromptForDefaultLook(); };
+        Opened += async (_, _) => await StartStudio();
     }
     private static string FindRoot(string[] args)
     {
