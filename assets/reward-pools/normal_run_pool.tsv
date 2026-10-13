@@ -666,3 +666,7 @@ Relics	fdd9ab50-79d3-47f6-9358-2534ca1ee935	Retro Rocket	1	yes	level 1, category
 Relics	fe7830b2-e2db-4bc1-9307-5efbd81189bd	Buzzer Beater (Level 2)	2	yes	level 2: upgrade of offered 'Buzzer Beater' (TryUpgradeRelic on each rolled reward: 2.5%, 7.5% in act 2, 15% in act 3; also upgrade events)
 Relics	ff358466-f146-408e-8049-b4ece03e4e12	Whistle Of Time Timer	1	yes	level 1, category UsedInCampaignPool|Timer|Customization -> offered by post-match relic reward after normal/elite games (RewardsStep.LaunchRelicReward) and relic nodes (RelicNodeReward); Timer-mode only (excluded when GameRule=Maxgoal)
 Relics	ff9ac081-9f12-4aad-af75-ea4f19edde93	Whisk (Level 2)	2	yes	level 2: upgrade of offered 'Whisk' (TryUpgradeRelic on each rolled reward: 2.5%, 7.5% in act 2, 15% in act 3; also upgrade events)
+Talents	7ab23b1d-105e-49ad-a023-42c86e937870	PerformanceBonus	1	no	Native category None: fixed player talent, not selected by native random reward categories.
+Talents	f0a3b753-49fe-42a2-92dc-4e3080c1e30d	Ref Block Shot Talent	1	no	Native category None: fixed player talent, not selected by native random reward categories.
+Talents	18d9447f-3d0d-40ff-b95f-bdbad224706e	Stat Stuffer	1	no	Native category None: fixed player talent, not selected by native random reward categories.
+Talents	df06c646-49f7-4ea6-9bf1-8986c93148b2	Temporary Contract Angus	1	no	Native category None: fixed player talent, not selected by native random reward categories.

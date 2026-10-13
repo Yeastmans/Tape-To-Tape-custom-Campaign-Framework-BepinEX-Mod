@@ -125,7 +125,7 @@ Talents	595413df-1cfe-4091-8ca2-d8d883ef082f	595413df-1cfe-4091-8ca2-d8d883ef082
 Talents	5958c85a-16cd-4441-8794-bb640c8f069c	5958c85a-16cd-4441-8794-bb640c8f069c	1	Top Gear	Hellbony	+30 Speed\nCan't increase Speed anymore
 Talents	59de64b1-7e7d-404c-8543-abf595210a5e	59de64b1-7e7d-404c-8543-abf595210a5e	1	Krill	Coach Potato	+5 OVR per win\n-15 OVR\nGames won: 0
 Talents	5ae82a10-7cce-42f6-8fc5-c263e78bdf56	5ae82a10-7cce-42f6-8fc5-c263e78bdf56	1	Sado Maso	Masochist	Injuries give +10 attribute instead
-Talents	5b2dfd5c-be7a-4b20-b63b-92ee3565bbc3	5b2dfd5c-be7a-4b20-b63b-92ee3565bbc3	1	Masquerade	Masquerade	Takes credit for her team's goals while she's on the ice
+Talents	5b2dfd5c-be7a-4b20-b63b-92ee3565bbc3	5b2dfd5c-be7a-4b20-b63b-92ee3565bbc3	1	Masquerade	Masquerade (unavailable in current game)	Legacy talent identity retained for existing files. This talent is absent from the current game's talent repository and cannot be granted. Its former effect credited its owner with teammates' goals.
 Talents	5b8581a5-ba07-4628-9df8-d4798646f8fa	5b8581a5-ba07-4628-9df8-d4798646f8fa	1	Live Wire	The Twitching Hand	+30 Shot Power\nGain
 Talents	5baa8b96-a6b8-417a-9691-0dcef10dc7db	5baa8b96-a6b8-417a-9691-0dcef10dc7db	2	Pressure Coooker (Level 2)	Pressure Cooker+	+30 OVR while you have 0 goals this game
 Talents	5e59d04a-582f-4f5b-88aa-4f3f6f69e323	5e59d04a-582f-4f5b-88aa-4f3f6f69e323	1	Spiked Armor	Spiked Armor	Skaters who bodycheck you end up flat on the ice for a few seconds
@@ -666,3 +666,7 @@ Relics	fdd9ab50-79d3-47f6-9358-2534ca1ee935	fdd9ab50-79d3-47f6-9358-2534ca1ee935
 Relics	fe7830b2-e2db-4bc1-9307-5efbd81189bd	fe7830b2-e2db-4bc1-9307-5efbd81189bd	2	Buzzer Beater (Level 2)	Buzzer Beater+	Goals scored in the last 30s of a period count as 2 goals
 Relics	ff358466-f146-408e-8049-b4ece03e4e12	ff358466-f146-408e-8049-b4ece03e4e12	1	Whistle Of Time Timer	Whistle of Time	Time goes 2x faster when you lead
 Relics	ff9ac081-9f12-4aad-af75-ea4f19edde93	ff9ac081-9f12-4aad-af75-ea4f19edde93	2	Whisk (Level 2)	Holy Fungus+	Each shot on goal gives +7 Speed. Resets on a goal
+Talents	7ab23b1d-105e-49ad-a023-42c86e937870	7ab23b1d-105e-49ad-a023-42c86e937870	1	PerformanceBonus	Performance Bonus	Gains a random talent each time she scores a hat trick.\nNative fixed talent on Fortune Banks; excluded from native random reward pools.
+Talents	f0a3b753-49fe-42a2-92dc-4e3080c1e30d	f0a3b753-49fe-42a2-92dc-4e3080c1e30d	1	Ref Block Shot Talent	Part of the Play (Referee Angus)	The referee will try to block the opponent's shots. +2 size.\nNative fixed talent on referee-squad Angus; depends on native referee behavior. Separate from the team relic.
+Talents	18d9447f-3d0d-40ff-b95f-bdbad224706e	18d9447f-3d0d-40ff-b95f-bdbad224706e	1	Stat Stuffer	Stat Stuffer	Permanently gain +5 to a random attribute after every game.\nNative fixed talent on Angus McStastny; excluded from native random reward pools.
+Talents	df06c646-49f7-4ea6-9bf1-8986c93148b2	df06c646-49f7-4ea6-9bf1-8986c93148b2	1	Temporary Contract Angus	Contract (General McShaggy, 3 games)	Will leave after playing 3 games.\nHidden native starting-player contract for the General Manager squad. Configure ordinary recruits through Player Contracts.

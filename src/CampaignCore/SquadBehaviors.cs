@@ -64,7 +64,7 @@ public static class SquadBehaviors
         new SquadBehavior("no_ability_offers", "Disable new ability offers", "Suppress new-ability choices in Blademaster and Fan prototype rewards.", "tchel"),
         new SquadBehavior("retro_skating", "SNES skating", "Use the native SNES turning behavior for the player team.", "snes"),
         new SquadBehavior("retro_audio", "SNES audio", "Use SNES music and crowd presentation.", "snes"),
-        new SquadBehavior("retro_presentation", "SNES match presentation", "Use SNES replay, scoreboard and skater-introduction behavior.", "snes"),
+        new SquadBehavior("retro_presentation", "SNES match presentation", "Use SNES replay, scoreboard, clock-adjacent penalty timers and skater-introduction behavior.", "snes"),
         new SquadBehavior("violence", "Violence collision rules", "Enable the player skaters' native Violence behavior.", "violence"),
         new SquadBehavior("slapshot_ai", "Slapshot AI", "Use Slapshot-specific breakaway shot choices. Weak non-slapshots and other relic-driven shot choices come from Slapshot Plushie in Team roster → Team relics.", "slapshot"),
         new SquadBehavior("slapshot_rewards", "Slapshot talent weighting", "Use the Slapshot squad's weighted talent preferences.", "slapshot"),

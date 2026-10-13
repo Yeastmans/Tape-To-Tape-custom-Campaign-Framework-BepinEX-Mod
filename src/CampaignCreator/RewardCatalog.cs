@@ -95,17 +95,20 @@ public static class RewardCatalog
     private static Dictionary<string, Entry>? Inventory(string root, string kind)
     {
         kind = RewardPoolDefinition.CatalogKind(kind);
-        string file = Path.GetFullPath(Path.Combine(root, "T2T_Dumps", "_gui_data", "_reward_catalog.tsv"));
-        if (!File.Exists(file)) file = Path.Combine(AppContext.BaseDirectory, "reward-data", "_reward_catalog.tsv");
-        if (!File.Exists(file)) return null;
+        // Reviewed release metadata must not be hidden by a migrated old dump.
+        // Keep additional locally discovered IDs so newer/custom entries survive.
+        string[] catalogs = [Path.Combine(AppContext.BaseDirectory, "reward-data", "_reward_catalog.tsv"),
+            Path.GetFullPath(Path.Combine(root, "T2T_Dumps", "_gui_data", "_reward_catalog.tsv"))];
+        if (!catalogs.Any(File.Exists)) return null;
         var result = new Dictionary<string, Entry>(StringComparer.OrdinalIgnoreCase);
+        foreach (string file in catalogs.Where(File.Exists))
         foreach (string line in File.ReadLines(file))
         {
             var p = line.Split('\t');
             if (p.Length != 7 || p[0] != kind || !int.TryParse(p[3], out int level)) continue;
             string name = p[5];
             if (string.IsNullOrWhiteSpace(name) || name.StartsWith("[Missing:", StringComparison.OrdinalIgnoreCase)) name = p[4] + " (native name missing)";
-            result[p[1]] = new(p[1], name, p[6].Replace("\\n", "\n"), level, p[2], p[4]);
+            result.TryAdd(p[1], new(p[1], name, p[6].Replace("\\n", "\n"), level, p[2], p[4]));
         }
         // Labels describe effects; native keys remain the saved identity.
         foreach (var group in result.Values.GroupBy(e => e.Name).Where(g => g.Count() > 1).ToArray())

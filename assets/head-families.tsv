@@ -1,13 +1,15 @@
-# Base head	Helmet-compatible variant; extracted from Player_Sprite skeleton 2026-09-23
+# Base head	Helmet-compatible variant; verified against native Steam build 25917988 on 2026-10-13. Existing intentional bare-only families preserved.
 Faces/Angus_Events/Angus_All	Faces/Angus_Events/Angus_All_Helmet
 Faces/Angus_Events/Angus_Bald	Faces/Angus_Events/Angus_Bald_Helmet
 Faces/Angus_Events/Angus_Chad	Faces/Angus_Events/Angus_Chad_Helmet
 Faces/Angus_Events/Angus_Decker	Faces/Angus_Events/Angus_Decker_Helmet
 Faces/Angus_Events/Angus_Eating	Faces/Angus_Events/Angus_Eating_Helmet
-Faces/Angus_Events/Angus_Gauntlet	Faces/Angus_Events/Angus_Gauntlet_Helmet
+Faces/Angus_Events/Angus_Fresh	Faces/Angus_Events/Angus_Fresh_Helmet
 Faces/Angus_Events/Angus_GM	Faces/Angus_Events/Angus_GM_Helmet
+Faces/Angus_Events/Angus_Gauntlet	Faces/Angus_Events/Angus_Gauntlet_Helmet
 Faces/Angus_Events/Angus_Intimidator	Faces/Angus_Events/Angus_Intimidator_Helmet
 Faces/Angus_Events/Angus_Liquidator	Faces/Angus_Events/Angus_Liquidator_Helmet
+Faces/Angus_Events/Angus_McGratton	Faces/Angus_Events/Angus_McGratton_Helmet
 Faces/Angus_Events/Angus_Moongus	Faces/Angus_Events/Angus_Moongus_Helmet
 Faces/Angus_Events/Angus_Oldschool	Faces/Angus_Events/Angus_Oldschool_Helmet
 Faces/Angus_Events/Angus_Ref	Faces/Angus_Events/Angus_Ref_Helmet
@@ -38,6 +40,7 @@ Faces/Anyteam/Nasher	Faces/Anyteam/Nasher_Helmet
 Faces/Anyteam/Onepunch	Faces/Anyteam/Onepunch_Helmet
 Faces/Anyteam/Propeller_Helmet	
 Faces/Anyteam/Referee_Old	Faces/Anyteam/Referee_Old_Helmet
+Faces/Canadians/Canada_Frog	
 Faces/Canadians/Captain	
 Faces/Canadians/Gratz	
 Faces/Canadians/Poule	

@@ -3,13 +3,23 @@
 ## Beta 1.0 — 2026-10-13
 
 **Campaign Studio and the bundled Custom Campaign Framework mod, for Windows
-x64 and Tape to Tape's Steam `roguelite` branch, build 25899138.** Beta 1.0 starts
+x64 and Tape to Tape's Steam `roguelite` branch, build 25917988.** Beta 1.0 starts
 the Studio release family; v2.1.x below refers to the previous creator. This
 release contains the Windows installer only; native Linux/macOS and Steam
 Deck/Proton integration are not validated.
 
 ### Campaign Studio
 
+- Every launch begins with a beta disclaimer before the main window or startup
+  tasks. It explains that features may be broken or differ from their descriptions,
+  links to Discord and GitHub bug reports, and offers Open Studio or Exit.
+- Refreshed compatibility for game build 25917988, including the SNES penalty
+  timer presentation rule. Added the previously omitted Angus Fresh, Angus
+  McGratton and Canada Frog native head choices and their supported variants.
+- Custom squads remain selectable when the game version differs from the reviewed
+  baseline. Unverified native hooks stay disabled; features that depend on those
+  hooks may require a compatibility update. Invalid squad settings still report
+  their own errors.
 - Up to two nodes per layer, connected routes and a single final Boss.
   Editor fit and zoom controls change the builder view, not the in-game camera zoom.
 - Goalie Pass Read accepts native fractional values from 0 to 1.
@@ -33,6 +43,11 @@ Deck/Proton integration are not validated.
 
 ### Recruitment and native behavior
 
+- Restored the missing native fixed talents Performance Bonus, Ref Block Shot
+  Talent, Stat Stuffer and General McShaggy's contextual three-game contract.
+  They remain outside default random pools. Old imported catalogs no longer hide
+  reviewed release entries; extra local IDs remain visible. Legacy Masquerade
+  retains its saved identity and now clearly says it is unavailable in this game.
 - Free-agent talent choices are independent of Regular and Chaos rewards.
   Begin with native outcomes checked, then choose exact allowed levels. Newly
   generated random recruitment extras and upgrade outcomes cannot use

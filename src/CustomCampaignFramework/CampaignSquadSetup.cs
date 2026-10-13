@@ -34,8 +34,8 @@ internal static class CampaignSquadSetup
     internal static void Install(Harmony harmony)
     {
         NativeSquadBehaviorBridge.Install();
-        // No generic template impersonation: every gameplay comparison is
-        // routed explicitly, and unknown binaries fail closed during cloning.
+        // Native comparison hooks require a reviewed profile. Their availability
+        // does not prevent custom squad cloning or managed roster/menu support.
     }
     internal static void OrderAuthoredLines(TeamData team)
     {

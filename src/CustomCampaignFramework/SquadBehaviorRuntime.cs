@@ -18,8 +18,9 @@ internal static class SquadBehaviorRuntime
         => TryEnabled(squadId, behavior, out bool enabled) ? enabled : nativeDefault;
     internal static void Validate(TeamConfig team)
     {
-        if (!NativeSquadBehaviorBridge.Ready)
-            throw new InvalidOperationException("Custom squad behaviors cannot run on this game build: " + NativeSquadBehaviorBridge.Status);
+        // Custom roster/menu support does not depend on the native comparison
+        // bridge. An unreviewed game update leaves those address-based hooks
+        // disabled, while authored squads remain available through managed hooks.
         var errors = SquadBehaviors.Conflicts(team.SquadTemplate, key =>
             key == "Bench Size" ? team.BenchSize.ToString() : key == "Starting Bench Positions" ? team.StartingBenchPositions
                 : team.SquadBehaviors.TryGetValue(key, out string value) ? value : "");

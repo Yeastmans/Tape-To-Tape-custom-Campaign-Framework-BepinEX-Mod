@@ -1,41 +1,41 @@
 {
-  "Id": "E190FC5EC2F1287106BE21AACE6D0AB755128BA6F1ADAFA7CB389BC6753711EA",
+  "Id": "DC2F0EB5B5449F4DFE83C743D5982417E534BF293F3BCE2916107AE79A4BDC05",
   "Profile": {
     "RuntimeContract": "t2t-native-v1-20261008",
-    "BaselineId": "E190FC5EC2F1287106BE21AACE6D0AB755128BA6F1ADAFA7CB389BC6753711EA",
-    "Build": "25899138",
-    "GameHash": "450B43499FD4E66C482720790454E3F33C3360FADBA53003774E4CC17F71ED66",
-    "MetadataHash": "9C0BD68F5D4A2655CDBCD8E950D9C9F43204F4F6DB6B27425693E79AA219C59E",
-    "SurfaceRva": 60421760,
+    "BaselineId": "DC2F0EB5B5449F4DFE83C743D5982417E534BF293F3BCE2916107AE79A4BDC05",
+    "Build": "25917988",
+    "GameHash": "7B93D7F5B31CA164F7D5E35D1310A4F64007C8058C7B408061EDB928007D0EBA",
+    "MetadataHash": "414FAABEB07D4372E8D5A68D3D1A1859AD0A6469ABB257ECD204408FA3E95D9F",
+    "SurfaceRva": 60434560,
     "SurfaceBytes": "48895C24084889742410574881EC90000000",
-    "FlowRva": 62429890,
+    "FlowRva": 62438450,
     "FlowBytes": "410FB6C60A4758",
     "Sites": [
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 63808500,
-        "Target": 61042928,
-        "Bytes": "E8F7CCD5FF",
+        "Rva": 63824180,
+        "Target": 61050928,
+        "Bytes": "E8F7AED5FF",
         "Method": "AI.AIStates.AIState$$OnGoalScored::System.Void OnGoalScored(Skaters.Skater goalScorer, NHL94.GoalType goalType, System.Boolean isGameEndingGoal)"
       },
       {
         "Feature": "slapshot_ai",
         "Query": "slapshot",
         "Kind": "query",
-        "Rva": 63838865,
-        "Target": 61042928,
-        "Bytes": "E85A56D5FF",
+        "Rva": 63854545,
+        "Target": 61050928,
+        "Bytes": "E85A38D5FF",
         "Method": "AI.AIStates.BreakawayState$$DetermineShotType::System.Void DetermineShotType()"
       },
       {
         "Feature": "slapshot_ai",
         "Query": "slapshot",
         "Kind": "query",
-        "Rva": 63849177,
-        "Target": 61042928,
-        "Bytes": "E8122ED5FF",
+        "Rva": 63864857,
+        "Target": 61050928,
+        "Bytes": "E81210D5FF",
         "Method": "AI.AIStates.BreakawayState$$OnEnter::System.Void OnEnter()"
       },
       {
@@ -43,8 +43,8 @@
         "Query": "solo",
         "Kind": "query",
         "Rva": 52883344,
-        "Target": 61042928,
-        "Bytes": "E85B817C00",
+        "Target": 61050928,
+        "Bytes": "E89BA07C00",
         "Method": "CameraController$$Initialize::System.Void Initialize()"
       },
       {
@@ -52,8 +52,8 @@
         "Query": "solo",
         "Kind": "query",
         "Rva": 52884413,
-        "Target": 61042928,
-        "Bytes": "E82E7D7C00",
+        "Target": 61050928,
+        "Bytes": "E86E9C7C00",
         "Method": "CameraController$$OnCameraModeChanged::System.Void OnCameraModeChanged(Settings.CameraMode _)"
       },
       {
@@ -61,8 +61,8 @@
         "Query": "eliminator",
         "Kind": "query",
         "Rva": 52884617,
-        "Target": 61042928,
-        "Bytes": "E8627C7C00",
+        "Target": 61050928,
+        "Bytes": "E8A29B7C00",
         "Method": "CameraController$$OnChangeGameState::System.Void OnChangeGameState(State.GameState from, State.GameState to)"
       },
       {
@@ -70,8 +70,8 @@
         "Query": "eliminator",
         "Kind": "query",
         "Rva": 52890351,
-        "Target": 61042928,
-        "Bytes": "E8FC657C00",
+        "Target": 61050928,
+        "Bytes": "E83C857C00",
         "Method": "CameraController$$OnGoalScored::System.Void OnGoalScored(Events.GoalScoredArg eventArg)"
       },
       {
@@ -79,422 +79,422 @@
         "Query": "snes",
         "Kind": "query",
         "Rva": 52725644,
-        "Target": 61042928,
-        "Bytes": "E85FE97E00",
+        "Target": 61050928,
+        "Bytes": "E89F087F00",
         "Method": "CrowdIncrementalSound$$ResolveArenaMode::System.Void ResolveArenaMode()"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 54523376,
-        "Target": 61042928,
-        "Bytes": "E8FB7A6300",
+        "Rva": 54551056,
+        "Target": 61050928,
+        "Bytes": "E81B2E6300",
         "Method": "FaceoffWithReferee$$OnEndOfReplay::System.Void OnEndOfReplay(Tape2Tape.Team t)"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 56538738,
-        "Target": 61042928,
-        "Bytes": "E879BA4400",
+        "Rva": 56572018,
+        "Target": 61050928,
+        "Bytes": "E8B9574400",
         "Method": "Fighting.BrawlChallengeSystem$$CanOpenOffer::System.Boolean CanOpenOffer()"
       },
       {
         "Feature": "speedrun",
         "Query": "speedrun",
         "Kind": "query",
-        "Rva": 58301465,
-        "Target": 61042928,
-        "Bytes": "E8D2D42900",
+        "Rva": 58326489,
+        "Target": 61050928,
+        "Bytes": "E852922900",
         "Method": "GameManager$$get_WinningTeam::Tape2Tape.Team get_WinningTeam()"
       },
       {
         "Feature": "sinbin_goal",
         "Query": "sinbin",
         "Kind": "query",
-        "Rva": 58295317,
-        "Target": 61042928,
-        "Bytes": "E8D6EC2900",
+        "Rva": 58320341,
+        "Target": 61050928,
+        "Bytes": "E856AA2900",
         "Method": "GameManager$$OnGoalScored::System.Void OnGoalScored(Events.GoalScoredArg eventArg)"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 54556209,
-        "Target": 61042928,
-        "Bytes": "E8BAFA6200",
+        "Rva": 54586625,
+        "Target": 61050928,
+        "Bytes": "E82AA36200",
         "Method": "GoalLineTrigger$$IsGameEndingGoal::System.Boolean IsGameEndingGoal(Tape2Tape.Team scorerTeam, Tape2Tape.Team otherTeam, NHL94.GoalType goalType)"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 54559837,
-        "Target": 61042928,
-        "Bytes": "E88EEC6200",
+        "Rva": 54590253,
+        "Target": 61050928,
+        "Bytes": "E8FE946200",
         "Method": "GoalLineTrigger$$VerifyGoalScored::System.Void VerifyGoalScored(UnityEngine.Collider other)"
       },
       {
         "Feature": "retro_presentation",
         "Query": "snes",
         "Kind": "query",
-        "Rva": 54566485,
-        "Target": 61042928,
-        "Bytes": "E896D26200",
+        "Rva": 54596901,
+        "Target": 61050928,
+        "Bytes": "E8067B6200",
         "Method": "GoalReplay$$Awake::System.Void Awake()"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 56253428,
-        "Target": 61042928,
-        "Bytes": "E8F7144900",
+        "Rva": 56286708,
+        "Target": 61050928,
+        "Bytes": "E837B24800",
         "Method": "Goaltender.Goaltender$$Initialize::System.Void Initialize(Data.GoaltenderData gData, System.Boolean isCampaignTeam = False)"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 56392085,
-        "Target": 61042928,
-        "Bytes": "E856F74600",
+        "Rva": 56425365,
+        "Target": 61050928,
+        "Bytes": "E896944600",
         "Method": "Goaltender.GoaltenderNorth$$OnResetMap::System.Void OnResetMap()"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 56395753,
-        "Target": 61042928,
-        "Bytes": "E802E94600",
+        "Rva": 56429033,
+        "Target": 61050928,
+        "Bytes": "E842864600",
         "Method": "Goaltender.GoaltenderSouth$$OnResetMap::System.Void OnResetMap()"
       },
       {
         "Feature": "no_relic_rewards",
         "Query": "norelics",
         "Kind": "query",
-        "Rva": 59491791,
-        "Target": 61042928,
-        "Bytes": "E81CAB1700",
+        "Rva": 59492159,
+        "Target": 61050928,
+        "Bytes": "E8ECC81700",
         "Method": "MatchPreviewMenu$$RefreshUnknownRewards::System.Void RefreshUnknownRewards(STS.Map.MatchBlueprint bp)"
       },
       {
         "Feature": "no_relic_rewards",
         "Query": "norelics",
         "Kind": "query",
-        "Rva": 59492599,
-        "Target": 61042928,
-        "Bytes": "E8F4A71700",
+        "Rva": 59492967,
+        "Target": 61050928,
+        "Bytes": "E8C4C51700",
         "Method": "MatchPreviewMenu$$RefreshUnknownRewards::System.Void RefreshUnknownRewards(STS.Map.MatchBlueprint bp)"
       },
       {
         "Feature": "no_bench_quests",
         "Query": "lines",
         "Kind": "query",
-        "Rva": 58588212,
-        "Target": 61042928,
-        "Bytes": "E8B7742500",
+        "Rva": 58597876,
+        "Target": 61050928,
+        "Bytes": "E8376E2500",
         "Method": "Rogue.BenchQuests.BenchQuestSystem$$get_IsDisabled::System.Boolean get_IsDisabled()"
       },
       {
         "Feature": "no_bench_snapshots",
         "Query": "oldschool",
         "Kind": "query",
-        "Rva": 58600192,
-        "Target": 61042928,
-        "Bytes": "E8EB452500",
+        "Rva": 58609856,
+        "Target": 61050928,
+        "Bytes": "E86B3F2500",
         "Method": "Rogue.BenchSnapshots.BenchSnapshotService$$get_IsDisabled::System.Boolean get_IsDisabled()"
       },
       {
         "Feature": "no_bench_snapshots",
         "Query": "lines",
         "Kind": "query",
-        "Rva": 58600263,
-        "Target": 61042928,
-        "Bytes": "E8A4452500",
+        "Rva": 58609927,
+        "Target": 61050928,
+        "Bytes": "E8243F2500",
         "Method": "Rogue.BenchSnapshots.BenchSnapshotService$$get_IsDisabled::System.Boolean get_IsDisabled()"
       },
       {
         "Feature": "no_angus_curse",
         "Query": "allangus",
         "Kind": "neq",
-        "Rva": 57620698,
-        "Target": 65894224,
-        "Bytes": "E8713E7E00",
+        "Rva": 57645722,
+        "Target": 65909904,
+        "Bytes": "E8F1197E00",
         "Method": "Rogue.CanadaCurses.CanadaCurseCatalog.\u003C\u003Ec$$\u003C.cctor\u003Eb__5_0::System.Boolean \u003C.cctor\u003Eb__5_0(State.RunSquadScriptableObject squad, Data.TeamData _)"
       },
       {
         "Feature": "no_injury_curse",
         "Query": "oldschool",
         "Kind": "neq",
-        "Rva": 57621175,
-        "Target": 65894224,
-        "Bytes": "E9943C7E00",
+        "Rva": 57646199,
+        "Target": 65909904,
+        "Bytes": "E914187E00",
         "Method": "Rogue.CanadaCurses.CanadaCurseCatalog.\u003C\u003Ec$$\u003C.cctor\u003Eb__5_2::System.Boolean \u003C.cctor\u003Eb__5_2(State.RunSquadScriptableObject squad, Data.TeamData _)"
       },
       {
         "Feature": "no_eliminator_curse",
         "Query": "eliminator",
         "Kind": "neq",
-        "Rva": 57621319,
-        "Target": 65894224,
-        "Bytes": "E9043C7E00",
+        "Rva": 57646343,
+        "Target": 65909904,
+        "Bytes": "E984177E00",
         "Method": "Rogue.CanadaCurses.CanadaCurseCatalog.\u003C\u003Ec$$\u003C.cctor\u003Eb__5_3::System.Boolean \u003C.cctor\u003Eb__5_3(State.RunSquadScriptableObject squad, Data.TeamData _)"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 58627524,
-        "Target": 61042928,
-        "Bytes": "E827DB2400",
+        "Rva": 58637188,
+        "Target": 61050928,
+        "Bytes": "E8A7D42400",
         "Method": "Rogue.Eliminator.EliminatorGoalFlow$$Awake::System.Void Awake()"
       },
       {
         "Feature": "gauntlet_scaling",
         "Query": "gauntlet",
         "Kind": "query",
-        "Rva": 56681208,
-        "Target": 61042928,
-        "Bytes": "E9F38D4200",
+        "Rva": 56714488,
+        "Target": 61050928,
+        "Bytes": "E9332B4200",
         "Method": "Rogue.GauntletStackBonusScaler$$get_IsGauntletActive::System.Boolean get_IsGauntletActive()"
       },
       {
         "Feature": "gauntlet_scaling",
         "Query": "gauntlet",
         "Kind": "query",
-        "Rva": 56681001,
-        "Target": 61042928,
-        "Bytes": "E8C28E4200",
+        "Rva": 56714281,
+        "Target": 61050928,
+        "Bytes": "E8022C4200",
         "Method": "Rogue.GauntletStackBonusScaler$$ScaleBonus::System.Int32 ScaleBonus(System.Int32 bonus)"
       },
       {
         "Feature": "speedrun",
         "Query": "speedrun",
         "Kind": "query",
-        "Rva": 57305026,
-        "Target": 61042928,
-        "Bytes": "E829093900",
+        "Rva": 57330050,
+        "Target": 61050928,
+        "Bytes": "E8A9C63800",
         "Method": "Rogue.LastStand$$WillTimerAtZeroEndGame::System.Boolean WillTimerAtZeroEndGame()"
       },
       {
         "Feature": "solo_rewards",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 58603351,
-        "Target": 61042928,
-        "Bytes": "E894392500",
+        "Rva": 58613015,
+        "Target": 61050928,
+        "Bytes": "E814332500",
         "Method": "Rogue.NPC.BlademasterNPC.BlademasterEvent$$GetPlayersEligibleForNewAbility::System.Collections.Generic.List\u00601\u003CData.ForwardData\u003E GetPlayersEligibleForNewAbility(State.CampaignState campaignState)"
       },
       {
         "Feature": "no_ability_offers",
         "Query": "tchel",
         "Kind": "query",
-        "Rva": 58611139,
-        "Target": 61042928,
-        "Bytes": "E8281B2500",
+        "Rva": 58620803,
+        "Target": 61050928,
+        "Bytes": "E8A8142500",
         "Method": "Rogue.NPC.BlademasterNPC.BlademasterEvent$$ShouldOfferNewAbility::System.Boolean ShouldOfferNewAbility(State.CampaignState campaignState, System.Int32 upgradeablePowerupsCount)"
       },
       {
         "Feature": "speedrun",
         "Query": "speedrun",
         "Kind": "query",
-        "Rva": 58617925,
-        "Target": 61042928,
-        "Bytes": "E8A6002500",
+        "Rva": 58627589,
+        "Target": 61050928,
+        "Bytes": "E826FA2400",
         "Method": "Rogue.NPC.CoachNPC.CoachEvent$$Initialize::System.Void Initialize()"
       },
       {
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 58618005,
-        "Target": 61042928,
-        "Bytes": "E856002500",
+        "Rva": 58627669,
+        "Target": 61050928,
+        "Bytes": "E8D6F92400",
         "Method": "Rogue.NPC.CoachNPC.CoachEvent$$Initialize::System.Void Initialize()"
       },
       {
         "Feature": "no_ability_offers",
         "Query": "tchel",
         "Kind": "query",
-        "Rva": 58668254,
-        "Target": 61042928,
-        "Bytes": "E80D3C2400",
+        "Rva": 58677918,
+        "Target": 61050928,
+        "Bytes": "E88D352400",
         "Method": "Rogue.NPC.FanNumber1NPC.Events.PrototypeRewardPoolSubEvent$$TryCreateAbilityChoiceForCurrentSkater::System.Nullable\u00601\u003CSTS.Map.EventChoice\u003E TryCreateAbilityChoiceForCurrentSkater()"
       },
       {
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 58639847,
-        "Target": 61042928,
-        "Bytes": "E804AB2400",
+        "Rva": 58649511,
+        "Target": 61050928,
+        "Bytes": "E884A42400",
         "Method": "Rogue.NPC.FanNumber1NPC.FanNumber1Event$$Initialize::System.Void Initialize()"
       },
       {
         "Feature": "manual_poke",
         "Query": "tchel",
         "Kind": "eq",
-        "Rva": 58479906,
-        "Target": 65860256,
-        "Bytes": "E8799D7000",
+        "Rva": 58489570,
+        "Target": 65875936,
+        "Bytes": "E8F9B47000",
         "Method": "Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent$$CreatePlayerChoice::System.Void CreatePlayerChoice(Data.ForwardData template, Data.TeamData teamData)"
       },
       {
         "Feature": "gm_contracts",
         "Query": "generalmanager",
         "Kind": "eq",
-        "Rva": 58480211,
-        "Target": 65860256,
-        "Bytes": "E8489C7000",
+        "Rva": 58489875,
+        "Target": 65875936,
+        "Bytes": "E8C8B37000",
         "Method": "Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent$$CreatePlayerChoice::System.Void CreatePlayerChoice(Data.ForwardData template, Data.TeamData teamData)"
       },
       {
         "Feature": "gm_reroll",
         "Query": "generalmanager",
         "Kind": "query",
-        "Rva": 58487102,
-        "Target": 61042928,
-        "Bytes": "E8ADFF2600",
+        "Rva": 58496766,
+        "Target": 61050928,
+        "Bytes": "E82DF92600",
         "Method": "Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent$$RerollSkaterNodeRewards::System.Void RerollSkaterNodeRewards()"
       },
       {
         "Feature": "solo_rewards",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 58401720,
-        "Target": 61042928,
-        "Bytes": "E8334D2800",
+        "Rva": 58411384,
+        "Target": 61050928,
+        "Bytes": "E8B3462800",
         "Method": "Rogue.NPC.NurseNPC.Procedures.NurseProcedureRoster$$CreateForCurrentRun::Rogue.NPC.NurseNPC.Procedures.NurseProcedureRoster CreateForCurrentRun()"
       },
       {
         "Feature": "solo_rewards",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 58407830,
-        "Target": 61042928,
-        "Bytes": "E855352800",
+        "Rva": 58417494,
+        "Target": 61050928,
+        "Bytes": "E8D52E2800",
         "Method": "Rogue.NPC.NurseNPC.Procedures.NurseProcedureRoster$$GetRequiredForwardId::System.String GetRequiredForwardId()"
       },
       {
         "Feature": "slapshot_rewards",
         "Query": "slapshot",
         "Kind": "query",
-        "Rva": 57847071,
-        "Target": 61042928,
-        "Bytes": "E8CCC33000",
+        "Rva": 57872095,
+        "Target": 61050928,
+        "Bytes": "E84C813000",
         "Method": "Rogue.Powerups.Repository.TalentRepository.\u003C\u003Ec__DisplayClass#$$\u003CGetWeightedRandomTalents\u003Eg__GetWeight|0::System.Single \u003CGetWeightedRandomTalents\u003Eg__GetWeight|0(Rogue.Talent t)"
       },
       {
         "Feature": "no_relic_rewards",
         "Query": "norelics",
         "Kind": "query",
-        "Rva": 57421877,
-        "Target": 61042928,
-        "Bytes": "E8B6403700",
+        "Rva": 57446901,
+        "Target": 61050928,
+        "Bytes": "E836FE3600",
         "Method": "Rogue.Rewards.RewardCounter$$SetRelicRewardCount::System.Void SetRelicRewardCount()"
       },
       {
         "Feature": "gm_rewards",
         "Query": "generalmanager",
         "Kind": "query",
-        "Rva": 57421952,
-        "Target": 61042928,
-        "Bytes": "E86B403700",
+        "Rva": 57446976,
+        "Target": 61050928,
+        "Bytes": "E8EBFD3600",
         "Method": "Rogue.Rewards.RewardCounter$$SetRelicRewardCount::System.Void SetRelicRewardCount()"
       },
       {
         "Feature": "no_relic_rewards",
         "Query": "norelics",
         "Kind": "query",
-        "Rva": 57422443,
-        "Target": 61042928,
-        "Bytes": "E8803E3700",
+        "Rva": 57447467,
+        "Target": 61050928,
+        "Bytes": "E800FC3600",
         "Method": "Rogue.Rewards.RewardCounter$$SetTalentRewardCount::System.Void SetTalentRewardCount()"
       },
       {
         "Feature": "gm_rewards",
         "Query": "generalmanager",
         "Kind": "query",
-        "Rva": 57422518,
-        "Target": 61042928,
-        "Bytes": "E8353E3700",
+        "Rva": 57447542,
+        "Target": 61050928,
+        "Bytes": "E8B5FB3600",
         "Method": "Rogue.Rewards.RewardCounter$$SetTalentRewardCount::System.Void SetTalentRewardCount()"
       },
       {
         "Feature": "solo_camera",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 53609267,
-        "Target": 61042928,
-        "Bytes": "E8B86D7100",
+        "Rva": 53714810,
+        "Target": 61050928,
+        "Bytes": "E8B1F06F00",
         "Method": "Settings.GameplaySettingsUI$$InitializeCameraModeOptions::System.Void InitializeCameraModeOptions()"
       },
       {
         "Feature": "gauntlet_opponents",
         "Query": "gauntlet",
         "Kind": "query",
-        "Rva": 59576100,
-        "Target": 61042928,
-        "Bytes": "E8C7611600",
+        "Rva": 59588692,
+        "Target": 61050928,
+        "Bytes": "E8D74F1600",
         "Method": "Skaters.Forward$$Initialize::System.Void Initialize(Data.ForwardData fdata, Skaters.SkaterType skType, System.Boolean isHome, Data.TeamData teamData = null, System.Boolean useAlternateColors = False)"
       },
       {
         "Feature": "retro_skating",
         "Query": "snes",
         "Kind": "query",
-        "Rva": 59593941,
-        "Target": 61042928,
-        "Bytes": "E8161C1600",
+        "Rva": 59606533,
+        "Target": 61050928,
+        "Bytes": "E8260A1600",
         "Method": "Skaters.Forward$$OnGameInitializationDone::System.Void OnGameInitializationDone()"
       },
       {
         "Feature": "manual_poke",
         "Query": "tchel",
         "Kind": "query",
-        "Rva": 59594029,
-        "Target": 61042928,
-        "Bytes": "E8BE1B1600",
+        "Rva": 59606621,
+        "Target": 61050928,
+        "Bytes": "E8CE091600",
         "Method": "Skaters.Forward$$OnGameInitializationDone::System.Void OnGameInitializationDone()"
       },
       {
         "Feature": "violence",
         "Query": "violence",
         "Kind": "query",
-        "Rva": 59594113,
-        "Target": 61042928,
-        "Bytes": "E86A1B1600",
+        "Rva": 59606705,
+        "Target": 61050928,
+        "Bytes": "E87A091600",
         "Method": "Skaters.Forward$$OnGameInitializationDone::System.Void OnGameInitializationDone()"
       },
       {
         "Feature": "no_injuries",
         "Query": "oldschool",
         "Kind": "query",
-        "Rva": 60037205,
-        "Target": 61042928,
-        "Bytes": "E896580F00",
+        "Rva": 60049797,
+        "Target": 61050928,
+        "Bytes": "E8A6460F00",
         "Method": "Skaters.Injuries.InjurySystem$$AreInjuriesDisabledInMatch::System.Boolean AreInjuriesDisabledInMatch()"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 59721211,
-        "Target": 61042928,
-        "Bytes": "E8F02A1400",
+        "Rva": 59733803,
+        "Target": 61050928,
+        "Bytes": "E800191400",
         "Method": "Skaters.Referee$$FixedUpdate::System.Void FixedUpdate()"
       },
       {
         "Feature": "line_stamina",
         "Query": "lines",
         "Kind": "query",
-        "Rva": 60059015,
-        "Target": 61042928,
-        "Bytes": "E864030F00",
+        "Rva": 60071607,
+        "Target": 61050928,
+        "Bytes": "E874F10E00",
         "Method": "Skaters.TeamStaminaSystem$$Initialize::System.Void Initialize(Tape2Tape.Team team, System.Boolean isCampaignTeam)"
       },
       {
@@ -502,8 +502,8 @@
         "Query": "snes",
         "Kind": "query",
         "Rva": 52803721,
-        "Target": 61042928,
-        "Bytes": "E862B87D00",
+        "Target": 61050928,
+        "Bytes": "E8A2D77D00",
         "Method": "SoundManager$$OnChangeGameState::System.Void OnChangeGameState(State.GameState from, State.GameState to)"
       },
       {
@@ -511,8 +511,8 @@
         "Query": "snes",
         "Kind": "query",
         "Rva": 52823233,
-        "Target": 61042928,
-        "Bytes": "E82A6C7D00",
+        "Target": 61050928,
+        "Bytes": "E86A8B7D00",
         "Method": "SoundManager$$OnGameInitDone::System.Void OnGameInitDone()"
       },
       {
@@ -520,349 +520,349 @@
         "Query": "snes",
         "Kind": "query",
         "Rva": 52823924,
-        "Target": 61042928,
-        "Bytes": "E877697D00",
+        "Target": 61050928,
+        "Bytes": "E8B7887D00",
         "Method": "SoundManager$$OnGamePresentation::System.Void OnGamePresentation()"
       },
       {
         "Feature": "manual_poke",
         "Query": "tchel",
         "Kind": "eq",
-        "Rva": 58712049,
-        "Target": 65860256,
-        "Bytes": "E8AA126D00",
+        "Rva": 58721713,
+        "Target": 65875936,
+        "Bytes": "E82A2A6D00",
         "Method": "State.CampaignState$$InstantiateStartingTeam::Data.TeamData InstantiateStartingTeam(State.RunSquadScriptableObject squad)"
       },
       {
         "Feature": "referee_look",
         "Query": "referee",
         "Kind": "eq",
-        "Rva": 58713866,
-        "Target": 65860256,
-        "Bytes": "E8910B6D00",
+        "Rva": 58723530,
+        "Target": 65875936,
+        "Bytes": "E811236D00",
         "Method": "State.CampaignState$$InstantiateStartingTeam::Data.TeamData InstantiateStartingTeam(State.RunSquadScriptableObject squad)"
       },
       {
         "Feature": "gm_contracts",
         "Query": "generalmanager",
         "Kind": "neq",
-        "Rva": 58715731,
-        "Target": 65894224,
-        "Bytes": "E8F8886D00",
+        "Rva": 58725395,
+        "Target": 65909904,
+        "Bytes": "E878A06D00",
         "Method": "State.CampaignState$$PreGenerateFreeAgents::System.Void PreGenerateFreeAgents(State.RunSquadScriptableObject squad, System.Collections.Generic.List\u00601\u003CData.ForwardData\u003E freeAgents, System.Collections.Generic.List\u00601\u003CRogue.FreeAgents.PreGeneratedFreeAgentData\u003E output, Unlocks.UnlockSystem unlockSystem)"
       },
       {
         "Feature": "gm_contracts",
         "Query": "generalmanager",
         "Kind": "neq",
-        "Rva": 58719228,
-        "Target": 65894224,
-        "Bytes": "E84F7B6D00",
+        "Rva": 58728892,
+        "Target": 65909904,
+        "Bytes": "E8CF926D00",
         "Method": "State.CampaignState$$RegisterStartingFreeAgents::System.Void RegisterStartingFreeAgents(State.RunSquadScriptableObject squad, Data.TeamData team, System.Collections.Generic.List\u00601\u003CRogue.FreeAgents.FreeAgent\u003E freeAgentsList)"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 59246626,
-        "Target": 61042928,
-        "Bytes": "E8C9681B00",
+        "Rva": 59256290,
+        "Target": 61050928,
+        "Bytes": "E849621B00",
         "Method": "State.EndConditions.MaxGoal$$CampaignGoalTarget::System.Int32 CampaignGoalTarget(STS.Map.NodeType nodeType, Data.TeamData opponent, System.Int32 defaultTarget)"
       },
       {
         "Feature": "gauntlet_end",
         "Query": "gauntlet",
         "Kind": "query",
-        "Rva": 59246762,
-        "Target": 61042928,
-        "Bytes": "E841681B00",
+        "Rva": 59256426,
+        "Target": 61050928,
+        "Bytes": "E8C1611B00",
         "Method": "State.EndConditions.MaxGoal$$CampaignGoalTarget::System.Int32 CampaignGoalTarget(STS.Map.NodeType nodeType, Data.TeamData opponent, System.Int32 defaultTarget)"
       },
       {
         "Feature": "speedrun",
         "Query": "speedrun",
         "Kind": "query",
-        "Rva": 59248028,
-        "Target": 61042928,
-        "Bytes": "E84F631B00",
+        "Rva": 59257692,
+        "Target": 61050928,
+        "Bytes": "E8CF5C1B00",
         "Method": "State.EndConditions.MaxGoal$$OnTimerEnd::System.Void OnTimerEnd()"
       },
       {
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 59284845,
-        "Target": 61042928,
-        "Bytes": "E87ED31A00",
+        "Rva": 59294509,
+        "Target": 61050928,
+        "Bytes": "E8FECC1A00",
         "Method": "State.EndOfGame.Steps.RewardsStep$$GenerateTalentRewards::Rogue.SkaterTalentRewards GenerateTalentRewards(Data.TeamData teamData, Rogue.Powerups.Repository.ITalentRepository talentRepository)"
       },
       {
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 59286280,
-        "Target": 61042928,
-        "Bytes": "E8E3CD1A00",
+        "Rva": 59295944,
+        "Target": 61050928,
+        "Bytes": "E863C71A00",
         "Method": "State.EndOfGame.Steps.RewardsStep$$LaunchForcedSkaterTalentReward::System.Void LaunchForcedSkaterTalentReward(State.EndOfGame.EndOfGameContext ctx)"
       },
       {
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 59288053,
-        "Target": 61042928,
-        "Bytes": "E8F6C61A00",
+        "Rva": 59297717,
+        "Target": 61050928,
+        "Bytes": "E876C01A00",
         "Method": "State.EndOfGame.Steps.RewardsStep$$LaunchTalentReward::System.Void LaunchTalentReward(State.EndOfGame.EndOfGameContext ctx)"
       },
       {
         "Feature": "solo_control",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 59023515,
-        "Target": 61042928,
-        "Bytes": "E850D01E00",
+        "Rva": 59033179,
+        "Target": 61050928,
+        "Bytes": "E8D0C91E00",
         "Method": "State.GameModeControllers.GameControllerBase$$ApplySoloControllerLimit::System.Void ApplySoloControllerLimit()"
       },
       {
         "Feature": "gauntlet_end",
         "Query": "gauntlet",
         "Kind": "query",
-        "Rva": 59040472,
-        "Target": 61042928,
-        "Bytes": "E8138E1E00",
+        "Rva": 59050136,
+        "Target": 61050928,
+        "Bytes": "E893871E00",
         "Method": "State.GameModeControllers.GameControllerBase$$InitializeEndOfGame::System.Void InitializeEndOfGame()"
       },
       {
         "Feature": "manual_poke",
         "Query": "tchel",
         "Kind": "query",
-        "Rva": 59044413,
-        "Target": 61042928,
-        "Bytes": "E8AE7E1E00",
+        "Rva": 59054077,
+        "Target": 61050928,
+        "Bytes": "E82E781E00",
         "Method": "State.GameModeControllers.GameControllerBase$$InitializePowerupEffects::System.Void InitializePowerupEffects()"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 59263930,
-        "Target": 61042928,
-        "Bytes": "E831251B00",
+        "Rva": 59273594,
+        "Target": 61050928,
+        "Bytes": "E8B11E1B00",
         "Method": "State.GameModeControllers.NormalMatch.NormalMatchGameModeController$$get_CanAwardRefereeBreakawayPenaltyShot::System.Boolean get_CanAwardRefereeBreakawayPenaltyShot()"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 59257125,
-        "Target": 61042928,
-        "Bytes": "E8C63F1B00",
+        "Rva": 59266789,
+        "Target": 61050928,
+        "Bytes": "E846391B00",
         "Method": "State.GameModeControllers.NormalMatch.NormalMatchGameModeController$$Initialize::System.Void Initialize()"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 59263086,
-        "Target": 61042928,
-        "Bytes": "E87D281B00",
+        "Rva": 59272750,
+        "Target": 61050928,
+        "Bytes": "E8FD211B00",
         "Method": "State.GameModeControllers.NormalMatch.NormalMatchGameModeController$$TryRefereeBreakawayPenaltyShot::System.Void TryRefereeBreakawayPenaltyShot(Tape2Tape.Team refereeTeam)"
       },
       {
         "Feature": "all_angus_outro",
         "Query": "allangus",
         "Kind": "neq",
-        "Rva": 58960948,
-        "Target": 65894224,
-        "Bytes": "E817CB6900",
+        "Rva": 58970612,
+        "Target": 65909904,
+        "Bytes": "E897E26900",
         "Method": "State.GolferOutro.GolferOutroDirector$$GetMainAngusId::System.String GetMainAngusId()"
       },
       {
         "Feature": "all_angus_outro",
         "Query": "allangus",
         "Kind": "neq",
-        "Rva": 58983037,
-        "Target": 65894224,
-        "Bytes": "E8CE746900",
+        "Rva": 58992701,
+        "Target": 65909904,
+        "Bytes": "E84E8C6900",
         "Method": "State.GolferOutro.GolferOutroDirector$$Stage::System.Void Stage(System.Boolean keepLayout = False)"
       },
       {
         "Feature": "all_angus",
         "Query": "allangus",
         "Kind": "neq",
-        "Rva": 58858897,
-        "Target": 65894224,
-        "Bytes": "E8BA596B00",
+        "Rva": 58868561,
+        "Target": 65909904,
+        "Bytes": "E83A716B00",
         "Method": "State.RunSquadScriptableObject$$IsAngus::System.Boolean IsAngus(System.String skaterId)"
       },
       {
         "Feature": "solo_rewards",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 53685393,
-        "Target": 61042928,
-        "Bytes": "E85A447000",
+        "Rva": 53696385,
+        "Target": 61050928,
+        "Bytes": "E8AA387000",
         "Method": "STS.Map.BlademasterMapNode$$CreateNodeReward::STS.NodeRewards.INodeReward CreateNodeReward()"
       },
       {
         "Feature": "speedrun",
         "Query": "speedrun",
         "Kind": "query",
-        "Rva": 53689166,
-        "Target": 61042928,
-        "Bytes": "E89D357000",
+        "Rva": 53700158,
+        "Target": 61050928,
+        "Bytes": "E8ED297000",
         "Method": "STS.Map.BossMapNode$$LaunchMatch::System.Void LaunchMatch()"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 53693515,
-        "Target": 61042928,
-        "Bytes": "E8A0247000",
+        "Rva": 53704507,
+        "Target": 61050928,
+        "Bytes": "E8F0187000",
         "Method": "STS.Map.ChallengeMapNode$$LaunchMatch::System.Void LaunchMatch()"
       },
       {
         "Feature": "speedrun",
         "Query": "speedrun",
         "Kind": "query",
-        "Rva": 53699810,
-        "Target": 61042928,
-        "Bytes": "E8090C7000",
+        "Rva": 53710802,
+        "Target": 61050928,
+        "Bytes": "E859007000",
         "Method": "STS.Map.EliteMapNode$$LaunchMatch::System.Void LaunchMatch()"
       },
       {
         "Feature": "referee_opponents",
         "Query": "referee",
         "Kind": "eq",
-        "Rva": 53740677,
-        "Target": 65860256,
-        "Bytes": "E816EEB800",
+        "Rva": 53830373,
+        "Target": 65875936,
+        "Bytes": "E8F6CCB700",
         "Method": "STS.Map.MapObject$$SetOpponents::System.Void SetOpponents(System.Int32 act)"
       },
       {
         "Feature": "no_generated_gm",
         "Query": "lines",
         "Kind": "query",
-        "Rva": 53896006,
-        "Target": 61042928,
-        "Bytes": "E8A50D6D00",
+        "Rva": 53908358,
+        "Target": 61050928,
+        "Bytes": "E8A5FC6C00",
         "Method": "STS.Map.TemplateMapGenerator$$GetMap::STS.Map.Map GetMap(System.Int32 act, STS.Map.MapConfig config)"
       },
       {
         "Feature": "no_generated_gm",
         "Query": "gauntlet",
         "Kind": "query",
-        "Rva": 53896085,
-        "Target": 61042928,
-        "Bytes": "E8560D6D00",
+        "Rva": 53908437,
+        "Target": 61050928,
+        "Bytes": "E856FC6C00",
         "Method": "STS.Map.TemplateMapGenerator$$GetMap::STS.Map.Map GetMap(System.Int32 act, STS.Map.MapConfig config)"
       },
       {
         "Feature": "no_generated_gm",
         "Query": "oldschool",
         "Kind": "query",
-        "Rva": 53896160,
-        "Target": 61042928,
-        "Bytes": "E80B0D6D00",
+        "Rva": 53908512,
+        "Target": 61050928,
+        "Bytes": "E80BFC6C00",
         "Method": "STS.Map.TemplateMapGenerator$$GetMap::STS.Map.Map GetMap(System.Int32 act, STS.Map.MapConfig config)"
       },
       {
         "Feature": "oldschool_map",
         "Query": "oldschool",
         "Kind": "query",
-        "Rva": 53896244,
-        "Target": 61042928,
-        "Bytes": "E8B70C6D00",
+        "Rva": 53908596,
+        "Target": 61050928,
+        "Bytes": "E8B7FB6C00",
         "Method": "STS.Map.TemplateMapGenerator$$GetMap::STS.Map.Map GetMap(System.Int32 act, STS.Map.MapConfig config)"
       },
       {
         "Feature": "training_map",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 53896320,
-        "Target": 61042928,
-        "Bytes": "E86B0C6D00",
+        "Rva": 53908672,
+        "Target": 61050928,
+        "Bytes": "E86BFB6C00",
         "Method": "STS.Map.TemplateMapGenerator$$GetMap::STS.Map.Map GetMap(System.Int32 act, STS.Map.MapConfig config)"
       },
       {
         "Feature": "solo_map",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 53896396,
-        "Target": 61042928,
-        "Bytes": "E81F0C6D00",
+        "Rva": 53908748,
+        "Target": 61050928,
+        "Bytes": "E81FFB6C00",
         "Method": "STS.Map.TemplateMapGenerator$$GetMap::STS.Map.Map GetMap(System.Int32 act, STS.Map.MapConfig config)"
       },
       {
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 53701248,
-        "Target": 61042928,
-        "Bytes": "E86B067000",
+        "Rva": 53712240,
+        "Target": 61050928,
+        "Bytes": "E8BBFA6F00",
         "Method": "STS.NodeRewards.FanNodeReward$$GenerateReward::System.Void GenerateReward(State.CampaignState campaignState)"
       },
       {
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 53702545,
-        "Target": 61042928,
-        "Bytes": "E85A017000",
+        "Rva": 53713537,
+        "Target": 61050928,
+        "Bytes": "E8AAF56F00",
         "Method": "STS.NodeRewards.FanNodeReward$$SetRewardFromID::System.Void SetRewardFromID(State.CampaignState campaignState, System.String id)"
       },
       {
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 53780224,
-        "Target": 61042928,
-        "Bytes": "E8EBD16E00",
+        "Rva": 53776656,
+        "Target": 61050928,
+        "Bytes": "E81BFF6E00",
         "Method": "STS.NodeRewards.TalentNodeReward$$GenerateReward::System.Void GenerateReward(State.CampaignState campaignState)"
       },
       {
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 53780623,
-        "Target": 61042928,
-        "Bytes": "E85CD06E00",
+        "Rva": 53777055,
+        "Target": 61050928,
+        "Bytes": "E88CFD6E00",
         "Method": "STS.NodeRewards.TalentNodeReward$$GetRewardCategory::Rogue.Powerups.Repository.TalentCategory GetRewardCategory()"
       },
       {
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 53781288,
-        "Target": 61042928,
-        "Bytes": "E8C3CD6E00",
+        "Rva": 53777720,
+        "Target": 61050928,
+        "Bytes": "E8F3FA6E00",
         "Method": "STS.NodeRewards.TalentNodeReward$$SetRewardFromID::System.Void SetRewardFromID(State.CampaignState campaignState, System.String id)"
       },
       {
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 53781568,
-        "Target": 61042928,
-        "Bytes": "E8ABCC6E00",
+        "Rva": 53778000,
+        "Target": 61050928,
+        "Bytes": "E8DBF96E00",
         "Method": "STS.NodeRewards.TalentNodeReward$$ShouldRegenerateReward::System.Boolean ShouldRegenerateReward(Rogue.Talent talent)"
       },
       {
         "Feature": "referee_look",
         "Query": "referee",
         "Kind": "eq",
-        "Rva": 61034845,
-        "Target": 65860256,
-        "Bytes": "E83EA14900",
+        "Rva": 61042845,
+        "Target": 65875936,
+        "Bytes": "E83EBF4900",
         "Method": "Tape2Tape.CampaignHelper$$SetupCampaignSkins::System.Void SetupCampaignSkins(Data.ForwardData newPlayer, State.RunSquadScriptableObject squad)"
       },
       {
         "Feature": "three_skaters",
         "Query": "trio",
         "Kind": "query",
-        "Rva": 61039179,
-        "Target": 61042928,
+        "Rva": 61047179,
+        "Target": 61050928,
         "Bytes": "E8A00E0000",
         "Method": "Tape2Tape.CampaignUtil$$GetMaxActiveForwards::System.Int32 GetMaxActiveForwards(System.Boolean checkMode = True)"
       },
@@ -870,8 +870,8 @@
         "Feature": "four_skaters",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 61039351,
-        "Target": 61042928,
+        "Rva": 61047351,
+        "Target": 61050928,
         "Bytes": "E8F40D0000",
         "Method": "Tape2Tape.CampaignUtil$$GetMaxActiveForwards::System.Int32 GetMaxActiveForwards(System.Boolean checkMode = True)"
       },
@@ -879,406 +879,415 @@
         "Feature": "three_skaters",
         "Query": "trio",
         "Kind": "eq",
-        "Rva": 61039826,
-        "Target": 65860256,
-        "Bytes": "E8C98D4900",
+        "Rva": 61047826,
+        "Target": 65875936,
+        "Bytes": "E8C9AB4900",
         "Method": "Tape2Tape.CampaignUtil$$GetMaxActiveForwards::System.Int32 GetMaxActiveForwards(System.String squadId)"
       },
       {
         "Feature": "four_skaters",
         "Query": "eliminator",
         "Kind": "eq",
-        "Rva": 61039864,
-        "Target": 65860256,
-        "Bytes": "E8A38D4900",
+        "Rva": 61047864,
+        "Target": 65875936,
+        "Bytes": "E8A3AB4900",
         "Method": "Tape2Tape.CampaignUtil$$GetMaxActiveForwards::System.Int32 GetMaxActiveForwards(System.String squadId)"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 60476788,
-        "Target": 61042928,
-        "Bytes": "E877A30800",
+        "Rva": 60489588,
+        "Target": 61050928,
+        "Bytes": "E8B7900800",
         "Method": "Tape2Tape.Celebrations$$OnGoalScored::System.Void OnGoalScored(Events.GoalScoredArg eventArg)"
       },
       {
         "Feature": "two_lines",
         "Query": "lines",
         "Kind": "query",
-        "Rva": 63125599,
-        "Target": 61042928,
-        "Bytes": "E88C38E0FF",
+        "Rva": 63141247,
+        "Target": 61050928,
+        "Bytes": "E8AC1AE0FF",
         "Method": "Tape2Tape.Customization.UI.TeamRosterData$$ApplyChanges::System.Boolean ApplyChanges()"
       },
       {
         "Feature": "solo_lock",
         "Query": "solo",
         "Kind": "eq",
-        "Rva": 63127206,
-        "Target": 65860256,
-        "Bytes": "E8F5B32900",
+        "Rva": 63142854,
+        "Target": 65875936,
+        "Bytes": "E815B42900",
         "Method": "Tape2Tape.Customization.UI.TeamRosterData$$CheckRoster::System.Boolean CheckRoster(System.Boolean requireMaxForwards)"
       },
       {
         "Feature": "two_lines",
         "Query": "lines",
         "Kind": "query",
-        "Rva": 63132675,
-        "Target": 61042928,
-        "Bytes": "E8E81CE0FF",
+        "Rva": 63148323,
+        "Target": 61050928,
+        "Bytes": "E808FFDFFF",
         "Method": "Tape2Tape.Customization.UI.TeamRosterData$$UpdateTemporaryTeamData::System.Void UpdateTemporaryTeamData()"
       },
       {
         "Feature": "trio_draft",
         "Query": "trio",
         "Kind": "eq",
-        "Rva": 61219803,
-        "Target": 65860256,
-        "Bytes": "E8C0CE4600",
+        "Rva": 61229035,
+        "Target": 65875936,
+        "Bytes": "E8F0E74600",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu.\u003C\u003CConfirm\u003Eg__Do|#\u003Ed$$MoveNext::System.Void MoveNext()"
       },
       {
         "Feature": "gauntlet_draft",
         "Query": "gauntlet",
         "Kind": "eq",
-        "Rva": 61219885,
-        "Target": 65860256,
-        "Bytes": "E86ECE4600",
+        "Rva": 61229117,
+        "Target": 65875936,
+        "Bytes": "E89EE74600",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu.\u003C\u003CConfirm\u003Eg__Do|#\u003Ed$$MoveNext::System.Void MoveNext()"
       },
       {
         "Feature": "two_lines",
         "Query": "lines",
         "Kind": "eq",
-        "Rva": 61206748,
-        "Target": 65860256,
-        "Bytes": "E8BF014700",
+        "Rva": 61215980,
+        "Target": 65875936,
+        "Bytes": "E8EF1A4700",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu.\u003CShow\u003Ed__#$$MoveNext::System.Void MoveNext()"
       },
       {
         "Feature": "two_lines",
         "Query": "lines",
         "Kind": "eq",
-        "Rva": 61207127,
-        "Target": 65860256,
-        "Bytes": "E844004700",
+        "Rva": 61216359,
+        "Target": 65875936,
+        "Bytes": "E874194700",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu.\u003CShow\u003Ed__#$$MoveNext::System.Void MoveNext()"
       },
       {
         "Feature": "gauntlet_draft",
         "Query": "gauntlet",
         "Kind": "eq",
-        "Rva": 61204476,
-        "Target": 65860256,
-        "Bytes": "E89F0A4700",
+        "Rva": 61213708,
+        "Target": 65875936,
+        "Bytes": "E8CF234700",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu.\u003CShowRosterInvalidPrompt\u003Ed__#$$MoveNext::System.Void MoveNext()"
       },
       {
         "Feature": "two_lines",
         "Query": "lines",
         "Kind": "neq",
-        "Rva": 61127979,
-        "Target": 65894224,
-        "Bytes": "E820BA4800",
+        "Rva": 61137211,
+        "Target": 65909904,
+        "Bytes": "E850D34800",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$AutoSelect::System.Void AutoSelect(System.Int32 missingFowardCount)"
       },
       {
         "Feature": "manual_poke",
         "Query": "tchel",
         "Kind": "eq",
-        "Rva": 61134684,
-        "Target": 65860256,
-        "Bytes": "E83F1B4800",
+        "Rva": 61143916,
+        "Target": 65875936,
+        "Bytes": "E86F344800",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$BuildPoolSkater::Tape2Tape.Customization.UI.SkaterDataForUI BuildPoolSkater(Data.ForwardData original, State.RunSquadScriptableObject squad)"
       },
       {
         "Feature": "trio_draft",
         "Query": "trio",
         "Kind": "eq",
-        "Rva": 61139538,
-        "Target": 65860256,
-        "Bytes": "E849084800",
+        "Rva": 61148770,
+        "Target": 65875936,
+        "Bytes": "E879214800",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$IsBenchwarmerRosterReady::System.Boolean IsBenchwarmerRosterReady()"
       },
       {
         "Feature": "gauntlet_draft",
         "Query": "gauntlet",
         "Kind": "eq",
-        "Rva": 61139641,
-        "Target": 65860256,
-        "Bytes": "E8E2074800",
+        "Rva": 61148873,
+        "Target": 65875936,
+        "Bytes": "E812214800",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$IsBenchwarmerRosterReady::System.Boolean IsBenchwarmerRosterReady()"
       },
       {
         "Feature": "two_lines",
         "Query": "lines",
         "Kind": "eq",
-        "Rva": 61142383,
-        "Target": 65860256,
-        "Bytes": "E82CFD4700",
+        "Rva": 61151615,
+        "Target": 65875936,
+        "Bytes": "E85C164800",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$LoadCurrentTeam::System.Void LoadCurrentTeam()"
       },
       {
         "Feature": "two_lines",
         "Query": "lines",
         "Kind": "eq",
-        "Rva": 61148857,
-        "Target": 65860256,
-        "Bytes": "E8E2E34700",
+        "Rva": 61158089,
+        "Target": 65875936,
+        "Bytes": "E812FD4700",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$LoadCurrentTeam::System.Void LoadCurrentTeam()"
       },
       {
         "Feature": "manual_poke",
         "Query": "tchel",
         "Kind": "eq",
-        "Rva": 61145882,
-        "Target": 65860256,
-        "Bytes": "E881EF4700",
+        "Rva": 61155114,
+        "Target": 65875936,
+        "Bytes": "E8B1084800",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$LoadCurrentTeam::System.Void LoadCurrentTeam()"
       },
       {
         "Feature": "solo_lock",
         "Query": "solo",
         "Kind": "eq",
-        "Rva": 61166099,
-        "Target": 65860256,
-        "Bytes": "E888A04700",
+        "Rva": 61175331,
+        "Target": 65875936,
+        "Bytes": "E8B8B94700",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$WouldBenchSoloAngus::System.Boolean WouldBenchSoloAngus(Data.ForwardData skater, Tape2Tape.Customization.UI.SkaterDataForUI target)"
       },
       {
         "Feature": "gm_intro",
         "Query": "generalmanager",
         "Kind": "query",
-        "Rva": 61285636,
-        "Target": 61042928,
-        "Bytes": "E8E74BFCFF",
+        "Rva": 61294868,
+        "Target": 61050928,
+        "Bytes": "E81747FCFF",
         "Method": "Tape2Tape.Hockey.UI.ChooseMetaMenu.\u003CHide\u003Ed__#$$MoveNext::System.Void MoveNext()"
       },
       {
         "Feature": "solo_control",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 61499469,
-        "Target": 61042928,
-        "Bytes": "E99E08F9FF",
+        "Rva": 61508701,
+        "Target": 61050928,
+        "Bytes": "E9CE03F9FF",
         "Method": "Tape2Tape.Hockey.UI.ControllerAssignmentMenu$$get_IsSoloCampaignAssignment::System.Boolean get_IsSoloCampaignAssignment()"
       },
       {
         "Feature": "no_pause_lineup",
         "Query": "lines",
         "Kind": "query",
-        "Rva": 61582086,
-        "Target": 61042928,
-        "Bytes": "E8E5C5F7FF",
+        "Rva": 61591318,
+        "Target": 61050928,
+        "Bytes": "E815C1F7FF",
         "Method": "Tape2Tape.Hockey.UI.GameMenu$$InitData::System.Void InitData(System.Object data)"
       },
       {
         "Feature": "no_pause_lineup",
         "Query": "sinbin",
         "Kind": "query",
-        "Rva": 61582162,
-        "Target": 61042928,
-        "Bytes": "E899C5F7FF",
+        "Rva": 61591394,
+        "Target": 61050928,
+        "Bytes": "E8C9C0F7FF",
         "Method": "Tape2Tape.Hockey.UI.GameMenu$$InitData::System.Void InitData(System.Object data)"
       },
       {
         "Feature": "solo_lock",
         "Query": "solo",
         "Kind": "eq",
-        "Rva": 62006371,
-        "Target": 65860256,
-        "Bytes": "E838CE3A00",
+        "Rva": 62014931,
+        "Target": 65875936,
+        "Bytes": "E808EA3A00",
         "Method": "Tape2Tape.Hockey.UI.LineupMenu$$WouldBenchSoloAngus::System.Boolean WouldBenchSoloAngus(Data.ForwardData skater, Tape2Tape.Customization.UI.SkaterDataForUI target)"
       },
       {
         "Feature": "manual_poke",
         "Query": "tchel",
         "Kind": "query",
-        "Rva": 62098200,
-        "Target": 61042928,
-        "Bytes": "E8D3E5EFFF",
+        "Rva": 62106760,
+        "Target": 61050928,
+        "Bytes": "E8A3E3EFFF",
         "Method": "Tape2Tape.Hockey.UI.OldSquadMenu$$CreatePlayerChoice::Data.ForwardData CreatePlayerChoice(Data.ForwardData template, Data.TeamData teamData)"
       },
       {
         "Feature": "oldschool_intro",
         "Query": "oldschool",
         "Kind": "query",
-        "Rva": 62098514,
-        "Target": 61042928,
-        "Bytes": "E899E4EFFF",
+        "Rva": 62107074,
+        "Target": 61050928,
+        "Bytes": "E869E2EFFF",
         "Method": "Tape2Tape.Hockey.UI.OldSquadMenu$$CreatePlayerChoice::Data.ForwardData CreatePlayerChoice(Data.ForwardData template, Data.TeamData teamData)"
       },
       {
         "Feature": "retro_presentation",
         "Query": "snes",
         "Kind": "query",
-        "Rva": 62034260,
-        "Target": 61042928,
-        "Bytes": "E897DFF0FF",
+        "Rva": 62042820,
+        "Target": 61050928,
+        "Bytes": "E867DDF0FF",
         "Method": "Tape2Tape.Hockey.UI.SkaterInitUI$$Start::System.Void Start()"
       },
       {
         "Feature": "oldschool_intro",
         "Query": "oldschool",
         "Kind": "query",
-        "Rva": 62429706,
-        "Target": 61042928,
-        "Bytes": "E8E1D6EAFF",
+        "Rva": 62438266,
+        "Target": 61050928,
+        "Bytes": "E8B1D4EAFF",
         "Method": "Tape2Tape.Hockey.UI.TitleScreen.\u003C\u003CNewRun\u003Eg__StartNewRun|#\u003Ed$$MoveNext::System.Void MoveNext()"
       },
       {
         "Feature": "gm_intro",
         "Query": "generalmanager",
         "Kind": "query",
-        "Rva": 62429830,
-        "Target": 61042928,
-        "Bytes": "E865D6EAFF",
+        "Rva": 62438390,
+        "Target": 61050928,
+        "Bytes": "E835D4EAFF",
         "Method": "Tape2Tape.Hockey.UI.TitleScreen.\u003C\u003CNewRun\u003Eg__StartNewRun|#\u003Ed$$MoveNext::System.Void MoveNext()"
       },
       {
         "Feature": "solo_control",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 62357362,
-        "Target": 61042928,
-        "Bytes": "E879F1EBFF",
+        "Rva": 62365922,
+        "Target": 61050928,
+        "Bytes": "E849EFEBFF",
         "Method": "Tape2Tape.Hockey.UI.TitleScreen$$AssignDefaultControllers::System.Void AssignDefaultControllers()"
       },
       {
         "Feature": "auto_bench",
         "Query": "lines",
         "Kind": "query",
-        "Rva": 62388506,
-        "Target": 61042928,
-        "Bytes": "E8D177EBFF",
+        "Rva": 62397066,
+        "Target": 61050928,
+        "Bytes": "E8A175EBFF",
         "Method": "Tape2Tape.Hockey.UI.TitleScreen$$TryAutoAddAllBenchwarmers::System.Boolean TryAutoAddAllBenchwarmers()"
       },
       {
         "Feature": "auto_bench",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 62388586,
-        "Target": 61042928,
-        "Bytes": "E88177EBFF",
+        "Rva": 62397146,
+        "Target": 61050928,
+        "Bytes": "E85175EBFF",
         "Method": "Tape2Tape.Hockey.UI.TitleScreen$$TryAutoAddAllBenchwarmers::System.Boolean TryAutoAddAllBenchwarmers()"
       },
       {
         "Feature": "auto_bench",
         "Query": "allangus",
         "Kind": "query",
-        "Rva": 62388666,
-        "Target": 61042928,
-        "Bytes": "E83177EBFF",
+        "Rva": 62397226,
+        "Target": 61050928,
+        "Bytes": "E80175EBFF",
         "Method": "Tape2Tape.Hockey.UI.TitleScreen$$TryAutoAddAllBenchwarmers::System.Boolean TryAutoAddAllBenchwarmers()"
       },
       {
         "Feature": "auto_bench",
         "Query": "gauntlet",
         "Kind": "eq",
-        "Rva": 62388900,
-        "Target": 65860256,
-        "Bytes": "E8F7F73400",
+        "Rva": 62397460,
+        "Target": 65875936,
+        "Bytes": "E8C7133500",
         "Method": "Tape2Tape.Hockey.UI.TitleScreen$$TryAutoAddAllBenchwarmers::System.Boolean TryAutoAddAllBenchwarmers()"
       },
       {
         "Feature": "tchel_offside",
         "Query": "tchel",
         "Kind": "query",
-        "Rva": 60796187,
-        "Target": 61042928,
-        "Bytes": "E8D0C30300",
+        "Rva": 60805211,
+        "Target": 61050928,
+        "Bytes": "E8D0BF0300",
         "Method": "Tape2Tape.OffsideController$$ApplyPenalty::System.Void ApplyPenalty(Skaters.Forward forward)"
       },
       {
         "Feature": "tchel_offside",
         "Query": "tchel",
         "Kind": "query",
-        "Rva": 60799419,
-        "Target": 61042928,
-        "Bytes": "E830B70300",
+        "Rva": 60808443,
+        "Target": 61050928,
+        "Bytes": "E830B30300",
         "Method": "Tape2Tape.OffsideController$$GetOffsidePenalty::Settings.OffsidePenalty GetOffsidePenalty()"
       },
       {
         "Feature": "tchel_offside",
         "Query": "tchel",
         "Kind": "query",
-        "Rva": 60802717,
-        "Target": 61042928,
-        "Bytes": "E84EAA0300",
+        "Rva": 60811741,
+        "Target": 61050928,
+        "Bytes": "E84EA60300",
         "Method": "Tape2Tape.OffsideController$$Refresh::System.Void Refresh()"
       },
       {
         "Feature": "solo_control",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 60967944,
-        "Target": 61042928,
-        "Bytes": "E9E3240100",
+        "Rva": 60975752,
+        "Target": 61050928,
+        "Bytes": "E9A3250100",
         "Method": "Tape2Tape.Team$$IsSoloSquadControlEnabled::System.Boolean IsSoloSquadControlEnabled()"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 61113710,
-        "Target": 61042928,
-        "Bytes": "E87DEBFEFF",
+        "Rva": 61122942,
+        "Target": 61050928,
+        "Bytes": "E8ADE6FEFF",
         "Method": "Tape2Tape.TeamScore$$OnReplaySkipped::System.Void OnReplaySkipped()"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 60205728,
-        "Target": 61042928,
-        "Bytes": "E84BC60C00",
+        "Rva": 60218320,
+        "Target": 61050928,
+        "Bytes": "E85BB40C00",
         "Method": "UI.GoalScorerBanner$$OnGoalScored::System.Void OnGoalScored(Events.GoalScoredArg arg0)"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 60203526,
-        "Target": 61042928,
-        "Bytes": "E8E5CE0C00",
+        "Rva": 60216118,
+        "Target": 61050928,
+        "Bytes": "E8F5BC0C00",
         "Method": "UI.GoalScorerBannerColors$$OnGoalScored::System.Void OnGoalScored(Events.GoalScoredArg eventArg)"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 60309889,
-        "Target": 61042928,
-        "Bytes": "E96A2F0B00",
+        "Rva": 60322481,
+        "Target": 61050928,
+        "Bytes": "E97A1D0B00",
         "Method": "UI.Scoreboard.ScoreboardCanvasController$$OnGoalScored::System.Void OnGoalScored(Events.GoalScoredArg arg0)"
       },
       {
         "Feature": "retro_presentation",
         "Query": "snes",
         "Kind": "query",
-        "Rva": 60310553,
-        "Target": 61042928,
-        "Bytes": "E8D22C0B00",
+        "Rva": 60323145,
+        "Target": 61050928,
+        "Bytes": "E8E21A0B00",
         "Method": "UI.Scoreboard.ScoreboardCanvasController$$Start::System.Void Start()"
       },
       {
         "Feature": "retro_presentation",
         "Query": "snes",
         "Kind": "query",
-        "Rva": 60310638,
-        "Target": 61042928,
-        "Bytes": "E87D2C0B00",
+        "Rva": 60323230,
+        "Target": 61050928,
+        "Bytes": "E88D1A0B00",
         "Method": "UI.Scoreboard.ScoreboardCanvasController$$Start::System.Void Start()"
       },
       {
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 60303939,
-        "Target": 61042928,
-        "Bytes": "E8A8460B00",
+        "Rva": 60316531,
+        "Target": 61050928,
+        "Bytes": "E8B8340B00",
         "Method": "UI.StandardGame.OffscreenIndicatorCanvasController$$OnGoalScored::System.Void OnGoalScored(Events.GoalScoredArg arg0)"
+      },
+      {
+        "Feature": "retro_presentation",
+        "Query": "snes",
+        "Kind": "query",
+        "Rva": 62624792,
+        "Target": 61050928,
+        "Bytes": "E813FCE7FF",
+        "Method": "Tape2Tape.Hockey.UI.PenaltyTimerWidget$$Start::System.Void Start()"
       }
     ]
   },
@@ -1316,7 +1325,7 @@
     {
       "Name": "AI.AIStates.BreakoutWithoutPuckState$$OnFixedUpdate::System.Void OnFixedUpdate()",
       "Signature": "System.Void OnFixedUpdate()",
-      "BodyHash": "758F1F942732585C5675B86C27B54E4CA3526AD4A5968FA9541400344C56A492"
+      "BodyHash": "07D9536F563307AEB578A7AEED463D1418EA415AC288140888A63413659FF198"
     },
     {
       "Name": "AI.AIStates.BreakoutWithPuck$$CheckForPass::System.Boolean CheckForPass(System.Boolean gettingHit, System.Boolean recordPressurePass = False)",
@@ -1326,7 +1335,7 @@
     {
       "Name": "AI.AIStates.BreakoutWithPuck$$OnEnter::System.Void OnEnter()",
       "Signature": "System.Void OnEnter()",
-      "BodyHash": "CFDD247D47C3F623DDE7858B42DF8A051BD3D48D6354DD372E7DFA70229D8BC8"
+      "BodyHash": "463E5DFC5CB2FA6F87687BAB5E68B662CBBD1632456C78814B45B140DA59679A"
     },
     {
       "Name": "AI.AIStates.BreakoutWithPuck$$OnFixedUpdate::System.Void OnFixedUpdate()",
@@ -1421,7 +1430,7 @@
     {
       "Name": "CameraController$$OnChangeGameState::System.Void OnChangeGameState(State.GameState from, State.GameState to)",
       "Signature": "System.Void OnChangeGameState(State.GameState from, State.GameState to)",
-      "BodyHash": "36B4D176AD3AC93424C5311261D6CE15B28F7B62DC42893921EE9C61B2C55C58"
+      "BodyHash": "C57D27C962EC9B88A2D9D55894D58CF6E8F09207AD12E23865413269E099F147"
     },
     {
       "Name": "CameraController$$OnGoalScored::System.Void OnGoalScored(Events.GoalScoredArg eventArg)",
@@ -1436,7 +1445,7 @@
     {
       "Name": "CrowdIncrementalSound$$ResolveArenaMode::System.Void ResolveArenaMode()",
       "Signature": "System.Void ResolveArenaMode()",
-      "BodyHash": "7B20FC52D6EE9ADB20213EEFD1013B53DFD575982465B9F33494E4CC04E711C1"
+      "BodyHash": "48E6998F2531938E9F0914AE0EB4EA10AB65B6A88A0C4D03F511BCFB054E1E54"
     },
     {
       "Name": "DAGG.Generation.TemplateToGraphConverter$$Convert::DAGG.Core.Graph Convert(DAGG.Generation.Template.MapTemplateData template)",
@@ -1551,7 +1560,7 @@
     {
       "Name": "GameManager$$get_WinningTeam::Tape2Tape.Team get_WinningTeam()",
       "Signature": "Tape2Tape.Team get_WinningTeam()",
-      "BodyHash": "E7CDAF129E8623890E625F9DAC876BB884CD9ABE8B2E40BDDD984F212756AAF3"
+      "BodyHash": "08D4339C6015B81A18475356ECE921420C56BCC8A1AB65AE48A7921598649D13"
     },
     {
       "Name": "GameManager$$OnGoalScored::System.Void OnGoalScored(Events.GoalScoredArg eventArg)",
@@ -1576,12 +1585,12 @@
     {
       "Name": "Goaltender.Goaltender.\u003CInitializeSkin\u003Ed__#$$MoveNext::System.Void MoveNext()",
       "Signature": "System.Void MoveNext()",
-      "BodyHash": "976A89BF9A1187FD1532FC27F527BA3040BBB2CCF9C58E8ECC0AAC2747814164"
+      "BodyHash": "3106CA880CE608D7E6339D5C8FAABF194FA1FEFC61BCB9705232E1B216C52318"
     },
     {
       "Name": "Goaltender.Goaltender$$Initialize::System.Void Initialize(Data.GoaltenderData gData, System.Boolean isCampaignTeam = False)",
       "Signature": "System.Void Initialize(Data.GoaltenderData gData, System.Boolean isCampaignTeam = False)",
-      "BodyHash": "83B7824C64293B6F9293E48458277703BF75CA0AFA5F00D7BBB59513C1DEEEFE"
+      "BodyHash": "4A66F7B60E33BE83D4BC25DA29EA0BC3147612AA6302316D29A7F06D323125D4"
     },
     {
       "Name": "Goaltender.GoaltenderNorth$$OnResetMap::System.Void OnResetMap()",
@@ -1621,7 +1630,7 @@
     {
       "Name": "MatchPreviewMenu$$BackToMap::System.Void BackToMap()",
       "Signature": "System.Void BackToMap()",
-      "BodyHash": "34E56401381B7CFA612DC393472DD400193C731CAC38DBC7B9AE3CC1BBB09CC3"
+      "BodyHash": "66BBD36642D1EB68017B0C7C92BEED7E9F59934D58DD090EE3B5D22E0348B8FE"
     },
     {
       "Name": "MatchPreviewMenu$$RefreshUnknownRewards::System.Void RefreshUnknownRewards(STS.Map.MatchBlueprint bp)",
@@ -1636,7 +1645,7 @@
     {
       "Name": "Movements.MovementStates.KnockoutState.\u003CReapplySkin\u003Ed__#$$MoveNext::System.Void MoveNext()",
       "Signature": "System.Void MoveNext()",
-      "BodyHash": "C2675CE4B9B53C9A7C5650CA5009F03A1212CE4C09C3B08BD9482BF51452BF75"
+      "BodyHash": "2A4B24805DE23007F6183E62E90BE92E086DA4DD63FF1539B3C5247DF06B4CBF"
     },
     {
       "Name": "Movements.MovementStates.KnockoutState$$DoBeforeMove::UnityEngine.Vector3 DoBeforeMove(UnityEngine.Vector3 direction)",
@@ -1651,7 +1660,7 @@
     {
       "Name": "NewNationalAnthem.\u003CListenForSkip\u003Ed__#$$MoveNext::System.Void MoveNext()",
       "Signature": "System.Void MoveNext()",
-      "BodyHash": "F20E8655EFC9A58CFBA70C39C23C2FA53BA11612CAFEF2B05500E8E7EA5D9F75"
+      "BodyHash": "58C31EB513444BB569451C35A73ABBA0AB5E64B860261D3D47D79B15B779129B"
     },
     {
       "Name": "PeriodIndicatorUI$$ClearPeriodMarkers::System.Void ClearPeriodMarkers()",
@@ -1676,7 +1685,7 @@
     {
       "Name": "PeriodIndicatorUI$$UpdateMercyCondition::System.Void UpdateMercyCondition()",
       "Signature": "System.Void UpdateMercyCondition()",
-      "BodyHash": "6880EF2E4E59F7AC9804B71DF07CFCD52BE46D79C179AC91E645999745745765"
+      "BodyHash": "B44BB8FA2388E442364B04BD890AD49406CBA888976EC625A4D09BC9C57C61EA"
     },
     {
       "Name": "PeriodIndicatorUI$$UpdatePeriodMarker::System.Void UpdatePeriodMarker(System.Int32 currentPeriod)",
@@ -1691,7 +1700,7 @@
     {
       "Name": "Rogue.BallHitDetector$$OnCollisionEnter::System.Void OnCollisionEnter(UnityEngine.Collision collision)",
       "Signature": "System.Void OnCollisionEnter(UnityEngine.Collision collision)",
-      "BodyHash": "028B83E5596C8686AEA55F0D07F9A8D029AB0C0FCD1D818DE72291EAB4A7CB79"
+      "BodyHash": "3CB0FE92DB7FEBF48D4A955D19DDF18B1F2E4C27E546EE23ADD53A6E31557A49"
     },
     {
       "Name": "Rogue.BenchPowers.EliteBonusBenchPower$$Initialize::System.Void Initialize(Tape2Tape.Team team, State.CampaignState campaignState)",
@@ -1921,12 +1930,12 @@
     {
       "Name": "Settings.GameplaySettingsUI$$InitializeCameraModeOptions::System.Void InitializeCameraModeOptions()",
       "Signature": "System.Void InitializeCameraModeOptions()",
-      "BodyHash": "8CE223AA5125A761742E324A642E8A7F4C728C66E4A6A158A7B8B0E3A615F5EE"
+      "BodyHash": "53C1D42EE4BF8FFE08D32DF0B69DDDF720FD67A24276B50DC907BEE90C9281B3"
     },
     {
       "Name": "Skaters.Forward$$CanPickupPuck::System.Boolean CanPickupPuck()",
       "Signature": "System.Boolean CanPickupPuck()",
-      "BodyHash": "7CA7BC56E047089BED1DCDC2DD1837D7C367D8028CAEEF7EFC15BA883B48984C"
+      "BodyHash": "F82CBCC92F4125669819D8082064B839FC51E00D6A89DD8A73A57B3792A80CD9"
     },
     {
       "Name": "Skaters.Forward$$get_FightHpMax::System.Single get_FightHpMax()",
@@ -1941,7 +1950,7 @@
     {
       "Name": "Skaters.Forward$$Initialize::System.Void Initialize(Data.ForwardData fdata, Skaters.SkaterType skType, System.Boolean isHome, Data.TeamData teamData = null, System.Boolean useAlternateColors = False)",
       "Signature": "System.Void Initialize(Data.ForwardData fdata, Skaters.SkaterType skType, System.Boolean isHome, Data.TeamData teamData = null, System.Boolean useAlternateColors = False)",
-      "BodyHash": "CF3D0EC3C5E731531C854145D122EA81C11DCC162C594A08A68110F2C7C1080A"
+      "BodyHash": "9C866B41AA7B7EA2C8A2F1B47735432DF549B0F5B4A17C0D3BDEAE5DD37A3150"
     },
     {
       "Name": "Skaters.Forward$$InitLogoAndNumber::System.Void InitLogoAndNumber()",
@@ -1951,7 +1960,7 @@
     {
       "Name": "Skaters.Forward$$Knockout::System.Boolean Knockout(UnityEngine.Vector3 direction, Skaters.Skater knockedOutBy, Skaters.KnockoutType knockoutType, System.Single friction, System.Single timeKnockout, System.Boolean willLoseStick = False, System.Boolean forceInjury = False, System.Boolean isCausedByPuck = False, System.Boolean ignoreImmunity = False, System.Boolean isBrawlFinisher = False)",
       "Signature": "System.Boolean Knockout(UnityEngine.Vector3 direction, Skaters.Skater knockedOutBy, Skaters.KnockoutType knockoutType, System.Single friction, System.Single timeKnockout, System.Boolean willLoseStick = False, System.Boolean forceInjury = False, System.Boolean isCausedByPuck = False, System.Boolean ignoreImmunity = False, System.Boolean isBrawlFinisher = False)",
-      "BodyHash": "251B4A64A530EC269A7B087A72FD92A3ACEF1541946426234F11E1733E561144"
+      "BodyHash": "60FDAFC50B25B6DAFB93CEBF421013AD5940F751C61765D1020F51E567C6A24F"
     },
     {
       "Name": "Skaters.Forward$$OnGameInitializationDone::System.Void OnGameInitializationDone()",
@@ -1966,22 +1975,22 @@
     {
       "Name": "Skaters.Injuries.InjurySystem$$AreInjuriesDisabledInMatch::System.Boolean AreInjuriesDisabledInMatch()",
       "Signature": "System.Boolean AreInjuriesDisabledInMatch()",
-      "BodyHash": "29C0C0327D81E5E8ECB9D61F9BEC33D7FE0196DA6F5502DD885270BA99DA657A"
+      "BodyHash": "D46F2A4371839B20F2D3F49B34A280B858EABB1F6F9CB739F554E784EEE7A26E"
     },
     {
       "Name": "Skaters.Referee$$FixedUpdate::System.Void FixedUpdate()",
       "Signature": "System.Void FixedUpdate()",
-      "BodyHash": "A81B4925690D75098667E285E925948162972DAB98A7859934AA5421A59F00B6"
+      "BodyHash": "EAADB50A1476EFE123612D65EC28747D98315AB4DC5338734F10286EBD70D8BD"
     },
     {
       "Name": "Skaters.SkaterAbility.\u003C_Pass\u003Ed__#$$MoveNext::System.Boolean MoveNext()",
       "Signature": "System.Boolean MoveNext()",
-      "BodyHash": "5461E4BD09C779826681C025D35A64B940E1EA0061446055B260E57AC7B6CAF7"
+      "BodyHash": "C6C09CC8218514465B336EF1CAC817FB91005820464F0727F40BCE15934D8BD7"
     },
     {
       "Name": "Skaters.SkaterAbility$$ApplyFairwayShotBoost::UnityEngine.Vector3 ApplyFairwayShotBoost(UnityEngine.Vector3 shotDirection)",
       "Signature": "UnityEngine.Vector3 ApplyFairwayShotBoost(UnityEngine.Vector3 shotDirection)",
-      "BodyHash": "116542A2BCC2B39C3EF8B8B0662636E9AE0FB531D3393C5F9FFF7A603253BFC1"
+      "BodyHash": "68E3029C79CD75BEE5B8CCC9AB5E54A53E81315585EFF7BED88EF7C1533650F1"
     },
     {
       "Name": "Skaters.SkaterAbility$$ApplySandShotDebuff::UnityEngine.Vector3 ApplySandShotDebuff(UnityEngine.Vector3 shotDirection, out System.Boolean isSandShot)",
@@ -1996,7 +2005,7 @@
     {
       "Name": "Skaters.SkaterCollision$$HandleHitted::System.Void HandleHitted(Skaters.Forward bodychecker, Skaters.Forward hitted, UnityEngine.Vector3 hitDirection, UnityEngine.Vector3 point)",
       "Signature": "System.Void HandleHitted(Skaters.Forward bodychecker, Skaters.Forward hitted, UnityEngine.Vector3 hitDirection, UnityEngine.Vector3 point)",
-      "BodyHash": "2127523DAE34EEA6B2C85C95C345996EB53B5D8181C7113BDB6F206BFB7694A9"
+      "BodyHash": "1CDE676C95157B0697DE766D80CFBDEF36CC158780515265656B8149F08766AA"
     },
     {
       "Name": "Skaters.T2TSkeletonExtensions$$ApplyColorSchemesToMaterial::System.Void ApplyColorSchemesToMaterial(Data.TeamColorsData teamColors, UnityEngine.Material material)",
@@ -2061,7 +2070,7 @@
     {
       "Name": "SoundManager$$OnKnockout::System.Void OnKnockout(Events.KnockoutArgs arg)",
       "Signature": "System.Void OnKnockout(Events.KnockoutArgs arg)",
-      "BodyHash": "2FF447E91488A650E7F717127D181A7F6199C5B8E3443C46DCEBD743CF35FE5D"
+      "BodyHash": "A87CA8F04E3FE6B3B40984C24265A1EEC8C2600979F2018AFC586BA0CC9A0AB5"
     },
     {
       "Name": "SoundManager$$PlayInBetweenPeriod::System.Void PlayInBetweenPeriod()",
@@ -2071,12 +2080,12 @@
     {
       "Name": "SoundManager$$PlayShotSoundByType::System.Void PlayShotSoundByType(Events.ShootingArg arg)",
       "Signature": "System.Void PlayShotSoundByType(Events.ShootingArg arg)",
-      "BodyHash": "96BF967DC178249C1676C37561022699D93A33F343C4B55516B3528EAF370C53"
+      "BodyHash": "4A6DE95977CBC636F9AA58137E8BECE1F06DB6FE6765C944A1996FB49260BF29"
     },
     {
       "Name": "Spine.Skeleton.\u003CSetSkinAsyncInternal\u003Ed__#$$MoveNext::System.Void MoveNext()",
       "Signature": "System.Void MoveNext()",
-      "BodyHash": "9F601FF32FD49F9C0C8A3ADFACEE5956323468E9BA958FD97FE8C62DD4E321F7"
+      "BodyHash": "0AD5A78AB0AC85E12C3420EAEEADB08E02BC8A8D0F255E58432D41C236B21A6E"
     },
     {
       "Name": "Spine.Skin$$ComputeAttachmentHash::System.Int32 ComputeAttachmentHash(Spine.Attachment a)",
@@ -2096,7 +2105,7 @@
     {
       "Name": "State.CampaignState$$PreGenerateFreeAgents::System.Void PreGenerateFreeAgents(State.RunSquadScriptableObject squad, System.Collections.Generic.List\u00601\u003CData.ForwardData\u003E freeAgents, System.Collections.Generic.List\u00601\u003CRogue.FreeAgents.PreGeneratedFreeAgentData\u003E output, Unlocks.UnlockSystem unlockSystem)",
       "Signature": "System.Void PreGenerateFreeAgents(State.RunSquadScriptableObject squad, System.Collections.Generic.List\u00601\u003CData.ForwardData\u003E freeAgents, System.Collections.Generic.List\u00601\u003CRogue.FreeAgents.PreGeneratedFreeAgentData\u003E output, Unlocks.UnlockSystem unlockSystem)",
-      "BodyHash": "F25BCFD2B199A0DD24C3FD24B0DE641731C7555BB5FAB317901668866FEEE1D5"
+      "BodyHash": "93015D59DD3B310D4E028B3301C276493890FC6D1D98C844352A4FB157A6DEB6"
     },
     {
       "Name": "State.CampaignState$$RegisterStartingFreeAgents::System.Void RegisterStartingFreeAgents(State.RunSquadScriptableObject squad, Data.TeamData team, System.Collections.Generic.List\u00601\u003CRogue.FreeAgents.FreeAgent\u003E freeAgentsList)",
@@ -2146,7 +2155,7 @@
     {
       "Name": "State.GameModeControllers.GameControllerBase$$InitializeEndOfGame::System.Void InitializeEndOfGame()",
       "Signature": "System.Void InitializeEndOfGame()",
-      "BodyHash": "412BD64C97682D8B1AB36B9EDE80F1DC3E9F853D4E4820D0AE9964E1B1C7C4BD"
+      "BodyHash": "3DADAE31371051CEAB926547FBB46A2C2EDF2A2C0ADB2B4BB42EEEE4156645DA"
     },
     {
       "Name": "State.GameModeControllers.GameControllerBase$$InitializeForward::Skaters.Forward InitializeForward(UnityEngine.Transform trans, Data.ForwardData forwardData, Skaters.SkaterType skaterType, Data.TeamData teamData = null, System.Boolean isHome = True)",
@@ -2206,7 +2215,7 @@
     {
       "Name": "State.GolferOutro.GolferOutroDirector$$Stage::System.Void Stage(System.Boolean keepLayout = False)",
       "Signature": "System.Void Stage(System.Boolean keepLayout = False)",
-      "BodyHash": "1A9F2FF480CE078EB20D72F24960420418A842DFFCB8C15C1E1728E39A87F041"
+      "BodyHash": "02C180157C2A244D7C7902BC53DBD0C4ED20D82C4F9CD36D9F347F6035571F05"
     },
     {
       "Name": "State.RunSquadScriptableObject$$IsAngus::System.Boolean IsAngus(System.String skaterId)",
@@ -2356,12 +2365,12 @@
     {
       "Name": "Tape2Tape.Customization.UI.SkaterPreviewInUI.\u003CRefreshSkin_Internal\u003Ed__#$$MoveNext::System.Void MoveNext()",
       "Signature": "System.Void MoveNext()",
-      "BodyHash": "5B3B1703DEB7C4CE431E4C135242A41B378D764B0AE4B0E9F0BB459D0E3A3D91"
+      "BodyHash": "D6430E34ECD501DB89098DF2AA6BBA5A80784E921927E3797EF7C254FE75DAA4"
     },
     {
       "Name": "Tape2Tape.Customization.UI.TeamCustomizationPlayerPreview.\u003CRefreshColors\u003Ed__#$$MoveNext::System.Void MoveNext()",
       "Signature": "System.Void MoveNext()",
-      "BodyHash": "7DE2E9E731A5C6387DFCA8E07927DADE1FC14A45E0BB55AD7EBEC787CD5B1558"
+      "BodyHash": "68C5DDC6A7307409B6BB44CA4BAB1100FC75F54D4619E522EF439A12BB18D5AE"
     },
     {
       "Name": "Tape2Tape.Customization.UI.TeamRosterData$$.ctor::System.Void .ctor(Data.TeamData original, System.Boolean isStoringLineup = False, State.ILineupStore lineupStore = null, System.String forSquadId = null)",
@@ -2386,17 +2395,17 @@
     {
       "Name": "Tape2Tape.Hockey.UI.BenchwarmerMenu.\u003C\u003CConfirm\u003Eg__Do|#\u003Ed$$MoveNext::System.Void MoveNext()",
       "Signature": "System.Void MoveNext()",
-      "BodyHash": "CB818AAF057CB80EDFC3637EA5FF34E8CF43FC4044FF68E545CB34CFA13607BD"
+      "BodyHash": "1C7E1B91EF309DDD2DE7E2FE5BA8C76A1D5E0102FB9693A84F89FBCF85C28DD4"
     },
     {
       "Name": "Tape2Tape.Hockey.UI.BenchwarmerMenu.\u003CShow\u003Ed__#$$MoveNext::System.Void MoveNext()",
       "Signature": "System.Void MoveNext()",
-      "BodyHash": "DAFAFE1939F5CE2E33618AA844E59D83834FA1B6871A20AFA6F6116F75BA81DD"
+      "BodyHash": "89A8AB3457EB08DD561EE4C62024734BC7BBF07A11E0A67E78008FE44E2EFA92"
     },
     {
       "Name": "Tape2Tape.Hockey.UI.BenchwarmerMenu.\u003CShowRosterInvalidPrompt\u003Ed__#$$MoveNext::System.Void MoveNext()",
       "Signature": "System.Void MoveNext()",
-      "BodyHash": "8ED2F4F3EA3F088B6B94DB05816465A91077C0FB55A8109C1B95409E1CCC74CF"
+      "BodyHash": "22E72BE598BC80C843E5442FA5961EA3FE4F481D691735C1F0722AE31FD57D31"
     },
     {
       "Name": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$AutoSelect::System.Void AutoSelect(System.Int32 missingFowardCount)",
@@ -2426,7 +2435,7 @@
     {
       "Name": "Tape2Tape.Hockey.UI.ChooseMetaMenu.\u003CHide\u003Ed__#$$MoveNext::System.Void MoveNext()",
       "Signature": "System.Void MoveNext()",
-      "BodyHash": "A938E982A2A93D5C4315750124C132B097766E237A60C20B9AC68612681CE123"
+      "BodyHash": "B8A097C46CEDD9074ECF3FFDD5E8382077CE06D2C3F49907758E049EB7357965"
     },
     {
       "Name": "Tape2Tape.Hockey.UI.ControllerAssignmentMenu$$get_IsSoloCampaignAssignment::System.Boolean get_IsSoloCampaignAssignment()",
@@ -2436,7 +2445,7 @@
     {
       "Name": "Tape2Tape.Hockey.UI.GameMenu$$InitData::System.Void InitData(System.Object data)",
       "Signature": "System.Void InitData(System.Object data)",
-      "BodyHash": "35E20AE96F0B660B4773677875B29C4B8DDF097029E8AD62F1F97C49A67928EA"
+      "BodyHash": "1CF858DD17B47F4A2939770F96959FB2C394F95B68524266947E1DCD6D8F7AEA"
     },
     {
       "Name": "Tape2Tape.Hockey.UI.LineupMenu$$LoadCurrentTeam::System.Void LoadCurrentTeam()",
@@ -2454,9 +2463,14 @@
       "BodyHash": "7FEA6645EE7A65EAB3EDB8803190F1D745270D0F6A04494C7D06C4E2BD8781BF"
     },
     {
+      "Name": "Tape2Tape.Hockey.UI.PenaltyTimerWidget$$Start::System.Void Start()",
+      "Signature": "System.Void Start()",
+      "BodyHash": "F4CD0DD0240779424A9098E1F0B9C1928F5CB3D876B2C7B0E28B7D3A6D7724BC"
+    },
+    {
       "Name": "Tape2Tape.Hockey.UI.SkaterAndSkin.\u003CApplySkinAsync\u003Ed__#$$MoveNext::System.Void MoveNext()",
       "Signature": "System.Void MoveNext()",
-      "BodyHash": "CCD0F2C342C24165775AECA6E1892A6C50A2AE1510654FE3E39E354A8181E3C3"
+      "BodyHash": "4BD5084A330555230D044E7817E9560D6DDC03495BF9E2EDEDE02119011FE40B"
     },
     {
       "Name": "Tape2Tape.Hockey.UI.SkaterInitUI$$Start::System.Void Start()",
@@ -2466,12 +2480,12 @@
     {
       "Name": "Tape2Tape.Hockey.UI.TitleScreen.\u003C\u003CNewRun\u003Eg__StartNewRun|#\u003Ed$$MoveNext",
       "Signature": "System.Void MoveNext()",
-      "BodyHash": "9F5F27C7B080F19279EE79A38A82951D895769F4B6C23C553F4B05710E3DA89A"
+      "BodyHash": "04A4471A3304413BA226E654DB252229A2768C6CE4E5C6E31BC0CCBF08E5880E"
     },
     {
       "Name": "Tape2Tape.Hockey.UI.TitleScreen.\u003C\u003CNewRun\u003Eg__StartNewRun|#\u003Ed$$MoveNext::System.Void MoveNext()",
       "Signature": "System.Void MoveNext()",
-      "BodyHash": "9F5F27C7B080F19279EE79A38A82951D895769F4B6C23C553F4B05710E3DA89A"
+      "BodyHash": "04A4471A3304413BA226E654DB252229A2768C6CE4E5C6E31BC0CCBF08E5880E"
     },
     {
       "Name": "Tape2Tape.Hockey.UI.TitleScreen$$AssignDefaultControllers::System.Void AssignDefaultControllers()",
@@ -2486,7 +2500,7 @@
     {
       "Name": "Tape2Tape.Hockey.UI.WorldMapActIntro.\u003CPlay\u003Ed__#$$MoveNext::System.Void MoveNext()",
       "Signature": "System.Void MoveNext()",
-      "BodyHash": "ABC75235C6DE36A228535B5197544A98D3718A4DB985AB8980CA1088E60FDD8A"
+      "BodyHash": "96AC8A4E1D2A9D6F53B5D1F06D75DB7F59863C31AE3BD3C4950DECF7A707E073"
     },
     {
       "Name": "Tape2Tape.Hockey.UI.WorldMapActIntro$$Evaluate::System.Void Evaluate(System.Single t)",
@@ -2526,7 +2540,7 @@
     {
       "Name": "Tape2Tape.OffsideController$$Refresh::System.Void Refresh()",
       "Signature": "System.Void Refresh()",
-      "BodyHash": "8752283B6DE394EE3FCC0CBEE1BF77938E3FB08A3106B0A871377EB4639B5D4F"
+      "BodyHash": "8FFFEADEA648B25C5BA0C491C8E00BBCAB02BE3A7818ACE7EA603AB59D1AF164"
     },
     {
       "Name": "Tape2Tape.Puck$$OnCollisionEnter::System.Void OnCollisionEnter(UnityEngine.Collision other)",
@@ -2595,9 +2609,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 63808500,
-        "Target": 61042928,
-        "Bytes": "E8F7CCD5FF",
+        "Rva": 63824180,
+        "Target": 61050928,
+        "Bytes": "E8F7AED5FF",
         "Method": "AI.AIStates.AIState$$OnGoalScored::System.Void OnGoalScored(Skaters.Skater goalScorer, NHL94.GoalType goalType, System.Boolean isGameEndingGoal)"
       },
       "InstructionIndex": 49
@@ -2607,9 +2621,9 @@
         "Feature": "slapshot_ai",
         "Query": "slapshot",
         "Kind": "query",
-        "Rva": 63838865,
-        "Target": 61042928,
-        "Bytes": "E85A56D5FF",
+        "Rva": 63854545,
+        "Target": 61050928,
+        "Bytes": "E85A38D5FF",
         "Method": "AI.AIStates.BreakawayState$$DetermineShotType::System.Void DetermineShotType()"
       },
       "InstructionIndex": 31
@@ -2619,9 +2633,9 @@
         "Feature": "slapshot_ai",
         "Query": "slapshot",
         "Kind": "query",
-        "Rva": 63849177,
-        "Target": 61042928,
-        "Bytes": "E8122ED5FF",
+        "Rva": 63864857,
+        "Target": 61050928,
+        "Bytes": "E81210D5FF",
         "Method": "AI.AIStates.BreakawayState$$OnEnter::System.Void OnEnter()"
       },
       "InstructionIndex": 31
@@ -2632,8 +2646,8 @@
         "Query": "solo",
         "Kind": "query",
         "Rva": 52883344,
-        "Target": 61042928,
-        "Bytes": "E85B817C00",
+        "Target": 61050928,
+        "Bytes": "E89BA07C00",
         "Method": "CameraController$$Initialize::System.Void Initialize()"
       },
       "InstructionIndex": 259
@@ -2644,8 +2658,8 @@
         "Query": "solo",
         "Kind": "query",
         "Rva": 52884413,
-        "Target": 61042928,
-        "Bytes": "E82E7D7C00",
+        "Target": 61050928,
+        "Bytes": "E86E9C7C00",
         "Method": "CameraController$$OnCameraModeChanged::System.Void OnCameraModeChanged(Settings.CameraMode _)"
       },
       "InstructionIndex": 23
@@ -2656,8 +2670,8 @@
         "Query": "eliminator",
         "Kind": "query",
         "Rva": 52884617,
-        "Target": 61042928,
-        "Bytes": "E8627C7C00",
+        "Target": 61050928,
+        "Bytes": "E8A29B7C00",
         "Method": "CameraController$$OnChangeGameState::System.Void OnChangeGameState(State.GameState from, State.GameState to)"
       },
       "InstructionIndex": 36
@@ -2668,8 +2682,8 @@
         "Query": "eliminator",
         "Kind": "query",
         "Rva": 52890351,
-        "Target": 61042928,
-        "Bytes": "E8FC657C00",
+        "Target": 61050928,
+        "Bytes": "E83C857C00",
         "Method": "CameraController$$OnGoalScored::System.Void OnGoalScored(Events.GoalScoredArg eventArg)"
       },
       "InstructionIndex": 37
@@ -2680,8 +2694,8 @@
         "Query": "snes",
         "Kind": "query",
         "Rva": 52725644,
-        "Target": 61042928,
-        "Bytes": "E85FE97E00",
+        "Target": 61050928,
+        "Bytes": "E89F087F00",
         "Method": "CrowdIncrementalSound$$ResolveArenaMode::System.Void ResolveArenaMode()"
       },
       "InstructionIndex": 159
@@ -2691,9 +2705,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 54523376,
-        "Target": 61042928,
-        "Bytes": "E8FB7A6300",
+        "Rva": 54551056,
+        "Target": 61050928,
+        "Bytes": "E81B2E6300",
         "Method": "FaceoffWithReferee$$OnEndOfReplay::System.Void OnEndOfReplay(Tape2Tape.Team t)"
       },
       "InstructionIndex": 25
@@ -2703,9 +2717,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 56538738,
-        "Target": 61042928,
-        "Bytes": "E879BA4400",
+        "Rva": 56572018,
+        "Target": 61050928,
+        "Bytes": "E8B9574400",
         "Method": "Fighting.BrawlChallengeSystem$$CanOpenOffer::System.Boolean CanOpenOffer()"
       },
       "InstructionIndex": 96
@@ -2715,9 +2729,9 @@
         "Feature": "speedrun",
         "Query": "speedrun",
         "Kind": "query",
-        "Rva": 58301465,
-        "Target": 61042928,
-        "Bytes": "E8D2D42900",
+        "Rva": 58326489,
+        "Target": 61050928,
+        "Bytes": "E852922900",
         "Method": "GameManager$$get_WinningTeam::Tape2Tape.Team get_WinningTeam()"
       },
       "InstructionIndex": 57
@@ -2727,9 +2741,9 @@
         "Feature": "sinbin_goal",
         "Query": "sinbin",
         "Kind": "query",
-        "Rva": 58295317,
-        "Target": 61042928,
-        "Bytes": "E8D6EC2900",
+        "Rva": 58320341,
+        "Target": 61050928,
+        "Bytes": "E856AA2900",
         "Method": "GameManager$$OnGoalScored::System.Void OnGoalScored(Events.GoalScoredArg eventArg)"
       },
       "InstructionIndex": 120
@@ -2739,9 +2753,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 54556209,
-        "Target": 61042928,
-        "Bytes": "E8BAFA6200",
+        "Rva": 54586625,
+        "Target": 61050928,
+        "Bytes": "E82AA36200",
         "Method": "GoalLineTrigger$$IsGameEndingGoal::System.Boolean IsGameEndingGoal(Tape2Tape.Team scorerTeam, Tape2Tape.Team otherTeam, NHL94.GoalType goalType)"
       },
       "InstructionIndex": 43
@@ -2751,9 +2765,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 54559837,
-        "Target": 61042928,
-        "Bytes": "E88EEC6200",
+        "Rva": 54590253,
+        "Target": 61050928,
+        "Bytes": "E8FE946200",
         "Method": "GoalLineTrigger$$VerifyGoalScored::System.Void VerifyGoalScored(UnityEngine.Collider other)"
       },
       "InstructionIndex": 551
@@ -2763,9 +2777,9 @@
         "Feature": "retro_presentation",
         "Query": "snes",
         "Kind": "query",
-        "Rva": 54566485,
-        "Target": 61042928,
-        "Bytes": "E896D26200",
+        "Rva": 54596901,
+        "Target": 61050928,
+        "Bytes": "E8067B6200",
         "Method": "GoalReplay$$Awake::System.Void Awake()"
       },
       "InstructionIndex": 71
@@ -2775,9 +2789,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 56253428,
-        "Target": 61042928,
-        "Bytes": "E8F7144900",
+        "Rva": 56286708,
+        "Target": 61050928,
+        "Bytes": "E837B24800",
         "Method": "Goaltender.Goaltender$$Initialize::System.Void Initialize(Data.GoaltenderData gData, System.Boolean isCampaignTeam = False)"
       },
       "InstructionIndex": 112
@@ -2787,9 +2801,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 56392085,
-        "Target": 61042928,
-        "Bytes": "E856F74600",
+        "Rva": 56425365,
+        "Target": 61050928,
+        "Bytes": "E896944600",
         "Method": "Goaltender.GoaltenderNorth$$OnResetMap::System.Void OnResetMap()"
       },
       "InstructionIndex": 26
@@ -2799,9 +2813,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 56395753,
-        "Target": 61042928,
-        "Bytes": "E802E94600",
+        "Rva": 56429033,
+        "Target": 61050928,
+        "Bytes": "E842864600",
         "Method": "Goaltender.GoaltenderSouth$$OnResetMap::System.Void OnResetMap()"
       },
       "InstructionIndex": 24
@@ -2811,9 +2825,9 @@
         "Feature": "no_relic_rewards",
         "Query": "norelics",
         "Kind": "query",
-        "Rva": 59491791,
-        "Target": 61042928,
-        "Bytes": "E81CAB1700",
+        "Rva": 59492159,
+        "Target": 61050928,
+        "Bytes": "E8ECC81700",
         "Method": "MatchPreviewMenu$$RefreshUnknownRewards::System.Void RefreshUnknownRewards(STS.Map.MatchBlueprint bp)"
       },
       "InstructionIndex": 94
@@ -2823,9 +2837,9 @@
         "Feature": "no_relic_rewards",
         "Query": "norelics",
         "Kind": "query",
-        "Rva": 59492599,
-        "Target": 61042928,
-        "Bytes": "E8F4A71700",
+        "Rva": 59492967,
+        "Target": 61050928,
+        "Bytes": "E8C4C51700",
         "Method": "MatchPreviewMenu$$RefreshUnknownRewards::System.Void RefreshUnknownRewards(STS.Map.MatchBlueprint bp)"
       },
       "InstructionIndex": 284
@@ -2835,9 +2849,9 @@
         "Feature": "no_bench_quests",
         "Query": "lines",
         "Kind": "query",
-        "Rva": 58588212,
-        "Target": 61042928,
-        "Bytes": "E8B7742500",
+        "Rva": 58597876,
+        "Target": 61050928,
+        "Bytes": "E8376E2500",
         "Method": "Rogue.BenchQuests.BenchQuestSystem$$get_IsDisabled::System.Boolean get_IsDisabled()"
       },
       "InstructionIndex": 21
@@ -2847,9 +2861,9 @@
         "Feature": "no_bench_snapshots",
         "Query": "oldschool",
         "Kind": "query",
-        "Rva": 58600192,
-        "Target": 61042928,
-        "Bytes": "E8EB452500",
+        "Rva": 58609856,
+        "Target": 61050928,
+        "Bytes": "E86B3F2500",
         "Method": "Rogue.BenchSnapshots.BenchSnapshotService$$get_IsDisabled::System.Boolean get_IsDisabled()"
       },
       "InstructionIndex": 23
@@ -2859,9 +2873,9 @@
         "Feature": "no_bench_snapshots",
         "Query": "lines",
         "Kind": "query",
-        "Rva": 58600263,
-        "Target": 61042928,
-        "Bytes": "E8A4452500",
+        "Rva": 58609927,
+        "Target": 61050928,
+        "Bytes": "E8243F2500",
         "Method": "Rogue.BenchSnapshots.BenchSnapshotService$$get_IsDisabled::System.Boolean get_IsDisabled()"
       },
       "InstructionIndex": 39
@@ -2871,9 +2885,9 @@
         "Feature": "no_angus_curse",
         "Query": "allangus",
         "Kind": "neq",
-        "Rva": 57620698,
-        "Target": 65894224,
-        "Bytes": "E8713E7E00",
+        "Rva": 57645722,
+        "Target": 65909904,
+        "Bytes": "E8F1197E00",
         "Method": "Rogue.CanadaCurses.CanadaCurseCatalog.\u003C\u003Ec$$\u003C.cctor\u003Eb__5_0::System.Boolean \u003C.cctor\u003Eb__5_0(State.RunSquadScriptableObject squad, Data.TeamData _)"
       },
       "InstructionIndex": 25
@@ -2883,9 +2897,9 @@
         "Feature": "no_injury_curse",
         "Query": "oldschool",
         "Kind": "neq",
-        "Rva": 57621175,
-        "Target": 65894224,
-        "Bytes": "E9943C7E00",
+        "Rva": 57646199,
+        "Target": 65909904,
+        "Bytes": "E914187E00",
         "Method": "Rogue.CanadaCurses.CanadaCurseCatalog.\u003C\u003Ec$$\u003C.cctor\u003Eb__5_2::System.Boolean \u003C.cctor\u003Eb__5_2(State.RunSquadScriptableObject squad, Data.TeamData _)"
       },
       "InstructionIndex": 31
@@ -2895,9 +2909,9 @@
         "Feature": "no_eliminator_curse",
         "Query": "eliminator",
         "Kind": "neq",
-        "Rva": 57621319,
-        "Target": 65894224,
-        "Bytes": "E9043C7E00",
+        "Rva": 57646343,
+        "Target": 65909904,
+        "Bytes": "E984177E00",
         "Method": "Rogue.CanadaCurses.CanadaCurseCatalog.\u003C\u003Ec$$\u003C.cctor\u003Eb__5_3::System.Boolean \u003C.cctor\u003Eb__5_3(State.RunSquadScriptableObject squad, Data.TeamData _)"
       },
       "InstructionIndex": 31
@@ -2907,9 +2921,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 58627524,
-        "Target": 61042928,
-        "Bytes": "E827DB2400",
+        "Rva": 58637188,
+        "Target": 61050928,
+        "Bytes": "E8A7D42400",
         "Method": "Rogue.Eliminator.EliminatorGoalFlow$$Awake::System.Void Awake()"
       },
       "InstructionIndex": 21
@@ -2919,9 +2933,9 @@
         "Feature": "gauntlet_scaling",
         "Query": "gauntlet",
         "Kind": "query",
-        "Rva": 56681208,
-        "Target": 61042928,
-        "Bytes": "E9F38D4200",
+        "Rva": 56714488,
+        "Target": 61050928,
+        "Bytes": "E9332B4200",
         "Method": "Rogue.GauntletStackBonusScaler$$get_IsGauntletActive::System.Boolean get_IsGauntletActive()"
       },
       "InstructionIndex": 34
@@ -2931,9 +2945,9 @@
         "Feature": "gauntlet_scaling",
         "Query": "gauntlet",
         "Kind": "query",
-        "Rva": 56681001,
-        "Target": 61042928,
-        "Bytes": "E8C28E4200",
+        "Rva": 56714281,
+        "Target": 61050928,
+        "Bytes": "E8022C4200",
         "Method": "Rogue.GauntletStackBonusScaler$$ScaleBonus::System.Int32 ScaleBonus(System.Int32 bonus)"
       },
       "InstructionIndex": 34
@@ -2943,9 +2957,9 @@
         "Feature": "speedrun",
         "Query": "speedrun",
         "Kind": "query",
-        "Rva": 57305026,
-        "Target": 61042928,
-        "Bytes": "E829093900",
+        "Rva": 57330050,
+        "Target": 61050928,
+        "Bytes": "E8A9C63800",
         "Method": "Rogue.LastStand$$WillTimerAtZeroEndGame::System.Boolean WillTimerAtZeroEndGame()"
       },
       "InstructionIndex": 30
@@ -2955,9 +2969,9 @@
         "Feature": "solo_rewards",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 58603351,
-        "Target": 61042928,
-        "Bytes": "E894392500",
+        "Rva": 58613015,
+        "Target": 61050928,
+        "Bytes": "E814332500",
         "Method": "Rogue.NPC.BlademasterNPC.BlademasterEvent$$GetPlayersEligibleForNewAbility::System.Collections.Generic.List\u00601\u003CData.ForwardData\u003E GetPlayersEligibleForNewAbility(State.CampaignState campaignState)"
       },
       "InstructionIndex": 55
@@ -2967,9 +2981,9 @@
         "Feature": "no_ability_offers",
         "Query": "tchel",
         "Kind": "query",
-        "Rva": 58611139,
-        "Target": 61042928,
-        "Bytes": "E8281B2500",
+        "Rva": 58620803,
+        "Target": 61050928,
+        "Bytes": "E8A8142500",
         "Method": "Rogue.NPC.BlademasterNPC.BlademasterEvent$$ShouldOfferNewAbility::System.Boolean ShouldOfferNewAbility(State.CampaignState campaignState, System.Int32 upgradeablePowerupsCount)"
       },
       "InstructionIndex": 27
@@ -2979,9 +2993,9 @@
         "Feature": "speedrun",
         "Query": "speedrun",
         "Kind": "query",
-        "Rva": 58617925,
-        "Target": 61042928,
-        "Bytes": "E8A6002500",
+        "Rva": 58627589,
+        "Target": 61050928,
+        "Bytes": "E826FA2400",
         "Method": "Rogue.NPC.CoachNPC.CoachEvent$$Initialize::System.Void Initialize()"
       },
       "InstructionIndex": 146
@@ -2991,9 +3005,9 @@
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 58618005,
-        "Target": 61042928,
-        "Bytes": "E856002500",
+        "Rva": 58627669,
+        "Target": 61050928,
+        "Bytes": "E8D6F92400",
         "Method": "Rogue.NPC.CoachNPC.CoachEvent$$Initialize::System.Void Initialize()"
       },
       "InstructionIndex": 162
@@ -3003,9 +3017,9 @@
         "Feature": "no_ability_offers",
         "Query": "tchel",
         "Kind": "query",
-        "Rva": 58668254,
-        "Target": 61042928,
-        "Bytes": "E80D3C2400",
+        "Rva": 58677918,
+        "Target": 61050928,
+        "Bytes": "E88D352400",
         "Method": "Rogue.NPC.FanNumber1NPC.Events.PrototypeRewardPoolSubEvent$$TryCreateAbilityChoiceForCurrentSkater::System.Nullable\u00601\u003CSTS.Map.EventChoice\u003E TryCreateAbilityChoiceForCurrentSkater()"
       },
       "InstructionIndex": 25
@@ -3015,9 +3029,9 @@
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 58639847,
-        "Target": 61042928,
-        "Bytes": "E804AB2400",
+        "Rva": 58649511,
+        "Target": 61050928,
+        "Bytes": "E884A42400",
         "Method": "Rogue.NPC.FanNumber1NPC.FanNumber1Event$$Initialize::System.Void Initialize()"
       },
       "InstructionIndex": 75
@@ -3027,9 +3041,9 @@
         "Feature": "manual_poke",
         "Query": "tchel",
         "Kind": "eq",
-        "Rva": 58479906,
-        "Target": 65860256,
-        "Bytes": "E8799D7000",
+        "Rva": 58489570,
+        "Target": 65875936,
+        "Bytes": "E8F9B47000",
         "Method": "Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent$$CreatePlayerChoice::System.Void CreatePlayerChoice(Data.ForwardData template, Data.TeamData teamData)"
       },
       "InstructionIndex": 171
@@ -3039,9 +3053,9 @@
         "Feature": "gm_contracts",
         "Query": "generalmanager",
         "Kind": "eq",
-        "Rva": 58480211,
-        "Target": 65860256,
-        "Bytes": "E8489C7000",
+        "Rva": 58489875,
+        "Target": 65875936,
+        "Bytes": "E8C8B37000",
         "Method": "Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent$$CreatePlayerChoice::System.Void CreatePlayerChoice(Data.ForwardData template, Data.TeamData teamData)"
       },
       "InstructionIndex": 239
@@ -3051,9 +3065,9 @@
         "Feature": "gm_reroll",
         "Query": "generalmanager",
         "Kind": "query",
-        "Rva": 58487102,
-        "Target": 61042928,
-        "Bytes": "E8ADFF2600",
+        "Rva": 58496766,
+        "Target": 61050928,
+        "Bytes": "E82DF92600",
         "Method": "Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent$$RerollSkaterNodeRewards::System.Void RerollSkaterNodeRewards()"
       },
       "InstructionIndex": 47
@@ -3063,9 +3077,9 @@
         "Feature": "solo_rewards",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 58401720,
-        "Target": 61042928,
-        "Bytes": "E8334D2800",
+        "Rva": 58411384,
+        "Target": 61050928,
+        "Bytes": "E8B3462800",
         "Method": "Rogue.NPC.NurseNPC.Procedures.NurseProcedureRoster$$CreateForCurrentRun::Rogue.NPC.NurseNPC.Procedures.NurseProcedureRoster CreateForCurrentRun()"
       },
       "InstructionIndex": 180
@@ -3075,9 +3089,9 @@
         "Feature": "solo_rewards",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 58407830,
-        "Target": 61042928,
-        "Bytes": "E855352800",
+        "Rva": 58417494,
+        "Target": 61050928,
+        "Bytes": "E8D52E2800",
         "Method": "Rogue.NPC.NurseNPC.Procedures.NurseProcedureRoster$$GetRequiredForwardId::System.String GetRequiredForwardId()"
       },
       "InstructionIndex": 33
@@ -3087,9 +3101,9 @@
         "Feature": "slapshot_rewards",
         "Query": "slapshot",
         "Kind": "query",
-        "Rva": 57847071,
-        "Target": 61042928,
-        "Bytes": "E8CCC33000",
+        "Rva": 57872095,
+        "Target": 61050928,
+        "Bytes": "E84C813000",
         "Method": "Rogue.Powerups.Repository.TalentRepository.\u003C\u003Ec__DisplayClass#$$\u003CGetWeightedRandomTalents\u003Eg__GetWeight|0::System.Single \u003CGetWeightedRandomTalents\u003Eg__GetWeight|0(Rogue.Talent t)"
       },
       "InstructionIndex": 36
@@ -3099,9 +3113,9 @@
         "Feature": "no_relic_rewards",
         "Query": "norelics",
         "Kind": "query",
-        "Rva": 57421877,
-        "Target": 61042928,
-        "Bytes": "E8B6403700",
+        "Rva": 57446901,
+        "Target": 61050928,
+        "Bytes": "E836FE3600",
         "Method": "Rogue.Rewards.RewardCounter$$SetRelicRewardCount::System.Void SetRelicRewardCount()"
       },
       "InstructionIndex": 63
@@ -3111,9 +3125,9 @@
         "Feature": "gm_rewards",
         "Query": "generalmanager",
         "Kind": "query",
-        "Rva": 57421952,
-        "Target": 61042928,
-        "Bytes": "E86B403700",
+        "Rva": 57446976,
+        "Target": 61050928,
+        "Bytes": "E8EBFD3600",
         "Method": "Rogue.Rewards.RewardCounter$$SetRelicRewardCount::System.Void SetRelicRewardCount()"
       },
       "InstructionIndex": 78
@@ -3123,9 +3137,9 @@
         "Feature": "no_relic_rewards",
         "Query": "norelics",
         "Kind": "query",
-        "Rva": 57422443,
-        "Target": 61042928,
-        "Bytes": "E8803E3700",
+        "Rva": 57447467,
+        "Target": 61050928,
+        "Bytes": "E800FC3600",
         "Method": "Rogue.Rewards.RewardCounter$$SetTalentRewardCount::System.Void SetTalentRewardCount()"
       },
       "InstructionIndex": 46
@@ -3135,9 +3149,9 @@
         "Feature": "gm_rewards",
         "Query": "generalmanager",
         "Kind": "query",
-        "Rva": 57422518,
-        "Target": 61042928,
-        "Bytes": "E8353E3700",
+        "Rva": 57447542,
+        "Target": 61050928,
+        "Bytes": "E8B5FB3600",
         "Method": "Rogue.Rewards.RewardCounter$$SetTalentRewardCount::System.Void SetTalentRewardCount()"
       },
       "InstructionIndex": 61
@@ -3147,21 +3161,21 @@
         "Feature": "solo_camera",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 53609267,
-        "Target": 61042928,
-        "Bytes": "E8B86D7100",
+        "Rva": 53714810,
+        "Target": 61050928,
+        "Bytes": "E8B1F06F00",
         "Method": "Settings.GameplaySettingsUI$$InitializeCameraModeOptions::System.Void InitializeCameraModeOptions()"
       },
-      "InstructionIndex": 99
+      "InstructionIndex": 97
     },
     {
       "Site": {
         "Feature": "gauntlet_opponents",
         "Query": "gauntlet",
         "Kind": "query",
-        "Rva": 59576100,
-        "Target": 61042928,
-        "Bytes": "E8C7611600",
+        "Rva": 59588692,
+        "Target": 61050928,
+        "Bytes": "E8D74F1600",
         "Method": "Skaters.Forward$$Initialize::System.Void Initialize(Data.ForwardData fdata, Skaters.SkaterType skType, System.Boolean isHome, Data.TeamData teamData = null, System.Boolean useAlternateColors = False)"
       },
       "InstructionIndex": 131
@@ -3171,9 +3185,9 @@
         "Feature": "retro_skating",
         "Query": "snes",
         "Kind": "query",
-        "Rva": 59593941,
-        "Target": 61042928,
-        "Bytes": "E8161C1600",
+        "Rva": 59606533,
+        "Target": 61050928,
+        "Bytes": "E8260A1600",
         "Method": "Skaters.Forward$$OnGameInitializationDone::System.Void OnGameInitializationDone()"
       },
       "InstructionIndex": 48
@@ -3183,9 +3197,9 @@
         "Feature": "manual_poke",
         "Query": "tchel",
         "Kind": "query",
-        "Rva": 59594029,
-        "Target": 61042928,
-        "Bytes": "E8BE1B1600",
+        "Rva": 59606621,
+        "Target": 61050928,
+        "Bytes": "E8CE091600",
         "Method": "Skaters.Forward$$OnGameInitializationDone::System.Void OnGameInitializationDone()"
       },
       "InstructionIndex": 67
@@ -3195,9 +3209,9 @@
         "Feature": "violence",
         "Query": "violence",
         "Kind": "query",
-        "Rva": 59594113,
-        "Target": 61042928,
-        "Bytes": "E86A1B1600",
+        "Rva": 59606705,
+        "Target": 61050928,
+        "Bytes": "E87A091600",
         "Method": "Skaters.Forward$$OnGameInitializationDone::System.Void OnGameInitializationDone()"
       },
       "InstructionIndex": 86
@@ -3207,9 +3221,9 @@
         "Feature": "no_injuries",
         "Query": "oldschool",
         "Kind": "query",
-        "Rva": 60037205,
-        "Target": 61042928,
-        "Bytes": "E896580F00",
+        "Rva": 60049797,
+        "Target": 61050928,
+        "Bytes": "E8A6460F00",
         "Method": "Skaters.Injuries.InjurySystem$$AreInjuriesDisabledInMatch::System.Boolean AreInjuriesDisabledInMatch()"
       },
       "InstructionIndex": 58
@@ -3219,9 +3233,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 59721211,
-        "Target": 61042928,
-        "Bytes": "E8F02A1400",
+        "Rva": 59733803,
+        "Target": 61050928,
+        "Bytes": "E800191400",
         "Method": "Skaters.Referee$$FixedUpdate::System.Void FixedUpdate()"
       },
       "InstructionIndex": 160
@@ -3231,9 +3245,9 @@
         "Feature": "line_stamina",
         "Query": "lines",
         "Kind": "query",
-        "Rva": 60059015,
-        "Target": 61042928,
-        "Bytes": "E864030F00",
+        "Rva": 60071607,
+        "Target": 61050928,
+        "Bytes": "E874F10E00",
         "Method": "Skaters.TeamStaminaSystem$$Initialize::System.Void Initialize(Tape2Tape.Team team, System.Boolean isCampaignTeam)"
       },
       "InstructionIndex": 52
@@ -3244,8 +3258,8 @@
         "Query": "snes",
         "Kind": "query",
         "Rva": 52803721,
-        "Target": 61042928,
-        "Bytes": "E862B87D00",
+        "Target": 61050928,
+        "Bytes": "E8A2D77D00",
         "Method": "SoundManager$$OnChangeGameState::System.Void OnChangeGameState(State.GameState from, State.GameState to)"
       },
       "InstructionIndex": 59
@@ -3256,8 +3270,8 @@
         "Query": "snes",
         "Kind": "query",
         "Rva": 52823233,
-        "Target": 61042928,
-        "Bytes": "E82A6C7D00",
+        "Target": 61050928,
+        "Bytes": "E86A8B7D00",
         "Method": "SoundManager$$OnGameInitDone::System.Void OnGameInitDone()"
       },
       "InstructionIndex": 25
@@ -3268,8 +3282,8 @@
         "Query": "snes",
         "Kind": "query",
         "Rva": 52823924,
-        "Target": 61042928,
-        "Bytes": "E877697D00",
+        "Target": 61050928,
+        "Bytes": "E8B7887D00",
         "Method": "SoundManager$$OnGamePresentation::System.Void OnGamePresentation()"
       },
       "InstructionIndex": 48
@@ -3279,9 +3293,9 @@
         "Feature": "manual_poke",
         "Query": "tchel",
         "Kind": "eq",
-        "Rva": 58712049,
-        "Target": 65860256,
-        "Bytes": "E8AA126D00",
+        "Rva": 58721713,
+        "Target": 65875936,
+        "Bytes": "E82A2A6D00",
         "Method": "State.CampaignState$$InstantiateStartingTeam::Data.TeamData InstantiateStartingTeam(State.RunSquadScriptableObject squad)"
       },
       "InstructionIndex": 338
@@ -3291,9 +3305,9 @@
         "Feature": "referee_look",
         "Query": "referee",
         "Kind": "eq",
-        "Rva": 58713866,
-        "Target": 65860256,
-        "Bytes": "E8910B6D00",
+        "Rva": 58723530,
+        "Target": 65875936,
+        "Bytes": "E811236D00",
         "Method": "State.CampaignState$$InstantiateStartingTeam::Data.TeamData InstantiateStartingTeam(State.RunSquadScriptableObject squad)"
       },
       "InstructionIndex": 733
@@ -3303,9 +3317,9 @@
         "Feature": "gm_contracts",
         "Query": "generalmanager",
         "Kind": "neq",
-        "Rva": 58715731,
-        "Target": 65894224,
-        "Bytes": "E8F8886D00",
+        "Rva": 58725395,
+        "Target": 65909904,
+        "Bytes": "E878A06D00",
         "Method": "State.CampaignState$$PreGenerateFreeAgents::System.Void PreGenerateFreeAgents(State.RunSquadScriptableObject squad, System.Collections.Generic.List\u00601\u003CData.ForwardData\u003E freeAgents, System.Collections.Generic.List\u00601\u003CRogue.FreeAgents.PreGeneratedFreeAgentData\u003E output, Unlocks.UnlockSystem unlockSystem)"
       },
       "InstructionIndex": 104
@@ -3315,9 +3329,9 @@
         "Feature": "gm_contracts",
         "Query": "generalmanager",
         "Kind": "neq",
-        "Rva": 58719228,
-        "Target": 65894224,
-        "Bytes": "E84F7B6D00",
+        "Rva": 58728892,
+        "Target": 65909904,
+        "Bytes": "E8CF926D00",
         "Method": "State.CampaignState$$RegisterStartingFreeAgents::System.Void RegisterStartingFreeAgents(State.RunSquadScriptableObject squad, Data.TeamData team, System.Collections.Generic.List\u00601\u003CRogue.FreeAgents.FreeAgent\u003E freeAgentsList)"
       },
       "InstructionIndex": 46
@@ -3327,9 +3341,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 59246626,
-        "Target": 61042928,
-        "Bytes": "E8C9681B00",
+        "Rva": 59256290,
+        "Target": 61050928,
+        "Bytes": "E849621B00",
         "Method": "State.EndConditions.MaxGoal$$CampaignGoalTarget::System.Int32 CampaignGoalTarget(STS.Map.NodeType nodeType, Data.TeamData opponent, System.Int32 defaultTarget)"
       },
       "InstructionIndex": 27
@@ -3339,9 +3353,9 @@
         "Feature": "gauntlet_end",
         "Query": "gauntlet",
         "Kind": "query",
-        "Rva": 59246762,
-        "Target": 61042928,
-        "Bytes": "E841681B00",
+        "Rva": 59256426,
+        "Target": 61050928,
+        "Bytes": "E8C1611B00",
         "Method": "State.EndConditions.MaxGoal$$CampaignGoalTarget::System.Int32 CampaignGoalTarget(STS.Map.NodeType nodeType, Data.TeamData opponent, System.Int32 defaultTarget)"
       },
       "InstructionIndex": 63
@@ -3351,9 +3365,9 @@
         "Feature": "speedrun",
         "Query": "speedrun",
         "Kind": "query",
-        "Rva": 59248028,
-        "Target": 61042928,
-        "Bytes": "E84F631B00",
+        "Rva": 59257692,
+        "Target": 61050928,
+        "Bytes": "E8CF5C1B00",
         "Method": "State.EndConditions.MaxGoal$$OnTimerEnd::System.Void OnTimerEnd()"
       },
       "InstructionIndex": 34
@@ -3363,9 +3377,9 @@
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 59284845,
-        "Target": 61042928,
-        "Bytes": "E87ED31A00",
+        "Rva": 59294509,
+        "Target": 61050928,
+        "Bytes": "E8FECC1A00",
         "Method": "State.EndOfGame.Steps.RewardsStep$$GenerateTalentRewards::Rogue.SkaterTalentRewards GenerateTalentRewards(Data.TeamData teamData, Rogue.Powerups.Repository.ITalentRepository talentRepository)"
       },
       "InstructionIndex": 31
@@ -3375,9 +3389,9 @@
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 59286280,
-        "Target": 61042928,
-        "Bytes": "E8E3CD1A00",
+        "Rva": 59295944,
+        "Target": 61050928,
+        "Bytes": "E863C71A00",
         "Method": "State.EndOfGame.Steps.RewardsStep$$LaunchForcedSkaterTalentReward::System.Void LaunchForcedSkaterTalentReward(State.EndOfGame.EndOfGameContext ctx)"
       },
       "InstructionIndex": 53
@@ -3387,9 +3401,9 @@
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 59288053,
-        "Target": 61042928,
-        "Bytes": "E8F6C61A00",
+        "Rva": 59297717,
+        "Target": 61050928,
+        "Bytes": "E876C01A00",
         "Method": "State.EndOfGame.Steps.RewardsStep$$LaunchTalentReward::System.Void LaunchTalentReward(State.EndOfGame.EndOfGameContext ctx)"
       },
       "InstructionIndex": 104
@@ -3399,9 +3413,9 @@
         "Feature": "solo_control",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 59023515,
-        "Target": 61042928,
-        "Bytes": "E850D01E00",
+        "Rva": 59033179,
+        "Target": 61050928,
+        "Bytes": "E8D0C91E00",
         "Method": "State.GameModeControllers.GameControllerBase$$ApplySoloControllerLimit::System.Void ApplySoloControllerLimit()"
       },
       "InstructionIndex": 47
@@ -3411,9 +3425,9 @@
         "Feature": "gauntlet_end",
         "Query": "gauntlet",
         "Kind": "query",
-        "Rva": 59040472,
-        "Target": 61042928,
-        "Bytes": "E8138E1E00",
+        "Rva": 59050136,
+        "Target": 61050928,
+        "Bytes": "E893871E00",
         "Method": "State.GameModeControllers.GameControllerBase$$InitializeEndOfGame::System.Void InitializeEndOfGame()"
       },
       "InstructionIndex": 211
@@ -3423,9 +3437,9 @@
         "Feature": "manual_poke",
         "Query": "tchel",
         "Kind": "query",
-        "Rva": 59044413,
-        "Target": 61042928,
-        "Bytes": "E8AE7E1E00",
+        "Rva": 59054077,
+        "Target": 61050928,
+        "Bytes": "E82E781E00",
         "Method": "State.GameModeControllers.GameControllerBase$$InitializePowerupEffects::System.Void InitializePowerupEffects()"
       },
       "InstructionIndex": 96
@@ -3435,9 +3449,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 59263930,
-        "Target": 61042928,
-        "Bytes": "E831251B00",
+        "Rva": 59273594,
+        "Target": 61050928,
+        "Bytes": "E8B11E1B00",
         "Method": "State.GameModeControllers.NormalMatch.NormalMatchGameModeController$$get_CanAwardRefereeBreakawayPenaltyShot::System.Boolean get_CanAwardRefereeBreakawayPenaltyShot()"
       },
       "InstructionIndex": 50
@@ -3447,9 +3461,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 59257125,
-        "Target": 61042928,
-        "Bytes": "E8C63F1B00",
+        "Rva": 59266789,
+        "Target": 61050928,
+        "Bytes": "E846391B00",
         "Method": "State.GameModeControllers.NormalMatch.NormalMatchGameModeController$$Initialize::System.Void Initialize()"
       },
       "InstructionIndex": 121
@@ -3459,9 +3473,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 59263086,
-        "Target": 61042928,
-        "Bytes": "E87D281B00",
+        "Rva": 59272750,
+        "Target": 61050928,
+        "Bytes": "E8FD211B00",
         "Method": "State.GameModeControllers.NormalMatch.NormalMatchGameModeController$$TryRefereeBreakawayPenaltyShot::System.Void TryRefereeBreakawayPenaltyShot(Tape2Tape.Team refereeTeam)"
       },
       "InstructionIndex": 53
@@ -3471,9 +3485,9 @@
         "Feature": "all_angus_outro",
         "Query": "allangus",
         "Kind": "neq",
-        "Rva": 58960948,
-        "Target": 65894224,
-        "Bytes": "E817CB6900",
+        "Rva": 58970612,
+        "Target": 65909904,
+        "Bytes": "E897E26900",
         "Method": "State.GolferOutro.GolferOutroDirector$$GetMainAngusId::System.String GetMainAngusId()"
       },
       "InstructionIndex": 38
@@ -3483,9 +3497,9 @@
         "Feature": "all_angus_outro",
         "Query": "allangus",
         "Kind": "neq",
-        "Rva": 58983037,
-        "Target": 65894224,
-        "Bytes": "E8CE746900",
+        "Rva": 58992701,
+        "Target": 65909904,
+        "Bytes": "E84E8C6900",
         "Method": "State.GolferOutro.GolferOutroDirector$$Stage::System.Void Stage(System.Boolean keepLayout = False)"
       },
       "InstructionIndex": 378
@@ -3495,9 +3509,9 @@
         "Feature": "all_angus",
         "Query": "allangus",
         "Kind": "neq",
-        "Rva": 58858897,
-        "Target": 65894224,
-        "Bytes": "E8BA596B00",
+        "Rva": 58868561,
+        "Target": 65909904,
+        "Bytes": "E83A716B00",
         "Method": "State.RunSquadScriptableObject$$IsAngus::System.Boolean IsAngus(System.String skaterId)"
       },
       "InstructionIndex": 116
@@ -3507,9 +3521,9 @@
         "Feature": "solo_rewards",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 53685393,
-        "Target": 61042928,
-        "Bytes": "E85A447000",
+        "Rva": 53696385,
+        "Target": 61050928,
+        "Bytes": "E8AA387000",
         "Method": "STS.Map.BlademasterMapNode$$CreateNodeReward::STS.NodeRewards.INodeReward CreateNodeReward()"
       },
       "InstructionIndex": 107
@@ -3519,9 +3533,9 @@
         "Feature": "speedrun",
         "Query": "speedrun",
         "Kind": "query",
-        "Rva": 53689166,
-        "Target": 61042928,
-        "Bytes": "E89D357000",
+        "Rva": 53700158,
+        "Target": 61050928,
+        "Bytes": "E8ED297000",
         "Method": "STS.Map.BossMapNode$$LaunchMatch::System.Void LaunchMatch()"
       },
       "InstructionIndex": 338
@@ -3531,9 +3545,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 53693515,
-        "Target": 61042928,
-        "Bytes": "E8A0247000",
+        "Rva": 53704507,
+        "Target": 61050928,
+        "Bytes": "E8F0187000",
         "Method": "STS.Map.ChallengeMapNode$$LaunchMatch::System.Void LaunchMatch()"
       },
       "InstructionIndex": 105
@@ -3543,9 +3557,9 @@
         "Feature": "speedrun",
         "Query": "speedrun",
         "Kind": "query",
-        "Rva": 53699810,
-        "Target": 61042928,
-        "Bytes": "E8090C7000",
+        "Rva": 53710802,
+        "Target": 61050928,
+        "Bytes": "E859007000",
         "Method": "STS.Map.EliteMapNode$$LaunchMatch::System.Void LaunchMatch()"
       },
       "InstructionIndex": 310
@@ -3555,9 +3569,9 @@
         "Feature": "referee_opponents",
         "Query": "referee",
         "Kind": "eq",
-        "Rva": 53740677,
-        "Target": 65860256,
-        "Bytes": "E816EEB800",
+        "Rva": 53830373,
+        "Target": 65875936,
+        "Bytes": "E8F6CCB700",
         "Method": "STS.Map.MapObject$$SetOpponents::System.Void SetOpponents(System.Int32 act)"
       },
       "InstructionIndex": 63
@@ -3567,9 +3581,9 @@
         "Feature": "no_generated_gm",
         "Query": "lines",
         "Kind": "query",
-        "Rva": 53896006,
-        "Target": 61042928,
-        "Bytes": "E8A50D6D00",
+        "Rva": 53908358,
+        "Target": 61050928,
+        "Bytes": "E8A5FC6C00",
         "Method": "STS.Map.TemplateMapGenerator$$GetMap::STS.Map.Map GetMap(System.Int32 act, STS.Map.MapConfig config)"
       },
       "InstructionIndex": 70
@@ -3579,9 +3593,9 @@
         "Feature": "no_generated_gm",
         "Query": "gauntlet",
         "Kind": "query",
-        "Rva": 53896085,
-        "Target": 61042928,
-        "Bytes": "E8560D6D00",
+        "Rva": 53908437,
+        "Target": 61050928,
+        "Bytes": "E856FC6C00",
         "Method": "STS.Map.TemplateMapGenerator$$GetMap::STS.Map.Map GetMap(System.Int32 act, STS.Map.MapConfig config)"
       },
       "InstructionIndex": 86
@@ -3591,9 +3605,9 @@
         "Feature": "no_generated_gm",
         "Query": "oldschool",
         "Kind": "query",
-        "Rva": 53896160,
-        "Target": 61042928,
-        "Bytes": "E80B0D6D00",
+        "Rva": 53908512,
+        "Target": 61050928,
+        "Bytes": "E80BFC6C00",
         "Method": "STS.Map.TemplateMapGenerator$$GetMap::STS.Map.Map GetMap(System.Int32 act, STS.Map.MapConfig config)"
       },
       "InstructionIndex": 102
@@ -3603,9 +3617,9 @@
         "Feature": "oldschool_map",
         "Query": "oldschool",
         "Kind": "query",
-        "Rva": 53896244,
-        "Target": 61042928,
-        "Bytes": "E8B70C6D00",
+        "Rva": 53908596,
+        "Target": 61050928,
+        "Bytes": "E8B7FB6C00",
         "Method": "STS.Map.TemplateMapGenerator$$GetMap::STS.Map.Map GetMap(System.Int32 act, STS.Map.MapConfig config)"
       },
       "InstructionIndex": 120
@@ -3615,9 +3629,9 @@
         "Feature": "training_map",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 53896320,
-        "Target": 61042928,
-        "Bytes": "E86B0C6D00",
+        "Rva": 53908672,
+        "Target": 61050928,
+        "Bytes": "E86BFB6C00",
         "Method": "STS.Map.TemplateMapGenerator$$GetMap::STS.Map.Map GetMap(System.Int32 act, STS.Map.MapConfig config)"
       },
       "InstructionIndex": 135
@@ -3627,9 +3641,9 @@
         "Feature": "solo_map",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 53896396,
-        "Target": 61042928,
-        "Bytes": "E81F0C6D00",
+        "Rva": 53908748,
+        "Target": 61050928,
+        "Bytes": "E81FFB6C00",
         "Method": "STS.Map.TemplateMapGenerator$$GetMap::STS.Map.Map GetMap(System.Int32 act, STS.Map.MapConfig config)"
       },
       "InstructionIndex": 150
@@ -3639,9 +3653,9 @@
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 53701248,
-        "Target": 61042928,
-        "Bytes": "E86B067000",
+        "Rva": 53712240,
+        "Target": 61050928,
+        "Bytes": "E8BBFA6F00",
         "Method": "STS.NodeRewards.FanNodeReward$$GenerateReward::System.Void GenerateReward(State.CampaignState campaignState)"
       },
       "InstructionIndex": 61
@@ -3651,9 +3665,9 @@
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 53702545,
-        "Target": 61042928,
-        "Bytes": "E85A017000",
+        "Rva": 53713537,
+        "Target": 61050928,
+        "Bytes": "E8AAF56F00",
         "Method": "STS.NodeRewards.FanNodeReward$$SetRewardFromID::System.Void SetRewardFromID(State.CampaignState campaignState, System.String id)"
       },
       "InstructionIndex": 79
@@ -3663,9 +3677,9 @@
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 53780224,
-        "Target": 61042928,
-        "Bytes": "E8EBD16E00",
+        "Rva": 53776656,
+        "Target": 61050928,
+        "Bytes": "E81BFF6E00",
         "Method": "STS.NodeRewards.TalentNodeReward$$GenerateReward::System.Void GenerateReward(State.CampaignState campaignState)"
       },
       "InstructionIndex": 247
@@ -3675,9 +3689,9 @@
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 53780623,
-        "Target": 61042928,
-        "Bytes": "E85CD06E00",
+        "Rva": 53777055,
+        "Target": 61050928,
+        "Bytes": "E88CFD6E00",
         "Method": "STS.NodeRewards.TalentNodeReward$$GetRewardCategory::Rogue.Powerups.Repository.TalentCategory GetRewardCategory()"
       },
       "InstructionIndex": 19
@@ -3687,9 +3701,9 @@
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 53781288,
-        "Target": 61042928,
-        "Bytes": "E8C3CD6E00",
+        "Rva": 53777720,
+        "Target": 61050928,
+        "Bytes": "E8F3FA6E00",
         "Method": "STS.NodeRewards.TalentNodeReward$$SetRewardFromID::System.Void SetRewardFromID(State.CampaignState campaignState, System.String id)"
       },
       "InstructionIndex": 69
@@ -3699,9 +3713,9 @@
         "Feature": "stat_rewards",
         "Query": "statrewards",
         "Kind": "query",
-        "Rva": 53781568,
-        "Target": 61042928,
-        "Bytes": "E8ABCC6E00",
+        "Rva": 53778000,
+        "Target": 61050928,
+        "Bytes": "E8DBF96E00",
         "Method": "STS.NodeRewards.TalentNodeReward$$ShouldRegenerateReward::System.Boolean ShouldRegenerateReward(Rogue.Talent talent)"
       },
       "InstructionIndex": 23
@@ -3711,9 +3725,9 @@
         "Feature": "referee_look",
         "Query": "referee",
         "Kind": "eq",
-        "Rva": 61034845,
-        "Target": 65860256,
-        "Bytes": "E83EA14900",
+        "Rva": 61042845,
+        "Target": 65875936,
+        "Bytes": "E83EBF4900",
         "Method": "Tape2Tape.CampaignHelper$$SetupCampaignSkins::System.Void SetupCampaignSkins(Data.ForwardData newPlayer, State.RunSquadScriptableObject squad)"
       },
       "InstructionIndex": 29
@@ -3723,8 +3737,8 @@
         "Feature": "three_skaters",
         "Query": "trio",
         "Kind": "query",
-        "Rva": 61039179,
-        "Target": 61042928,
+        "Rva": 61047179,
+        "Target": 61050928,
         "Bytes": "E8A00E0000",
         "Method": "Tape2Tape.CampaignUtil$$GetMaxActiveForwards::System.Int32 GetMaxActiveForwards(System.Boolean checkMode = True)"
       },
@@ -3735,8 +3749,8 @@
         "Feature": "four_skaters",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 61039351,
-        "Target": 61042928,
+        "Rva": 61047351,
+        "Target": 61050928,
         "Bytes": "E8F40D0000",
         "Method": "Tape2Tape.CampaignUtil$$GetMaxActiveForwards::System.Int32 GetMaxActiveForwards(System.Boolean checkMode = True)"
       },
@@ -3747,9 +3761,9 @@
         "Feature": "three_skaters",
         "Query": "trio",
         "Kind": "eq",
-        "Rva": 61039826,
-        "Target": 65860256,
-        "Bytes": "E8C98D4900",
+        "Rva": 61047826,
+        "Target": 65875936,
+        "Bytes": "E8C9AB4900",
         "Method": "Tape2Tape.CampaignUtil$$GetMaxActiveForwards::System.Int32 GetMaxActiveForwards(System.String squadId)"
       },
       "InstructionIndex": 93
@@ -3759,9 +3773,9 @@
         "Feature": "four_skaters",
         "Query": "eliminator",
         "Kind": "eq",
-        "Rva": 61039864,
-        "Target": 65860256,
-        "Bytes": "E8A38D4900",
+        "Rva": 61047864,
+        "Target": 65875936,
+        "Bytes": "E8A3AB4900",
         "Method": "Tape2Tape.CampaignUtil$$GetMaxActiveForwards::System.Int32 GetMaxActiveForwards(System.String squadId)"
       },
       "InstructionIndex": 104
@@ -3771,9 +3785,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 60476788,
-        "Target": 61042928,
-        "Bytes": "E877A30800",
+        "Rva": 60489588,
+        "Target": 61050928,
+        "Bytes": "E8B7900800",
         "Method": "Tape2Tape.Celebrations$$OnGoalScored::System.Void OnGoalScored(Events.GoalScoredArg eventArg)"
       },
       "InstructionIndex": 45
@@ -3783,9 +3797,9 @@
         "Feature": "two_lines",
         "Query": "lines",
         "Kind": "query",
-        "Rva": 63125599,
-        "Target": 61042928,
-        "Bytes": "E88C38E0FF",
+        "Rva": 63141247,
+        "Target": 61050928,
+        "Bytes": "E8AC1AE0FF",
         "Method": "Tape2Tape.Customization.UI.TeamRosterData$$ApplyChanges::System.Boolean ApplyChanges()"
       },
       "InstructionIndex": 47
@@ -3795,9 +3809,9 @@
         "Feature": "solo_lock",
         "Query": "solo",
         "Kind": "eq",
-        "Rva": 63127206,
-        "Target": 65860256,
-        "Bytes": "E8F5B32900",
+        "Rva": 63142854,
+        "Target": 65875936,
+        "Bytes": "E815B42900",
         "Method": "Tape2Tape.Customization.UI.TeamRosterData$$CheckRoster::System.Boolean CheckRoster(System.Boolean requireMaxForwards)"
       },
       "InstructionIndex": 207
@@ -3807,9 +3821,9 @@
         "Feature": "two_lines",
         "Query": "lines",
         "Kind": "query",
-        "Rva": 63132675,
-        "Target": 61042928,
-        "Bytes": "E8E81CE0FF",
+        "Rva": 63148323,
+        "Target": 61050928,
+        "Bytes": "E808FFDFFF",
         "Method": "Tape2Tape.Customization.UI.TeamRosterData$$UpdateTemporaryTeamData::System.Void UpdateTemporaryTeamData()"
       },
       "InstructionIndex": 34
@@ -3819,9 +3833,9 @@
         "Feature": "trio_draft",
         "Query": "trio",
         "Kind": "eq",
-        "Rva": 61219803,
-        "Target": 65860256,
-        "Bytes": "E8C0CE4600",
+        "Rva": 61229035,
+        "Target": 65875936,
+        "Bytes": "E8F0E74600",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu.\u003C\u003CConfirm\u003Eg__Do|#\u003Ed$$MoveNext::System.Void MoveNext()"
       },
       "InstructionIndex": 83
@@ -3831,9 +3845,9 @@
         "Feature": "gauntlet_draft",
         "Query": "gauntlet",
         "Kind": "eq",
-        "Rva": 61219885,
-        "Target": 65860256,
-        "Bytes": "E86ECE4600",
+        "Rva": 61229117,
+        "Target": 65875936,
+        "Bytes": "E89EE74600",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu.\u003C\u003CConfirm\u003Eg__Do|#\u003Ed$$MoveNext::System.Void MoveNext()"
       },
       "InstructionIndex": 103
@@ -3843,9 +3857,9 @@
         "Feature": "two_lines",
         "Query": "lines",
         "Kind": "eq",
-        "Rva": 61206748,
-        "Target": 65860256,
-        "Bytes": "E8BF014700",
+        "Rva": 61215980,
+        "Target": 65875936,
+        "Bytes": "E8EF1A4700",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu.\u003CShow\u003Ed__#$$MoveNext::System.Void MoveNext()"
       },
       "InstructionIndex": 222
@@ -3855,9 +3869,9 @@
         "Feature": "two_lines",
         "Query": "lines",
         "Kind": "eq",
-        "Rva": 61207127,
-        "Target": 65860256,
-        "Bytes": "E844004700",
+        "Rva": 61216359,
+        "Target": 65875936,
+        "Bytes": "E874194700",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu.\u003CShow\u003Ed__#$$MoveNext::System.Void MoveNext()"
       },
       "InstructionIndex": 306
@@ -3867,9 +3881,9 @@
         "Feature": "gauntlet_draft",
         "Query": "gauntlet",
         "Kind": "eq",
-        "Rva": 61204476,
-        "Target": 65860256,
-        "Bytes": "E89F0A4700",
+        "Rva": 61213708,
+        "Target": 65875936,
+        "Bytes": "E8CF234700",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu.\u003CShowRosterInvalidPrompt\u003Ed__#$$MoveNext::System.Void MoveNext()"
       },
       "InstructionIndex": 206
@@ -3879,9 +3893,9 @@
         "Feature": "two_lines",
         "Query": "lines",
         "Kind": "neq",
-        "Rva": 61127979,
-        "Target": 65894224,
-        "Bytes": "E820BA4800",
+        "Rva": 61137211,
+        "Target": 65909904,
+        "Bytes": "E850D34800",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$AutoSelect::System.Void AutoSelect(System.Int32 missingFowardCount)"
       },
       "InstructionIndex": 206
@@ -3891,9 +3905,9 @@
         "Feature": "manual_poke",
         "Query": "tchel",
         "Kind": "eq",
-        "Rva": 61134684,
-        "Target": 65860256,
-        "Bytes": "E83F1B4800",
+        "Rva": 61143916,
+        "Target": 65875936,
+        "Bytes": "E86F344800",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$BuildPoolSkater::Tape2Tape.Customization.UI.SkaterDataForUI BuildPoolSkater(Data.ForwardData original, State.RunSquadScriptableObject squad)"
       },
       "InstructionIndex": 37
@@ -3903,9 +3917,9 @@
         "Feature": "trio_draft",
         "Query": "trio",
         "Kind": "eq",
-        "Rva": 61139538,
-        "Target": 65860256,
-        "Bytes": "E849084800",
+        "Rva": 61148770,
+        "Target": 65875936,
+        "Bytes": "E879214800",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$IsBenchwarmerRosterReady::System.Boolean IsBenchwarmerRosterReady()"
       },
       "InstructionIndex": 29
@@ -3915,9 +3929,9 @@
         "Feature": "gauntlet_draft",
         "Query": "gauntlet",
         "Kind": "eq",
-        "Rva": 61139641,
-        "Target": 65860256,
-        "Bytes": "E8E2074800",
+        "Rva": 61148873,
+        "Target": 65875936,
+        "Bytes": "E812214800",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$IsBenchwarmerRosterReady::System.Boolean IsBenchwarmerRosterReady()"
       },
       "InstructionIndex": 58
@@ -3927,9 +3941,9 @@
         "Feature": "two_lines",
         "Query": "lines",
         "Kind": "eq",
-        "Rva": 61142383,
-        "Target": 65860256,
-        "Bytes": "E82CFD4700",
+        "Rva": 61151615,
+        "Target": 65875936,
+        "Bytes": "E85C164800",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$LoadCurrentTeam::System.Void LoadCurrentTeam()"
       },
       "InstructionIndex": 533
@@ -3939,9 +3953,9 @@
         "Feature": "two_lines",
         "Query": "lines",
         "Kind": "eq",
-        "Rva": 61148857,
-        "Target": 65860256,
-        "Bytes": "E8E2E34700",
+        "Rva": 61158089,
+        "Target": 65875936,
+        "Bytes": "E812FD4700",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$LoadCurrentTeam::System.Void LoadCurrentTeam()"
       },
       "InstructionIndex": 1922
@@ -3951,9 +3965,9 @@
         "Feature": "manual_poke",
         "Query": "tchel",
         "Kind": "eq",
-        "Rva": 61145882,
-        "Target": 65860256,
-        "Bytes": "E881EF4700",
+        "Rva": 61155114,
+        "Target": 65875936,
+        "Bytes": "E8B1084800",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$LoadCurrentTeam::System.Void LoadCurrentTeam()"
       },
       "InstructionIndex": 1275
@@ -3963,9 +3977,9 @@
         "Feature": "solo_lock",
         "Query": "solo",
         "Kind": "eq",
-        "Rva": 61166099,
-        "Target": 65860256,
-        "Bytes": "E888A04700",
+        "Rva": 61175331,
+        "Target": 65875936,
+        "Bytes": "E8B8B94700",
         "Method": "Tape2Tape.Hockey.UI.BenchwarmerMenu$$WouldBenchSoloAngus::System.Boolean WouldBenchSoloAngus(Data.ForwardData skater, Tape2Tape.Customization.UI.SkaterDataForUI target)"
       },
       "InstructionIndex": 53
@@ -3975,9 +3989,9 @@
         "Feature": "gm_intro",
         "Query": "generalmanager",
         "Kind": "query",
-        "Rva": 61285636,
-        "Target": 61042928,
-        "Bytes": "E8E74BFCFF",
+        "Rva": 61294868,
+        "Target": 61050928,
+        "Bytes": "E81747FCFF",
         "Method": "Tape2Tape.Hockey.UI.ChooseMetaMenu.\u003CHide\u003Ed__#$$MoveNext::System.Void MoveNext()"
       },
       "InstructionIndex": 342
@@ -3987,9 +4001,9 @@
         "Feature": "solo_control",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 61499469,
-        "Target": 61042928,
-        "Bytes": "E99E08F9FF",
+        "Rva": 61508701,
+        "Target": 61050928,
+        "Bytes": "E9CE03F9FF",
         "Method": "Tape2Tape.Hockey.UI.ControllerAssignmentMenu$$get_IsSoloCampaignAssignment::System.Boolean get_IsSoloCampaignAssignment()"
       },
       "InstructionIndex": 38
@@ -3999,9 +4013,9 @@
         "Feature": "no_pause_lineup",
         "Query": "lines",
         "Kind": "query",
-        "Rva": 61582086,
-        "Target": 61042928,
-        "Bytes": "E8E5C5F7FF",
+        "Rva": 61591318,
+        "Target": 61050928,
+        "Bytes": "E815C1F7FF",
         "Method": "Tape2Tape.Hockey.UI.GameMenu$$InitData::System.Void InitData(System.Object data)"
       },
       "InstructionIndex": 673
@@ -4011,9 +4025,9 @@
         "Feature": "no_pause_lineup",
         "Query": "sinbin",
         "Kind": "query",
-        "Rva": 61582162,
-        "Target": 61042928,
-        "Bytes": "E899C5F7FF",
+        "Rva": 61591394,
+        "Target": 61050928,
+        "Bytes": "E8C9C0F7FF",
         "Method": "Tape2Tape.Hockey.UI.GameMenu$$InitData::System.Void InitData(System.Object data)"
       },
       "InstructionIndex": 689
@@ -4023,9 +4037,9 @@
         "Feature": "solo_lock",
         "Query": "solo",
         "Kind": "eq",
-        "Rva": 62006371,
-        "Target": 65860256,
-        "Bytes": "E838CE3A00",
+        "Rva": 62014931,
+        "Target": 65875936,
+        "Bytes": "E808EA3A00",
         "Method": "Tape2Tape.Hockey.UI.LineupMenu$$WouldBenchSoloAngus::System.Boolean WouldBenchSoloAngus(Data.ForwardData skater, Tape2Tape.Customization.UI.SkaterDataForUI target)"
       },
       "InstructionIndex": 53
@@ -4035,9 +4049,9 @@
         "Feature": "manual_poke",
         "Query": "tchel",
         "Kind": "query",
-        "Rva": 62098200,
-        "Target": 61042928,
-        "Bytes": "E8D3E5EFFF",
+        "Rva": 62106760,
+        "Target": 61050928,
+        "Bytes": "E8A3E3EFFF",
         "Method": "Tape2Tape.Hockey.UI.OldSquadMenu$$CreatePlayerChoice::Data.ForwardData CreatePlayerChoice(Data.ForwardData template, Data.TeamData teamData)"
       },
       "InstructionIndex": 60
@@ -4047,9 +4061,9 @@
         "Feature": "oldschool_intro",
         "Query": "oldschool",
         "Kind": "query",
-        "Rva": 62098514,
-        "Target": 61042928,
-        "Bytes": "E899E4EFFF",
+        "Rva": 62107074,
+        "Target": 61050928,
+        "Bytes": "E869E2EFFF",
         "Method": "Tape2Tape.Hockey.UI.OldSquadMenu$$CreatePlayerChoice::Data.ForwardData CreatePlayerChoice(Data.ForwardData template, Data.TeamData teamData)"
       },
       "InstructionIndex": 133
@@ -4059,9 +4073,9 @@
         "Feature": "retro_presentation",
         "Query": "snes",
         "Kind": "query",
-        "Rva": 62034260,
-        "Target": 61042928,
-        "Bytes": "E897DFF0FF",
+        "Rva": 62042820,
+        "Target": 61050928,
+        "Bytes": "E867DDF0FF",
         "Method": "Tape2Tape.Hockey.UI.SkaterInitUI$$Start::System.Void Start()"
       },
       "InstructionIndex": 23
@@ -4071,9 +4085,9 @@
         "Feature": "oldschool_intro",
         "Query": "oldschool",
         "Kind": "query",
-        "Rva": 62429706,
-        "Target": 61042928,
-        "Bytes": "E8E1D6EAFF",
+        "Rva": 62438266,
+        "Target": 61050928,
+        "Bytes": "E8B1D4EAFF",
         "Method": "Tape2Tape.Hockey.UI.TitleScreen.\u003C\u003CNewRun\u003Eg__StartNewRun|#\u003Ed$$MoveNext::System.Void MoveNext()"
       },
       "InstructionIndex": 724
@@ -4083,9 +4097,9 @@
         "Feature": "gm_intro",
         "Query": "generalmanager",
         "Kind": "query",
-        "Rva": 62429830,
-        "Target": 61042928,
-        "Bytes": "E865D6EAFF",
+        "Rva": 62438390,
+        "Target": 61050928,
+        "Bytes": "E835D4EAFF",
         "Method": "Tape2Tape.Hockey.UI.TitleScreen.\u003C\u003CNewRun\u003Eg__StartNewRun|#\u003Ed$$MoveNext::System.Void MoveNext()"
       },
       "InstructionIndex": 753
@@ -4095,9 +4109,9 @@
         "Feature": "solo_control",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 62357362,
-        "Target": 61042928,
-        "Bytes": "E879F1EBFF",
+        "Rva": 62365922,
+        "Target": 61050928,
+        "Bytes": "E849EFEBFF",
         "Method": "Tape2Tape.Hockey.UI.TitleScreen$$AssignDefaultControllers::System.Void AssignDefaultControllers()"
       },
       "InstructionIndex": 77
@@ -4107,9 +4121,9 @@
         "Feature": "auto_bench",
         "Query": "lines",
         "Kind": "query",
-        "Rva": 62388506,
-        "Target": 61042928,
-        "Bytes": "E8D177EBFF",
+        "Rva": 62397066,
+        "Target": 61050928,
+        "Bytes": "E8A175EBFF",
         "Method": "Tape2Tape.Hockey.UI.TitleScreen$$TryAutoAddAllBenchwarmers::System.Boolean TryAutoAddAllBenchwarmers()"
       },
       "InstructionIndex": 69
@@ -4119,9 +4133,9 @@
         "Feature": "auto_bench",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 62388586,
-        "Target": 61042928,
-        "Bytes": "E88177EBFF",
+        "Rva": 62397146,
+        "Target": 61050928,
+        "Bytes": "E85175EBFF",
         "Method": "Tape2Tape.Hockey.UI.TitleScreen$$TryAutoAddAllBenchwarmers::System.Boolean TryAutoAddAllBenchwarmers()"
       },
       "InstructionIndex": 85
@@ -4131,9 +4145,9 @@
         "Feature": "auto_bench",
         "Query": "allangus",
         "Kind": "query",
-        "Rva": 62388666,
-        "Target": 61042928,
-        "Bytes": "E83177EBFF",
+        "Rva": 62397226,
+        "Target": 61050928,
+        "Bytes": "E80175EBFF",
         "Method": "Tape2Tape.Hockey.UI.TitleScreen$$TryAutoAddAllBenchwarmers::System.Boolean TryAutoAddAllBenchwarmers()"
       },
       "InstructionIndex": 101
@@ -4143,9 +4157,9 @@
         "Feature": "auto_bench",
         "Query": "gauntlet",
         "Kind": "eq",
-        "Rva": 62388900,
-        "Target": 65860256,
-        "Bytes": "E8F7F73400",
+        "Rva": 62397460,
+        "Target": 65875936,
+        "Bytes": "E8C7133500",
         "Method": "Tape2Tape.Hockey.UI.TitleScreen$$TryAutoAddAllBenchwarmers::System.Boolean TryAutoAddAllBenchwarmers()"
       },
       "InstructionIndex": 158
@@ -4155,9 +4169,9 @@
         "Feature": "tchel_offside",
         "Query": "tchel",
         "Kind": "query",
-        "Rva": 60796187,
-        "Target": 61042928,
-        "Bytes": "E8D0C30300",
+        "Rva": 60805211,
+        "Target": 61050928,
+        "Bytes": "E8D0BF0300",
         "Method": "Tape2Tape.OffsideController$$ApplyPenalty::System.Void ApplyPenalty(Skaters.Forward forward)"
       },
       "InstructionIndex": 52
@@ -4167,9 +4181,9 @@
         "Feature": "tchel_offside",
         "Query": "tchel",
         "Kind": "query",
-        "Rva": 60799419,
-        "Target": 61042928,
-        "Bytes": "E830B70300",
+        "Rva": 60808443,
+        "Target": 61050928,
+        "Bytes": "E830B30300",
         "Method": "Tape2Tape.OffsideController$$GetOffsidePenalty::Settings.OffsidePenalty GetOffsidePenalty()"
       },
       "InstructionIndex": 23
@@ -4179,9 +4193,9 @@
         "Feature": "tchel_offside",
         "Query": "tchel",
         "Kind": "query",
-        "Rva": 60802717,
-        "Target": 61042928,
-        "Bytes": "E84EAA0300",
+        "Rva": 60811741,
+        "Target": 61050928,
+        "Bytes": "E84EA60300",
         "Method": "Tape2Tape.OffsideController$$Refresh::System.Void Refresh()"
       },
       "InstructionIndex": 52
@@ -4191,9 +4205,9 @@
         "Feature": "solo_control",
         "Query": "solo",
         "Kind": "query",
-        "Rva": 60967944,
-        "Target": 61042928,
-        "Bytes": "E9E3240100",
+        "Rva": 60975752,
+        "Target": 61050928,
+        "Bytes": "E9A3250100",
         "Method": "Tape2Tape.Team$$IsSoloSquadControlEnabled::System.Boolean IsSoloSquadControlEnabled()"
       },
       "InstructionIndex": 55
@@ -4203,9 +4217,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 61113710,
-        "Target": 61042928,
-        "Bytes": "E87DEBFEFF",
+        "Rva": 61122942,
+        "Target": 61050928,
+        "Bytes": "E8ADE6FEFF",
         "Method": "Tape2Tape.TeamScore$$OnReplaySkipped::System.Void OnReplaySkipped()"
       },
       "InstructionIndex": 32
@@ -4215,9 +4229,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 60205728,
-        "Target": 61042928,
-        "Bytes": "E84BC60C00",
+        "Rva": 60218320,
+        "Target": 61050928,
+        "Bytes": "E85BB40C00",
         "Method": "UI.GoalScorerBanner$$OnGoalScored::System.Void OnGoalScored(Events.GoalScoredArg arg0)"
       },
       "InstructionIndex": 29
@@ -4227,9 +4241,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 60203526,
-        "Target": 61042928,
-        "Bytes": "E8E5CE0C00",
+        "Rva": 60216118,
+        "Target": 61050928,
+        "Bytes": "E8F5BC0C00",
         "Method": "UI.GoalScorerBannerColors$$OnGoalScored::System.Void OnGoalScored(Events.GoalScoredArg eventArg)"
       },
       "InstructionIndex": 31
@@ -4239,9 +4253,9 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 60309889,
-        "Target": 61042928,
-        "Bytes": "E96A2F0B00",
+        "Rva": 60322481,
+        "Target": 61050928,
+        "Bytes": "E97A1D0B00",
         "Method": "UI.Scoreboard.ScoreboardCanvasController$$OnGoalScored::System.Void OnGoalScored(Events.GoalScoredArg arg0)"
       },
       "InstructionIndex": 37
@@ -4251,9 +4265,9 @@
         "Feature": "retro_presentation",
         "Query": "snes",
         "Kind": "query",
-        "Rva": 60310553,
-        "Target": 61042928,
-        "Bytes": "E8D22C0B00",
+        "Rva": 60323145,
+        "Target": 61050928,
+        "Bytes": "E8E21A0B00",
         "Method": "UI.Scoreboard.ScoreboardCanvasController$$Start::System.Void Start()"
       },
       "InstructionIndex": 39
@@ -4263,9 +4277,9 @@
         "Feature": "retro_presentation",
         "Query": "snes",
         "Kind": "query",
-        "Rva": 60310638,
-        "Target": 61042928,
-        "Bytes": "E87D2C0B00",
+        "Rva": 60323230,
+        "Target": 61050928,
+        "Bytes": "E88D1A0B00",
         "Method": "UI.Scoreboard.ScoreboardCanvasController$$Start::System.Void Start()"
       },
       "InstructionIndex": 57
@@ -4275,12 +4289,24 @@
         "Feature": "eliminator",
         "Query": "eliminator",
         "Kind": "query",
-        "Rva": 60303939,
-        "Target": 61042928,
-        "Bytes": "E8A8460B00",
+        "Rva": 60316531,
+        "Target": 61050928,
+        "Bytes": "E8B8340B00",
         "Method": "UI.StandardGame.OffscreenIndicatorCanvasController$$OnGoalScored::System.Void OnGoalScored(Events.GoalScoredArg arg0)"
       },
       "InstructionIndex": 37
+    },
+    {
+      "Site": {
+        "Feature": "retro_presentation",
+        "Query": "snes",
+        "Kind": "query",
+        "Rva": 62624792,
+        "Target": 61050928,
+        "Bytes": "E813FCE7FF",
+        "Method": "Tape2Tape.Hockey.UI.PenaltyTimerWidget$$Start::System.Void Start()"
+      },
+      "InstructionIndex": 64
     }
   ],
   "FlowMethod": "Tape2Tape.Hockey.UI.TitleScreen.\u003C\u003CNewRun\u003Eg__StartNewRun|#\u003Ed$$MoveNext",
@@ -4377,6 +4403,7 @@
     "Tape2Tape.Hockey.UI.GameMenu$$InitData|sinbin",
     "Tape2Tape.Hockey.UI.OldSquadMenu$$CreatePlayerChoice|oldschool",
     "Tape2Tape.Hockey.UI.OldSquadMenu$$CreatePlayerChoice|tchel",
+    "Tape2Tape.Hockey.UI.PenaltyTimerWidget$$Start|snes",
     "Tape2Tape.Hockey.UI.SkaterInitUI$$Start|snes",
     "Tape2Tape.Hockey.UI.TitleScreen.\u003C\u003CNewRun\u003Eg__StartNewRun|#\u003Ed$$MoveNext|generalmanager",
     "Tape2Tape.Hockey.UI.TitleScreen.\u003C\u003CNewRun\u003Eg__StartNewRun|#\u003Ed$$MoveNext|oldschool",

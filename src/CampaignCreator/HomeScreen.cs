@@ -155,7 +155,7 @@ public sealed partial class MainWindow
                 linkStatus.IsVisible = true;
             }
         }
-        var discord = Button("Join Discord for help", () => OpenCommunityLink("https://discord.gg/hscxnYghb")); discord.Name = "HomeDiscord";
+        var discord = Button("Join Discord for help", () => OpenCommunityLink(BugReport.Discord)); discord.Name = "HomeDiscord";
         var github = Button("GitHub", () => OpenCommunityLink(BugReport.Repository)); github.Name = "HomeGitHub";
         var readArt = Button("Read game artwork", async () => await EnsureGameArt(force: true)); readArt.Name = "HomeReadGameArt";
         var updateMod = Button("Update mod compatibility", async () => { if(!readingGameArt) await EnsureModCompatibility(force: true); }); updateMod.Name = "HomeUpdateModCompatibility";

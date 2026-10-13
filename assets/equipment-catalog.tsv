@@ -1,439 +1,444 @@
 role	category	asset	field	derived	observed	sources	missing_sources	slots
-goalie	Blockers	Body_Blocker/Brown	Goalie Blocker	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Blocker
-goalie	Blockers	Body_Blocker/Chicago	Goalie Blocker	false	false	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Blocker
-goalie	Blockers	Body_Blocker/Customization/Customization_colors	Goalie Blocker	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Blocker
-goalie	Blockers	Body_Blocker/Customization/Customization_iso	Goalie Blocker	false	false	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Blocker
-goalie	Blockers	Body_Blocker/Figure_Skaters	Goalie Blocker	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Blocker
-goalie	Blockers	Body_Blocker/Golfers	Goalie Blocker	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Blocker
-goalie	Blockers	Body_Blocker/Hockey_FC	Goalie Blocker	false	false	resources.assets:1261:goalie_south.skel	resources.assets:1274:goalie_for_spine.skel	Blocker
-goalie	Blockers	Body_Blocker/Knights	Goalie Blocker	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Blocker
-goalie	Blockers	Body_Blocker/Tycoons	Goalie Blocker	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Blocker
-goalie	Gloves	Body_Glove/Brown	Goalie Glove	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Glove
-goalie	Gloves	Body_Glove/Chicago	Goalie Glove	false	false	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Glove
-goalie	Gloves	Body_Glove/Customization/Customization_colors	Goalie Glove	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Glove
-goalie	Gloves	Body_Glove/Customization/Customization_iso	Goalie Glove	false	false	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Glove
-goalie	Gloves	Body_Glove/Figure_Skaters	Goalie Glove	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Glove
-goalie	Gloves	Body_Glove/Hockey_FC	Goalie Glove	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Glove
-goalie	Gloves	Body_Glove/Tycoons	Goalie Glove	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Glove
-goalie	Helmets	Helmet/Helmet_Canadians	Goalie Helmet	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet; Helmet_Top
-goalie	Helmets	Helmet/Helmet_Cheese	Goalie Helmet	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet
-goalie	Helmets	Helmet/Helmet_Chicago	Goalie Helmet	false	false	resources.assets:1274:goalie_for_spine.skel	resources.assets:1261:goalie_south.skel	Helmet
-goalie	Helmets	Helmet/Helmet_Cultists	Goalie Helmet	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet
-goalie	Helmets	Helmet/Helmet_Customization_colors	Goalie Helmet	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet_Custom
-goalie	Helmets	Helmet/Helmet_Customization_Face	Goalie Helmet	false	false	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet
-goalie	Helmets	Helmet/Helmet_Customization_iso	Goalie Helmet	false	false	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet_Custom
-goalie	Helmets	Helmet/Helmet_Disco	Goalie Helmet	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet
-goalie	Helmets	Helmet/Helmet_Enraged	Goalie Helmet	false	false	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet
-goalie	Helmets	Helmet/Helmet_Figure_Skaters	Goalie Helmet	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet
-goalie	Helmets	Helmet/Helmet_Golfers	Goalie Helmet	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet
-goalie	Helmets	Helmet/Helmet_HockeyFC	Goalie Helmet	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet
-goalie	Helmets	Helmet/Helmet_Knights	Goalie Helmet	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet
-goalie	Helmets	Helmet/Helmet_Meatballs	Goalie Helmet	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet
-goalie	Helmets	Helmet/Helmet_Mountaineers	Goalie Helmet	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet
-goalie	Helmets	Helmet/Helmet_Princess	Goalie Helmet	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet
-goalie	Helmets	Helmet/Helmet_Prisoners	Goalie Helmet	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet
-goalie	Helmets	Helmet/Helmet_Referees	Goalie Helmet	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet
-goalie	Helmets	Helmet/Helmet_Toronto	Goalie Helmet	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet
-goalie	Helmets	Helmet/Helmet_Tycoons	Goalie Helmet	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Helmet
-goalie	Jerseys	Body/Chicago	Goalie Skin	false	false	resources.assets:1274:goalie_for_spine.skel	resources.assets:1261:goalie_south.skel	Arm_left; Arm_right; Body; Forearm_left; Pants_left; Pants_right
-goalie	Jerseys	Body/Customization_colors	Goalie Skin	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
-goalie	Jerseys	Body/Customization_iso	Goalie Skin	false	false	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
-goalie	Jerseys	Body/Figure_Skaters	Goalie Skin	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
-goalie	Jerseys	Body/Golfers	Goalie Skin	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
-goalie	Jerseys	Body/HockeyFC	Goalie Skin	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
-goalie	Jerseys	Body/Knights	Goalie Skin	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
-goalie	Jerseys	Body/Mountaineers	Goalie Skin	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
-goalie	Jerseys	Body/Princess	Goalie Skin	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
-goalie	Jerseys	Body/Prisoners	Goalie Skin	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
-goalie	Jerseys	Body/Referees	Goalie Skin	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
-goalie	Jerseys	Body/Toronto	Goalie Skin	false	false	resources.assets:1261:goalie_south.skel	resources.assets:1274:goalie_for_spine.skel	Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
-goalie	Jerseys	Body/Tycoons	Goalie Skin	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
-goalie	Logos	Team_Logo/Calaveras		false		resources.assets:1274:goalie_for_spine.skel	resources.assets:1261:goalie_south.skel	Team_logo-chicago_logo
-goalie	Logos	Team_Logo/Cheese		false		resources.assets:1274:goalie_for_spine.skel	resources.assets:1261:goalie_south.skel	Team_logo-chicago_logo
-goalie	Logos	Team_Logo/Cultists		false		resources.assets:1274:goalie_for_spine.skel	resources.assets:1261:goalie_south.skel	Team_logo-chicago_logo
-goalie	Logos	Team_Logo/Golfers		false		resources.assets:1274:goalie_for_spine.skel	resources.assets:1261:goalie_south.skel	Team_logo-chicago_logo
-goalie	Logos	Team_Logo/Knights		false		resources.assets:1274:goalie_for_spine.skel	resources.assets:1261:goalie_south.skel	Team_logo-chicago_logo
-goalie	Logos	Team_Logo/Lettuce		false		resources.assets:1274:goalie_for_spine.skel	resources.assets:1261:goalie_south.skel	Team_logo-chicago_logo
-goalie	Logos	Team_Logo/Meatballs		false		resources.assets:1274:goalie_for_spine.skel	resources.assets:1261:goalie_south.skel	Team_logo-chicago_logo
-goalie	Logos	Team_Logo/Mountaineers		false		resources.assets:1274:goalie_for_spine.skel	resources.assets:1261:goalie_south.skel	Team_logo-chicago_logo
-goalie	Logos	Team_Logo/Officials		false		resources.assets:1274:goalie_for_spine.skel	resources.assets:1261:goalie_south.skel	Team_logo-chicago_logo
-goalie	Logos	Team_Logo/Princess		false		resources.assets:1274:goalie_for_spine.skel	resources.assets:1261:goalie_south.skel	Team_logo-chicago_logo
-goalie	Logos	Team_Logo/Spartans		false		resources.assets:1274:goalie_for_spine.skel	resources.assets:1261:goalie_south.skel	Team_logo-chicago_logo
-goalie	Logos	Team_Logo/TapetoTape		false		resources.assets:1274:goalie_for_spine.skel	resources.assets:1261:goalie_south.skel	Team_logo-chicago_logo
-goalie	Logos	Team_Logo/Teams_Disco		false		resources.assets:1274:goalie_for_spine.skel	resources.assets:1261:goalie_south.skel	Team_logo-chicago_logo
-goalie	Numbers	Number		false		resources.assets:1261:goalie_south.skel	resources.assets:1274:goalie_for_spine.skel	Number
-goalie	Other	default		false		resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Dummy_For_Default_Skin; Fire
-goalie	Pads	Body_Pads/Brown	Goalie Pads	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Pad_left; Pad_right
-goalie	Pads	Body_Pads/Chicago	Goalie Pads	false	false	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Pad_left; Pad_right
-goalie	Pads	Body_Pads/Customization/Customization_colors	Goalie Pads	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Pad_left; Pad_right
-goalie	Pads	Body_Pads/Customization/Customization_iso	Goalie Pads	false	false	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Pad_left; Pad_right
-goalie	Pads	Body_Pads/Figure_Skaters	Goalie Pads	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Pad_left; Pad_right
-goalie	Pads	Body_Pads/Golfers	Goalie Pads	false	false	resources.assets:1261:goalie_south.skel	resources.assets:1274:goalie_for_spine.skel	Pad_left; Pad_right
-goalie	Pads	Body_Pads/Hockey_FC	Goalie Pads	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Pad_left; Pad_right
-goalie	Pads	Body_Pads/Tycoons	Goalie Pads	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Pad_left; Pad_right
-goalie	Sticks	Body_Stick/Chicago	Goalie Stick	false	false	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Stick
-goalie	Sticks	Body_Stick/Customization/Customization_colors	Goalie Stick	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Stick
-goalie	Sticks	Body_Stick/Customization/Customization_iso	Goalie Stick	false	false	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Stick
-goalie	Sticks	Body_Stick/Figure_Skaters	Goalie Stick	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Stick
-goalie	Sticks	Body_Stick/Tycoons	Goalie Stick	false	true	resources.assets:1261:goalie_south.skel; resources.assets:1274:goalie_for_spine.skel		Stick
-skater	Glasses	Glasses/Standard_Glasses	Glasses	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glasses
-skater	Glasses	Glasses/Standard_Glasses_High	Glasses	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glasses
-skater	Glasses	Glasses/Standard_Glasses_Mid	Glasses	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glasses
-skater	Gloves	Body_Gloves/Customization/Customization_colors	Gloves	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove left; Glove right
-skater	Gloves	Body_Gloves/Customization/Customization_iso	Gloves	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove left; Glove right
-skater	Gloves	Body_Gloves/Figure_Skaters	Gloves	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove left; Glove right
-skater	Gloves	Body_Gloves/Fist_Black	Gloves	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove left; Glove right
-skater	Gloves	Body_Gloves/Fist_White	Gloves	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove left; Glove right
-skater	Gloves	Body_Gloves/Hand_Referees	Gloves	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove left; Glove right
-skater	Gloves	Body_Gloves/Hockey_FC	Gloves	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove left; Glove right
-skater	Gloves	Body_Gloves/Injured	Gloves	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove left; Glove right
-skater	Gloves	Body_Gloves/Prince	Gloves	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove left; Glove right
-skater	Gloves	Body_Gloves/Standard	Gloves	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove left; Glove right
-skater	Heads	Faces/Angus_Events/Angus_All	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_All_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Bald	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Bald_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Chad	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Chad_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Decker	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Decker_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Eating	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Eating_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Gauntlet	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Gauntlet_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_GM	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_GM_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Intimidator	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Intimidator_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Liquidator	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Liquidator_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Moongus	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Moongus_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Oldschool	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Oldschool_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Ref	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Ref_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Slapshot	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Slapshot_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Solo	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Solo_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Speed	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Speed_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Stat	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Stat_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Superwall	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Superwall_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Tchel	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Tchel_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Test	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Trio	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Trio_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Violence	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Angus_Events/Angus_Violence_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_Bench	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_Bench_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_BenchZZZZZ	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_Brewster	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_Brewster_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_BrewsterZZZZ	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_Buttface	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_Buttface_Angus	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_Buttface_Angus_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_Buttface_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_Buttface_Rambo	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_Buttface_Rambo_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_Kirby	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_Kirby_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_KirbyZZZZZ	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_Kovalski	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_Kovalski_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_KovalskiZZZZZZ	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_Stumple	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Bench_Stumple_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Chickensneeze	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Chickensneeze_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Heavy_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Nasher	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Nasher_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Onepunch	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Onepunch_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Propeller_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Referee_Old	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Anyteam/Referee_Old_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Canadians/Captain	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; Helmet_Top; openhand
-skater	Heads	Faces/Canadians/Captain_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; Helmet_Top; openhand
-skater	Heads	Faces/Canadians/Gratz	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; Helmet_Top; openhand
-skater	Heads	Faces/Canadians/Gratz_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; Helmet_Top; openhand
-skater	Heads	Faces/Canadians/Poule	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; Helmet_Top; openhand
-skater	Heads	Faces/Canadians/Poule_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; Helmet_Top; openhand
-skater	Heads	Faces/Chicago/Angus	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/Angus_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/Angus_Large	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/Angus_Pixel	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/Angus_Pixel_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/Angus2_Dialogue	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/Chapstick	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/Chapstick_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/ChapstickZZZZ	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/Chicos	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/Chicos_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/ChicosZZZZ	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/Grohl	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/Grohl_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/Louder	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/Louder_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/LouderZZZZZ	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/Rory	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Chicago/Rory_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Cultists/Cultist	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Cultists/Cultist_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Cultists/Dord_Evil	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Cultists/Dord_Evil_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Cultists/Jelly_Evil	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Cultists/Jelly_Evil_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Cultists/Rory_Evil	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Cultists/Rory_Evil_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Disco/Oioioi	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Disco/Oioioi_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Figure_Skaters/Figure_Skater_Vanilla	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Figure_Skaters/Figure_Skater_Vanilla_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Figure_Skaters/FigureSkaterbig	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Figure_Skaters/FigureSkaterbig_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Figure_Skaters/FigureSkatersmall	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Figure_Skaters/FigureSkatersmall_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Golfers/Golfer_Elite	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Golfers/Golfer_Elite_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Golfers/Golfer_Elite_Mutant	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Golfers/Golfer_Elite_Mutant_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Golfers/Golfer_Gillman	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Golfers/Golfer_Gillman_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Golfers/Golfer_Lady	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Golfers/Golfer_Lady_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Golfers/Golfer_Lady_Mutant	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Golfers/Golfer_Lady_Mutant_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Golfers/Golfer_Ramirez	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Golfers/Golfer_Ramirez_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Golfers/Golfer_Whacker	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Golfers/Golfer_Whacker_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Helmets/Heavy_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Helmets/Knight_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Helmets/Propeller_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/Backham	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/Backham_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/Ehrhoffaldo	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/Ehrhoffaldo_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/Icekicks	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/Icekicks_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/Knudribble	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/Knudribble_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/Maroondona	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/Maroondona_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/Messier	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/Messier_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/OHenry	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/OHenry_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/Ronaldo	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/Ronaldo_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/Zidanejad	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/HockeyFC/Zidanejad_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/Knights/Lancelov	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Knights/Lancelov_Helmless	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Knights/Lancelov_Helmless_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Knights/Prince	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Knights/Prince_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Knights/Red_Knight	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Knights/Red_Knight_Helmetless	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Knights/Red_Knight_Helmetless_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Midwest/Amber	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Midwest/Amber_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Midwest/Brie	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Midwest/Brie_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Midwest/Mental	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Midwest/Mental_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Midwest/Mentalzzzzz	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Midwest/Rochefort	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Midwest/Rochefort_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Moutaineers/Furter	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Moutaineers/Furter_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Moutaineers/Krupp	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Moutaineers/Krupp_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Moutaineers/Pianist	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Moutaineers/Pianist_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Moutaineers/Torte	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Moutaineers/Torte_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Moutaineers/Wurst	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Moutaineers/Wurst_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Princess/Boni	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Princess/Boni_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Princess/BoniZZZZZ	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Princess/Clementine	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Princess/Clementine_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Princess/Joan	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Princess/Joan_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Prisoners/Averell	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Prisoners/Averell_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Prisoners/Dalton	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Prisoners/Dalton_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Prisoners/Joe	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Prisoners/Joe_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Prisoners/Ma	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Prisoners/Ma_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Referees/Gedeon	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Referees/Gedeon_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Toronto/Dord	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Toronto/Dord_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Toronto/Jelly	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Toronto/Jelly_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Toronto/Kilmore	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Toronto/Kilmore_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Toronto/KilmoreZZZZZ	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Toronto/Mathieu	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Toronto/Mathieu_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Toronto/MathieuZZZZZ	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Toronto/Popping	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Toronto/Popping_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Toronto/Spark	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Toronto/Spark_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Toronto/SparkZZZZ	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Twinfalls/Crockett	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Twinfalls/Crockett_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Twinfalls/Haggis	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Twinfalls/Haggis_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Twinfalls/Jerky	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Twinfalls/Jerky_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Twinfalls/Wiener	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Twinfalls/Wiener_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Twinfalls/WienerZZZZ	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Tycoons/Tycoons_Elite	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/Tycoons/Tycoons_Elite_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/Tycoons/Tycoons_Lady	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/Tycoons/Tycoons_Lady_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
-skater	Heads	Faces/Tycoons/Tycoons_Large	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Tycoons/Tycoons_Large_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Tycoons/Tycoons_Small	Face	false	true	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Heads	Faces/Tycoons/Tycoons_Small_Helmet	Face	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Helmets	Faces/Custom/Helmet_Colors	Helmet	false	true	resources.assets:1276:Ultimate_Sprite.skel		Helmet_Custom
-skater	Helmets	Faces/Custom/Helmet_Face	Helmet	false	false	resources.assets:1276:Ultimate_Sprite.skel		Glove right; Helmet; openhand
-skater	Helmets	Faces/Custom/Helmet_lso	Helmet	false	false	resources.assets:1276:Ultimate_Sprite.skel		Helmet_Custom
-skater	Helmets	Faces/Custom/Helmet_Reference	Helmet	false	false	resources.assets:1276:Ultimate_Sprite.skel		Helmet_Custom
-skater	Helmets	Faces/Helmets/Helmet_Enrage	Helmet	false	false	resources.assets:1276:Ultimate_Sprite.skel		Helmet_Custom
-skater	Helmets	Faces/Helmets/Helmet_Frog	Helmet	false	false	resources.assets:1276:Ultimate_Sprite.skel		Helmet_Custom
-skater	Helmets	Faces/Helmets/Helmet_Golden	Helmet	false	false	resources.assets:1276:Ultimate_Sprite.skel		Helmet_Custom
-skater	Helmets	Faces/Helmets/Helmet_Reference	Helmet	false	false	resources.assets:1276:Ultimate_Sprite.skel		Helmet_Custom
-skater	Helmets	Faces/Helmets/Helmet_Wing	Helmet	false	false	resources.assets:1276:Ultimate_Sprite.skel		Helmet_Custom
-skater	Jerseys	Body/Alumni/Ref_Alumni	Body	false	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Jerseys	Body/Chicago/Chicago_Away	Body	false	false	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Jerseys	Body/Crusaders/Campaign_Away	Body	false	false	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Jerseys	Body/Crusaders/Campaign_Home	Body	false	false	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Jerseys	Body/Crusaders/Galahad	Body	false	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Jerseys	Body/Crusaders/GSpiked_Armor	Body	false	false	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Jerseys	Body/Crusaders/Guretski	Body	false	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Jerseys	Body/Crusaders/Lancelov	Body	false	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Jerseys	Body/Crusaders/Percivalsson	Body	false	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Jerseys	Body/Crusaders/Prince	Body	false	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Jerseys	Body/Customization/Customization_colors	Body	false	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Jerseys	Body/Customization/Customization_iso	Body	false	false	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Jerseys	Body/Figure_Skaters/Figure_Skaters	Body	false	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Jerseys	Body/Golfers/Golfers	Body	false	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Jerseys	Body/Golfers/Golfers_Mutant	Body	false	false	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Jerseys	Body/HockeyFC/HockeyFC	Body	false	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Jerseys	Body/HockeyFC/HockeyFC_Away	Body	false	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Jerseys	Body/Mountaineers/Mountaineers	Body	false	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Jerseys	Body/Mountaineers/Mountaineers_Beer	Body	false	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Jerseys	Body/Princess/Princess	Body	false	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Jerseys	Body/Prisoners/Prisoners	Body	false	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Jerseys	Body/Referee	Body	false	false	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Jerseys	Body/Toronto/Mathieu	Body	false	false	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Jerseys	Body/Tycoons/Tycoons	Body	false	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Logos	Team_Logo/Calaveras	Logo	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
-skater	Logos	Team_Logo/Cheese	Logo	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
-skater	Logos	Team_Logo/Cultists	Logo	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
-skater	Logos	Team_Logo/Custom_L	Logo	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter
-skater	Logos	Team_Logo/Custom_R	Logo	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter
-skater	Logos	Team_Logo/Disco	Logo	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
-skater	Logos	Team_Logo/Golfers	Logo	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
-skater	Logos	Team_Logo/Knights	Logo	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
-skater	Logos	Team_Logo/Lettuce	Logo	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
-skater	Logos	Team_Logo/Meatballs	Logo	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
-skater	Logos	Team_Logo/Mountaineers	Logo	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
-skater	Logos	Team_Logo/Officials	Logo	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
-skater	Logos	Team_Logo/Princess	Logo	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
-skater	Logos	Team_Logo/Spartans	Logo	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
-skater	Logos	Team_Logo/Tape_to_tape	Logo	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
-skater	Numbers	Numbers/Number_69	Number	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Number; openhand
-skater	Other	Backpack_Stick1		false		resources.assets:1276:Ultimate_Sprite.skel		Backpack_Stick1; Backpack_Stick2; Expression_Peter; Glove right; openhand
-skater	Other	Backpack_Stick2		false		resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; openhand
-skater	Other	default		false		resources.assets:1276:Ultimate_Sprite.skel		Crack1; Crack2; Crack3; Crack4; Crack5; Crack6; Crack7; Crack8; Exlode_VFX; Frozen; Glove left; Glove right; IceBreakingMask; IceHole; Ice_Shard1; Ice_Shard2; Ice_Shard3; Ice_Shard4; Ice_Shard5; Ice_Shard6; Ice_Shard7; Ice_Shard8; Kraken_Puck1; Kraken_Puck10; Kraken_Puck11; Kraken_Puck12; Kraken_Puck13; Kraken_Puck14; Kraken_Puck2; Kraken_Puck3; Kraken_Puck4; Kraken_Puck5; Kraken_Puck6; Kraken_Puck7; Kraken_Puck8; Kraken_Puck9; Kraken_puck; Mouth_OO; Mouth_P; Mouth_S; Puff_VFX; Spin-spin_001; Spin2-spin_002; Swing_FX; Tentacule; Towel; Upgrade_Arrow_base; Upgrade_Arrow_top; Upgrade_aura; Upgrade_shock; bakedshadow; fire_000; ice_transparent; lozange_VFX; lozange_VFX2; lozange_VFX3; mouth_a; mouth_o; shine; smoke1
-skater	Other	Names/McShaggy_R		false		resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Name; openhand
-skater	Pants	Body_Pants/Customization/Customization_colors	Pants	false	true	resources.assets:1276:Ultimate_Sprite.skel		Pants left; Pants right
-skater	Pants	Body_Pants/Customization/Customization_iso	Pants	false	false	resources.assets:1276:Ultimate_Sprite.skel		Pants left; Pants right
-skater	Pants	Body_Pants/Figure_Skaters	Pants	false	true	resources.assets:1276:Ultimate_Sprite.skel		Pants left; Pants right
-skater	Pants	Body_Pants/Golfers	Pants	false	true	resources.assets:1276:Ultimate_Sprite.skel		Pants left; Pants right
-skater	Pants	Body_Pants/HockeyFC	Pants	false	false	resources.assets:1276:Ultimate_Sprite.skel		Pants left; Pants right
-skater	Pants	Body_Pants/Mountaineers	Pants	false	true	resources.assets:1276:Ultimate_Sprite.skel		Pants left; Pants right
-skater	Pants	Body_Pants/Prince	Pants	false	false	resources.assets:1276:Ultimate_Sprite.skel		Pants left; Pants right
-skater	Pants	Body_Pants/Prisoners	Pants	false	true	resources.assets:1276:Ultimate_Sprite.skel		Pants left; Pants right
-skater	Pants	Body_Pants/Standard	Pants	false	false	resources.assets:1276:Ultimate_Sprite.skel		Pants left; Pants right
-skater	Pants	Body_Pants/Tycoons	Pants	false	true	resources.assets:1276:Ultimate_Sprite.skel		Pants left; Pants right
-skater	Skates	Body_Skates/Black_Skates	Skates	false	true	resources.assets:1276:Ultimate_Sprite.skel		Skate left; Skate right
-skater	Skates	Body_Skates/Customization/Customization_colors	Skates	false	true	resources.assets:1276:Ultimate_Sprite.skel		Skate left; Skate right
-skater	Skates	Body_Skates/Customization/Customization_iso	Skates	false	false	resources.assets:1276:Ultimate_Sprite.skel		Skate left; Skate right
-skater	Skates	Body_Skates/Injured	Skates	false	false	resources.assets:1276:Ultimate_Sprite.skel		Skate left; Skate right
-skater	Skates	Body_Skates/Winged	Skates	false	false	resources.assets:1276:Ultimate_Sprite.skel		Skate left; Skate right
-skater	Sleeves	Body_Bicep/Crusaders	Bicep	false	true	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Crusaders_Prince	Bicep	false	true	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Crusaders_Spiked	Bicep	false	false	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Customization/Customization_colors	Bicep	false	true	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Customization/Customization_iso	Bicep	false	false	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Figure_Skaters	Bicep	false	true	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Golfers	Bicep	false	true	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Golfers_Mutant	Bicep	false	false	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Hockey_FC	Bicep	false	true	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Hockey_FC_Away	Bicep	false	true	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Injured	Bicep	false	false	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Mountaineers_Black	Bicep	false	true	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Mountaineers_White	Bicep	false	true	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Princess	Bicep	false	true	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Prisoners	Bicep	false	true	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Referees	Bicep	false	true	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Standard	Bicep	false	false	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Sleeves	Body_Bicep/Tycoons	Bicep	false	true	resources.assets:1276:Ultimate_Sprite.skel		Bicep left; Bicep right
-skater	Socks	Body/Alumni/Ref_Alumni	Body	true	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Socks	Body/Chicago/Chicago_Away	Body	true	false	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Socks	Body/Crusaders/Campaign_Away	Body	true	false	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Socks	Body/Crusaders/Campaign_Home	Body	true	false	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Socks	Body/Crusaders/Galahad	Body	true	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Socks	Body/Crusaders/GSpiked_Armor	Body	true	false	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Socks	Body/Crusaders/Guretski	Body	true	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Socks	Body/Crusaders/Lancelov	Body	true	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Socks	Body/Crusaders/Percivalsson	Body	true	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Socks	Body/Crusaders/Prince	Body	true	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Socks	Body/Customization/Customization_colors	Body	true	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Socks	Body/Customization/Customization_iso	Body	true	false	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Socks	Body/Figure_Skaters/Figure_Skaters	Body	true	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Socks	Body/Golfers/Golfers	Body	true	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Socks	Body/Golfers/Golfers_Mutant	Body	true	false	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Socks	Body/HockeyFC/HockeyFC	Body	true	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Socks	Body/HockeyFC/HockeyFC_Away	Body	true	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Socks	Body/Mountaineers/Mountaineers	Body	true	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Socks	Body/Mountaineers/Mountaineers_Beer	Body	true	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Socks	Body/Princess/Princess	Body	true	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
-skater	Socks	Body/Prisoners/Prisoners	Body	true	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Socks	Body/Referee	Body	true	false	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Socks	Body/Toronto/Mathieu	Body	true	false	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Socks	Body/Tycoons/Tycoons	Body	true	true	resources.assets:1276:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
-skater	Sticks	Sticks/Black	Stick	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
-skater	Sticks	Sticks/Bluegreen	Stick	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
-skater	Sticks	Sticks/Curve	Stick	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
-skater	Sticks	Sticks/Customization/Customization_colors	Stick	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
-skater	Sticks	Sticks/Customization/Customization_iso	Stick	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
-skater	Sticks	Sticks/Gold	Stick	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
-skater	Sticks	Sticks/Golf_Iron	Stick	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
-skater	Sticks	Sticks/Hotdog	Stick	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
-skater	Sticks	Sticks/Magnet_Blue	Stick	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
-skater	Sticks	Sticks/Magnet_Red	Stick	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
-skater	Sticks	Sticks/Purple	Stick	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
-skater	Sticks	Sticks/Red	Stick	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
-skater	Sticks	Sticks/Redgold	Stick	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
-skater	Sticks	Sticks/Sword	Stick	false	true	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
-skater	Sticks	Sticks/Tongs	Stick	false	false	resources.assets:1276:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
+goalie	Blockers	Body_Blocker/Brown	Goalie Blocker	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Blocker
+goalie	Blockers	Body_Blocker/Chicago	Goalie Blocker	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Blocker
+goalie	Blockers	Body_Blocker/Customization/Customization_colors	Goalie Blocker	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Blocker
+goalie	Blockers	Body_Blocker/Customization/Customization_iso	Goalie Blocker	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Blocker
+goalie	Blockers	Body_Blocker/Figure_Skaters	Goalie Blocker	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Blocker
+goalie	Blockers	Body_Blocker/Golfers	Goalie Blocker	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Blocker
+goalie	Blockers	Body_Blocker/Hockey_FC	Goalie Blocker	false		resources.assets:1314:goalie_south.skel	resources.assets:1328:goalie_for_spine.skel	Blocker
+goalie	Blockers	Body_Blocker/Knights	Goalie Blocker	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Blocker
+goalie	Blockers	Body_Blocker/Tycoons	Goalie Blocker	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Blocker
+goalie	Gloves	Body_Glove/Brown	Goalie Glove	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Glove
+goalie	Gloves	Body_Glove/Chicago	Goalie Glove	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Glove
+goalie	Gloves	Body_Glove/Customization/Customization_colors	Goalie Glove	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Glove
+goalie	Gloves	Body_Glove/Customization/Customization_iso	Goalie Glove	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Glove
+goalie	Gloves	Body_Glove/Figure_Skaters	Goalie Glove	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Glove
+goalie	Gloves	Body_Glove/Hockey_FC	Goalie Glove	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Glove
+goalie	Gloves	Body_Glove/Tycoons	Goalie Glove	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Glove
+goalie	Helmets	Helmet/Helmet_Canadians	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet; Helmet_Top
+goalie	Helmets	Helmet/Helmet_Cheese	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet
+goalie	Helmets	Helmet/Helmet_Chicago	Goalie Helmet	false		resources.assets:1328:goalie_for_spine.skel	resources.assets:1314:goalie_south.skel	Helmet
+goalie	Helmets	Helmet/Helmet_Cultists	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet
+goalie	Helmets	Helmet/Helmet_Customization_colors	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet_Custom
+goalie	Helmets	Helmet/Helmet_Customization_Face	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet
+goalie	Helmets	Helmet/Helmet_Customization_iso	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet_Custom
+goalie	Helmets	Helmet/Helmet_Disco	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet
+goalie	Helmets	Helmet/Helmet_Enraged	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet
+goalie	Helmets	Helmet/Helmet_Figure_Skaters	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet
+goalie	Helmets	Helmet/Helmet_Golfers	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet
+goalie	Helmets	Helmet/Helmet_HockeyFC	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet
+goalie	Helmets	Helmet/Helmet_Knights	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet
+goalie	Helmets	Helmet/Helmet_Meatballs	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet
+goalie	Helmets	Helmet/Helmet_Mountaineers	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet
+goalie	Helmets	Helmet/Helmet_Princess	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet
+goalie	Helmets	Helmet/Helmet_Prisoners	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet
+goalie	Helmets	Helmet/Helmet_Referees	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet
+goalie	Helmets	Helmet/Helmet_Toronto	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet
+goalie	Helmets	Helmet/Helmet_Tycoons	Goalie Helmet	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Helmet
+goalie	Jerseys	Body/Chicago	Goalie Skin	false		resources.assets:1328:goalie_for_spine.skel	resources.assets:1314:goalie_south.skel	Arm_left; Arm_right; Body; Forearm_left; Pants_left; Pants_right
+goalie	Jerseys	Body/Customization_colors	Goalie Skin	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
+goalie	Jerseys	Body/Customization_iso	Goalie Skin	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
+goalie	Jerseys	Body/Figure_Skaters	Goalie Skin	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
+goalie	Jerseys	Body/Golfers	Goalie Skin	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
+goalie	Jerseys	Body/HockeyFC	Goalie Skin	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
+goalie	Jerseys	Body/Knights	Goalie Skin	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
+goalie	Jerseys	Body/Mountaineers	Goalie Skin	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
+goalie	Jerseys	Body/Princess	Goalie Skin	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
+goalie	Jerseys	Body/Prisoners	Goalie Skin	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
+goalie	Jerseys	Body/Referees	Goalie Skin	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
+goalie	Jerseys	Body/Toronto	Goalie Skin	false		resources.assets:1314:goalie_south.skel	resources.assets:1328:goalie_for_spine.skel	Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
+goalie	Jerseys	Body/Tycoons	Goalie Skin	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Arm_left; Arm_right; Bicep_left; Bicep_right; Body; Forearm_left; Pants_left; Pants_right
+goalie	Logos	Team_Logo/Calaveras		false		resources.assets:1328:goalie_for_spine.skel	resources.assets:1314:goalie_south.skel	Team_logo-chicago_logo
+goalie	Logos	Team_Logo/Cheese		false		resources.assets:1328:goalie_for_spine.skel	resources.assets:1314:goalie_south.skel	Team_logo-chicago_logo
+goalie	Logos	Team_Logo/Cultists		false		resources.assets:1328:goalie_for_spine.skel	resources.assets:1314:goalie_south.skel	Team_logo-chicago_logo
+goalie	Logos	Team_Logo/Golfers		false		resources.assets:1328:goalie_for_spine.skel	resources.assets:1314:goalie_south.skel	Team_logo-chicago_logo
+goalie	Logos	Team_Logo/Knights		false		resources.assets:1328:goalie_for_spine.skel	resources.assets:1314:goalie_south.skel	Team_logo-chicago_logo
+goalie	Logos	Team_Logo/Lettuce		false		resources.assets:1328:goalie_for_spine.skel	resources.assets:1314:goalie_south.skel	Team_logo-chicago_logo
+goalie	Logos	Team_Logo/Meatballs		false		resources.assets:1328:goalie_for_spine.skel	resources.assets:1314:goalie_south.skel	Team_logo-chicago_logo
+goalie	Logos	Team_Logo/Mountaineers		false		resources.assets:1328:goalie_for_spine.skel	resources.assets:1314:goalie_south.skel	Team_logo-chicago_logo
+goalie	Logos	Team_Logo/Officials		false		resources.assets:1328:goalie_for_spine.skel	resources.assets:1314:goalie_south.skel	Team_logo-chicago_logo
+goalie	Logos	Team_Logo/Princess		false		resources.assets:1328:goalie_for_spine.skel	resources.assets:1314:goalie_south.skel	Team_logo-chicago_logo
+goalie	Logos	Team_Logo/Spartans		false		resources.assets:1328:goalie_for_spine.skel	resources.assets:1314:goalie_south.skel	Team_logo-chicago_logo
+goalie	Logos	Team_Logo/TapetoTape		false		resources.assets:1328:goalie_for_spine.skel	resources.assets:1314:goalie_south.skel	Team_logo-chicago_logo
+goalie	Logos	Team_Logo/Teams_Disco		false		resources.assets:1328:goalie_for_spine.skel	resources.assets:1314:goalie_south.skel	Team_logo-chicago_logo
+goalie	Numbers	Number		false		resources.assets:1314:goalie_south.skel	resources.assets:1328:goalie_for_spine.skel	Number
+goalie	Other	default		false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Dummy_For_Default_Skin; Fire
+goalie	Pads	Body_Pads/Brown	Goalie Pads	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Pad_left; Pad_right
+goalie	Pads	Body_Pads/Chicago	Goalie Pads	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Pad_left; Pad_right
+goalie	Pads	Body_Pads/Customization/Customization_colors	Goalie Pads	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Pad_left; Pad_right
+goalie	Pads	Body_Pads/Customization/Customization_iso	Goalie Pads	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Pad_left; Pad_right
+goalie	Pads	Body_Pads/Figure_Skaters	Goalie Pads	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Pad_left; Pad_right
+goalie	Pads	Body_Pads/Golfers	Goalie Pads	false		resources.assets:1314:goalie_south.skel	resources.assets:1328:goalie_for_spine.skel	Pad_left; Pad_right
+goalie	Pads	Body_Pads/Hockey_FC	Goalie Pads	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Pad_left; Pad_right
+goalie	Pads	Body_Pads/Tycoons	Goalie Pads	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Pad_left; Pad_right
+goalie	Sticks	Body_Stick/Chicago	Goalie Stick	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Stick
+goalie	Sticks	Body_Stick/Customization/Customization_colors	Goalie Stick	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Stick
+goalie	Sticks	Body_Stick/Customization/Customization_iso	Goalie Stick	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Stick
+goalie	Sticks	Body_Stick/Figure_Skaters	Goalie Stick	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Stick
+goalie	Sticks	Body_Stick/Tycoons	Goalie Stick	false		resources.assets:1314:goalie_south.skel; resources.assets:1328:goalie_for_spine.skel		Stick
+skater	Glasses	Glasses/Standard_Glasses	Glasses	false		resources.assets:1330:Ultimate_Sprite.skel		Glasses
+skater	Glasses	Glasses/Standard_Glasses_High	Glasses	false		resources.assets:1330:Ultimate_Sprite.skel		Glasses
+skater	Glasses	Glasses/Standard_Glasses_Mid	Glasses	false		resources.assets:1330:Ultimate_Sprite.skel		Glasses
+skater	Gloves	Body_Gloves/Customization/Customization_colors	Gloves	false		resources.assets:1330:Ultimate_Sprite.skel		Glove left; Glove right
+skater	Gloves	Body_Gloves/Customization/Customization_iso	Gloves	false		resources.assets:1330:Ultimate_Sprite.skel		Glove left; Glove right
+skater	Gloves	Body_Gloves/Figure_Skaters	Gloves	false		resources.assets:1330:Ultimate_Sprite.skel		Glove left; Glove right
+skater	Gloves	Body_Gloves/Fist_Black	Gloves	false		resources.assets:1330:Ultimate_Sprite.skel		Glove left; Glove right
+skater	Gloves	Body_Gloves/Fist_White	Gloves	false		resources.assets:1330:Ultimate_Sprite.skel		Glove left; Glove right
+skater	Gloves	Body_Gloves/Hand_Referees	Gloves	false		resources.assets:1330:Ultimate_Sprite.skel		Glove left; Glove right
+skater	Gloves	Body_Gloves/Hockey_FC	Gloves	false		resources.assets:1330:Ultimate_Sprite.skel		Glove left; Glove right
+skater	Gloves	Body_Gloves/Injured	Gloves	false		resources.assets:1330:Ultimate_Sprite.skel		Glove left; Glove right
+skater	Gloves	Body_Gloves/Prince	Gloves	false		resources.assets:1330:Ultimate_Sprite.skel		Glove left; Glove right
+skater	Gloves	Body_Gloves/Standard	Gloves	false		resources.assets:1330:Ultimate_Sprite.skel		Glove left; Glove right
+skater	Heads	Faces/Angus_Events/Angus_All	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_All_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Bald	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Bald_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Chad	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Chad_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Decker	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Decker_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Eating	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Eating_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Fresh	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Fresh_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Gauntlet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Gauntlet_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_GM	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_GM_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Intimidator	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Intimidator_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Liquidator	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Liquidator_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_McGratton	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_McGratton_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Moongus	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Moongus_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Oldschool	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Oldschool_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Ref	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Ref_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Slapshot	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Slapshot_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Solo	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Solo_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Speed	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Speed_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Stat	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Stat_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Superwall	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Superwall_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Tchel	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Tchel_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Test	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Trio	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Trio_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Violence	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Angus_Events/Angus_Violence_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_Bench	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_Bench_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_BenchZZZZZ	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_Brewster	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_Brewster_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_BrewsterZZZZ	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_Buttface	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_Buttface_Angus	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_Buttface_Angus_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_Buttface_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_Buttface_Rambo	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_Buttface_Rambo_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_Kirby	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_Kirby_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_KirbyZZZZZ	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_Kovalski	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_Kovalski_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_KovalskiZZZZZZ	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_Stumple	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Bench_Stumple_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Chickensneeze	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Chickensneeze_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Heavy_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Nasher	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Nasher_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Onepunch	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Onepunch_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Propeller_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Referee_Old	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Anyteam/Referee_Old_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Canadians/Canada_Frog	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; Helmet_Top; openhand
+skater	Heads	Faces/Canadians/Captain	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; Helmet_Top; openhand
+skater	Heads	Faces/Canadians/Captain_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; Helmet_Top; openhand
+skater	Heads	Faces/Canadians/Gratz	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; Helmet_Top; openhand
+skater	Heads	Faces/Canadians/Gratz_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; Helmet_Top; openhand
+skater	Heads	Faces/Canadians/Poule	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; Helmet_Top; openhand
+skater	Heads	Faces/Canadians/Poule_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; Helmet_Top; openhand
+skater	Heads	Faces/Chicago/Angus	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/Angus_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/Angus_Large	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/Angus_Pixel	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/Angus_Pixel_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/Angus2_Dialogue	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/Chapstick	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/Chapstick_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/ChapstickZZZZ	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/Chicos	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/Chicos_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/ChicosZZZZ	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/Grohl	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/Grohl_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/Louder	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/Louder_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/LouderZZZZZ	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/Rory	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Chicago/Rory_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Cultists/Cultist	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Cultists/Cultist_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Cultists/Dord_Evil	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Cultists/Dord_Evil_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Cultists/Jelly_Evil	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Cultists/Jelly_Evil_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Cultists/Rory_Evil	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Cultists/Rory_Evil_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Disco/Oioioi	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Disco/Oioioi_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Figure_Skaters/Figure_Skater_Vanilla	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Figure_Skaters/Figure_Skater_Vanilla_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Figure_Skaters/FigureSkaterbig	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Figure_Skaters/FigureSkaterbig_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Figure_Skaters/FigureSkatersmall	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Figure_Skaters/FigureSkatersmall_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Golfers/Golfer_Elite	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Golfers/Golfer_Elite_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Golfers/Golfer_Elite_Mutant	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Golfers/Golfer_Elite_Mutant_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Golfers/Golfer_Gillman	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Golfers/Golfer_Gillman_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Golfers/Golfer_Lady	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Golfers/Golfer_Lady_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Golfers/Golfer_Lady_Mutant	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Golfers/Golfer_Lady_Mutant_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Golfers/Golfer_Ramirez	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Golfers/Golfer_Ramirez_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Golfers/Golfer_Whacker	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Golfers/Golfer_Whacker_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Helmets/Heavy_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Helmets/Knight_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Helmets/Propeller_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/Backham	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/Backham_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/Ehrhoffaldo	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/Ehrhoffaldo_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/Icekicks	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/Icekicks_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/Knudribble	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/Knudribble_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/Maroondona	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/Maroondona_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/Messier	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/Messier_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/OHenry	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/OHenry_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/Ronaldo	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/Ronaldo_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/Zidanejad	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/HockeyFC/Zidanejad_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/Knights/Lancelov	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Knights/Lancelov_Helmless	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Knights/Lancelov_Helmless_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Knights/Prince	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Knights/Prince_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Knights/Red_Knight	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Knights/Red_Knight_Helmetless	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Knights/Red_Knight_Helmetless_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Midwest/Amber	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Midwest/Amber_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Midwest/Brie	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Midwest/Brie_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Midwest/Mental	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Midwest/Mental_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Midwest/Mentalzzzzz	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Midwest/Rochefort	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Midwest/Rochefort_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Moutaineers/Furter	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Moutaineers/Furter_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Moutaineers/Krupp	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Moutaineers/Krupp_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Moutaineers/Pianist	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Moutaineers/Pianist_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Moutaineers/Torte	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Moutaineers/Torte_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Moutaineers/Wurst	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Moutaineers/Wurst_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Princess/Boni	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Princess/Boni_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Princess/BoniZZZZZ	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Princess/Clementine	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Princess/Clementine_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Princess/Joan	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Princess/Joan_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Prisoners/Averell	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Prisoners/Averell_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Prisoners/Dalton	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Prisoners/Dalton_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Prisoners/Joe	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Prisoners/Joe_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Prisoners/Ma	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Prisoners/Ma_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Referees/Gedeon	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Referees/Gedeon_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Toronto/Dord	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Toronto/Dord_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Toronto/Jelly	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Toronto/Jelly_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Toronto/Kilmore	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Toronto/Kilmore_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Toronto/KilmoreZZZZZ	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Toronto/Mathieu	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Toronto/Mathieu_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Toronto/MathieuZZZZZ	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Toronto/Popping	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Toronto/Popping_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Toronto/Spark	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Toronto/Spark_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Toronto/SparkZZZZ	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Twinfalls/Crockett	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Twinfalls/Crockett_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Twinfalls/Haggis	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Twinfalls/Haggis_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Twinfalls/Jerky	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Twinfalls/Jerky_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Twinfalls/Wiener	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Twinfalls/Wiener_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Twinfalls/WienerZZZZ	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Tycoons/Tycoons_Elite	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/Tycoons/Tycoons_Elite_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/Tycoons/Tycoons_Lady	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/Tycoons/Tycoons_Lady_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Helmet; openhand
+skater	Heads	Faces/Tycoons/Tycoons_Large	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Tycoons/Tycoons_Large_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Tycoons/Tycoons_Small	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Heads	Faces/Tycoons/Tycoons_Small_Helmet	Face	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Helmets	Faces/Custom/Helmet_Colors	Helmet	false		resources.assets:1330:Ultimate_Sprite.skel		Helmet_Custom
+skater	Helmets	Faces/Custom/Helmet_Face	Helmet	false		resources.assets:1330:Ultimate_Sprite.skel		Glove right; Helmet; openhand
+skater	Helmets	Faces/Custom/Helmet_lso	Helmet	false		resources.assets:1330:Ultimate_Sprite.skel		Helmet_Custom
+skater	Helmets	Faces/Custom/Helmet_Reference	Helmet	false		resources.assets:1330:Ultimate_Sprite.skel		Helmet_Custom
+skater	Helmets	Faces/Helmets/Helmet_Enrage	Helmet	false		resources.assets:1330:Ultimate_Sprite.skel		Helmet_Custom
+skater	Helmets	Faces/Helmets/Helmet_Frog	Helmet	false		resources.assets:1330:Ultimate_Sprite.skel		Helmet_Custom
+skater	Helmets	Faces/Helmets/Helmet_Golden	Helmet	false		resources.assets:1330:Ultimate_Sprite.skel		Helmet_Custom
+skater	Helmets	Faces/Helmets/Helmet_Reference	Helmet	false		resources.assets:1330:Ultimate_Sprite.skel		Helmet_Custom
+skater	Helmets	Faces/Helmets/Helmet_Wing	Helmet	false		resources.assets:1330:Ultimate_Sprite.skel		Helmet_Custom
+skater	Jerseys	Body/Alumni/Ref_Alumni	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Jerseys	Body/Chicago/Chicago_Away	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Jerseys	Body/Crusaders/Campaign_Away	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Jerseys	Body/Crusaders/Campaign_Home	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Jerseys	Body/Crusaders/Galahad	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Jerseys	Body/Crusaders/GSpiked_Armor	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Jerseys	Body/Crusaders/Guretski	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Jerseys	Body/Crusaders/Lancelov	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Jerseys	Body/Crusaders/Percivalsson	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Jerseys	Body/Crusaders/Prince	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Jerseys	Body/Customization/Customization_colors	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Jerseys	Body/Customization/Customization_iso	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Jerseys	Body/Figure_Skaters/Figure_Skaters	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Jerseys	Body/Golfers/Golfers	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Jerseys	Body/Golfers/Golfers_Mutant	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Jerseys	Body/HockeyFC/HockeyFC	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Jerseys	Body/HockeyFC/HockeyFC_Away	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Jerseys	Body/Mountaineers/Mountaineers	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Jerseys	Body/Mountaineers/Mountaineers_Beer	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Jerseys	Body/Princess/Princess	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Jerseys	Body/Prisoners/Prisoners	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Jerseys	Body/Referee	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Jerseys	Body/Toronto/Mathieu	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Jerseys	Body/Tycoons/Tycoons	Body	false		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Logos	Team_Logo/Calaveras	Logo	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
+skater	Logos	Team_Logo/Cheese	Logo	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
+skater	Logos	Team_Logo/Cultists	Logo	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
+skater	Logos	Team_Logo/Custom_L	Logo	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter
+skater	Logos	Team_Logo/Custom_R	Logo	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter
+skater	Logos	Team_Logo/Disco	Logo	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
+skater	Logos	Team_Logo/Golfers	Logo	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
+skater	Logos	Team_Logo/Knights	Logo	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
+skater	Logos	Team_Logo/Lettuce	Logo	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
+skater	Logos	Team_Logo/Meatballs	Logo	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
+skater	Logos	Team_Logo/Mountaineers	Logo	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
+skater	Logos	Team_Logo/Officials	Logo	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
+skater	Logos	Team_Logo/Princess	Logo	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
+skater	Logos	Team_Logo/Spartans	Logo	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
+skater	Logos	Team_Logo/Tape_to_tape	Logo	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Team_logo-Twinfalls_logo
+skater	Numbers	Numbers/Number_69	Number	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Number; openhand
+skater	Other	Backpack_Stick1		false		resources.assets:1330:Ultimate_Sprite.skel		Backpack_Stick1; Backpack_Stick2; Expression_Peter; Glove right; openhand
+skater	Other	Backpack_Stick2		false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; openhand
+skater	Other	default		false		resources.assets:1330:Ultimate_Sprite.skel		Crack1; Crack2; Crack3; Crack4; Crack5; Crack6; Crack7; Crack8; Cup; Exlode_VFX; Frozen; Glove left; Glove right; IceBreakingMask; IceHole; Ice_Shard1; Ice_Shard2; Ice_Shard3; Ice_Shard4; Ice_Shard5; Ice_Shard6; Ice_Shard7; Ice_Shard8; Kraken_Puck1; Kraken_Puck10; Kraken_Puck11; Kraken_Puck12; Kraken_Puck13; Kraken_Puck14; Kraken_Puck2; Kraken_Puck3; Kraken_Puck4; Kraken_Puck5; Kraken_Puck6; Kraken_Puck7; Kraken_Puck8; Kraken_Puck9; Kraken_puck; Mouth_OO; Mouth_P; Mouth_S; Puff_VFX; Spin-spin_001; Spin2-spin_002; Swing_FX; Tentacule; Towel; Upgrade_Arrow_base; Upgrade_Arrow_top; Upgrade_aura; Upgrade_shock; bakedshadow; fire_000; ice_transparent; lozange_VFX; lozange_VFX2; lozange_VFX3; mouth_a; mouth_o; shine; smoke1
+skater	Other	Names/McShaggy_R		false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Name; openhand
+skater	Pants	Body_Pants/Customization/Customization_colors	Pants	false		resources.assets:1330:Ultimate_Sprite.skel		Pants left; Pants right
+skater	Pants	Body_Pants/Customization/Customization_iso	Pants	false		resources.assets:1330:Ultimate_Sprite.skel		Pants left; Pants right
+skater	Pants	Body_Pants/Figure_Skaters	Pants	false		resources.assets:1330:Ultimate_Sprite.skel		Pants left; Pants right
+skater	Pants	Body_Pants/Golfers	Pants	false		resources.assets:1330:Ultimate_Sprite.skel		Pants left; Pants right
+skater	Pants	Body_Pants/HockeyFC	Pants	false		resources.assets:1330:Ultimate_Sprite.skel		Pants left; Pants right
+skater	Pants	Body_Pants/Mountaineers	Pants	false		resources.assets:1330:Ultimate_Sprite.skel		Pants left; Pants right
+skater	Pants	Body_Pants/Prince	Pants	false		resources.assets:1330:Ultimate_Sprite.skel		Pants left; Pants right
+skater	Pants	Body_Pants/Prisoners	Pants	false		resources.assets:1330:Ultimate_Sprite.skel		Pants left; Pants right
+skater	Pants	Body_Pants/Standard	Pants	false		resources.assets:1330:Ultimate_Sprite.skel		Pants left; Pants right
+skater	Pants	Body_Pants/Tycoons	Pants	false		resources.assets:1330:Ultimate_Sprite.skel		Pants left; Pants right
+skater	Skates	Body_Skates/Black_Skates	Skates	false		resources.assets:1330:Ultimate_Sprite.skel		Skate left; Skate right
+skater	Skates	Body_Skates/Customization/Customization_colors	Skates	false		resources.assets:1330:Ultimate_Sprite.skel		Skate left; Skate right
+skater	Skates	Body_Skates/Customization/Customization_iso	Skates	false		resources.assets:1330:Ultimate_Sprite.skel		Skate left; Skate right
+skater	Skates	Body_Skates/Injured	Skates	false		resources.assets:1330:Ultimate_Sprite.skel		Skate left; Skate right
+skater	Skates	Body_Skates/Winged	Skates	false		resources.assets:1330:Ultimate_Sprite.skel		Skate left; Skate right
+skater	Sleeves	Body_Bicep/Crusaders	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Crusaders_Prince	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Crusaders_Spiked	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Customization/Customization_colors	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Customization/Customization_iso	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Figure_Skaters	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Golfers	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Golfers_Mutant	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Hockey_FC	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Hockey_FC_Away	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Injured	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Mountaineers_Black	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Mountaineers_White	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Princess	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Prisoners	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Referees	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Standard	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Sleeves	Body_Bicep/Tycoons	Bicep	false		resources.assets:1330:Ultimate_Sprite.skel		Bicep left; Bicep right
+skater	Socks	Body/Alumni/Ref_Alumni	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Socks	Body/Chicago/Chicago_Away	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Socks	Body/Crusaders/Campaign_Away	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Socks	Body/Crusaders/Campaign_Home	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Socks	Body/Crusaders/Galahad	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Socks	Body/Crusaders/GSpiked_Armor	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Socks	Body/Crusaders/Guretski	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Socks	Body/Crusaders/Lancelov	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Socks	Body/Crusaders/Percivalsson	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Socks	Body/Crusaders/Prince	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Socks	Body/Customization/Customization_colors	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Socks	Body/Customization/Customization_iso	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Socks	Body/Figure_Skaters/Figure_Skaters	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Socks	Body/Golfers/Golfers	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Socks	Body/Golfers/Golfers_Mutant	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Socks	Body/HockeyFC/HockeyFC	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Socks	Body/HockeyFC/HockeyFC_Away	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Socks	Body/Mountaineers/Mountaineers	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Socks	Body/Mountaineers/Mountaineers_Beer	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Socks	Body/Princess/Princess	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; Tutu; openhand
+skater	Socks	Body/Prisoners/Prisoners	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Socks	Body/Referee	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Socks	Body/Toronto/Mathieu	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Socks	Body/Tycoons/Tycoons	Body	true		resources.assets:1330:Ultimate_Sprite.skel		Body; Expression_Peter; Forearm left; Forearm right; Glove right; Leg left; Leg right; openhand
+skater	Sticks	Sticks/Black	Stick	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
+skater	Sticks	Sticks/Bluegreen	Stick	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
+skater	Sticks	Sticks/Curve	Stick	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
+skater	Sticks	Sticks/Customization/Customization_colors	Stick	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
+skater	Sticks	Sticks/Customization/Customization_iso	Stick	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
+skater	Sticks	Sticks/Gold	Stick	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
+skater	Sticks	Sticks/Golf_Iron	Stick	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
+skater	Sticks	Sticks/Hotdog	Stick	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
+skater	Sticks	Sticks/Magnet_Blue	Stick	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
+skater	Sticks	Sticks/Magnet_Red	Stick	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
+skater	Sticks	Sticks/Purple	Stick	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
+skater	Sticks	Sticks/Red	Stick	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
+skater	Sticks	Sticks/Redgold	Stick	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
+skater	Sticks	Sticks/Sword	Stick	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand
+skater	Sticks	Sticks/Tongs	Stick	false		resources.assets:1330:Ultimate_Sprite.skel		Expression_Peter; Glove right; Stick; openhand

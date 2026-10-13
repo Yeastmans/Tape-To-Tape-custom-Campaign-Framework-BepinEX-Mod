@@ -4,7 +4,9 @@
 
 [Download Beta 1.0](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
-**Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **`roguelite` branch, build 25899138**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
+**Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **`roguelite` branch, build 25917988**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
+
+**This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. Reporting bugs on [Discord](https://discord.gg/hscxnYghb) or [GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues) helps immensely.
 
 > [!WARNING]
 > **Game updates will likely break this mod.** Compatibility with future Tape to Tape updates is not guaranteed, and you may need to wait for a mod update before it works again. Studio's compatibility checker cannot fix every game change. Check the release notes or [join Discord for updates and help](https://discord.gg/hscxnYghb).
@@ -30,13 +32,13 @@
 
 ### Windows
 
-**You need:** Windows x64, your own Steam copy of Tape to Tape, and access to its **`roguelite` branch**. Beta 1.0 targets **game build 25899138**. The Windows installer includes the editor runtime and the required BepInEx 6 IL2CPP loader; Python and a separate .NET installation are not needed to use it.
+**You need:** Windows x64, your own Steam copy of Tape to Tape, and access to its **`roguelite` branch**. Beta 1.0 targets **game build 25917988**. The Windows installer includes the editor runtime and the required BepInEx 6 IL2CPP loader; Python and a separate .NET installation are not needed to use it.
 
 1. In Steam, right-click **Tape to Tape → Properties → Betas** and select **`roguelite`**. If it is unavailable, you need branch access before continuing. Let Steam finish updating.
 2. Launch the game once, then quit it. Close any old creator or Studio window.
 3. Open [GitHub Releases](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases) and download **`T2T_Custom_Campaign_Framework_Setup.exe`** from **Campaign Studio Beta 1.0**. The GitHub “Source code” ZIP is not the installer.
 4. Run Setup from the Windows account you use to play and accept its administrator prompt. Choose the **Studio application folder**, then the separate **Tape to Tape game folder** containing `Tape to Tape.exe`. Steam's **Manage → Browse local files** opens the game folder.
-5. Finish Setup and open **T2T Campaign Studio** from its Start menu entry or optional desktop shortcut. Setup installs the editor separately from the game's loader and mod files.
+5. Finish Setup and open **T2T Campaign Studio** from its Start menu entry or optional desktop shortcut. Read the beta notice and choose **I understand · Open Studio**. Setup installs the editor separately from the game's loader and mod files.
 6. On Home, choose **Read game artwork**. If asked, select your game folder. Studio reads previews and base-game catalogs from your installed game; the game does not need to be running.
 7. Check the compatibility message at the bottom of Home. **Update mod compatibility** retries the check. If it reports an unsupported build or an error, resolve that before starting a custom run.
 

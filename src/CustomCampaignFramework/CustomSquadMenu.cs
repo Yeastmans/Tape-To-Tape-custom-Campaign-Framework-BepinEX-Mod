@@ -144,12 +144,9 @@ internal static class CustomSquadMenu
                 menu.m_LockedInMeta = null; menu.m_HighlightedMeta = null;
                 if (menu.m_Title != null) menu.m_Title.text = "CUSTOM SQUADS";
                 bool configured = Plugin.PlayerTeamConfigs.Count > 0;
-                bool supportUnavailable = configured && !NativeSquadBehaviorBridge.Ready;
-                if (menu.m_MetaName != null) menu.m_MetaName.text = supportUnavailable ? "Custom squads are unavailable"
-                    : configured ? "Custom squads could not load" : "No custom squads yet";
-                if (menu.m_MetaDescription != null) menu.m_MetaDescription.text = supportUnavailable
-                    ? "Your campaign squads were found, but the mod could not enable squad support. Update or repair the mod for this game version, then restart the game."
-                    : configured ? "Your campaign squads were found, but could not be loaded. Check their settings in Campaign Studio and the game log for details."
+                if (menu.m_MetaName != null) menu.m_MetaName.text = configured ? "Custom squads could not load" : "No custom squads yet";
+                if (menu.m_MetaDescription != null) menu.m_MetaDescription.text = configured
+                    ? "Your campaign squads were found, but could not be loaded. Check their settings in Campaign Studio and the game log for details."
                     : "Add a custom squad to this campaign in Campaign Studio, then reopen squad selection.";
                 if (menu.m_MetaTeamsParent != null) menu.m_MetaTeamsParent.RegisterChildren(true);
             }

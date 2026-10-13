@@ -48,15 +48,23 @@ public sealed class App : Application
         Styles.Add(new FluentTheme());
         Styles.Add(new Avalonia.Markup.Xaml.Styling.StyleInclude(new Uri("avares://CampaignCreator/")) { Source = new Uri("avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml") });
         StudioTheme.Install(this);
-        PageHelpButton.Install();
     }
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            MainWindow.BuildGameArtOnStart = true;
-            MainWindow.UpdateModCompatibilityOnStart = true;
-            desktop.MainWindow = new MainWindow(desktop.Args ?? Array.Empty<string>());
+            var notice = new BetaNoticeWindow();
+            notice.ContinueRequested += () =>
+            {
+                PageHelpButton.Install();
+                MainWindow.BuildGameArtOnStart = true;
+                MainWindow.UpdateModCompatibilityOnStart = true;
+                var studio = new MainWindow(desktop.Args ?? Array.Empty<string>());
+                desktop.MainWindow = studio;
+                studio.Show();
+                notice.Close();
+            };
+            desktop.MainWindow = notice;
         }
         base.OnFrameworkInitializationCompleted();
     }

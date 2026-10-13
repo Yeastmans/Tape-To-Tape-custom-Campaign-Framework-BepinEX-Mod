@@ -2,7 +2,7 @@
 
 Campaign Studio reads heads, equipment, logos, map artwork, head templates and native roster records from the player's installed copy of Tape to Tape. The game can remain closed. Home > **Read game artwork** rebuilds the local cache; Studio offers extraction when the cache is missing or outdated and asks for the game folder if automatic discovery fails. Players need no Python, Node or Spine runtime.
 
-The current extractor targets Steam build **25899138** and uses cache format **5**. The cache lives under `%LOCALAPPDATA%\T2T Campaign Studio\game-art\<fingerprint>`. It is user data and is excluded from releases. `T2T_GAME_ART_CACHE` can override that location for a development installation.
+The current extractor targets Steam build **25917988** and uses cache format **5**. The cache lives under `%LOCALAPPDATA%\T2T Campaign Studio\game-art\<fingerprint>`. It is user data and is excluded from releases. `T2T_GAME_ART_CACHE` can override that location for a development installation.
 
 The fingerprint includes extractor format, game binary/metadata and bundle file sizes and timestamps, extractor identities, and embedded mapping hashes. Complete caches are reused. Rebuilds are staged; cancellation or a fatal failure preserves the existing cache. A failed individual extractor is recorded without exposing its partial output. The editor remains usable when previews or native imports are unavailable.
 
