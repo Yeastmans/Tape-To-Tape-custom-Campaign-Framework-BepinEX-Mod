@@ -138,6 +138,11 @@ public sealed class UpgradeCleanup
             || key.Equals(FreeAgentTalentPool.ModeKey, StringComparison.OrdinalIgnoreCase)
             || key.Equals(FreeAgentTalentPool.SelectedKey, StringComparison.OrdinalIgnoreCase)) return value;
         string k = key.ToLowerInvariant();
+        // Authored heads are not in the shipped native upgrade catalog. Preserve
+        // their identities during upgrades and imports, including when the head
+        // project will be installed later; the head loader validates its assets.
+        if ((k is "face" or "squad head" or "zamboni head" or "bench head")
+            && value.StartsWith("Faces/CustomHeads/", StringComparison.OrdinalIgnoreCase)) return value;
         if (SquadBehaviors.All.Any(b => b.Key.Equals(key, StringComparison.OrdinalIgnoreCase)))
             return In(value, "Inherit", "On", "Off", "yes", "no", "true", "false") ? value : "";
         if (k.StartsWith("export ")) return value;

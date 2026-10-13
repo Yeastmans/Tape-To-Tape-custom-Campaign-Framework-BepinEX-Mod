@@ -1,5 +1,12 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 2 — 2026-10-13
+
+- Preserve custom-head assignments when upgrading or importing content. Custom
+  heads use authored identities outside the shipped native equipment catalog;
+  cleanup no longer clears those identities, including helmet variants and
+  squad, bench and Zamboni head choices.
+
 ## Beta 1.0 — 2026-10-13
 
 **Campaign Studio and the bundled Custom Campaign Framework mod, for Windows
