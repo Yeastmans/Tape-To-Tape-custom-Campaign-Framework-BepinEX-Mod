@@ -1,0 +1,668 @@
+# kind	key	id	level	asset	name	description
+Talents	00e6e2f9-cfbe-438a-9ebe-7f2287f68436	00e6e2f9-cfbe-438a-9ebe-7f2287f68436	1	En Garde!	En Garde!	Disarm opponent when pokechecking
+Talents	046ff93c-c3a4-420f-8ed9-fbe3068a367f	046ff93c-c3a4-420f-8ed9-fbe3068a367f	1	Balanced Talent	Balanced Talent	All attributes are balanced evenly
+Talents	0594f81a-2f37-46e0-a46a-04f83c75e0ab	0594f81a-2f37-46e0-a46a-04f83c75e0ab	1	Linesman	Linesman	The offside rule is enforced while he is on the ice
+Talents	05ab70d6-9387-4fa8-9386-ac531612e7cd	05ab70d6-9387-4fa8-9386-ac531612e7cd	2	Rebound Magnet (Level 2)	Rebound Magnet+	Opposing goaltender rebounds will be strongly pulled toward you, even from far away
+Talents	05e1d389-e157-443e-81c9-27c0b26d716d	05e1d389-e157-443e-81c9-27c0b26d716d	1	Butt Boost Talent	Butt Boost	Team gets +10 OVR when you're not benched
+Talents	0610ec4e-ec72-4f47-a3b5-947591a6893f	0610ec4e-ec72-4f47-a3b5-947591a6893f	2	Momentum LVL2	Momentum+	+7 Speed per win\nGames won: 0
+Talents	06960c90-b754-47a2-a0f7-7c275e649482	06960c90-b754-47a2-a0f7-7c275e649482	2	Iron Helmet (Level 2)	Iron Helmet+	+60 Shot Power\n-30 Speed
+Talents	0699923d-3d4c-4ba6-9d4a-2ef1a629b8c9	0699923d-3d4c-4ba6-9d4a-2ef1a629b8c9	2	Trick Shot (Level 2)	Trickshot+	Shots will move up and down wildly
+Talents	075f3566-7318-46ed-b1fc-afb604bc5725	075f3566-7318-46ed-b1fc-afb604bc5725	1	Escalating Crit	Crit Stacks	+5% crit chance per shot\nResets on crit
+Talents	07833f45-37de-4a25-bd47-d3f144fc5df8	07833f45-37de-4a25-bd47-d3f144fc5df8	2	Greater Cooldown (Level 2)	Bench Charger+	+100% ability cooldown speed
+Talents	090802e3-7f25-45c6-84e4-8d7edf0a65b6	090802e3-7f25-45c6-84e4-8d7edf0a65b6	2	Chexplosion (Level 2)	Chexplosion+	Successful bodychecks knock out skaters in a wide radius
+Talents	090ea889-96c8-4f9d-a3bb-f4ee2bbe4019	090ea889-96c8-4f9d-a3bb-f4ee2bbe4019	1	slapShart	Slapshart	Get propelled forward after shooting
+Talents	092a36f6-a9fa-4c8f-8d50-25ae830ee88f	092a36f6-a9fa-4c8f-8d50-25ae830ee88f	2	BoneCrusher (Level 2)	Bonecrusher+	Skaters you knock out will get thrown very far and lose their stick
+Talents	09d54ce8-a17b-4a92-aba9-3839e4d70ed2	09d54ce8-a17b-4a92-aba9-3839e4d70ed2	1	WeakMode	[Missing: powerups/weak_mode/name]	[Missing: powerups/weak_mode/name]
+Talents	09e78225-217d-4627-9af4-db8465064493	09e78225-217d-4627-9af4-db8465064493	2	Flawless Feeder (Level 2)	Flawless Feeder+	Your passes can't be intercepted\n+30% pass speed
+Talents	0a086128-8515-4aa9-beac-9b12685ffb6a	0a086128-8515-4aa9-beac-9b12685ffb6a	1	Silent Hero	Silent Hero	+5 OVR per game with 0 goals and at least 1 assist\nTotal Bonuses: 0
+Talents	0a2ba8af-1f12-4e2f-93de-4e91d7027263	0a2ba8af-1f12-4e2f-93de-4e91d7027263	1	karlsonBehavior	[Missing: powerups/karlson_behaviour/name]	[Missing: powerups/karlson_behaviour/description]
+Talents	0ae0451b-77c7-4b76-b460-63ab76616a7d	0ae0451b-77c7-4b76-b460-63ab76616a7d	1	Random Skill	Random Ability	Gain a random ability at the start of each game
+Talents	0be2d6a4-eb47-4562-87a1-4c87818be248	0be2d6a4-eb47-4562-87a1-4c87818be248	2	Shart Slap (Level 2)	Shartslap+	Get propelled far forward when charging a slapshot
+Talents	0bf5028c-2577-4c40-953f-562ddf2633bb	0bf5028c-2577-4c40-953f-562ddf2633bb	2	Silent Hero (Level 2)	Silent Hero+	+8 OVR per game with 0 goals and at least 1 assist\nTotal Bonuses: 0
+Talents	0c89e132-f9b3-4fec-a692-3dd60c8e0134	0c89e132-f9b3-4fec-a692-3dd60c8e0134	1	Trenchcoat	Trenchcoat	-10 OVR per talent
+Talents	0c8da1e2-0681-4ebb-826e-189a5790db4d	0c8da1e2-0681-4ebb-826e-189a5790db4d	2	Fury Stick (Level 2)	Fury Stick+	Throw your stick forward on slapshots. Start with an Extra Stick
+Talents	0cadb72e-602e-4645-b0f5-f67cbaa4918b	0cadb72e-602e-4645-b0f5-f67cbaa4918b	2	Power Up Retention Talent (Level 2)	Retention+	Retains up to 2 random power-ups for the next run
+Talents	0d6b04ec-adf6-4390-86cb-88858a9425f1	0d6b04ec-adf6-4390-86cb-88858a9425f1	1	Twig Tax	Twig Tax	+20 Shot Power for each game in which you break a stick\nGames with a broken stick: 0
+Talents	0d81ea6f-4c2b-42b0-a60a-3510fdcf54a6	0d81ea6f-4c2b-42b0-a60a-3510fdcf54a6	1	Iron Helmet	Iron Helmet	+40 Shot Power\n-20 Speed
+Talents	0deabd38-03b4-431c-8295-d764f9993fad	0deabd38-03b4-431c-8295-d764f9993fad	2	XRay Shot (Level 2)	X-Ray Shot+	Shots will go through skaters, and have a 5% chance of passing through the goalie
+Talents	0f934511-8f18-4a56-b63e-d6ed4e7c22d7	0f934511-8f18-4a56-b63e-d6ed4e7c22d7	1	Sonic Slap	Sonic Slap	Slapshots knock out surrounding skaters
+Talents	0fc02257-1064-4333-bf39-d5dafdfc8c66	0fc02257-1064-4333-bf39-d5dafdfc8c66	1	Feed	Cold Turkey	Get enraged after 20s without the puck
+Talents	112784c6-6723-44e4-931c-290e65f51c44	112784c6-6723-44e4-931c-290e65f51c44	1	Bench Borrower	Bench Borrower	While on the ice, borrows 1 random talent from a benched teammate
+Talents	114f0f42-1ede-4600-87ff-b5feba92ce0e	114f0f42-1ede-4600-87ff-b5feba92ce0e	1	Hidden Ace	Hidden Ace	Your goals count as 2 goals
+Talents	12d0243c-410e-48b3-8077-b9193bcd22df	12d0243c-410e-48b3-8077-b9193bcd22df	2	Sonic Slap (Level 2)	Sonic Slap+	Slapshots knock out skaters in a wide radius
+Talents	13baf0db-7f44-4ce5-9b3a-4f3ffd6e97fe	13baf0db-7f44-4ce5-9b3a-4f3ffd6e97fe	1	Sally Bench Quest Talent	Quest	Score 10 enraged goals in a single run\nEnraged Goals: 0/10   Highest: 0
+Talents	13d8b6e0-eab5-497a-8f1b-6fabfb9438bf	13d8b6e0-eab5-497a-8f1b-6fabfb9438bf	1	Loaded Puck	Loaded Puck	While he is on the ice, the puck has a 25% chance to be worth 2 or 3 goals
+Talents	152180c5-354e-4ca8-87a3-e1e9fdeafc8b	152180c5-354e-4ca8-87a3-e1e9fdeafc8b	1	Pressure Cooker	Pressure Cooker	+20 OVR while you have 0 goals this game
+Talents	165117d1-1f09-4780-b648-264526da094d	165117d1-1f09-4780-b648-264526da094d	1	Talent_ForwardStatBonus_Spd	+10 Speed	
+Talents	16fed9a0-84bf-43d1-b103-c49310275a32	16fed9a0-84bf-43d1-b103-c49310275a32	1	Cannon Arm	Cannon Arm	+5 Shot Power per win\nGames won: 0
+Talents	17976a29-7049-4986-8a34-42839db71796	17976a29-7049-4986-8a34-42839db71796	1	Bedrock	Worst Best Skater	+30 Checking\nCan't increase Checking anymore
+Talents	17e71ee4-a59f-4f94-9a66-3197f728aa42	17e71ee4-a59f-4f94-9a66-3197f728aa42	1	Helmet Stack	Helmet Stack	2x helmet effects
+Talents	189ff00c-bfe1-4efd-b846-fd972913d2e4	189ff00c-bfe1-4efd-b846-fd972913d2e4	1	hotTalent	Hot	+15 OVR
+Talents	193c5c71-fe36-4a3a-a591-fb546d058fff	193c5c71-fe36-4a3a-a591-fb546d058fff	2	Hat Trick (Level 2)	Hat Trick Bonus+	+15 OVR after your 3rd goal each game\nGames with Hat Trick: 0
+Talents	19bdf186-315b-405c-9e4d-626793a61b93	19bdf186-315b-405c-9e4d-626793a61b93	1	Supernova Talent	Directional Shroom	Skate in same direction for 1.75s to get propelled forward
+Talents	1a3f79e6-5551-4f45-a142-606cd0c81e09	1a3f79e6-5551-4f45-a142-606cd0c81e09	1	Kettle	Kettle	+10 OVR per game with 0 goals. Resets after scoring\nGames without a goal: 0
+Talents	1b59fdd9-6293-4580-8b28-ab7136fd869f	1b59fdd9-6293-4580-8b28-ab7136fd869f	1	Poke Rage	Sensitive Skin	Get enraged when pokechecked
+Talents	1b746d12-f385-420f-b7f7-d362398692ca	1b746d12-f385-420f-b7f7-d362398692ca	1	Rebound Magnet	Rebound Magnet	Opposing goaltender rebounds will be directed toward you
+Talents	1bcdaf65-2f9d-479a-9ec1-7af48ab6d656	1bcdaf65-2f9d-479a-9ec1-7af48ab6d656	2	Center Bonecrusher Talent (Level 2)	Center Bonecrusher Talent+	If C, your LD and RD gain
+Talents	1cd489df-70c0-4f76-8223-00c5c83b30fe	1cd489df-70c0-4f76-8223-00c5c83b30fe	1	Triple Twig	Triple Twig	Get 2 extra sticks
+Talents	1d2853ff-abb8-4b39-b045-85015c06e080	1d2853ff-abb8-4b39-b045-85015c06e080	2	Deadzone (Level 2)	Slapshot Immunity+	Immune for 2s while charging a slapshot
+Talents	1da847fe-41c2-40b1-a9ec-8226aea2c71d	1da847fe-41c2-40b1-a9ec-8226aea2c71d	2	Windup (Level 2)	Wind Up+	Unleash a shockwave that pushes surrounding skaters far away when winding up a slapshot
+Talents	1f1e5b98-f66f-4278-bce7-f868d64e4ddb	1f1e5b98-f66f-4278-bce7-f868d64e4ddb	1	Kirby Bench Quest Talent	Quest	Shoot with at least 100% crit chance\nCrit %: 0/100   Highest: 12
+Talents	1fa21e6e-2419-41c5-aabc-3db2c214d9aa	1fa21e6e-2419-41c5-aabc-3db2c214d9aa	2	Rocket Skates (Level 2)	Instant Ramen+	+80 Speed\nLose some agility
+Talents	1fcac925-2f2a-410b-87f0-1e034603b1a2	1fcac925-2f2a-410b-87f0-1e034603b1a2	1	FairwayImmunity	[Missing: powerups/fairway_immunity/name]	[Missing: powerups/fairway_immunity/description]
+Talents	2044ed62-8626-4966-adf8-24aa28dbae87	2044ed62-8626-4966-adf8-24aa28dbae87	2	Passing Domino (Level 2)	Generous Domino+	+8% pass speed per assist\nAssists: 0
+Talents	212e5b5f-127d-45ed-b960-ee6779588edb	212e5b5f-127d-45ed-b960-ee6779588edb	1	The Wall	The Wall	Deflect pucks...and sticks!
+Talents	2230fb81-6439-4e3f-b717-40438005ead5	2230fb81-6439-4e3f-b717-40438005ead5	2	Slapshot Slowmo (Level 2)	Slapshot Slowmo+	Slow time while winding up your slapshot\n+50% windup speed
+Talents	23cd75aa-9335-4771-9de7-8dee9c4f72e1	23cd75aa-9335-4771-9de7-8dee9c4f72e1	1	Sonic Interception	Sonic Interception	When your pass is intercepted, surrounding skaters are knocked out
+Talents	23eb930a-4327-449b-8872-6633624041e7	23eb930a-4327-449b-8872-6633624041e7	1	Offensive Bodycheck	Offensive Bodycheck	Bodycheck while carrying the puck
+Talents	2651b21a-013f-4749-80ec-0e01003646e4	2651b21a-013f-4749-80ec-0e01003646e4	2	Hit Streak (Level 2)	Domino Effect+	+8 Checking per knockout last game\nknockouts last game: 0
+Talents	28158966-5b28-4a8b-bed4-7d0ee04b929f	28158966-5b28-4a8b-bed4-7d0ee04b929f	1	No Goal	No Goal	3% chance to overturn an opponent's goal
+Goalie Talents	2835afab-4b2b-4275-9005-5f774f2bdfed	2835afab-4b2b-4275-9005-5f774f2bdfed	1	Goalie Assist	The Quarterback	Team gets +3 OVR for every goalie assist\nAssists: 0
+Talents	28550c2a-af72-4dd2-879e-c8760820a643	28550c2a-af72-4dd2-879e-c8760820a643	1	cultistPowerLD	CultistAI	[Missing: powerups/cultist/description]
+Talents	28add2b6-eccd-46bd-9e9f-db221c7f8703	28add2b6-eccd-46bd-9e9f-db221c7f8703	1	Crit Boost	Stix	+10% crit chance
+Talents	291a967e-6c5a-47c0-a7dd-363086f10e16	291a967e-6c5a-47c0-a7dd-363086f10e16	1	Bee Sting	Infected	+20 Shot Power\nStart every game
+Talents	29759d20-399b-46e1-9434-ef33ca3f49a4	29759d20-399b-46e1-9434-ef33ca3f49a4	2	Split Personality (Level 2)	Split Personality+	+35 OVR every other game\n-35 OVR otherwise\nBoosted: Yes
+Talents	29a517b8-9990-43c6-8c3d-9515c0921c69	29a517b8-9990-43c6-8c3d-9515c0921c69	1	Speed Transfer	Speed Transfer	Your passes give +30 Speed for 5s
+Talents	29dab3df-f06e-4383-a9af-b032d562416c	29dab3df-f06e-4383-a9af-b032d562416c	1	Padlock	Bad Luck	Your goals are denied 95% of the time\nGoals denied: {0}
+Talents	29e9fdd5-50e5-47c3-9502-f64bb018e426	29e9fdd5-50e5-47c3-9502-f64bb018e426	1	Toupie	Toupie	Gain agility
+Talents	2a11c469-45da-4003-8859-865e47963996	2a11c469-45da-4003-8859-865e47963996	1	Mark Bench Quest Talent	Quest	Mark Bench plays every game, Angus stays benched. Swap them for the final and win\nOn Track: true
+Goalie Talents	2ab64669-eba6-4ef5-85b1-98cb6b83e8e0	2ab64669-eba6-4ef5-85b1-98cb6b83e8e0	1	Goalie Speed Talent	The Falcon	Goalie picks up free pucks quicker
+Talents	2adc26e7-c625-4b09-b7ec-0350d8e5be21	2adc26e7-c625-4b09-b7ec-0350d8e5be21	2	Point Sniper (Level 2)	Point Sniper+	+30% crit chance at blue line
+Talents	2c05f9e2-2a2c-4de0-b399-3af96a7a546e	2c05f9e2-2a2c-4de0-b399-3af96a7a546e	1	nohit	Never Hit	[Missing: powerups/no_hit/description]
+Talents	2cb6019f-de96-44dd-9b99-807544f44514	2cb6019f-de96-44dd-9b99-807544f44514	2	Try Hard (Level 2)	Dormant Domino+	+7 OVR per game with 0 goals\nGames without a goal: 0
+Talents	2d5645fa-69cf-4aab-86be-014d0a62e0dc	2d5645fa-69cf-4aab-86be-014d0a62e0dc	1	princeAI	Prince AI	[Missing: powerups/prince_a_i/description]
+Goalie Talents	2daeb88e-ffb8-4df8-922b-5ab16297d8ba	2daeb88e-ffb8-4df8-922b-5ab16297d8ba	1	Goalie Pass Proepl	The Fungus	Your skaters get propelled forward when receiving a pass from the goalie
+Talents	2f0d3d32-4081-4a42-a62c-23e8cff99314	2f0d3d32-4081-4a42-a62c-23e8cff99314	1	Divine Passes	Divine Passes	Skaters receiving your passes get propelled forward
+Talents	2f85a325-ce70-40b3-8cf2-1eb650f89d6a	2f85a325-ce70-40b3-8cf2-1eb650f89d6a	1	First Period Fever	First Period Fever	+25 OVR in period 1\n-25 OVR otherwise
+Talents	2fc3cd85-88b5-4aae-8c02-e72ee0a888d5	2fc3cd85-88b5-4aae-8c02-e72ee0a888d5	1	Greater Cooldown	Bench Charger	+50% ability cooldown speed
+Talents	2ff5ae22-22db-4998-941a-7840248ab75d	2ff5ae22-22db-4998-941a-7840248ab75d	1	Split Personality	Split Personality	+25 OVR every other game\n-25 OVR otherwise\nBoosted: Yes
+Talents	32d4539a-f5ad-4b58-88f3-1f215064793d	32d4539a-f5ad-4b58-88f3-1f215064793d	1	Flat puck	Flat Puck	Your shots and passes never leave the ice
+Talents	3390f71c-2940-49d3-b415-4bd4db66842d	3390f71c-2940-49d3-b415-4bd4db66842d	1	Wild Shot	Wild Shot	Randomize Shot Power and Accuracy on every shot
+Talents	33984bd4-97ce-4450-8c0a-2f071529a253	33984bd4-97ce-4450-8c0a-2f071529a253	2	Pass Puncher (Level 2)	Pass Puncher+	When knocked out, pass the puck to the closest teammate. The receiver gets +30 Shot Power for 5s
+Talents	33f469a6-5ca2-4cb8-8b77-7770d799b528	33f469a6-5ca2-4cb8-8b77-7770d799b528	2	Kettle (Level 2)	Kettle+	+15 OVR per game with 0 goals. Resets after scoring\nGames without a goal: 0
+Talents	35e52ce8-abfa-4fd1-81c4-209271f5f646	35e52ce8-abfa-4fd1-81c4-209271f5f646	2	Sword (Level 2)	Sword+	+20 Shot Power\nGives immunity to pokechecks
+Goalie Talents	37a51935-df91-4b28-8798-04c4154eb30c	37a51935-df91-4b28-8798-04c4154eb30c	1	Goalie Enrage Last30Sec	The Finisher	Get enraged for the last 30s of every period
+Goalie Talents	386ebfd6-ca12-42db-84d2-c5d3d56d66a4	386ebfd6-ca12-42db-84d2-c5d3d56d66a4	1	Goalie Enraged On Breakaway	The Hunter	Enrage on a breakaway for 10s
+Talents	38c39df7-4a5a-446d-8a35-fa5c64431338	38c39df7-4a5a-446d-8a35-fa5c64431338	1	Blue Marker Talent	Blue Marker Talent	+15 OVR if LD or RD
+Talents	3a34b062-e8ff-4f19-b9ff-9b74f9cd0f6b	3a34b062-e8ff-4f19-b9ff-9b74f9cd0f6b	1	Glass Cannon	Glass Cannon	+50% crit chance\nStick breaks on non-crits\nSticks Shattered: 0
+Talents	3b85e306-cf76-4aa8-862e-aff3c7192c91	3b85e306-cf76-4aa8-862e-aff3c7192c91	2	Marauder (Level 2)	Marauder+	+50 Checking - Skater automatically hits puckless opponents in the offensive zone
+Talents	3be37e41-ecc1-4455-8051-af281a150905	3be37e41-ecc1-4455-8051-af281a150905	1	Triangle Offense	Triangle Offense	+3 OVR for each goal he scores assisted by two teammates\n0 two-assist goals
+Talents	3bf7a894-1271-4cc1-bdc8-cbe4d0e47c79	3bf7a894-1271-4cc1-bdc8-cbe4d0e47c79	1	Ping King	Ping King	Always shoots at the post
+Talents	3cffacda-84b9-44fe-a983-db6efdc78abe	3cffacda-84b9-44fe-a983-db6efdc78abe	1	Wind Down	Wind Down	Unleash a shockwave that pushes surrounding skaters away when releasing a shot
+Talents	3dcd15a4-6cbd-4760-8cac-847ea7972b64	3dcd15a4-6cbd-4760-8cac-847ea7972b64	1	cultistPowerRD	CultistAI	[Missing: powerups/cultist/description]
+Talents	3f31fd15-0c4b-4ce8-983b-2561ebc793e4	3f31fd15-0c4b-4ce8-983b-2561ebc793e4	1	noStick	No Stick	[Missing: powerups/no_stick/description]
+Talents	4141b927-151c-4954-950c-9a3828bf4726	4141b927-151c-4954-950c-9a3828bf4726	2	Backward Turbo (Level 2)	Reverse Fungus+	Get propelled far when you start skating backward
+Goalie Talents	4146ec2b-98ca-4c4b-a2a8-54a5c5b6d801	4146ec2b-98ca-4c4b-a2a8-54a5c5b6d801	1	Always Catch Pucks	Infinimitt	Pucks that hit the goalie are always caught; no rebounds
+Talents	422d4a16-7b61-42f8-b6c8-5bfe43c262a8	422d4a16-7b61-42f8-b6c8-5bfe43c262a8	1	Butt Bench Talent	Butt Bench	Team gets 1.5x bench bonus when you're not benched
+Talents	427a4542-6b4b-4ac2-8d2c-66198e7286a5	427a4542-6b4b-4ac2-8d2c-66198e7286a5	1	Spring Board	Springboard	Get up instantly after a knockout
+Talents	43441d15-7922-44be-9318-27adae460449	43441d15-7922-44be-9318-27adae460449	1	Point Sniper	Point Sniper	+20% crit chance at blue line
+Talents	43a4d8cf-ba45-48fa-8ee3-128e00b5e81f	43a4d8cf-ba45-48fa-8ee3-128e00b5e81f	1	Shell Fish	Shellfish	Teammates get +30 OVR while you are playing\n-120 OVR
+Talents	45b6cdd8-8f40-45c7-a337-83ff34a01e3a	45b6cdd8-8f40-45c7-a337-83ff34a01e3a	1	Human Shield	Human Shield	On defense, stays between the puck and net to block shots
+Talents	4693028b-232e-4264-aa61-0d5a04a4ccda	4693028b-232e-4264-aa61-0d5a04a4ccda	2	En Garde! (Level 2)	En Garde!+	Break opponent's stick when pokechecking
+Talents	47f55fbc-66f6-48f1-94f7-20efa5669441	47f55fbc-66f6-48f1-94f7-20efa5669441	2	Power Transfer (Level 2)	Power Transfer+	Your passes give +30 Shot Power for 6s
+Talents	48f4938a-957c-472e-bf10-66fb6e3fdb60	48f4938a-957c-472e-bf10-66fb6e3fdb60	1	Backdraft	Backdraft	Get propelled backward after a shot
+Talents	4a1abed4-86ab-46fb-b66d-e2dde7bde413	4a1abed4-86ab-46fb-b66d-e2dde7bde413	2	Explosion On Landing (Level 2)	Eggsplosion+	Explode in a wide radius on knockout
+Talents	4a499143-7809-4ca3-8bc1-199136bceb53	4a499143-7809-4ca3-8bc1-199136bceb53	1	Defensive Deflect	Defensive Deflect	Deflect the opponent's shots
+Talents	4a97fabd-9ea4-4ee5-8fb8-3e2a48b3b8c6	4a97fabd-9ea4-4ee5-8fb8-3e2a48b3b8c6	1	Fire Cracker	Cursed Schedule	+30 OVR in period 1\n-50 OVR otherwise
+Talents	4cc926ea-0533-4107-ac50-5d04ead3c7ef	4cc926ea-0533-4107-ac50-5d04ead3c7ef	2	Puck Hunter (Level 2)	Puck Hunt+	+25 Speed when opponent has the puck
+Talents	4dcd17bd-0789-4feb-886f-8aea4ffeaade	4dcd17bd-0789-4feb-886f-8aea4ffeaade	1	xRayGoalie	Xray Goalie	[Missing: powerups/x_ray_goalie/description]
+Talents	4e72b9f8-b680-4007-ac18-7d6361d3274d	4e72b9f8-b680-4007-ac18-7d6361d3274d	2	Target Practice LVL2	Target Practice+	+7 Accuracy per win\nGames won: 0
+Talents	4ecf038e-f793-45e9-bc69-64c499b8ac96	4ecf038e-f793-45e9-bc69-64c499b8ac96	1	Momentum	Momentum	+5 Speed per win\nGames won: 0
+Goalie Talents	4fb909ae-2915-4076-97a8-6355472f6450	4fb909ae-2915-4076-97a8-6355472f6450	1	Musical Nets	Musical Nets	Copy the opponent goalie's ability
+Talents	515ef729-6026-4c09-8a87-2e9605f3480d	515ef729-6026-4c09-8a87-2e9605f3480d	2	Curve Ball (Level 2)	Curve Ball+	Your shots curve dramatically
+Talents	5172afdc-0403-446a-8f52-cc8b0d23a713	5172afdc-0403-446a-8f52-cc8b0d23a713	1	Faceless Talent	Faceless	At the start of a run, transform into an  clone of a random free agent
+Talents	5181bbd5-4de5-44e5-8032-f86da733c1a3	5181bbd5-4de5-44e5-8032-f86da733c1a3	2	Propeller Helmet (Level 2)	Propeller Helmet+	+60 Speed\n-60 Accuracy
+Talents	519b80ea-3cf2-46a0-aab1-1f2a1fd675cf	519b80ea-3cf2-46a0-aab1-1f2a1fd675cf	1	Bouncy McBounce	Bouncy McBounce	Your shots always rebound off the goalie
+Talents	523f1507-3bc8-4972-b35a-946eccf8fcd4	523f1507-3bc8-4972-b35a-946eccf8fcd4	2	Bouncy McBounce (Level 2)	Bouncy McBounce+	Your shots always rebound softly off the goalie
+Talents	52f5a1f5-3492-42a7-b101-2f0089be3cb3	52f5a1f5-3492-42a7-b101-2f0089be3cb3	1	GodMode	[Missing: powerups/god_mode/name]	[Missing: powerups/god_mode/description]
+Talents	5301fb0f-caae-4b37-b269-de9b911983c4	5301fb0f-caae-4b37-b269-de9b911983c4	1	Puck Rocket	Puck Rocket	+20 Speed with the puck
+Talents	55e0bf3e-f8e1-4c89-a1a5-d25d13836361	55e0bf3e-f8e1-4c89-a1a5-d25d13836361	1	Flawless Feeder	Flawless Feeder	Your passes can't be intercepted
+Talents	55ef9949-a00b-497f-a560-d74288580010	55ef9949-a00b-497f-a560-d74288580010	1	Slingshot	Comeback Whistle	+30 OVR when trailing. -30 OVR when leading.
+Talents	566716d1-0cd2-4445-98c1-aca86fd8feac	566716d1-0cd2-4445-98c1-aca86fd8feac	1	Velcro	Puck Sponge	Gain possession whenever the puck hits you
+Talents	56702518-052c-4bd7-bfba-4d100ab7ec67	56702518-052c-4bd7-bfba-4d100ab7ec67	1	Hat Trick	Hat Trick Bonus	+10 OVR after your 3rd goal each game\nGames with Hat Trick: 0
+Talents	56e92c51-54f6-4dbc-ba54-d39b631e2821	56e92c51-54f6-4dbc-ba54-d39b631e2821	1	Puck Puncher	Puck Puncher	When knocked out, will punch the puck toward opponent's net\n+25 Shot Power
+Talents	595413df-1cfe-4091-8ca2-d8d883ef082f	595413df-1cfe-4091-8ca2-d8d883ef082f	1	Board Bumper	Board Bumper	Bounce off the boards and get propelled in the reflected direction
+Talents	5958c85a-16cd-4441-8794-bb640c8f069c	5958c85a-16cd-4441-8794-bb640c8f069c	1	Top Gear	Hellbony	+30 Speed\nCan't increase Speed anymore
+Talents	59de64b1-7e7d-404c-8543-abf595210a5e	59de64b1-7e7d-404c-8543-abf595210a5e	1	Krill	Coach Potato	+5 OVR per win\n-15 OVR\nGames won: 0
+Talents	5ae82a10-7cce-42f6-8fc5-c263e78bdf56	5ae82a10-7cce-42f6-8fc5-c263e78bdf56	1	Sado Maso	Masochist	Injuries give +10 attribute instead
+Talents	5b2dfd5c-be7a-4b20-b63b-92ee3565bbc3	5b2dfd5c-be7a-4b20-b63b-92ee3565bbc3	1	Masquerade	Masquerade	Takes credit for her team's goals while she's on the ice
+Talents	5b8581a5-ba07-4628-9df8-d4798646f8fa	5b8581a5-ba07-4628-9df8-d4798646f8fa	1	Live Wire	The Twitching Hand	+30 Shot Power\nGain
+Talents	5baa8b96-a6b8-417a-9691-0dcef10dc7db	5baa8b96-a6b8-417a-9691-0dcef10dc7db	2	Pressure Coooker (Level 2)	Pressure Cooker+	+30 OVR while you have 0 goals this game
+Talents	5e59d04a-582f-4f5b-88aa-4f3f6f69e323	5e59d04a-582f-4f5b-88aa-4f3f6f69e323	1	Spiked Armor	Spiked Armor	Skaters who bodycheck you end up flat on the ice for a few seconds
+Talents	5fcbecb4-f5a7-4516-87f3-e2ce5e9bfa89	5fcbecb4-f5a7-4516-87f3-e2ce5e9bfa89	2	Wild Shot (Level 2)	Wild Shot+	Randomize Shot Power and Accuracy on every shot, with a minimum of 40
+Talents	608676e6-d466-458b-b00e-abfd45011ade	608676e6-d466-458b-b00e-abfd45011ade	1	Cassoulet Bench Quest Talent	Quest	Get 200 knockouts in a single run\nKnockouts: 0/200   Highest: 37
+Talents	60e7dd3a-cbda-4992-a6ff-c7dccdf122b1	60e7dd3a-cbda-4992-a6ff-c7dccdf122b1	1	Cripple Talent	Crippled	-1 OVR when knocked out
+Talents	61419e51-e66d-4bae-8309-98a6c9384727	61419e51-e66d-4bae-8309-98a6c9384727	1	Butt Reward Talent	Butt Reward	+1 talent reward
+Talents	62944f1b-6c6b-457b-9323-69f3bf9e4cec	62944f1b-6c6b-457b-9323-69f3bf9e4cec	1	knightAI	Knights AI	[Missing: powerups/knight_a_i_powerup/description]
+Talents	62dac533-57ea-452f-ba2b-bfa3bb9acbae	62dac533-57ea-452f-ba2b-bfa3bb9acbae	1	loseHelmetLancelov	Iron Helmet	+40 Shot Power\n-20 Speed
+Talents	63ab8101-3e32-4bcb-a1cd-84496d60a8c0	63ab8101-3e32-4bcb-a1cd-84496d60a8c0	1	Never Rewarded	Healthy Scratch	Never appears in reward selections
+Talents	64cc3039-04e6-46a9-9608-e1368427c2bf	64cc3039-04e6-46a9-9608-e1368427c2bf	1	dribbler	Dribbler	Can possess the puck without a stick\n+50 Shot Power without stick
+Talents	651dea18-ac1f-4005-a749-4d8672a0f0b4	651dea18-ac1f-4005-a749-4d8672a0f0b4	1	Froggified	Froggified	Become a frog
+Talents	65b241e8-f044-4ef3-97f5-43849df96cf9	65b241e8-f044-4ef3-97f5-43849df96cf9	1	berserk	Berserk	Plays stickless and bodychecks opponents
+Talents	670a373f-1f20-4185-be09-ee4db2e14a51	670a373f-1f20-4185-be09-ee4db2e14a51	1	Sword	Sword	+20 Shot Power
+Talents	67aeb5ce-e4ed-4065-a7d1-673c102c7547	67aeb5ce-e4ed-4065-a7d1-673c102c7547	1	Hit Streak	Domino Effect	+5 Checking per knockout last game\nknockouts last game: 0
+Talents	67f6fd51-8d97-416d-a139-ee4d3f42801c	67f6fd51-8d97-416d-a139-ee4d3f42801c	1	Fragile Talent	Fragile	10% chance of an injury each time this skater is knocked flat on the ice. Bench for a game or see the Nurse to recover.
+Talents	68c6c1eb-c8c4-4493-8fca-a038f6626864	68c6c1eb-c8c4-4493-8fca-a038f6626864	1	Lightning Rod	Lightning Rod	Loose pucks are always attracted to you
+Talents	697c1c09-0bc9-413b-841c-0cd175bc6faa	697c1c09-0bc9-413b-841c-0cd175bc6faa	1	X-Ray Shot	X-Ray Shot	Shots will go through skaters
+Talents	69856ca3-7996-442c-bd91-7e209bfac1a4	69856ca3-7996-442c-bd91-7e209bfac1a4	1	Status Extender	Status Extender	+50% status effect duration
+Talents	69e5c0cd-7faf-411d-ad4f-1ad089d2660d	69e5c0cd-7faf-411d-ad4f-1ad089d2660d	2	Inflated Ego (Level 2)	Inflated Ego+	+6 OVR after your 1st goal each game\nGames with a goal: 0
+Talents	6b7cc13b-e020-4fa2-b377-c86894a6ee90	6b7cc13b-e020-4fa2-b377-c86894a6ee90	1	Mega Deflect	Mega Deflect	Puck gains speed when deflected by this skater
+Talents	6cd8b5b6-77c3-45f3-ab41-7bc9bea9fdb6	6cd8b5b6-77c3-45f3-ab41-7bc9bea9fdb6	1	Fast Rebound	Crease Grease	+20% crit chance on rebounds
+Talents	6d90cef5-5ee4-4a76-9c50-46b471285b28	6d90cef5-5ee4-4a76-9c50-46b471285b28	2	Zoomer (Level 2)	Dashing Domino+	+15 Speed per goal last game\nGoals last game: 0
+Talents	6e3ed39b-3ae2-4133-b7df-f9b9920811a6	6e3ed39b-3ae2-4133-b7df-f9b9920811a6	1	Paper Jet	Cursed Fungus	+20 Speed\nStart every game
+Talents	6fb39260-9e3b-4eb3-9700-253cd8dda6e1	6fb39260-9e3b-4eb3-9700-253cd8dda6e1	1	cultistPowerC	Cultist Teleport	[Missing: powerups/defense_teleport_powerup/description]
+Talents	6fbfc473-7b61-4cba-96be-b7198eef0295	6fbfc473-7b61-4cba-96be-b7198eef0295	1	Slap Chop4000Talent	Slap Chot 4000	+30 Shot Power on a slapshot\n-30 Shot Power on a wrist shot
+Talents	6fcfb5fc-9ae8-42cf-96e4-a56818788fd5	6fcfb5fc-9ae8-42cf-96e4-a56818788fd5	2	Mega Deflect (Level 2)	Mega Deflect+	Puck gains speed and aim when deflected by this skater
+Talents	6fe1c456-a7da-41ab-9c89-1d63ae559fb3	6fe1c456-a7da-41ab-9c89-1d63ae559fb3	1	ShartSlap	Shartslap	Get propelled forward when charging a slapshot
+Goalie Talents	71de331f-74dc-4929-9f02-c6e6b3bee049	71de331f-74dc-4929-9f02-c6e6b3bee049	1	Goalie Throw Stick	Tomahawk	Throw stick at opponent with the puck
+Talents	72479775-05e8-457d-abbf-0bd876265fb4	72479775-05e8-457d-abbf-0bd876265fb4	1	Talent_ForwardStatBonus_Chk	+10 Checking	
+Talents	733844ee-899d-4d2b-b0de-ff18622e9383	733844ee-899d-4d2b-b0de-ff18622e9383	2	Glass Cannon (Level 2)	Glass Cannon+	+70% crit chance\nStick breaks on non-crits\nSticks Shattered: 0
+Goalie Talents	7542b61f-9309-4c32-937b-013e6cba1f12	7542b61f-9309-4c32-937b-013e6cba1f12	1	Cracked Mask	Cracked Mask	Your team gets enraged when your goalie receives a shot
+Talents	756ccfc3-f339-4905-9bcd-ccb14cc7efa6	756ccfc3-f339-4905-9bcd-ccb14cc7efa6	1	defenseTeleport	Cultist Teleport	[Missing: powerups/defense_teleport_powerup/description]
+Talents	75a92c3f-00af-4c98-9919-da876e082716	75a92c3f-00af-4c98-9919-da876e082716	1	Zoomer	Dashing Domino	+10 Speed per goal last game\nGoals last game: 0
+Talents	75b300b6-06a5-448f-857f-4120fbd1ef7e	75b300b6-06a5-448f-857f-4120fbd1ef7e	1	Puck Repellent	Puck Repellent	Repels the puck
+Talents	75d67393-621f-4cc2-98f0-a9dc064984ee	75d67393-621f-4cc2-98f0-a9dc064984ee	1	Enraged	Enraged	Get enraged when knocked out
+Talents	7772f86e-ce56-466b-8fd0-729d14aad709	7772f86e-ce56-466b-8fd0-729d14aad709	1	Redirector	Redirector	Behaviour: Stay in front of the puck to redirect shots
+Talents	7786daae-b270-4179-b2d7-d0f99c7799be	7786daae-b270-4179-b2d7-d0f99c7799be	1	Injured Teammates Ovr Talent	Eggspendables	+15 OVR per injured teammate playing\nCurrent bonus: +0 OVR
+Talents	77ff973f-e76b-4935-af93-18b6aed2e98b	77ff973f-e76b-4935-af93-18b6aed2e98b	1	BoringTalent	Boring	+4 OVR per talent
+Talents	78023445-c99b-4b32-9e2b-083d16342b2c	78023445-c99b-4b32-9e2b-083d16342b2c	2	Game Winner Bonus (Level 2)	Al Dente+	+15 Shot Power for each game-winning goal you score\nGame-winning goals: 0
+Talents	7a817813-0a7b-4025-b193-f35234415b87	7a817813-0a7b-4025-b193-f35234415b87	1	Benchwarmer	Bench Juice	+30 OVR if benched last game\nIs Active: No
+Talents	7bf44df5-0f15-430c-919e-82bb4e254b9c	7bf44df5-0f15-430c-919e-82bb4e254b9c	2	Puck Rocket (Level 2)	Puck Rocket+	+30 Speed with the puck
+Talents	7c23e3c2-cd42-4b19-9c61-3b330678968d	7c23e3c2-cd42-4b19-9c61-3b330678968d	1	Scrambled	The Walking Yoke	+2 OVR when knocked out. Resets each game
+Talents	7c53dd88-858f-4a8c-bcd8-04f3c7be227f	7c53dd88-858f-4a8c-bcd8-04f3c7be227f	2	Even Steven (Level 2)	Even Steven+	+50 OVR while the game is tied\n-10 OVR otherwise
+Goalie Talents	7e38d68d-e883-4c63-8c7a-0f47db9c6bab	7e38d68d-e883-4c63-8c7a-0f47db9c6bab	2	Cracked Mask (Level 2)	Cracked Mask+	Your team gets enraged when any goalie receives a shot
+Talents	7f93a2f8-1cc4-4b25-b3ac-39f8d4a423d3	7f93a2f8-1cc4-4b25-b3ac-39f8d4a423d3	2	Scrambled (Level 2)	The Walking Yoke+	+3 OVR when knocked out. Resets each game
+Talents	811ae7b8-2a56-4e2e-9697-a321fbdb0788	811ae7b8-2a56-4e2e-9697-a321fbdb0788	1	Pass Back	Pass Back	Pass Back
+Talents	8125b906-8171-4ac7-9106-e153ff15cd82	8125b906-8171-4ac7-9106-e153ff15cd82	1	Original Stick	The Original Stick	+50% Accuracy bonuses\nYour slapshots knock out nearby skaters and injure teammates
+Talents	81b47742-0fe9-4c64-8175-651dd7f0108e	81b47742-0fe9-4c64-8175-651dd7f0108e	2	Spiked Armor (Level 2)	Spiked Armor+	Skaters who bodycheck you are knocked out with 1.5x injury chance
+Talents	81fa843b-d48c-4816-a0de-5bf14515b6c0	81fa843b-d48c-4816-a0de-5bf14515b6c0	1	Onepunch	One Strike	Your bodychecks always succeed
+Goalie Talents	8454fe7d-73e0-4417-8355-dc7eb747c70c	8454fe7d-73e0-4417-8355-dc7eb747c70c	1	Goalie Enraged On Shot	The Berzeker	Enrage on a shot for 15s
+Talents	8507f860-4b42-4646-b80c-acb6d31fad25	8507f860-4b42-4646-b80c-acb6d31fad25	1	Railgun	Crackshot	+30 Shot Power\nCan't increase Shot Power anymore
+Talents	85236398-7676-4f60-a3b6-1e23ab85d7c0	85236398-7676-4f60-a3b6-1e23ab85d7c0	1	Propeller Helmet	Propeller Helmet	+40 Speed\n-40 Accuracy
+Talents	86f03bc1-3034-4abb-b687-a2c204af3268	86f03bc1-3034-4abb-b687-a2c204af3268	2	Charge Shot (Level 2)	Charge Shot+	Hold a slapshot to unleash its full potential\n+33% charge speed
+Talents	88d882ea-96a7-4c8a-a087-29200bbf57bf	88d882ea-96a7-4c8a-a087-29200bbf57bf	1	Original Skate	The Original Skate	+50% Speed bonuses\nTouching your teammates knocks you out
+Talents	89395865-bf51-42bc-a24c-03f148b9da27	89395865-bf51-42bc-a24c-03f148b9da27	1	Slapshot Slowmo	Slapshot Slowmo	Slow time while winding up your slapshot
+Talents	8b0a2cfd-91c0-4055-8384-585e4d662da2	8b0a2cfd-91c0-4055-8384-585e4d662da2	1	Monkeys Paw	Purgatory	+40 OVR\nLose the power-up if you are scoreless in a game
+Talents	8bd271cd-ed65-418e-b3aa-5fec65e784da	8bd271cd-ed65-418e-b3aa-5fec65e784da	1	Always Rewarded	Coach's Favorite	Always appears in end of game rewards
+Talents	8deff2b0-cff0-4e36-974a-d43a5610201f	8deff2b0-cff0-4e36-974a-d43a5610201f	1	cultistPowerPam		
+Talents	8df34c3f-3959-4575-8d83-3590fd8337cc	8df34c3f-3959-4575-8d83-3590fd8337cc	1	Blue Line Boost	Blue Line Boost	Get propelled forward when crossing the blue lines
+Talents	8e0a364a-0cb8-4ce6-a1ed-63a80dc6ea08	8e0a364a-0cb8-4ce6-a1ed-63a80dc6ea08	1	Growth Spurt	Growth Spurt	+2 size
+Talents	8e6ff25c-dbc2-441b-babc-ffc9a88171e2	8e6ff25c-dbc2-441b-babc-ffc9a88171e2	1	Power Up Retention Talent	Retention	Retains up to 2 random power-ups for the next run
+Talents	8e787751-45b6-4f4d-9732-0158306729ed	8e787751-45b6-4f4d-9732-0158306729ed	1	Unstable Chaos	Unstable	+60 Speed\nContact with another skater knocks you out
+Talents	90503d13-89f4-4843-811f-6e8ed48c05ce	90503d13-89f4-4843-811f-6e8ed48c05ce	1	Pass Puncher	Pass Puncher	When knocked out, pass the puck to the closest teammate
+Talents	91129e54-1743-41af-ad01-794ff4e6e5e8	91129e54-1743-41af-ad01-794ff4e6e5e8	1	coldTalent	Cold	-15 OVR
+Talents	9168222a-87fe-4f6e-b4e8-851aaa1f3a1a	9168222a-87fe-4f6e-b4e8-851aaa1f3a1a	1	Chexplosion	Chexplosion	Successful bodychecks knock out surrounding skaters
+Talents	93137c53-e541-4bb5-917e-208a8b55c943	93137c53-e541-4bb5-917e-208a8b55c943	1	Stumple Bench Quest Talent	Quest	Have 4 injuries at the same time\nInjury Types: 1/4
+Talents	94fcb9b2-98b9-48da-8a1e-c44b996e2dbd	94fcb9b2-98b9-48da-8a1e-c44b996e2dbd	1	Homewrecker	Homewrecker	+30 Checking - Automatically seek to hit skaters without the puck in the defensive zone
+Talents	951f6be9-3c93-4be1-9ae4-686e03dfa97d	951f6be9-3c93-4be1-9ae4-686e03dfa97d	1	evolution	Evolution	Evolve after each boss win
+Talents	96848e87-7ab8-45d1-914d-db3649ec12c5	96848e87-7ab8-45d1-914d-db3649ec12c5	1	Mold Powerup	The Final Chapter	Upgrade all talents\n-20 OVR
+Talents	983223b3-b055-486f-acf2-99e30820fee7	983223b3-b055-486f-acf2-99e30820fee7	1	Green Marker Talent	Green Marker Talent	+15 OVR if LW or RW
+Talents	98f91f67-88f2-4058-81d6-dcf512c61cad	98f91f67-88f2-4058-81d6-dcf512c61cad	1	refHands		
+Talents	9acb3ff4-bc9e-4e26-aade-80b5f27707d4	9acb3ff4-bc9e-4e26-aade-80b5f27707d4	2	Avenge Me! (Level 2)	Avenge Me!+	Your teammates and goalie get enraged when you are knocked out
+Talents	9adae0fb-5cd1-44f5-91a3-75c4c9bbb940	9adae0fb-5cd1-44f5-91a3-75c4c9bbb940	2	Puck Puncher (Level 2)	Puck Puncher+	When knocked out, will punch the puck toward opponent's net\n+50 Shot Power
+Talents	9ae0056e-75f2-4fce-b4ca-db53be0fb665	9ae0056e-75f2-4fce-b4ca-db53be0fb665	1	Explosion On Landing	Eggsplosion	Explode on knockout
+Talents	9af2fb5b-5b17-495a-935c-1ba2d0822a3f	9af2fb5b-5b17-495a-935c-1ba2d0822a3f	2	Playmaker (Level 2)	Extra Gravy+	The goal scorer gets +2 OVR if you assisted\n0 assists
+Talents	9b57d62e-e1a6-4d58-a80d-dec5f2c58037	9b57d62e-e1a6-4d58-a80d-dec5f2c58037	2	Random Skill (Level 2)	Random Ability+	Gain a random upgraded ability at the start of each game
+Talents	9ba0c2c8-53eb-41d1-b34c-a881ca627c59	9ba0c2c8-53eb-41d1-b34c-a881ca627c59	1	marauder	Marauder	+30 Checking - Skater automatically hits puckless opponents in the offensive zone
+Talents	9be1ffeb-6e70-4d1e-8ae1-13b9c087b569	9be1ffeb-6e70-4d1e-8ae1-13b9c087b569	2	Defensive Deflect (Level 2)	Defensive Deflect+	Deflect the opponent's shots towards a teammate
+Talents	9c1f6499-fbde-49ab-a67a-27b8a86fca4a	9c1f6499-fbde-49ab-a67a-27b8a86fca4a	1	Anchor	Dead Weight	Can't be bodychecked\nCan't bodycheck
+Talents	9c989acb-f74a-4711-9143-84dfaf081e91	9c989acb-f74a-4711-9143-84dfaf081e91	1	Assisted By Playmaker	Extra Gravy	Gain OVR when assisted by skater with \nAssisted 0 times
+Talents	9ca145a9-c0ea-4f5b-97b0-b8507e5e5ef4	9ca145a9-c0ea-4f5b-97b0-b8507e5e5ef4	1	Stat Padder	Attribute Bonus	+10 OVR per talent
+Talents	9d02b113-dac6-43b1-a557-20d224da839e	9d02b113-dac6-43b1-a557-20d224da839e	1	Backward Turbo	Reverse Fungus	Get propelled when you start skating backward
+Talents	9d5b0ea5-e4f5-4e43-a6c6-f217890d8c12	9d5b0ea5-e4f5-4e43-a6c6-f217890d8c12	1	figureCheck	Figure Check	When bodychecked, spin out instead of getting knocked out
+Talents	9ddef18d-e30f-434f-a80f-7c0a9d465124	9ddef18d-e30f-434f-a80f-7c0a9d465124	1	Passing Domino	Generous Domino	+5% pass speed per assist\nAssists: 0
+Talents	9e1388f5-d411-432d-9a6c-8fa3f8512438	9e1388f5-d411-432d-9a6c-8fa3f8512438	2	The Howitzer (Level 2)	The Howitzer+	Slapshots explode skaters in the puck's path
+Talents	9e2c7c75-4185-4183-ab6d-a6b83c18fd80	9e2c7c75-4185-4183-ab6d-a6b83c18fd80	1	Talent_ForwardStatBonus_Acc	+10 Accuracy	
+Talents	9e5191ce-52a7-407d-8007-81c9ea69aacd	9e5191ce-52a7-407d-8007-81c9ea69aacd	1	The Howitzer	The Howitzer	Slapshots knock out skaters in the puck's path
+Goalie Talents	9f530de2-25b8-47e1-bfba-91f2d25acf7b	9f530de2-25b8-47e1-bfba-91f2d25acf7b	1	Crease Clearer	Boom Blocker	Blocker saves knock out surrounding skaters
+Talents	a09f6773-88d8-4cfd-8265-d9179c127b62	a09f6773-88d8-4cfd-8265-d9179c127b62	1	Ball Chaser	Ball Chaser	Always chase the puck no matter what
+Talents	a1a932cd-299f-4969-9212-f68cbfa7036c	a1a932cd-299f-4969-9212-f68cbfa7036c	1	Cherry Picker	Cherry Picker	Sneak behind the defense
+Talents	a1b2c3d4e5f6708192a3b4c5d6e7f803	a1b2c3d4e5f6708192a3b4c5d6e7f803	1	cultistPowerRD	CultistAI	[Missing: powerups/cultist/description]
+Talents	a287385b-88d3-4438-a5da-cc006f95f72d	a287385b-88d3-4438-a5da-cc006f95f72d	1	Power Transfer	Power Transfer	Your passes give +20 Shot Power for 6s
+Talents	a2f20da0-0e73-481f-848e-76eb61f58e16	a2f20da0-0e73-481f-848e-76eb61f58e16	2	Homewrecker (Level 2)	Homewrecker+	+50 Checking - Automatically seek to hit skaters without the puck in the defensive zone
+Talents	a3066b41-4f21-4c5f-956f-a000662c47f0	a3066b41-4f21-4c5f-956f-a000662c47f0	1	diarrhea	Diarrhea	Constant unsolicited farts
+Talents	a470e536-f8f4-4937-826c-3046b558f8d9	a470e536-f8f4-4937-826c-3046b558f8d9	1	Golden Helmet	Golden Throne	Equip an extra golden helmet
+Talents	a708ff2f-7de5-41e0-b868-d9103c429073	a708ff2f-7de5-41e0-b868-d9103c429073	2	Growing Anger LVL2	Growing Anger+	+7 Checking per win\nGames won: 0
+Talents	a7f62324-dc47-4f2f-8b35-2127cfee8f67	a7f62324-dc47-4f2f-8b35-2127cfee8f67	2	Sado Maso (Level 2)	Masochist+	Injuries give +20 attribute instead
+Talents	a808bd99-53ce-4825-b46a-9634619570f3	a808bd99-53ce-4825-b46a-9634619570f3	2	Middle Management (Level 2)	Middle Management+	+40 OVR vs Elite\n-40 OVR vs Boss
+Talents	a8823831-f570-4f95-a4e9-a835d0a80220	a8823831-f570-4f95-a4e9-a835d0a80220	2	Cannon Arm (Level 2)	Cannon Arm+	+7 Shot Power per win\nGames won: 0
+Talents	a984b08c-b099-4105-ac8f-4d696dcc08aa	a984b08c-b099-4105-ac8f-4d696dcc08aa	2	Berserk (Level 2)	Berserk+	Plays stickless and bodychecks opponents\n+15 Checking
+Talents	a9d0548c-60fb-45ce-a4e5-5d299205c604	a9d0548c-60fb-45ce-a4e5-5d299205c604	1	Goal Crit Accumulator	Critios	+2% crit chance per goal scored\n0 goals scored (+0% crit)
+Talents	ac8bef68-f3b5-4ef3-b3a6-4c397fcc68eb	ac8bef68-f3b5-4ef3-b3a6-4c397fcc68eb	1	Lone Wolf	Lone Wolf	+2 OVR for each unassisted goal he scores\n0 unassisted goals
+Talents	afa061df-55d0-44d0-bfdd-b6a49117a2ad	afa061df-55d0-44d0-bfdd-b6a49117a2ad	1	Porcelain Hammer	Sledgehammer	+20 Checking\nStart every game
+Talents	afa4d35e-f814-4b88-bc78-30f6d6d111f3	afa4d35e-f814-4b88-bc78-30f6d6d111f3	1	Deadzone	Slapshot Immunity	Immune for 1s while charging a slapshot
+Talents	b04ba0c2-164c-45da-8386-d53c52e83031	b04ba0c2-164c-45da-8386-d53c52e83031	1	Safety First	Safety First	Behaviour: Stays between his own net and the closest enemy skater
+Talents	b16cb603-947a-4d78-96a7-102271b1c07b	b16cb603-947a-4d78-96a7-102271b1c07b	1	Changeup	Changeup	Puck slowdown mid shot
+Talents	b1e9d387-32c7-4d1e-beea-7ea45f17d903	b1e9d387-32c7-4d1e-beea-7ea45f17d903	1	cultistPowerLW	CultistAI	[Missing: powerups/cultist/description]
+Talents	b2c9a705-e8ca-4806-aa3f-5359765715ae	b2c9a705-e8ca-4806-aa3f-5359765715ae	1	Kovalski Bench Quest Talent	Quest	Score 20 goals in a single run\nGoals in a run: 0/20   Highest: 17
+Talents	b38696d2-fa29-42fd-85cb-610f3ff3339a	b38696d2-fa29-42fd-85cb-610f3ff3339a	1	ImperviousOnPass	Passing Rule	Immune for 0.5s after receiving a pass
+Talents	b7239f5a-8a8a-41f7-8f40-c6212dc81bdb	b7239f5a-8a8a-41f7-8f40-c6212dc81bdb	1	Even Steven	Even Steven	+30 OVR while the game is tied\n-10 OVR otherwise
+Talents	b7685862-83ea-4e41-81d4-57e8f066eab9	b7685862-83ea-4e41-81d4-57e8f066eab9	1	Goalie Pass Rebound	The Hopper	Will automatically pass to a teammate on a glove or blocker rebound
+Talents	b8532717-96dc-4793-83a3-463457e6eadf	b8532717-96dc-4793-83a3-463457e6eadf	1	Rocket Skates	Instant Ramen	+50 Speed\nLose some agility
+Talents	b9078d20-1355-4106-9b54-9f7fbf78c7aa	b9078d20-1355-4106-9b54-9f7fbf78c7aa	1	Bonecrusher	Bonecrusher	Skaters you knock out will get thrown further and lose their stick
+Talents	ba0af0a4-06f6-4025-811f-6b24e78aec41	ba0af0a4-06f6-4025-811f-6b24e78aec41	1	Brewster Bench Quest Talent	Quest	Use your ability 100 times in a single run\nAbility Uses: 0/100   Highest: 100
+Talents	bde3a8bd-a2c4-43e8-a610-48af1051a015	bde3a8bd-a2c4-43e8-a610-48af1051a015	2	Crit Boost (Level 2)	Stix+	+10% crit chance\n+25% crit strength
+Talents	bfe4b819-7866-457b-ade0-1ec98fc7e239	bfe4b819-7866-457b-ade0-1ec98fc7e239	2	Impervious On Pass (Level 2)	Passing Rule+	Immune for 1s after receiving a pass
+Talents	c00b7922-7b89-4589-b806-d62c1559fe39	c00b7922-7b89-4589-b806-d62c1559fe39	1	Sonic Pass	Sonic Pass	Passes knock out surrounding skaters
+Talents	c0dbe381-7cbf-4097-87a4-d84de715289a	c0dbe381-7cbf-4097-87a4-d84de715289a	2	Feed (Level 2)	Cold Turkey+	Get enraged after 10s without the puck
+Talents	c0e20799-6fed-492d-8695-fb74a2a88615	c0e20799-6fed-492d-8695-fb74a2a88615	2	Twig Tax (Level 2)	Twig Tax+	+30 Shot Power for each game in which you break a stick\nGames with a broken stick: 0
+Talents	c1e6d523-e7a3-4183-b936-4f7829d7e796	c1e6d523-e7a3-4183-b936-4f7829d7e796	1	Inflated Ego	Inflated Ego	+4 OVR after your 1st goal each game\nGames with a goal: 0
+Talents	c22dd2c6-7315-4639-acf3-48621b21bc17	c22dd2c6-7315-4639-acf3-48621b21bc17	1	Heavy Helmet	Heavy Helmet	+100 Checking\n-30 Speed
+Talents	c2aa0104-4178-4f37-a6a6-d0e0f98867d9	c2aa0104-4178-4f37-a6a6-d0e0f98867d9	1	Goal Based Stat Change	Cursed Ego	If you score at least a goal, +10 OVR, otherwise -10 OVR
+Talents	c41d2ad4-b42c-4d16-a946-70a66ee60863	c41d2ad4-b42c-4d16-a946-70a66ee60863	1	Steady Eddie	Steady Eddie	+3 OVR after each game\n-10 OVR
+Talents	c43b2209-da6b-487d-b538-f883bbe31804	c43b2209-da6b-487d-b538-f883bbe31804	1	Talent_ForwardStatBonus_Spwr	+10 Shot Power	
+Talents	c48b3f6b-e014-458a-8959-92ef4b8682d3	c48b3f6b-e014-458a-8959-92ef4b8682d3	1	Stray Shot	Stray Shot	+200 Shot Power. Shots miss the net 90% of the time. Direct shot knockouts always cause an injury.
+Talents	c4fa7193-c2ad-4fe7-a0a1-471ad013fd67	c4fa7193-c2ad-4fe7-a0a1-471ad013fd67	1	Try Hard	Dormant Domino	+5 OVR per game with 0 goals\nGames without a goal: 0
+Talents	c5c28a01-8a67-4957-a6e3-d98bd80327c4	c5c28a01-8a67-4957-a6e3-d98bd80327c4	1	ballAndChain	Ball and Chain	A heavy ball and chain that weighs you down
+Talents	c6aeb029-9e63-45ca-b81a-f5922bff6507	c6aeb029-9e63-45ca-b81a-f5922bff6507	1	Armor	Armor	+25 Checking\n-20 Speed
+Talents	c6f447dd-2151-4cd2-b0ca-aed167fe1094	c6f447dd-2151-4cd2-b0ca-aed167fe1094	1	cultistPowerRW	Cultist Teleport	[Missing: powerups/defense_teleport_powerup/description]
+Talents	c70fd562-f02b-4448-a4c4-7bf87dc23fa2	c70fd562-f02b-4448-a4c4-7bf87dc23fa2	1	magnetInterception	Safe Bounce	Your goalie's rebounds are magnetized toward you
+Talents	c7270149-ad1d-4c4c-a8f1-747156a75956	c7270149-ad1d-4c4c-a8f1-747156a75956	1	Trick Shot	Trickshot	Shots will move up and down
+Talents	c7d92c91-bc04-4efd-8083-0d516fd98bdd	c7d92c91-bc04-4efd-8083-0d516fd98bdd	2	Blue Line Boost (Level 2)	Blue Line Boost+	Get propelled forward when crossing the red or blue lines
+Talents	c8444521-9ed8-4da1-b991-80e8c53b3bc7	c8444521-9ed8-4da1-b991-80e8c53b3bc7	1	Boring Dude Bench Quest Talent	Quest	Have 8 talents at the same time\nMost Talents: 6/8
+Talents	c8fd4a31-0a82-4d02-896a-84be06a76337	c8fd4a31-0a82-4d02-896a-84be06a76337	1	Target Practice	Target Practice	+5 Accuracy per win\nGames won: 0
+Goalie Talents	ca24ccd5-0fa0-477d-a230-68a5974e8629	ca24ccd5-0fa0-477d-a230-68a5974e8629	1	Goalie Dance	Goalie Dance	Opponents dance when your goaltender makes a save
+Talents	cbc44788-68d0-48e8-9ff6-aabfae3e7ae2	cbc44788-68d0-48e8-9ff6-aabfae3e7ae2	1	Temporary Contract	Contract	Will leave after playing 4 games
+Talents	cc2d2fa1-58b0-4d67-b212-f3de675493a0	cc2d2fa1-58b0-4d67-b212-f3de675493a0	1	Built Different	Frozen Peas	Prevents injuries
+Goalie Talents	cc5deede-73e2-4bd0-b973-55d5ce6c2070	cc5deede-73e2-4bd0-b973-55d5ce6c2070	1	Mega Rebound	Rubbermade	Increase puck rebound distance on goaltender saves
+Talents	cc706e93-7bd4-4a8d-a84d-83315e0a7055	cc706e93-7bd4-4a8d-a84d-83315e0a7055	2	Short Contract (Level 2)	Short Contract+	+70 OVR\nLeaves your team after 2 games
+Talents	cd0ab866-47f0-4160-8531-ee4bc80f53a3	cd0ab866-47f0-4160-8531-ee4bc80f53a3	1	Puckless Rocket	Puckless Rocket	+10 Speed without the puck
+Talents	cf498e7a-4cf6-4d66-a8b7-1b1681ac404a	cf498e7a-4cf6-4d66-a8b7-1b1681ac404a	1	Playmaker	Extra Gravy	The goal scorer gets +1 OVR if you assisted\n0 assists
+Talents	d0c260eb-8881-436c-8330-36f47b2a5272	d0c260eb-8881-436c-8330-36f47b2a5272	1	slugger	Slugger	Bat with better aim and knock out surrounding skaters
+Goalie Talents	d1f1aab7-a7e3-464b-bf6c-998b1d8e041b	d1f1aab7-a7e3-464b-bf6c-998b1d8e041b	1	Goalie Enrage First30Sec	The Starter	Goalie is enraged for the first 30s of every period
+Talents	d39a1bea-68ca-4024-960b-84de963305ab	d39a1bea-68ca-4024-960b-84de963305ab	1	Curve Ball	Curve Ball	Your shots curve
+Talents	d4679af2-fb8d-4287-b327-6573cb50d512	d4679af2-fb8d-4287-b327-6573cb50d512	1	Cursed Noodle	Cursed Noodle	+50 Shot Power on a slapshot\n-50 Shot Power on a wrist shot
+Talents	d476c4b1-062d-4b83-b3c5-38c30d479518	d476c4b1-062d-4b83-b3c5-38c30d479518	1	Knocked Out Ovr Talent	The Egg Who Knocks	+1 OVR each time this skater knocks out another skater. Resets each game\nCurrent bonus: +0 OVR
+Talents	d52cad4f-e4f2-4159-933b-aa32aeb22e3f	d52cad4f-e4f2-4159-933b-aa32aeb22e3f	2	Enrage On Shot (Level 2)	Rage Release+	Your team gets enraged after a shot
+Talents	d52ef6de-216c-47f0-a634-d8b63c77425b	d52ef6de-216c-47f0-a634-d8b63c77425b	1	spasm	Spasms	Randomly shoot at the net
+Talents	d5757894-fe83-4d69-becc-9228c4783bd1	d5757894-fe83-4d69-becc-9228c4783bd1	1	Talent_ForwardStatBonus_Ovr	+3 Overall	
+Talents	d66a78a8-ab88-44ff-a629-520d5b7cb340	d66a78a8-ab88-44ff-a629-520d5b7cb340	2	Ball Chaser (Level 2)	Ball Chaser+	Always chase the puck no matter what. +15 Speed
+Talents	d71e9be3-208d-4f02-8cd3-33f4a9fdd964	d71e9be3-208d-4f02-8cd3-33f4a9fdd964	1	Dying Breath	Dying Breath	Unleash a powerful fart when you get knocked out
+Talents	d8329bc1-0cc8-4601-a7c3-d819801eb8e3	d8329bc1-0cc8-4601-a7c3-d819801eb8e3	2	Status Extender (Level 2)	Status Extender+	+100% status effect duration
+Goalie Talents	da4359ff-6dcc-4641-aa64-b844b6e7aa90	da4359ff-6dcc-4641-aa64-b844b6e7aa90	1	Goalie Enraged On Goal	The Avenger	Enrage after a goal for 30s
+Talents	da5d53fd-017d-4dc6-83f8-532fe596439b	da5d53fd-017d-4dc6-83f8-532fe596439b	2	Benchwarmer (Level 2)	Bench Juice+	+45 OVR if benched last game\nIs Active: No
+Talents	dabf930f-71e0-4b84-8d3c-9001c4eeeffa	dabf930f-71e0-4b84-8d3c-9001c4eeeffa	2	Changeup (Level 2)	Changeup+	Puck slowdown mid shot. +20 Shot Power
+Talents	dad5d89d-f0b0-404f-9d52-a6aada2d85f8	dad5d89d-f0b0-404f-9d52-a6aada2d85f8	2	Armor (Level 2)	Armor+	+25 Checking
+Goalie Talents	dc54c45d-a979-4389-860a-eb9ff873c005	dc54c45d-a979-4389-860a-eb9ff873c005	1	Goalie Fart	Goalie Fart	Will automatically fart the puck away from the crease
+Talents	df2a634a-c4fd-4777-bbb3-8812bad47a1e	df2a634a-c4fd-4777-bbb3-8812bad47a1e	1	Middle Management	Middle Management	+25 OVR vs Elite\n-25 OVR vs Boss
+Talents	e1b8c52a-c435-4db0-b60c-267907087e2b	e1b8c52a-c435-4db0-b60c-267907087e2b	1	Red Marker Talent	Red Marker Talent	+20 OVR if C
+Talents	e4d647f3-82d3-4224-893e-6dc4e57abdb4	e4d647f3-82d3-4224-893e-6dc4e57abdb4	1	Double Bench Talent	Double-Decker	+50% bench bonus
+Talents	e57752ca-c772-4bc3-9f0f-7af74b357970	e57752ca-c772-4bc3-9f0f-7af74b357970	1	Center Bonecrusher Talent	Center Bonecrusher Talent	If playing as C, your LD and RD gain
+Talents	e657362c-e30e-442b-b91d-58f625346e01	e657362c-e30e-442b-b91d-58f625346e01	2	Helmet Stack (Level 2)	Helmet Stack+	3x helmet effects
+Talents	e71790b3-0d29-4f9a-9e02-0b5be5fbbfd4	e71790b3-0d29-4f9a-9e02-0b5be5fbbfd4	1	Avenge Me!	Avenge Me!	Your teammates get enraged when you are knocked out
+Talents	e745811a-a750-42b6-b386-18edaccbe35a	e745811a-a750-42b6-b386-18edaccbe35a	1	Short Contract	Short Contract	+50 OVR\nLeaves your team after 2 games
+Talents	e7b2bb8c-7619-439e-880c-d680140b8123	e7b2bb8c-7619-439e-880c-d680140b8123	1	Growing Anger	Growing Anger	+5 Checking per win\nGames won: 0
+Talents	e87a7b0d-3e59-4b02-afff-910e18ee1db6	e87a7b0d-3e59-4b02-afff-910e18ee1db6	2	Slap Shart (Level 2)	Slapshart+	Get propelled far forward after shooting
+Talents	e885bb1e-5e08-41fa-857f-41fe0dd481e3	e885bb1e-5e08-41fa-857f-41fe0dd481e3	1	Liquidation	Liquidation	+10 OVR per lost talent\nLose all talents\nTalents Liquidated: 0
+Talents	ecc910c1-9068-4b25-90a3-ba5e05a52f63	ecc910c1-9068-4b25-90a3-ba5e05a52f63	2	Heavy Helmet (Level 2)	Heavy Helmet+	+200 Checking\n-60 Speed
+Talents	f0a1b9ec-2a21-483c-8fb3-b25cfdc3852b	f0a1b9ec-2a21-483c-8fb3-b25cfdc3852b	1	alzheimer	Foggy Brain	???
+Talents	f285dcb1-c942-4dd0-bacb-2cbb19a0029c	f285dcb1-c942-4dd0-bacb-2cbb19a0029c	1	Charge Shot	Charge Shot	Hold a slapshot to unleash its full potential
+Talents	f327f16f-b5b3-4e62-af65-4719f4d59cac	f327f16f-b5b3-4e62-af65-4719f4d59cac	1	Wind up	Wind Up	Unleash a shockwave that pushes surrouding skaters away when winding up a slapshot
+Talents	f37eda19-5a22-4c1a-bffa-b41833bbd1bb	f37eda19-5a22-4c1a-bffa-b41833bbd1bb	1	Puck Hunter	Puck Hunt	+15 Speed when opponent has the puck
+Goalie Talents	f39ac5c7-ba29-4014-90b1-ff4d68ee24e4	f39ac5c7-ba29-4014-90b1-ff4d68ee24e4	1	Shutout	The Impenetrable	Team gets +4 OVR for every shutout\nShutouts: 0
+Talents	f3c8a260-250f-498e-ba5e-37d168333de4	f3c8a260-250f-498e-ba5e-37d168333de4	1	SpeedBoost	[Missing: powerups/speed_boost/name]	[Missing: powerups/speed_boost/description]
+Talents	f5e56b54-474c-4536-9c62-f46b00e06f99	f5e56b54-474c-4536-9c62-f46b00e06f99	2	Ping King (Level 2)	Ping King+	No longer always shoots at the post
+Talents	f6738262-b740-4664-8526-d80cfcb0b114	f6738262-b740-4664-8526-d80cfcb0b114	2	Double Bench Talent (Level 2)	Double-Decker+	+100% bench bonus
+Talents	f693204d-b49a-4026-b8d9-c16d78c1c919	f693204d-b49a-4026-b8d9-c16d78c1c919	1	Express Delivery	Express Delivery	Increase the speed of your passes
+Talents	f7136786-2dff-4af5-92aa-7a2efd27bf51	f7136786-2dff-4af5-92aa-7a2efd27bf51	2	Sonic Pass (Level 2)	Sonic Pass+	Passes knock out skaters in a wide radius
+Talents	f85ba803-2c92-41eb-afa6-da9569f4724b	f85ba803-2c92-41eb-afa6-da9569f4724b	1	cultistPowerCornelius		
+Talents	f8b0af03-c5c2-460f-88da-26f74033c81e	f8b0af03-c5c2-460f-88da-26f74033c81e	2	Wind Down (Level 2)	Wind Down+	Unleash a shockwave that pushes surrounding skaters far away when releasing a shot
+Talents	f8eea5c6-b475-496a-8440-f24aadaa2ed8	f8eea5c6-b475-496a-8440-f24aadaa2ed8	1	Tail Wind	Blunted Blades	+40 Speed toward your side\n-40 Speed toward opponent's
+Talents	fa72eacd-20fb-41c9-a679-137e314a5ef6	fa72eacd-20fb-41c9-a679-137e314a5ef6	1	Critical Chaos	Slot Cannon	+20% crit chance\n-30 Shot Power
+Talents	fc335e10-9d98-4f51-a214-5c3fd9e34fb0	fc335e10-9d98-4f51-a214-5c3fd9e34fb0	1	Heavy Puck	Demon Puck	+40 Speed without puck\n-40 Speed with puck
+Talents	fc516d5a-38c4-47f6-933c-2e3a6c78f31a	fc516d5a-38c4-47f6-933c-2e3a6c78f31a	2	Backdraft (Level 2)	Backdraft+	Get propelled far backward after a shot
+Talents	fc57b141-1243-470a-ba08-14ff168c56cc	fc57b141-1243-470a-ba08-14ff168c56cc	1	Fury Stick	Fury Stick	Throw your stick forward on slapshots
+Talents	fd23bf49-c0b0-40ca-b8fe-2687e260d282	fd23bf49-c0b0-40ca-b8fe-2687e260d282	1	Original Glove	The Original Glove	+50% Checking bonuses\nKnocking out your teammate injures them
+Talents	fee08e10-d6da-4b46-881b-878168f0513d	fee08e10-d6da-4b46-881b-878168f0513d	1	Enrage On Shot	Rage Release	Get enraged after a shot
+Talents	ff0e52bb-d231-4c2b-98f0-fb0f9e11e566	ff0e52bb-d231-4c2b-98f0-fb0f9e11e566	1	Game Winner Bonus	Al Dente	+10 Shot Power for each game-winning goal you score\nGame-winning goals: 0
+Goalie Talents	ff36b448-9a62-4a24-8c29-e90d9e28486f	ff36b448-9a62-4a24-8c29-e90d9e28486f	1	Goalie Headshot	Goalie Headshot	Deflect puck into shooter's face when making a blocker save
+Talents	ff899bcd-994c-4b80-b57b-5b4717e3e16c	ff899bcd-994c-4b80-b57b-5b4717e3e16c	2	Dribbler (Level 2)	Dribbler+	Can possess the puck without a stick\n+80 Shot Power without stick
+Talents	ffc07636-dce7-48d6-ba8c-6f7dd3cf0a48	ffc07636-dce7-48d6-ba8c-6f7dd3cf0a48	2	Puckless Rocket (Level 2)	Puckless Rocket+	+20 Speed without the puck
+Abilities	0089c63f-29c9-4777-b383-f55d6293ebbd	0089c63f-29c9-4777-b383-f55d6293ebbd	1	Headshot Redirect	Headshot Redirect	Use the face of a teammate to deflect a puck toward the net
+Abilities	03d8b551-575c-405d-8179-619ccf5bc23e	03d8b551-575c-405d-8179-619ccf5bc23e	2	YoYo LVL2	Yo-Yo+	Activate to launch the puck, activate again to retrieve it. One-Timer yourself to crit while knocking out surrounding skaters
+Abilities	049fa5ca-7d30-4f59-b60d-33e625389a62	049fa5ca-7d30-4f59-b60d-33e625389a62	1	Polymorphic Ability	Polymorphic Ability	At the start of a run, gain a random ability
+Abilities	05a601c9-46a3-48d6-b373-f8f3ba3e8df3	05a601c9-46a3-48d6-b373-f8f3ba3e8df3	2	Headshot Redirect LVL2	Headshot Redirect+	Use the face of a teammate to deflect a puck toward the net. Knock out surrounding skaters
+Abilities	0981a764-4e19-4b6e-a0a1-15b143996c9b	0981a764-4e19-4b6e-a0a1-15b143996c9b	1	yoyoShot		
+Abilities	0cd099b6-7758-4025-be8b-8181b2d3cb0e	0cd099b6-7758-4025-be8b-8181b2d3cb0e	1	enrageAbility	Rage Burst	Get enraged for 10s
+Abilities	0de460c4-42e0-4bf0-95fa-60bb1b685ec6	0de460c4-42e0-4bf0-95fa-60bb1b685ec6	1	spinorama Shooting Stars	Spin-O-Rama	Spinning move
+Abilities	0fab2d24-8aec-42b9-b8c6-0ad75aa6c75a	0fab2d24-8aec-42b9-b8c6-0ad75aa6c75a	1	kazoo	Kazoo	Nearby opponents lose the puck
+Abilities	15e35579-bd6e-4ce4-82dd-d7fe0697da4b	15e35579-bd6e-4ce4-82dd-d7fe0697da4b	1	spinorama	Spin-O-Rama	Spinning move\nDisarms nearby opponents
+Abilities	202ef0e6-d782-4387-ae35-d4bd1a0b7048	202ef0e6-d782-4387-ae35-d4bd1a0b7048	1	tornado	Tornado	Turn into a tornado for 4s and launch the first skater you hit into the air
+Abilities	2300e726-cd44-48ac-8fdf-438642d79927	2300e726-cd44-48ac-8fdf-438642d79927	1	probe	Prod	Prod a skater to inflict an injury\n2 uses per game
+Abilities	2428ff88-071f-4c51-a88f-9d5adb28e5f0	2428ff88-071f-4c51-a88f-9d5adb28e5f0	1	gravityWell	Gravity Well	Pull surrounding skaters toward you, staggering them on impact
+Abilities	2705e1d3-bc6c-4363-a4a3-77e18da75c2f	2705e1d3-bc6c-4363-a4a3-77e18da75c2f	1	yoyoShot	Slapshot Yoyo	Automatically recall the puck midshot
+Abilities	3b9b84e9-d657-4536-86f1-f9c23c2bd844	3b9b84e9-d657-4536-86f1-f9c23c2bd844	1	StickThief	Stickpocket	Steal opposing skaters' sticks
+Abilities	40a2b402-4d46-424c-bb15-ad29f09d119b	40a2b402-4d46-424c-bb15-ad29f09d119b	1	Grappling Hook Mountaineer	Grappling Hook	Pull opponents to you, or pull yourself to a teammate
+Abilities	41ca591a-3b74-461b-8c92-2f3846dc155d	41ca591a-3b74-461b-8c92-2f3846dc155d	1	zap	Zap	Transform into an evil skater
+Abilities	443f0f0e-176c-4482-9c62-ffb7755e7fbf	443f0f0e-176c-4482-9c62-ffb7755e7fbf	1	Head Smasher	Head Smasher	Ricochet the puck off nearby opponents' faces. Leaves them knocked out
+Abilities	4b921c9a-95f3-4034-b11b-749c27a04fa6	4b921c9a-95f3-4034-b11b-749c27a04fa6	1	explodingPuck	Exploding Puck	The puck will explode after 5s
+Abilities	4d877b9a-3f0a-49ce-a682-31ae5a032502	4d877b9a-3f0a-49ce-a682-31ae5a032502	1	yoyo	Yo-Yo	Activate to launch the puck, activate again to retrieve it
+Abilities	4ffa0a0b-fc77-48f4-8b75-93be24f4e415	4ffa0a0b-fc77-48f4-8b75-93be24f4e415	2	immunity LVL2	Immunity+	Gain immunity for 2s
+Abilities	500c2055-17da-4b45-9d35-aa1feea47002	500c2055-17da-4b45-9d35-aa1feea47002	1	defenseTeleport	Teleport	Teleport close to the puck
+Abilities	588da941-34ae-4243-9708-37ee9adba2fc	588da941-34ae-4243-9708-37ee9adba2fc	2	Disco Dance LVL2	Disco Dance+	Spread the disco fever to nearby opponents. You dance for 3s; opponents dance for 7s
+Abilities	5ef2e6ec-c013-49da-b99f-00ddbc25f704	5ef2e6ec-c013-49da-b99f-00ddbc25f704	1	Dash	Dash	Dash like it's 94! Dash for 1s with a 5s cooldown
+Abilities	6ffae56f-fc78-4b0d-9153-fbd154cc253c	6ffae56f-fc78-4b0d-9153-fbd154cc253c	1	Yeet	Yeet	Shove skaters into the air
+Abilities	70339bc7-8375-4f5c-a527-0d3a25996c76	70339bc7-8375-4f5c-a527-0d3a25996c76	1	throwingStick	Tomahawk	Throw your stick to knock out skaters
+Abilities	72d2658a-0a66-4010-88a8-043514b31dc6	72d2658a-0a66-4010-88a8-043514b31dc6	2	Gas LVL2	Gas+	Hold to charge a fart that repels skaters and objects
+Abilities	7aba9b4a-ca31-44ce-ace4-098a255f2943	7aba9b4a-ca31-44ce-ace4-098a255f2943	1	toedrag	Side Dash	Dash sideways in a quick burst
+Abilities	7e003538-2bd8-48ff-bcb1-5d67ceb2165a	7e003538-2bd8-48ff-bcb1-5d67ceb2165a	1	immunity	Immunity	Gain immunity for 1s
+Abilities	80ecf6b7-e548-4e65-b032-2666b0015939	80ecf6b7-e548-4e65-b032-2666b0015939	2	Slowmo LVL2	Slowmo+	Slows time for 3.4s\nActivations: 0
+Abilities	878a9f6b-22e6-4379-81fd-b62351e619c0	878a9f6b-22e6-4379-81fd-b62351e619c0	2	Head Smasher LVL2	Head Smasher+	Ricochet the puck off opponents' faces. Leaves them knocked out and stickless
+Abilities	89222bed-dad4-443d-8303-6a7c6e35981e	89222bed-dad4-443d-8303-6a7c6e35981e	1	megaPokecheck	Mega Pokecheck	A pokecheck with huge reach
+Abilities	89f932b3-b2b3-4259-b439-6fce37e3b627	89f932b3-b2b3-4259-b439-6fce37e3b627	2	gravityWell LVL2	Gravity Well+	Pull surrounding opponents toward you, staggering them on impact
+Abilities	8c566296-bda4-496e-bf26-4893a92ecb54	8c566296-bda4-496e-bf26-4893a92ecb54	1	Disco Dance	Disco Dance	Spread the disco fever to nearby opponents. You dance for 4s; opponents dance for 6s
+Abilities	8cbf3984-686c-48e5-9dcd-52e8abc425da	8cbf3984-686c-48e5-9dcd-52e8abc425da	2	Grappling Hook LVL2	Grappling Hook+	Pull opponents to you, or pull yourself to a teammate. Hook is faster, reaches further and disarms opponents
+Abilities	8f544297-441b-4ef1-9065-930bf9256577	8f544297-441b-4ef1-9065-930bf9256577	2	throwingStick LVL2	Mjolnir+	Throw your stick to knock out skaters. It automatically returns to your hand
+Abilities	95c266d9-b137-4702-aa6c-17faf0cab82e	95c266d9-b137-4702-aa6c-17faf0cab82e	2	Yeet LVL2	Yeet+	Shove skaters into the air. Knocks out their nearby teammates when they land
+Abilities	96430453-7cef-4d2f-9964-735a40105022	96430453-7cef-4d2f-9964-735a40105022	1	Dragon Shout	Dragon Shout	Knock out yourself and surrounding skaters
+Abilities	988b72a1-cf67-4bde-80c6-92d45a558d20	988b72a1-cf67-4bde-80c6-92d45a558d20	1	deke	Deke	Slip the puck past defenders\nHold to aim
+Abilities	9dc4c46a-43d3-42f4-8613-41d5c891244a	9dc4c46a-43d3-42f4-8613-41d5c891244a	1	wet_towel	Wet Towel	Slap skaters to send them flying
+Abilities	a0a3b01c-b362-4672-847f-18a6734bdf01	a0a3b01c-b362-4672-847f-18a6734bdf01	1	fakePuck	Totally Normal Puck	Throw a decoy puck to distract opponents
+Abilities	ae332012-6302-4173-b69d-8cceb7de4013	ae332012-6302-4173-b69d-8cceb7de4013	2	fakePuck LVL2	Totally Normal Puck+	Throw a decoy puck far away to distract opponents. Short cooldown
+Abilities	af9fc1a0-e3b7-41ae-8c1c-bc219e22f003	af9fc1a0-e3b7-41ae-8c1c-bc219e22f003	2	Polymorphic Ability LVL2	Polymorphic Ability+	At the start of a run, gain a random upgraded ability
+Abilities	b1c48828-542f-49d1-9236-8303d5b17736	b1c48828-542f-49d1-9236-8303d5b17736	1	flop	Flop	Take a dive and clutch your knee: after 3s the ref awards you a penalty shot. Once per game.
+Abilities	bae09728-f7df-4060-a23b-e7cf34fb80b6	bae09728-f7df-4060-a23b-e7cf34fb80b6	1	Gas	Gas	Fart to repel skaters and objects
+Abilities	bbc2017a-db0c-4c3b-ab63-ef99009904d4	bbc2017a-db0c-4c3b-ab63-ef99009904d4	2	Jump LVL2	Jump+	Jump in the air; hold to go higher. Execute a jump shot in the offensive zone. Knock out nearby opponents when landing
+Abilities	c2814ee5-b13b-44ae-aa04-48af6b555990	c2814ee5-b13b-44ae-aa04-48af6b555990	1	jump	Jump	Jump in the air; hold to go higher. Execute a jump shot in the offensive zone
+Abilities	c539a67f-695e-4b41-bf27-edad2e7d2cca	c539a67f-695e-4b41-bf27-edad2e7d2cca	1	magneto	Magnet	Magnetically pulls the puck toward your stick
+Abilities	c8397f69-b768-4867-a4a5-4506cb54fea4	c8397f69-b768-4867-a4a5-4506cb54fea4	1	fakeshot	Fake Slapper	Fake a slapshot to fool the goalie
+Abilities	cd2a97cc-ec8c-4b36-8fe9-8e63c60580d9	cd2a97cc-ec8c-4b36-8fe9-8e63c60580d9	1	throwingHelmet	Throwing Helmet	Throw your helmet to knock out skaters
+Abilities	cfbc7ebe-3ed1-4c9b-9f13-8c424d091799	cfbc7ebe-3ed1-4c9b-9f13-8c424d091799	1	Grappling Hook	Grappling Hook	Pull opponents to you, or pull yourself to a teammate
+Abilities	d2c7adeb-cbe6-4999-a085-cf0abe236098	d2c7adeb-cbe6-4999-a085-cf0abe236098	2	Magneto LVL2	Magnet+	Strongly pulls the puck, skaters and sticks toward your stick from far away
+Abilities	dcc4c93c-8589-4503-9315-6b498c8d7de4	dcc4c93c-8589-4503-9315-6b498c8d7de4	2	Dash LVL2	Dash+	Dash like it's 94! Dash for 1.5s with a 4s cooldown
+Abilities	e1b3dfc2-9432-474d-80a9-7dbb309a29eb	e1b3dfc2-9432-474d-80a9-7dbb309a29eb	2	Dragon Shout LVL2	Dragon Shout+	Knock out yourself and surrounding opponents
+Abilities	e1dcfbc9-8a42-4144-82c3-4e62d6298977	e1dcfbc9-8a42-4144-82c3-4e62d6298977	1	Slowmo	Slowmo	Slows time for 2.3s\nActivations: 0
+Abilities	e5a11035-aa7f-4f1d-83ae-9cd5b5e6ecb7	e5a11035-aa7f-4f1d-83ae-9cd5b5e6ecb7	2	Kazoo LVL2	Kazoo+	Opponents in a wide radius lose the puck
+Abilities	f747ded7-f902-4fe1-9b88-d0508e528dfe	f747ded7-f902-4fe1-9b88-d0508e528dfe	1	megaLob	Mega-Sauce	Clear the puck far and high
+Relics	00cd536e-631b-4c32-8edf-856770b340ce	00cd536e-631b-4c32-8edf-856770b340ce	2	Blood Bonus (Level 2)	Pain Points+	Goals scored by injured skaters count as 3 goals\nGoals while injured: 0
+Relics	017ad3d7-4d17-4d8f-8613-d3d1e8f30e79	017ad3d7-4d17-4d8f-8613-d3d1e8f30e79	1	Spike Armor Relic	Spiked Armor Relic	At the start of a game, your skaters gain
+Relics	02eb9cec-4846-4a6c-b10a-7179867dd3c0	02eb9cec-4846-4a6c-b10a-7179867dd3c0	1	Farting Puck	Farting Puck	The puck farts every 9s. It gets greener and greener until it rips one
+Relics	02f24b1c-d1e9-4978-be9e-1d2fe94271c0	02f24b1c-d1e9-4978-be9e-1d2fe94271c0	1	Silky Mitts	Turbo-Absorbent Jock Strap	1s of immunity when picking up the puck
+Relics	041f4fb1-edcf-4f39-9375-728118bc4fe9	041f4fb1-edcf-4f39-9375-728118bc4fe9	2	Crash Test Dummy (Level 2)	Checking Monthly+	Give each skater a random upgraded Checking talent
+Relics	06023a54-565e-408f-b498-1cd8e23cce79	06023a54-565e-408f-b498-1cd8e23cce79	1	Bubble Wrap	Bubble Wrap	Prevents Speed injuries
+Relics	0683e583-a895-4a08-8a19-f6e00002f411	0683e583-a895-4a08-8a19-f6e00002f411	1	Slapshot Plushie	Slapshot Plushie	Every skater gains a slapshot power-up at the start of the run
+Relics	07339bea-4032-45f5-954e-7370e22ff1b4	07339bea-4032-45f5-954e-7370e22ff1b4	1	Rage Switch	Rage Switch	Enrage a skater when triggering an ability
+Relics	0855e258-445c-4b91-8a9e-a51dca80a02d	0855e258-445c-4b91-8a9e-a51dca80a02d	1	briberee	Briberee	The referee will bodycheck your opponents
+Relics	09295f23-4405-4a23-a513-295721c1d487	09295f23-4405-4a23-a513-295721c1d487	1	Ref Block Shot	Part of the Play	The referee will try to block the opponent's shots
+Relics	0a29f353-8e00-4863-a1ee-7616457e6048	0a29f353-8e00-4863-a1ee-7616457e6048	1	Stat Reward Relic	Abacus	Talent rewards now show attributes as an additional choice
+Relics	0a3f46ba-de59-4467-bda7-749a970f0fa2	0a3f46ba-de59-4467-bda7-749a970f0fa2	1	NoStickSoccerRelic	Soccer	Everyone loses their stick and kicks the ball
+Relics	0ae9759c-ee7a-4a59-8e64-af3f5c4239c1	0ae9759c-ee7a-4a59-8e64-af3f5c4239c1	1	Participation Trophy	Participation Trophy	Skaters that did not play get +3 OVR after each win\nTimes Applied: 0
+Relics	0cc828d7-7a74-41ee-b359-29608d82aaa2	0cc828d7-7a74-41ee-b359-29608d82aaa2	2	Metallic Fury (Level 2)	Squadllic Fury+	Your team gets enraged when any shot hits a post
+Relics	0d1f3b17-1c27-4ca7-8c5b-1684d8785fb3	0d1f3b17-1c27-4ca7-8c5b-1684d8785fb3	1	Ink Bottle	Defense Monthly	Each skater gains a defensive talent
+Relics	0d501341-6f3e-4721-8223-0942b1dc495a	0d501341-6f3e-4721-8223-0942b1dc495a	1	Cushioned	Steel Mitts	Prevents Shot Power injuries
+Relics	0dad63bd-74d5-498e-87cb-44c2af0651d3	0dad63bd-74d5-498e-87cb-44c2af0651d3	1	Halo	White Flag	+35 OVR until you knockout an opponent
+Relics	0eb9bdcd-30ac-489e-abda-56f842547a13	0eb9bdcd-30ac-489e-abda-56f842547a13	1	Critical One Timer Relic	Sweet Spot	One-Timers have +10% crit chance
+Relics	101f1540-d3d6-4346-bf87-c1bdd0967f50	101f1540-d3d6-4346-bf87-c1bdd0967f50	1	soccerNet	Soccer Net	Goals are a soccer net
+Relics	10a4d42c-149b-4d2c-9dbc-7aa1b62702ad	10a4d42c-149b-4d2c-9dbc-7aa1b62702ad	1	Golf Club	Convenient Bag	Everyone gets 2 extra sticks
+Relics	1201437e-8029-418a-b5e5-9dc4440ca906	1201437e-8029-418a-b5e5-9dc4440ca906	2	Fragile (Level 2)	Fragile+	3x injury chance for opponents
+Relics	1230905c-a4d2-4f92-bba7-0846f404cc13	1230905c-a4d2-4f92-bba7-0846f404cc13	2	Briberee (Level 2)	Briberee+	The referee will violently bodycheck your opponents
+Relics	13be52a9-ddc0-45c6-a348-e4333a53120f	13be52a9-ddc0-45c6-a348-e4333a53120f	2	Fragile Speed Bonus Relic (Level 2)	Iron Lung+	Injured skaters get +60 shot power
+Relics	14024758-1149-49e1-8a5b-a667d5c2e6f2	14024758-1149-49e1-8a5b-a667d5c2e6f2	1	Egg Shell Hands	Egg Shell Hands	Injuries you cause also target hands
+Relics	161a0474-2539-48d3-81ac-1e68ef4d512d	161a0474-2539-48d3-81ac-1e68ef4d512d	1	Relic Freezer	Relic Freezer	At the start of a game, freeze 1 of the opponent's relics
+Relics	1726d194-1ab4-45dc-895d-c07013d290f6	1726d194-1ab4-45dc-895d-c07013d290f6	1	Frog On Hit Ref	Frogeree	Frog opponents when you knockout the referee
+Relics	18db5598-ee2f-4066-b406-6a0e48d04030	18db5598-ee2f-4066-b406-6a0e48d04030	2	Remarkable Rock LVL2	Remarkable Rock+	Your first goal of the game counts as 2 goals
+Relics	1a89e56a-5b4f-404d-bef0-9143297a17fd	1a89e56a-5b4f-404d-bef0-9143297a17fd	1	Counter Rage Switch	Counter Rage Switch	Enrage the team when opponents trigger an ability
+Relics	1b0faea9-b138-41d8-a2cf-5905408967b3	1b0faea9-b138-41d8-a2cf-5905408967b3	1	Laser Pointer	Game-Seven Glasses	+50% crit chance in the last 20s of a period
+Relics	1b2f09bb-f1c0-4585-a831-12d10b43d293	1b2f09bb-f1c0-4585-a831-12d10b43d293	1	startingRelicBigHeadsEnrageRelic	Macrocephalia	At the start of a game, your skaters gain the  talent
+Relics	1b2f20d7-8b1a-4d82-8808-7148ba467a20	1b2f20d7-8b1a-4d82-8808-7148ba467a20	1	Sparky Electrolyte	Sparkly Electrolyte	+25 Shot Power in period 1
+Relics	1c904bd7-f698-45fb-9101-6da24753fd5f	1c904bd7-f698-45fb-9101-6da24753fd5f	2	Holiest Grenade (Level 2)	Holiest Grenade+	+25 Checking
+Relics	1d190d0d-ab74-4f04-a877-eb4aebbead2d	1d190d0d-ab74-4f04-a877-eb4aebbead2d	1	Oaky Electrolyte	Oaky Electrolyte	+25 Checking in period 1
+Relics	1d4a7c6d-f44c-4029-896c-ba169aa25f3b	1d4a7c6d-f44c-4029-896c-ba169aa25f3b	1	Glass Stick	Glass Stick	Opponents' sticks will shatter on slapshots
+Relics	1f1d78e5-6e3f-4e76-9056-583f1839a214	1f1d78e5-6e3f-4e76-9056-583f1839a214	2	Rare Berry (Level 2)	Rare Berry+	Your team gains immunity for 5s after winning a faceoff. Also gains enraged\nFaceoffs won: 0
+Relics	20428ce7-db54-4c20-891a-fb7e4d9cf0ff	20428ce7-db54-4c20-891a-fb7e4d9cf0ff	1	odd_fungus_reverse	Morel Support	Get propelled forward when passing
+Relics	20c7dc28-8554-4fbe-9ed0-970200867430	20c7dc28-8554-4fbe-9ed0-970200867430	1	Buzzer Beater	Buzzer Beater	Goals scored in the last 20s of a period count as 2 goals
+Relics	211959b1-50df-4d20-98e4-f46033a449b6	211959b1-50df-4d20-98e4-f46033a449b6	1	Holiest Grenade	Holiest Grenade	+15 Checking
+Relics	218aa072-e459-4e55-97e5-bd511b8f5c67	218aa072-e459-4e55-97e5-bd511b8f5c67	1	Frog Golden Helmet Relic	Golden Frog	Opponents with the Golden Helmet are frogged
+Relics	23a405dd-f237-4bd4-83f2-e7acf9497080	23a405dd-f237-4bd4-83f2-e7acf9497080	1	Frog On Ability	Froggy Ability	After an opponent uses an ability, they are frogged
+Relics	242403e7-7113-4d8e-a6cb-b6cefdd7ef29	242403e7-7113-4d8e-a6cb-b6cefdd7ef29	1	Banana Faceoff	Banana Split	Knock out 3 opponents when winning a faceoff
+Relics	25f60be7-7ab9-46a2-a562-f72b56d245a3	25f60be7-7ab9-46a2-a562-f72b56d245a3	1	Corn dog-stic	Corn dog-stic	+15 Shot Power
+Relics	29b0858a-5637-468e-9ad8-a7300a154f2f	29b0858a-5637-468e-9ad8-a7300a154f2f	2	Aromatic Electrolyte Timer (Level 2)	Aromatic Electrolyte+	+35 OVR in period 1
+Relics	2b145b00-f326-4ccd-911f-770ec9aaaedf	2b145b00-f326-4ccd-911f-770ec9aaaedf	1	Raged Critical	Blowtorch	+25% crit chance while enraged
+Relics	2b4832f8-24bb-4ec7-922b-e098623e5953	2b4832f8-24bb-4ec7-922b-e098623e5953	1	Ice Slapshot	Icy Shot	Slapshots freeze opponents
+Relics	2d0c11ce-b2f8-4ac8-a093-b91bf476f8dd	2d0c11ce-b2f8-4ac8-a093-b91bf476f8dd	1	CanadaCurseXsTeam	Tiny Team	Your team becomes
+Relics	2fc4428f-6b47-4dbb-830a-ca00f9241fcf	2fc4428f-6b47-4dbb-830a-ca00f9241fcf	1	Gauntlet Bench Bonus	Bench Bonus	[Missing: relics/bench_bonus/description]
+Relics	31618a31-edd6-4a60-822a-9845482472f5	31618a31-edd6-4a60-822a-9845482472f5	1	Wasabi Paste	Jar of Tears	After the opponent scores, get enraged
+Relics	32c59a2c-cd88-48ae-b5e9-6e061c7fc139	32c59a2c-cd88-48ae-b5e9-6e061c7fc139	2	Shrimp Cocktail (Level 2)	Shrimp Cocktail+	Your  and  skaters get +35 OVR
+Relics	33a5392f-5c0f-4e76-acfa-50f967ebf35c	33a5392f-5c0f-4e76-acfa-50f967ebf35c	2	Whistle Of Time Timer (Level 2)	Whistle of Time+	Time goes 2.5x faster when you lead
+Relics	347a8747-25aa-400f-ba6d-c54698557ab6	347a8747-25aa-400f-ba6d-c54698557ab6	1	soccerField	Soccer Field	Change the ice into a soccer field
+Relics	361e09f4-d712-4208-8899-828752d985dc	361e09f4-d712-4208-8899-828752d985dc	2	Yips Relic (Level 2)	Jigglypuck+	Opponents on a breakaway have -50% shot strength and are knocked out when they shoot\nShots Affected: 0
+Relics	36b7a780-299b-4063-b7ab-4b5b830917b8	36b7a780-299b-4063-b7ab-4b5b830917b8	1	Nut Job	Nut Job	Your first knockout of the game always causes an injury
+Relics	36dd9911-7304-4758-ab24-4a70e4944687	36dd9911-7304-4758-ab24-4a70e4944687	1	Comeback Clock	Spiteful Clock	When you get scored on, add 30s to the clock
+Relics	37ab03f9-1af9-4af4-9c8c-76edfe34304a	37ab03f9-1af9-4af4-9c8c-76edfe34304a	2	Hot & Cold (Level 2)	Hot & Cold+	At the start of a game, 1 random skater gets +40 OVR and 1 other skater gets -15 OVR
+Relics	38af34e7-3357-41f3-8773-31aaf7123890	38af34e7-3357-41f3-8773-31aaf7123890	1	Stopwatch	Frozen Clock	Opponent goals in the last 10s of a period are denied
+Relics	3aa903b4-22a3-4940-a200-f3b221f7242c	3aa903b4-22a3-4940-a200-f3b221f7242c	1	Invisible Thread	Hivemind	Your passes are uninterceptable in your zone
+Relics	3d89a837-4296-48ab-8e43-04fc512a229d	3d89a837-4296-48ab-8e43-04fc512a229d	2	Self Defense (Level 2)	Self Defense+	+50 Checking while in your own zone
+Relics	3e317390-80db-4ea2-bbb2-12297a72c460	3e317390-80db-4ea2-bbb2-12297a72c460	2	Oaky Electrolyte Timer (Level 2)	Oaky Electrolyte+	+35 OVR in period 2
+Relics	3e4ade06-8e13-429f-a2f4-8b4c3bdd1ac7	3e4ade06-8e13-429f-a2f4-8b4c3bdd1ac7	1	Random Talent Bench Bonus	Comfy Cushion	A new bench slot that gives a random talent
+Relics	3e7a23a2-741f-42a2-9784-d026c58a84ca	3e7a23a2-741f-42a2-9784-d026c58a84ca	1	Aromatic Electrolyte Timer	Aromatic Electrolyte	+25 OVR in period 1
+Relics	3e863cb0-b5c1-4905-8a95-896a50dc1602	3e863cb0-b5c1-4905-8a95-896a50dc1602	1	Greasy Stick	Greasy Stick	Opponents lose their sticks on shots
+Relics	3f7a7286-58d2-4897-b9cc-b799cbbc3f1d	3f7a7286-58d2-4897-b9cc-b799cbbc3f1d	2	Sparkly Electrolyte Timer (Level 2)	Sparkly Electrolyte+	+35 OVR in period 3
+Relics	3fd3a7a2-cffa-44b4-89ca-ee064af84f3f	3fd3a7a2-cffa-44b4-89ca-ee064af84f3f	1	Oven Mitts	Oven Mitts	+3 Shot Power after each shot on net. Resets when scoring a goal
+Relics	3ff3fdb2-d4d7-4ef6-b4c8-ee91e7fcb508	3ff3fdb2-d4d7-4ef6-b4c8-ee91e7fcb508	1	Hot & Cold	Hot & Cold	At the start of a game, 1 random skater gets +30 OVR and 1 other skater gets -15 OVR
+Relics	410cf1b1-4f06-49ab-b23c-8cde6de494cd	410cf1b1-4f06-49ab-b23c-8cde6de494cd	1	Express Delivery	Express Delivery	Increase the speed of your passes
+Relics	4113d9ad-c794-4bbf-9988-08ac76c304b3	4113d9ad-c794-4bbf-9988-08ac76c304b3	1	Short Fuse	Short Fuse	2x enraged time
+Relics	42198d8d-e419-4af5-b02a-b8ba08c2fe1d	42198d8d-e419-4af5-b02a-b8ba08c2fe1d	1	Zebra Hoof	Zebra Hoof	Referees join your team
+Relics	424fd86c-f78a-4315-8497-59c24dca9585	424fd86c-f78a-4315-8497-59c24dca9585	1	needle	Needle	Speed bonuses increase One-Timer Accuracy
+Relics	4280dce1-5ecc-4765-949d-af45dbffbdaa	4280dce1-5ecc-4765-949d-af45dbffbdaa	2	Short Fuse (Level 2)	Short Fuse+	3x enraged time
+Relics	445e4b3e-7b3c-4594-a333-652e20545abe	445e4b3e-7b3c-4594-a333-652e20545abe	1	Double reward	Extra Reward	For the next 2 games you get 1 extra relic reward\nRemaining Uses: 2
+Relics	44b58bf8-592a-4282-a1d3-a0d169fdbf5b	44b58bf8-592a-4282-a1d3-a0d169fdbf5b	2	Dentist Drill (Level 2)	Turbo Crutch+	+30 Speed when you have an injured skater
+Relics	4548d4a5-14d7-462e-a6dc-3b4635a64801	4548d4a5-14d7-462e-a6dc-3b4635a64801	2	Oaky Electrolyte (Level 2)	Oaky Electrolyte+	+35 Checking in period 1
+Relics	459d1221-ff00-4066-a4e5-66aac93ed57a	459d1221-ff00-4066-a4e5-66aac93ed57a	2	Training Whistle (Level 2)	Carrot on a Stick+	+15 Speed after training\nTimes Trained: 0
+Relics	46f76a31-f3c1-4127-993f-bdcbaa90de16	46f76a31-f3c1-4127-993f-bdcbaa90de16	1	Ref Hands Relic	Ref Hands	Your skaters throw the puck instead of using their sticks
+Relics	4782c6ce-a7fb-499e-8a37-02d81813276d	4782c6ce-a7fb-499e-8a37-02d81813276d	1	Special Helmet Ovr Relic	Master Strainer	Skaters wearing special helmets get +10 OVR
+Relics	47be8f03-fedd-4179-9a82-e06af59b01de	47be8f03-fedd-4179-9a82-e06af59b01de	1	Benchwarmer Strip	Organ Donor	2 benchwarmers lose all attributes and talents, which are spread to teammates
+Relics	48d038a1-6c91-428e-b1fc-1d6a17ebf355	48d038a1-6c91-428e-b1fc-1d6a17ebf355	1	Crit Shot Double Goal	Coach's Grunt	Goals from crits count as 2 goals
+Relics	491d625b-dcd1-4d5c-949b-550e13528387	491d625b-dcd1-4d5c-949b-550e13528387	1	Gigantism	Gigantism	+1 size
+Relics	4b098570-8e09-4fc4-860e-e80d65ee666d	4b098570-8e09-4fc4-860e-e80d65ee666d	1	Fragile	Fragile	2x injury chance for opponents
+Relics	4c72f7e8-0e03-49ad-a082-179bdd45d693	4c72f7e8-0e03-49ad-a082-179bdd45d693	1	Stethoscope	Grandma's Broth	Skaters get +10 OVR when an injury is healed\nInjuries Healed: 0
+Relics	4c83080d-a0b9-42ba-8477-53f4d564c403	4c83080d-a0b9-42ba-8477-53f4d564c403	1	Golden Hits	Golden Goose	Golden Helmet gives +30 Checking
+Relics	4ca70e53-1064-4ed4-91fb-5b3da35da9b5	4ca70e53-1064-4ed4-91fb-5b3da35da9b5	1	Metallic Fury	Squadllic Fury	Your team gets enraged when your shots hit a post
+Relics	4d3482b4-764b-405c-9c5a-504ead4fd300	4d3482b4-764b-405c-9c5a-504ead4fd300	1	Black Coffee	Speed Monthly	Give each skater a random Speed talent
+Relics	4de5b9a5-6aca-41b4-a975-d7b966b949ae	4de5b9a5-6aca-41b4-a975-d7b966b949ae	1	Critical Mass	Puck Pucks	2x crit chance
+Relics	4e43a3d9-b3f3-430b-a447-219fa2f22e2f	4e43a3d9-b3f3-430b-a447-219fa2f22e2f	1	Gain Random Ability Relic	Random Abilities	At the start of a game, every skater gains a random ability
+Relics	4fa1a250-a9b8-496a-b039-3244ea8ef159	4fa1a250-a9b8-496a-b039-3244ea8ef159	1	Fossilized Star	Fossilized Star	+15 Speed
+Relics	52793fd7-5999-4cc7-9d00-f2eb62b6624c	52793fd7-5999-4cc7-9d00-f2eb62b6624c	2	Brick Wall (Level 2)	Blue Marker+	LD and RD get +20 OVR
+Relics	52b4a81b-85c7-40e6-9b41-dbbe383d152d	52b4a81b-85c7-40e6-9b41-dbbe383d152d	2	Shrimp Basket (Level 2)	Shrimp Squad+	LD and RD get +2 size\nLW, RW and C get -2 size
+Relics	53242bc2-fc26-4660-a048-8bdb88bf18ca	53242bc2-fc26-4660-a048-8bdb88bf18ca	1	Whistle of time	[Missing: relics/whistle_of_time/name]	[Missing: relics/whistle_of_time/description]
+Relics	56613739-c2d3-4976-854c-8a974c03fdf7	56613739-c2d3-4976-854c-8a974c03fdf7	2	Companion Puck (Level 2)	Companion Puck+	Each skater gains an upgraded shooting talent
+Relics	56d138a3-2e66-4c66-82cb-60ceffe4d266	56d138a3-2e66-4c66-82cb-60ceffe4d266	1	DanceFloorRelic	Dance Floor	Dance floor on the ice
+Relics	570762fe-d062-4ddb-b50b-14b7290c4acf	570762fe-d062-4ddb-b50b-14b7290c4acf	1	Polarized Glasses	Ghost Vision	LD and RD gain
+Relics	57d8f8cd-a435-41f8-919e-69d06505428d	57d8f8cd-a435-41f8-919e-69d06505428d	1	Stick Breaking Knockout Relic	Lumberjack	Opponents get +25% stick break chance when knocked out
+Relics	5942b35f-a1ff-4aec-937c-a45a227b5542	5942b35f-a1ff-4aec-937c-a45a227b5542	2	Fossilized Star (Level 2)	Fossilized Star+	+25 Speed
+Relics	5991da44-7bb4-46dc-8ff4-6a1d12d1845e	5991da44-7bb4-46dc-8ff4-6a1d12d1845e	1	CanadaCurseFrogTwo	Frog Duty	2 skaters on your team get frogged
+Relics	5a9d27c1-6eee-48e6-8098-09ba9d80bf76	5a9d27c1-6eee-48e6-8098-09ba9d80bf76	2	Random Upgrade (Level 2)	The Improverizer+	2 random talents, abilities or relics are upgraded after each game
+Relics	5c1796ef-624b-4f6f-923d-e6df6e08a130	5c1796ef-624b-4f6f-923d-e6df6e08a130	1	Slap Chot 4000	Slap Chot 4000	+30 Shot Power on slapshots, -30 Shot Power otherwise
+Relics	5c68e9be-b90c-43c7-b2c7-a3a21e9c5a51	5c68e9be-b90c-43c7-b2c7-a3a21e9c5a51	1	Briefcase	Briefcase	Revert back 1 goal
+Relics	5c9577ec-7c67-41e9-b87b-c4e020394308	5c9577ec-7c67-41e9-b87b-c4e020394308	1	Crit Shot Enrage	Fragile Flakes	Crits enrage your team
+Relics	5d9486af-5cc9-4c1c-a283-3400b3e97dcd	5d9486af-5cc9-4c1c-a283-3400b3e97dcd	1	Lost Fungus	Lost Fungus	Picking up a loose puck propels your skaters forward
+Relics	5dff0a71-ffd4-45b9-8368-65013bd6e6fc	5dff0a71-ffd4-45b9-8368-65013bd6e6fc	1	The Original Puck	The Original Puck	+50% Shot Power bonuses\nSlapshots near your teammates injure them
+Relics	5e20ed1d-06c6-4bc3-aacb-1700530d1b5b	5e20ed1d-06c6-4bc3-aacb-1700530d1b5b	1	Revenge	Foiled	Inflict 1 injury on any skater who has injured your team
+Relics	5fa8c37c-b040-4f34-a09a-8bb0e3f465da	5fa8c37c-b040-4f34-a09a-8bb0e3f465da	2	Participation Trophy (Level 2)	Participation Trophy+	Skaters that did not play get +5 OVR after each win\nTimes Applied: 0
+Relics	5fce1934-fcb2-4e96-a756-3b9f0348d401	5fce1934-fcb2-4e96-a756-3b9f0348d401	1	Golden Sniper	Golden Wheats	Golden Helmet gives +10% crit chance
+Relics	5ff98e97-b482-430f-aa62-d2055734aecc	5ff98e97-b482-430f-aa62-d2055734aecc	1	Wet Noodle	Wet Noodle	-50% strength for opponent's first 4 shots
+Relics	60b499e7-cfa2-4d46-960d-af505f6c3c8d	60b499e7-cfa2-4d46-960d-af505f6c3c8d	2	Broken Alarm (Level 2)	Broken Alarm+	Opponents are knocked out +100% longer
+Relics	619b6056-b71f-48ad-afb4-ef8367ed8b31	619b6056-b71f-48ad-afb4-ef8367ed8b31	1	Second Referee	Two-Headed Zebra	1 extra referee joins the game
+Relics	6221b17a-8349-418a-83b3-86e8317b0bcd	6221b17a-8349-418a-83b3-86e8317b0bcd	1	Triple Threat	Cerbie Plushie	+2 OVR when a goal has 2 assists\nCurrent: 0
+Relics	6375483d-838d-43bc-91fa-33bafc8dab96	6375483d-838d-43bc-91fa-33bafc8dab96	1	Bench Bonus	Bench Bonus	[Missing: relics/bench_bonus/description]
+Relics	63eba90e-8f00-4147-ab8d-52f8405c500f	63eba90e-8f00-4147-ab8d-52f8405c500f	1	Bowling Relic	Bowling Relic	Skaters you knock out become bowling pins, knocking out any other skater they touch
+Relics	64b6228a-122e-4a14-8533-9a40a3125e23	64b6228a-122e-4a14-8533-9a40a3125e23	1	Empty Briefcase	Empty Briefcase	+10 OVR
+Relics	6507a6fe-47f5-48e6-9faa-29c1f92b211c	6507a6fe-47f5-48e6-9faa-29c1f92b211c	2	Cushioned (Level 2)	Steel Mitts+	Prevents Shot Power and Accuracy injuries
+Relics	68591c92-d2b7-415a-81ad-235eea15285d	68591c92-d2b7-415a-81ad-235eea15285d	1	Whisk	Holy Fungus	Each shot on goal gives +5 Speed. Resets on a goal
+Relics	68670f5c-626f-411d-b4fe-0f73b6bd97f4	68670f5c-626f-411d-b4fe-0f73b6bd97f4	1	Greater Cooldown	Bench Charger	+50% ability cooldown speed
+Relics	6a238c06-3a8d-4dae-aa32-a201ab5ff278	6a238c06-3a8d-4dae-aa32-a201ab5ff278	1	Bean Diet	Bean Diet	Farts have +33% strength and +33% range
+Relics	6d6ecb13-7f80-47d1-821c-f28d4e2bf89b	6d6ecb13-7f80-47d1-821c-f28d4e2bf89b	2	Indecisive (Level 2)	Indecisive+	+2 rerolls for each event\nTotal rerolls: 0
+Relics	6e5c5983-70a7-441c-80d2-69cf6c9c7a83	6e5c5983-70a7-441c-80d2-69cf6c9c7a83	1	Protection	Hard Hat	Skaters get +30 Checking when wearing a helmet
+Relics	6ebe1537-9f32-4842-b36d-6c22ea82960d	6ebe1537-9f32-4842-b36d-6c22ea82960d	2	Stethoscope (Level 2)	Grandma's Broth+	Skaters get +15 OVR when an injury is healed\nInjuries Healed: 0
+Relics	6ed1127c-2127-454b-8eeb-63af517dae07	6ed1127c-2127-454b-8eeb-63af517dae07	1	Red Marker	Red Marker	C gets +20 OVR
+Relics	6f00e6c6-c03e-4562-952a-c0d813bd312c	6f00e6c6-c03e-4562-952a-c0d813bd312c	1	CanadaCurseAngusZeroOvr	Angus Goes Cold	Angus plays with 0 OVR
+Relics	6f5bd97f-0ae6-4997-b86b-dc53167fd3bb	6f5bd97f-0ae6-4997-b86b-dc53167fd3bb	2	Oven Mitts (Level 2)	Oven Mitts+	+5 Shot Power after each shot on net. Resets when scoring a goal
+Relics	71c7036b-ba18-46e0-8fef-d25217d5ca17	71c7036b-ba18-46e0-8fef-d25217d5ca17	1	golfFairway	Golf Fairway	Switch the ice to a golf hole
+Relics	7235540f-4497-4c4c-8b5b-625f954b49f7	7235540f-4497-4c4c-8b5b-625f954b49f7	2	Corn dog-stic (Level 2)	Corn dog-stic+	+25 Shot Power
+Relics	727e0295-7626-4057-8e7d-728a17f20cfd	727e0295-7626-4057-8e7d-728a17f20cfd	1	Violent Plushie	Violent Plushie	Every bodycheck is a knockout. Every skater recovers from knockouts quickly
+Relics	72c65f7d-1be8-4669-98c3-4b580751f687	72c65f7d-1be8-4669-98c3-4b580751f687	1	Blue Banana	Blue Banana	Opponents will trip on the blue line 3% of the time
+Relics	733da43b-1c11-4c0c-94bf-d52a8b22d6c3	733da43b-1c11-4c0c-94bf-d52a8b22d6c3	1	CanadaCurseTeamOvrMinus20	Rusty Squad	Your team gets -20 OVR
+Relics	75a96514-8b4f-48a7-a191-9f0bafe02210	75a96514-8b4f-48a7-a191-9f0bafe02210	2	Merciless Timer (Level 2)	Merciless+	+7 OVR for each win by mercy
+Relics	7630ed1b-d222-442c-979b-b315fdd7c2a7	7630ed1b-d222-442c-979b-b315fdd7c2a7	1	annoyingAd	Annoying Ads	Get an ad when on a breakaway
+Relics	76abd0b9-ce32-49dd-8cf5-b5a469704e49	76abd0b9-ce32-49dd-8cf5-b5a469704e49	2	Gigantism LVL2	Gigantism+	+2 size
+Relics	778330c5-7df2-41c1-8583-b15604f9c21c	778330c5-7df2-41c1-8583-b15604f9c21c	1	Short Stick	Short-Handed	+30 OVR if you play with 3 skaters or less
+Relics	78f3fae3-b71f-4e6e-8742-e9781ac95a90	78f3fae3-b71f-4e6e-8742-e9781ac95a90	1	CanadaCurseOpponentBriefcase	Canadian Insurance	Team Canada gains
+Relics	7b71666a-6a7c-4852-9aa1-22e950e99fdd	7b71666a-6a7c-4852-9aa1-22e950e99fdd	1	Last Minute	Last Minute	+30 OVR in the last 30s of every period
+Relics	7be5fe1e-6709-4111-8d82-7213d678282b	7be5fe1e-6709-4111-8d82-7213d678282b	2	Fat Shrimp (Level 2)	Fat Shrimp+	Your  and  skaters get +25 OVR
+Relics	7e159de2-2d6d-4b2a-9ce9-18cc39a75933	7e159de2-2d6d-4b2a-9ce9-18cc39a75933	2	Last Minute Bonus (Level 2)	Last Minute+	+30 OVR in the last 45s of every period
+Relics	7ea7be80-1691-4967-99cc-1b4736c6d9e4	7ea7be80-1691-4967-99cc-1b4736c6d9e4	1	Sorest Loser	No-Fun Zone	Knockout the celebrating goal scorer to shatter every bone in their body
+Relics	7f07cefb-bab7-4807-b8c7-f47b7c2df416	7f07cefb-bab7-4807-b8c7-f47b7c2df416	1	Pizzaghetti	Pizzaghetti	Critical goals are worth 2 goals.
+Relics	7f1ecbb6-db92-4e73-ad66-60fdd7af7bfc	7f1ecbb6-db92-4e73-ad66-60fdd7af7bfc	1	Remarkable Rock	Remarkable Rock	The first goal of the game counts as 2 goals
+Relics	7f681d6a-a1ea-4c31-8b3a-4b1ccbc5c8cf	7f681d6a-a1ea-4c31-8b3a-4b1ccbc5c8cf	1	Blue Cone	Blue Cone	LD and RD get +25 Checking
+Relics	7fca4582-620a-4acc-8ba0-9b121f5e4c41	7fca4582-620a-4acc-8ba0-9b121f5e4c41	1	Companion Puck	Companion Puck	Each skater gains a shooting talent
+Relics	8047d884-a4a3-4596-94bf-da2b92ecb655	8047d884-a4a3-4596-94bf-da2b92ecb655	2	Bubble Wrap (Level 2)	Bubble Wrap+	Prevents Speed and Checking injuries
+Relics	80e81cc6-fcff-4009-8401-1a912975fc83	80e81cc6-fcff-4009-8401-1a912975fc83	1	soccerWall	Soccer Wall	[Missing: relics/soccer_wall/description]
+Relics	820af6ec-1651-4a0c-ba02-624cfedd65e2	820af6ec-1651-4a0c-ba02-624cfedd65e2	1	Breakaway Boost Relic	Breakaway Boost	+50% crit chance while on a breakaway
+Relics	82b895d4-bdd7-41d9-b46e-1d2d56e9e2c4	82b895d4-bdd7-41d9-b46e-1d2d56e9e2c4	2	Stop Watch (Level 2)	Frozen Clock+	Opponent goals in the last 20s of a period are denied
+Relics	840b6ecb-77d8-4a2b-82ba-cd57a73fcea5	840b6ecb-77d8-4a2b-82ba-cd57a73fcea5	2	Slap Stick Relic (Level 2)	Dentist Appointment+	Opponents have a 15% chance of getting knocked out after they shoot
+Relics	847d84d3-4cbf-4ce5-8646-4dabe3b8177e	847d84d3-4cbf-4ce5-8646-4dabe3b8177e	1	RefereeBriefcase	Briefcase	Revert 1st goal that gives opponent the lead
+Relics	8552fc83-5c1b-4ba9-9490-9f9eac0eae5d	8552fc83-5c1b-4ba9-9490-9f9eac0eae5d	1	Can of Worms	Can of Worms	Training gives +50% attributes\nTimes trained: 0
+Relics	88226e2f-45ce-4a66-92a3-edc3b86f49fa	88226e2f-45ce-4a66-92a3-edc3b86f49fa	2	Wasabi Paste (Level 2)	Jar of Tears+	After anyone scores, get enraged
+Relics	89d3ea78-6fb0-4d49-8bfd-8fe12092e001	89d3ea78-6fb0-4d49-8bfd-8fe12092e001	1	Shrink Serum	Shrink Serum	+30 Speed\n-1 size
+Relics	8add8d50-2c98-4e73-9655-1e6d1f079ef2	8add8d50-2c98-4e73-9655-1e6d1f079ef2	2	Weighted Die (Level 2)	Weighted Die+	+2 rerolls for each reward at the end of a game
+Relics	8af787d1-a196-4c1f-bc55-4cad272c4f3e	8af787d1-a196-4c1f-bc55-4cad272c4f3e	1	Critical Relic	Good Luck Puck	+15% crit chance
+Relics	8bee35df-3552-4afa-9f8a-51e8cf158ff3	8bee35df-3552-4afa-9f8a-51e8cf158ff3	2	Blue Banana (Level 2)	Blue Banana+	Opponents will trip on the blue line 4% of the time
+Relics	8cb96216-e1f6-4bfe-a626-50726936d538	8cb96216-e1f6-4bfe-a626-50726936d538	1	Crash Test Dummy	Checking Monthly	Give each skater a random Checking talent
+Relics	8dc55401-8077-4eef-a50b-32eca83712c7	8dc55401-8077-4eef-a50b-32eca83712c7	1	Aromatic Electrolyte	Aromatic Electrolyte	+25 Speed in period 1
+Relics	8e1ae372-a6cd-43a4-8dd3-20b12e2fed38	8e1ae372-a6cd-43a4-8dd3-20b12e2fed38	1	Brick Wall	Blue Marker	LD and RD get +10 OVR
+Relics	8e9727ad-290f-4ce1-b87a-f8fde420706c	8e9727ad-290f-4ce1-b87a-f8fde420706c	1	Training Whistle	Carrot on a Stick	+10 Speed after training\nTimes Trained: 0
+Relics	8ee2d786-f671-4208-aab0-ce5da57db344	8ee2d786-f671-4208-aab0-ce5da57db344	1	Head Start	Head Start Clock	At the start of a game, add 60s to the clock
+Relics	8f587e3b-0862-4fd2-99d8-e0a3b54a486f	8f587e3b-0862-4fd2-99d8-e0a3b54a486f	1	Frog On Goal	Frog Counter	The opponent's last goal scorer is always frogged
+Relics	8f773bf5-45cf-459f-91e5-81957a8e483d	8f773bf5-45cf-459f-91e5-81957a8e483d	1	Fragile Speed Bonus Relic	Iron Lung	Injured skaters get +40 shot power
+Relics	8fe59fdd-c68e-4caa-922d-3810948c593e	8fe59fdd-c68e-4caa-922d-3810948c593e	1	Hot Cake	Hot Cake	At the start of a game, all teammates gain one of your talents
+Relics	8fee9dab-7fef-4a17-8c33-2bf225f5dc74	8fee9dab-7fef-4a17-8c33-2bf225f5dc74	2	Sparky Electrolyte (Level 2)	Sparkly Electrolyte+	+35 Shot Power in period 1
+Relics	90698505-8e45-4e8b-8f41-00cbd4204d97	90698505-8e45-4e8b-8f41-00cbd4204d97	1	Shrimp Cocktail	Shrimp Cocktail	Your  and  skaters get +20 OVR
+Relics	90c318b2-c3a5-4677-a81c-153f8ca0b954	90c318b2-c3a5-4677-a81c-153f8ca0b954	1	Coach Coupon	Coach Coupon	Gain a second pick when visiting the Coach\nCoach visits: 0
+Relics	90db2d73-f6e7-444c-baa3-4f5685f3615e	90db2d73-f6e7-444c-baa3-4f5685f3615e	1	Lifeless Branch	Lifeless Branch	Your skaters get up 2x quicker
+Relics	9221c750-920d-44b1-90d9-a2ea89f91210	9221c750-920d-44b1-90d9-a2ea89f91210	1	Quantum Sextant	Quantum Sextant	Speed bonuses increase Shot Power instead
+Relics	92730526-7fe8-49f9-bbb4-ab16e609450b	92730526-7fe8-49f9-bbb4-ab16e609450b	1	Slap Stick Relic	Dentist Appointment	Opponents have a 10% chance of getting knocked out after they shoot
+Relics	942c8339-9c4a-4ad0-89ea-6ab43d9149be	942c8339-9c4a-4ad0-89ea-6ab43d9149be	2	Tribal Mask (Level 2)	Tribal Mask+	+25 OVR for each goal you are trailing by
+Relics	94917983-d166-4883-bad8-f978904199ff	94917983-d166-4883-bad8-f978904199ff	1	Frog On Faceoff	Frog-Off	Frog opponents for 60s when winning a faceoff
+Relics	94aa29fb-d25e-4f91-8bba-bcaeec13838d	94aa29fb-d25e-4f91-8bba-bcaeec13838d	2	Revenge (Level 2)	Foiled+	Inflict 2 injuries on any skater who has injured your team
+Relics	9542d9a4-27b0-43a9-b578-28101f1449c2	9542d9a4-27b0-43a9-b578-28101f1449c2	1	CanadaCurseTeamSpeedMinus40	Heavy Legs	Your team gets -40 Speed
+Relics	954e9106-af13-404f-b3f2-c8621239d88d	954e9106-af13-404f-b3f2-c8621239d88d	1	Enraged Injury Relic	Deviled Egg	Enraged skaters have 2x injury infliction chance
+Relics	956100f1-9bba-425a-b1fe-4984684bf5c5	956100f1-9bba-425a-b1fe-4984684bf5c5	1	Gerry Boulet	Brickie Plushie	+2 OVR when LD or RD score a goal\nCurrent: 0
+Relics	9574b033-21e6-4416-a2f5-82073298a6eb	9574b033-21e6-4416-a2f5-82073298a6eb	1	Random Upgrade	The Improverizer	1 random talent, ability or relic is upgraded after each game
+Relics	968eacc9-33e7-42b4-8595-68ce3d7e12db	968eacc9-33e7-42b4-8595-68ce3d7e12db	1	GoalPlankRelic	[Missing: relics/goal_plank/name]	[Missing: relics/goal_plank/description]
+Relics	96aab4e1-be88-4b76-84d9-b8f1fc1fef6b	96aab4e1-be88-4b76-84d9-b8f1fc1fef6b	1	Rare Berry	Rare Berry	Your team gains immunity for 5s after winning a faceoff\nFaceoffs won: 0
+Relics	98cfbee6-c14d-4e6a-8f35-4e58f88d78c0	98cfbee6-c14d-4e6a-8f35-4e58f88d78c0	2	Polarized Glasses (Level 2)	Ghost Vision+	All skaters gain
+Relics	9908344a-ce9f-4a68-996c-26605b30f16c	9908344a-ce9f-4a68-996c-26605b30f16c	2	Cripple (Level 2)	Cripple+	Opponents get -2 OVR when knocked out
+Relics	996c5d71-24d0-4c43-aa7e-43c997e0a359	996c5d71-24d0-4c43-aa7e-43c997e0a359	2	Buzzer Beater Timer (Level 2)	Buzzer Beater+	Goals scored in the last 60s of the game count as 2 goals
+Relics	9bbc4786-cb02-480d-8093-ee52ba014c08	9bbc4786-cb02-480d-8093-ee52ba014c08	2	Merciless (Level 2)	Merciless+	+7 OVR for each win in period 1\nMercy wins: 0
+Relics	9c2c69a4-fcf1-403f-b575-a46fee710f03	9c2c69a4-fcf1-403f-b575-a46fee710f03	1	Toothpick	Toothpick	Opponents get +10% stick break chance on a pass
+Relics	9c5ae2ce-6ca6-4041-a9c5-caa273b1bafe	9c5ae2ce-6ca6-4041-a9c5-caa273b1bafe	1	Indecisive	Indecisive	+1 reroll for each event\nTotal rerolls: 0
+Relics	9cba5384-e2b4-4574-ba67-214f964d94b4	9cba5384-e2b4-4574-ba67-214f964d94b4	2	Voodoo Doll (Level 2)	Missing Toe+	The best opponent skater gets -20 OVR for the game
+Relics	9d9897da-f391-4eb2-a5c8-fb0636b2ed8c	9d9897da-f391-4eb2-a5c8-fb0636b2ed8c	1	Rubberband	Rubberband	+15 Accuracy
+Relics	9e03f7ad-7fa4-4405-a77a-b45c97e9f14d	9e03f7ad-7fa4-4405-a77a-b45c97e9f14d	2	Express Delivery (Level 2)	Express Delivery+	Greatly increase the speed of your passes
+Relics	9e44ded7-39ba-4bf7-9f5d-a73d9960e16b	9e44ded7-39ba-4bf7-9f5d-a73d9960e16b	1	Green Marker	Green Marker	LW and RW get +10 OVR
+Relics	9f1cd745-75ed-49c0-ae2a-b362d62da828	9f1cd745-75ed-49c0-ae2a-b362d62da828	1	Self Defense	Self Defense	+30 Checking while in your own zone
+Relics	9f5809f2-e15a-4014-82dc-d36da1251f01	9f5809f2-e15a-4014-82dc-d36da1251f01	2	Helmetless (Level 2)	Flow Mode+	Skaters get +40 Speed when not wearing a helmet
+Relics	a0f2f9ae-0ee1-4492-945e-88ad697c83e4	a0f2f9ae-0ee1-4492-945e-88ad697c83e4	1	Small Player Crit	Shrimpy Bits	Your  and  skaters get +25% crit chance
+Relics	a17ae6bd-cbd1-4935-abb6-f7d909245dcc	a17ae6bd-cbd1-4935-abb6-f7d909245dcc	1	Bolt Relic	D20	+25% crit strength
+Relics	a1f1194a-1242-479f-8c77-b7bba33b9784	a1f1194a-1242-479f-8c77-b7bba33b9784	2	Shrink Serum (Level 2)	Shrink Serum+	+40 Speed\n-2 size
+Relics	a29c33ea-34e1-44e2-9389-df36920037e5	a29c33ea-34e1-44e2-9389-df36920037e5	1	Hard Boiled Egg	Hard Boiled	+25% injury chance for opponents knocked out by the puck
+Relics	a2f3a09d-b4bb-46d5-86ec-c0d7be3d2eaf	a2f3a09d-b4bb-46d5-86ec-c0d7be3d2eaf	2	Critical One Timer Relic (Level 2)	Sweet Spot+	One-Timers have +15% crit chance
+Relics	a51aeda7-b715-4235-b6cb-4eebdceee1a8	a51aeda7-b715-4235-b6cb-4eebdceee1a8	2	Laser Pointer (Level 2)	Game-Seven Glasses+	+50% crit chance in the last 30s of a period
+Relics	a71e3979-c7d5-41a2-a385-494c75f87d0c	a71e3979-c7d5-41a2-a385-494c75f87d0c	1	Handcuffs	Handcuffs	Your free agents never leave
+Relics	a877a97a-c064-4bab-b64b-7be8f5981fb8	a877a97a-c064-4bab-b64b-7be8f5981fb8	2	Blue Cone (Level 2)	Blue Cone+	LD and RD get +40 Checking
+Relics	a8bc1a0e-4e72-4551-8b43-0cde85a0a577	a8bc1a0e-4e72-4551-8b43-0cde85a0a577	2	Rage Switch (Level 2)	Rage Switch+	Enrage the team when triggering an ability
+Relics	aa57e8fe-94d8-429a-8af0-443690b6d404	aa57e8fe-94d8-429a-8af0-443690b6d404	1	Golden Duo	Spare Bucket	2nd best scorer also gets Golden Helmet
+Relics	ab2581e1-5430-4e13-a47a-61bdb4d9b6cb	ab2581e1-5430-4e13-a47a-61bdb4d9b6cb	2	Dry Noodle (Level 2)	Dry Noodle+	+50% strength for your first 5 shots
+Relics	ab3c468a-e3a0-4812-b0aa-e384497175c8	ab3c468a-e3a0-4812-b0aa-e384497175c8	1	Frozen Relic	Frozen Relic	Relic is frozen
+Relics	ac1066c4-054b-4862-bba7-25252847eae6	ac1066c4-054b-4862-bba7-25252847eae6	1	Dentist Drill	Turbo Crutch	+20 Speed when you have an injured skater
+Relics	acbeab28-21f6-41d0-9db8-c8face7aa8e2	acbeab28-21f6-41d0-9db8-c8face7aa8e2	2	Wet Noodle (Level 2)	Wet Noodle+	-50% strength for opponent's first 7 shots
+Relics	adc04619-9ebe-454d-8efe-3fa341737197	adc04619-9ebe-454d-8efe-3fa341737197	2	Odd Fungus (Level 2)	Odd Fungus+	Receiving a pass propels your skaters far forward
+Relics	b01fbcde-a00d-4bfd-b592-706d3349675e	b01fbcde-a00d-4bfd-b592-706d3349675e	2	Protection (Level 2)	Hard Hat+	Skaters get +40 Checking when wearing a helmet
+Relics	b1390d04-e654-4a79-aa96-7d7a007fc232	b1390d04-e654-4a79-aa96-7d7a007fc232	1	Fart Knockout	Fartillery	Fart bursts knock out all skaters in range
+Relics	b2dbfd59-72a3-4e8b-b615-76d7a37f817a	b2dbfd59-72a3-4e8b-b615-76d7a37f817a	2	Rubberband (Level 2)	Rubberband+	+25 Accuracy
+Relics	b3e0ce15-f424-4400-8e03-d7bd9ca9f59b	b3e0ce15-f424-4400-8e03-d7bd9ca9f59b	1	Defense Crit	Special D	LD and RD get +20% crit chance
+Relics	b4592c2a-160d-4a17-91c4-31c77c693b9f	b4592c2a-160d-4a17-91c4-31c77c693b9f	1	Golden Helmet Bench Bonus	Royal Rest	Golden Helmet gives 3x bench bonus\nTimes applied: 0
+Relics	b50d20ef-141c-4eae-8dde-1736ab233dbe	b50d20ef-141c-4eae-8dde-1736ab233dbe	1	Rigged Faceoff	Rigged Faceoff	You often win faceoffs
+Relics	b5e83e72-3947-41c0-80da-62dc0ecc42da	b5e83e72-3947-41c0-80da-62dc0ecc42da	1	Odd Fungus	Odd Fungus	Receiving a pass propels your skaters forward
+Relics	b728b878-f5b9-4247-abfa-b2f28c6e72d8	b728b878-f5b9-4247-abfa-b2f28c6e72d8	1	Benchwarmer Ovr Relic	Benchwarmer Boost	Benchwarmers get +15 OVR
+Relics	b76244a9-d4e8-4b23-b1d7-0e83a6678530	b76244a9-d4e8-4b23-b1d7-0e83a6678530	1	High Flyer	High Flyer	Lobbed passes are 2x higher
+Relics	b808090f-9a29-4e33-9702-d421b72d5618	b808090f-9a29-4e33-9702-d421b72d5618	1	hotPotato	Hot Potato	Puck explodes if you have it for more than 3s
+Relics	b84a161b-0b35-4cc8-a86f-08d9f82726bf	b84a161b-0b35-4cc8-a86f-08d9f82726bf	1	Sparkly Electrolyte Timer	Sparkly Electrolyte	+25 OVR in period 3
+Relics	bc623321-2e5c-43bd-9484-29ad93c9dca1	bc623321-2e5c-43bd-9484-29ad93c9dca1	1	The Squeezer	The Squeezer	Opponents get -1 size
+Relics	bd11acbc-8cb9-403d-8cbd-cf5510df4e2b	bd11acbc-8cb9-403d-8cbd-cf5510df4e2b	1	Merciless Timer	Merciless	+5 OVR for each win by mercy
+Relics	bec22419-80cc-4f22-af28-5d73ed46fc17	bec22419-80cc-4f22-af28-5d73ed46fc17	1	Fat Shrimp	Fat Shrimp	Your  and  skaters get +15 OVR
+Relics	bfc8f647-32b4-410e-96f2-1e409eb39081	bfc8f647-32b4-410e-96f2-1e409eb39081	2	Backdraft Relic (Level 2)	Backdraft+	Opponents' shots propel them far backward
+Relics	c03631a3-8962-42e5-8caa-f86df4a6085a	c03631a3-8962-42e5-8caa-f86df4a6085a	2	Hot Cake (Level 2)	Hot Cake+	At the start of a game, all teammates gain one of your talents, upgraded if possible
+Relics	c14d5b61-29d3-48f8-aa83-a4933793a26c	c14d5b61-29d3-48f8-aa83-a4933793a26c	1	Double Incision	Double Yolk	When you cause an injury, inflict 1 extra injury
+Relics	c2772cc6-5251-474c-8f4c-5d59180c4f89	c2772cc6-5251-474c-8f4c-5d59180c4f89	2	Bolt Relic (Level 2)	D20+	+50% crit strength
+Relics	c356fd2f-440e-4394-b1a4-7cf0991114e2	c356fd2f-440e-4394-b1a4-7cf0991114e2	1	Tied Homie	Tied Homie	The opposing team needs to win by at least 2 goals
+Relics	c482a0fc-951c-43e7-b101-2b6cb6a2a78f	c482a0fc-951c-43e7-b101-2b6cb6a2a78f	1	Double Bench Bonus	Double-Decker	2x bench bonus
+Relics	c6a74545-d6e6-4206-9af7-c2466e46bcdc	c6a74545-d6e6-4206-9af7-c2466e46bcdc	2	Double Reward (Level 2)	Extra Reward+	For the next 2 games you get 1 extra relic reward and 1 extra talent reward\nRemaining Uses: 2
+Relics	c78e4123-2a27-438b-8873-fcac1da8233f	c78e4123-2a27-438b-8873-fcac1da8233f	1	Both Team Crit	Pucky Charms	+20% crit chance for both teams
+Relics	c82b7394-4d8d-489f-bbb9-ba2fbe045d7e	c82b7394-4d8d-489f-bbb9-ba2fbe045d7e	2	Toothpick (Level 2)	Toothpick+	Opponents get +15% stick break chance on a pass
+Relics	c8dbe4ba-e07a-45e4-905a-497f39f3a044	c8dbe4ba-e07a-45e4-905a-497f39f3a044	1	Tribal Mask	Tribal Mask	+15 OVR for each goal you are trailing by
+Relics	c930bd48-ddbe-430c-9cf8-9fdc98a8cfb7	c930bd48-ddbe-430c-9cf8-9fdc98a8cfb7	2	Tong (Level 2)	Tong+	Your team gains puck possession after a pokecheck, and your skaters are propelled forward
+Relics	cad50d30-21e8-4c45-b165-16fc7479d3d0	cad50d30-21e8-4c45-b165-16fc7479d3d0	1	Yips	Jigglypuck	Opponents on a breakaway have -50% shot strength\nShots Affected: 0
+Relics	cb19f0da-d852-46ba-a8a8-48d97cdf8e2c	cb19f0da-d852-46ba-a8a8-48d97cdf8e2c	1	Tong	Tong	Your team gains puck possession after a pokecheck
+Relics	cbf019bf-c3c3-477f-bca4-e4f4d9e3a371	cbf019bf-c3c3-477f-bca4-e4f4d9e3a371	1	CanadaCurseOpponentBonecrusher	Bonecrusher Nation	Every Team Canada skater gains
+Relics	cbf1d6c7-0b0e-452e-ba8e-6882dba44bc0	cbf1d6c7-0b0e-452e-ba8e-6882dba44bc0	2	Breakaway Boost Relic (Level 2)	Breakaway Boost+	+75% crit chance while on a breakaway
+Relics	cc0fc484-dcba-4230-8a34-f7b6f989da2d	cc0fc484-dcba-4230-8a34-f7b6f989da2d	1	Angus Ascension	Ginger Fury	Upgrade every talent and ability on Angus
+Relics	cd547186-bdd6-4635-9b5d-d36c975f4351	cd547186-bdd6-4635-9b5d-d36c975f4351	1	Voodo Doll	Missing Toe	A random opponent gets -20 OVR for the game
+Relics	cdc68a1c-0d44-4b9a-83b3-829006a556a8	cdc68a1c-0d44-4b9a-83b3-829006a556a8	2	Greater Cooldown Relic (Level 2)	Bench Charger+	+100% ability cooldown speed
+Relics	cfcb6e4c-66c5-45b4-8dda-7bbe6be2177b	cfcb6e4c-66c5-45b4-8dda-7bbe6be2177b	1	Cripple	Cripple	Opponents get -1 OVR when knocked out
+Relics	d07ad9ad-5431-4bbe-a6ce-70b771f20da7	d07ad9ad-5431-4bbe-a6ce-70b771f20da7	1	Blue Line Bounce Relic	Blue Line Bounce	The loose puck bounces when it crosses the blue line
+Relics	d08f68e9-2fad-498f-829c-0fdf50ba3b17	d08f68e9-2fad-498f-829c-0fdf50ba3b17	1	Helmetless	Flow Mode	Skaters get +30 Speed when not wearing a helmet
+Relics	d0f6ed97-624e-4ddf-a6f8-99f47f8c0ad4	d0f6ed97-624e-4ddf-a6f8-99f47f8c0ad4	1	Relic Copier	Relic Copier	At the start of a game, copy 2 of the opponent's relics
+Relics	d1a7dc0b-cfc0-4f10-b094-b3a113d70f1f	d1a7dc0b-cfc0-4f10-b094-b3a113d70f1f	2	Fusilli (Level 2)	Mush-a-roni+	Skaters with at least 50 Shot Power get +45 Speed
+Relics	d354ee73-975a-4b73-a5e0-e8d123230318	d354ee73-975a-4b73-a5e0-e8d123230318	1	Blood Bonus	Pain Points	Goals scored by injured skaters count as 2 goals\nGoals while injured: 0
+Relics	d3904cee-79e1-48fe-ae51-003072746f57	d3904cee-79e1-48fe-ae51-003072746f57	2	Ink Bottle (Level 2)	Defense Monthly+	Each skater gains an upgraded defensive talent
+Relics	d3cdaeec-e353-485d-b284-e29fb0e3c663	d3cdaeec-e353-485d-b284-e29fb0e3c663	2	Black Coffee (Level 2)	Speed Monthly+	Give each skater a random upgraded Speed talent
+Relics	d4ca95dc-fc6d-4430-abf6-05535286ee06	d4ca95dc-fc6d-4430-abf6-05535286ee06	1	Golden Potential	Lucky Bullion	At the start of a game, Golden Helmet gives a random talent
+Relics	d637f9e3-3b3b-44a2-b845-05df5770e0b8	d637f9e3-3b3b-44a2-b845-05df5770e0b8	1	Fart Ovr	Special Undies	+1 OVR per fart\nResets each game
+Relics	d72bebe2-0fc3-48a4-af10-4f6d6f64ab01	d72bebe2-0fc3-48a4-af10-4f6d6f64ab01	2	Halo (Level 2)	White Flag+	+50 OVR until you knockout an opponent
+Relics	d79c7c9b-d400-4763-a930-95cac23549a3	d79c7c9b-d400-4763-a930-95cac23549a3	2	Double Incision (Level 2)	Double Yolk+	When you cause an injury, inflict 2 extra injuries
+Relics	d7c5b8fa-9959-48ba-9f34-8223ffe363e7	d7c5b8fa-9959-48ba-9f34-8223ffe363e7	1	Gurney	Noodlord	+10 Speed for every skater currently knocked out
+Relics	d95280ef-38b8-4c34-b463-7dabddaa53e1	d95280ef-38b8-4c34-b463-7dabddaa53e1	1	Robbed	Shot Clock	When the opposing goalie saves your shot, add 5s to the clock
+Relics	d9a18fc0-ae7f-471b-9beb-182067ec1756	d9a18fc0-ae7f-471b-9beb-182067ec1756	1	Dry Noodle	Dry Noodle	+50% strength for your first 3 shots
+Relics	dac24d59-ae55-41f7-8eae-eb20f9386371	dac24d59-ae55-41f7-8eae-eb20f9386371	1	Weighted Die	Weighted Die	+1 reroll for each reward at the end of a game
+Relics	dbd2ff78-ac54-406c-8e90-b7e06ede1f96	dbd2ff78-ac54-406c-8e90-b7e06ede1f96	1	falseGoalOnPost	Post Goal	Give a goal on a post shot
+Relics	dc7840fc-016b-44b2-a0f2-ffa8c43c3994	dc7840fc-016b-44b2-a0f2-ffa8c43c3994	1	Fart Immunity	Hockey Bag	Your farts grant immunity for 2s to the farter and your skaters that are farted on
+Relics	dd96d90a-5ec4-4552-bbdb-cc8afb1df5da	dd96d90a-5ec4-4552-bbdb-cc8afb1df5da	2	Briefcase (Level 2)	Briefcase+	Revert back 2 goals
+Relics	ddd1c7bb-5217-4c19-ae9f-b087e809b416	ddd1c7bb-5217-4c19-ae9f-b087e809b416	2	Aromatic Electrolyte (Level 2)	Aromatic Electrolyte+	+35 Speed in period 1
+Relics	de3c2b70-d2dd-4d9d-8cf9-3a16bb55c982	de3c2b70-d2dd-4d9d-8cf9-3a16bb55c982	1	Egg Timer	Deca-Egg	Every 10 knockouts cause an injury
+Relics	de9f694d-3846-4e47-9b91-c4f91dbc68b6	de9f694d-3846-4e47-9b91-c4f91dbc68b6	1	Crunch Time	Bruiser Clock	Each time your team knocks someone out, add 5s to the clock
+Relics	dee979af-6901-4b07-ab3e-46bb9bdf2298	dee979af-6901-4b07-ab3e-46bb9bdf2298	1	CanadaCurseFreezeTwoRelics	Deep Freeze	2 of your relics are frozen
+Relics	df1857c4-23b3-4765-addf-fe7fbff541de	df1857c4-23b3-4765-addf-fe7fbff541de	1	Enrage Bonus	Rage Burger	Goals scored by enraged skaters count as 2 goals
+Relics	df98ad6e-c327-424f-ab4b-4a07ac985b4b	df98ad6e-c327-424f-ab4b-4a07ac985b4b	1	tycoonsIce	[Missing: relics/tycoons_ice/name]	[Missing: relics/tycoons_ice/description]
+Relics	e153cd57-b035-487d-b5cb-eb4b0ab3d949	e153cd57-b035-487d-b5cb-eb4b0ab3d949	1	Fast Shoulder	Faster Checks	Quicker bodychecks
+Relics	e237b920-8800-4f42-80d3-fe7a8852a3d3	e237b920-8800-4f42-80d3-fe7a8852a3d3	1	Relic Stealer	Relic Stealer	At the start of a game, steal 2 of the opponent's relics
+Relics	e306f00d-56f3-4b82-abc7-3b3c8e30a15f	e306f00d-56f3-4b82-abc7-3b3c8e30a15f	1	Oaky Electrolyte Timer	Oaky Electrolyte	+25 OVR in period 2
+Relics	e43647f5-61bc-4b0c-9cca-f1bac664d238	e43647f5-61bc-4b0c-9cca-f1bac664d238	1	Referee Rumble	Referee Rumble	Enrage your team when the referee is knocked out
+Relics	e45f5232-0bca-4bd3-9d26-b043d142ed31	e45f5232-0bca-4bd3-9d26-b043d142ed31	1	Shrimp Basket	Shrimp Squad	LD and RD get +1 size\nLW, RW and C get -1 size
+Relics	e5365aff-d340-4ee9-9271-fbf51813ad3b	e5365aff-d340-4ee9-9271-fbf51813ad3b	1	Triage	Injured Clock	When any skater gets injured, add 30s to the clock
+Relics	e5f29525-6468-47e1-b1d2-4deb87573bc9	e5f29525-6468-47e1-b1d2-4deb87573bc9	1	Buzzer Beater Timer	Buzzer Beater	Goals scored in the last 45s of the game count as 2 goals
+Relics	e61fc149-89ec-4043-88d6-305b77805dc9	e61fc149-89ec-4043-88d6-305b77805dc9	1	Enraged Ovr	Infrared Marker	+2 OVR each time you get enraged. Resets each game
+Relics	e65241a8-3736-4b49-8a30-8fbfd596338c	e65241a8-3736-4b49-8a30-8fbfd596338c	1	Broken Alarm	Broken Alarm	Opponents are knocked out +50% longer
+Relics	e6f71ded-8515-4baf-ada3-97b6ddce7499	e6f71ded-8515-4baf-ada3-97b6ddce7499	1	Blue Line Launch Relic		
+Relics	e7fcea58-4747-4891-be46-bd432111e8bc	e7fcea58-4747-4891-be46-bd432111e8bc	1	OctopusAttackRelic	[Missing: relics/octopus_attack/name]	[Missing: relics/octopus_attack/description]
+Relics	e8ec67b8-2ff5-4032-bd04-7404639de568	e8ec67b8-2ff5-4032-bd04-7404639de568	1	Lucky Molar	Lucky Molar	Any knockout by one of your skaters propels all of them forward
+Relics	eb3dcaf9-2b10-4a3c-a5a4-80904b5fc48a	eb3dcaf9-2b10-4a3c-a5a4-80904b5fc48a	2	Lifeless Branch (Level 2)	Lifeless Branch+	Your skaters get up instantly
+Relics	ebfece72-ca43-41c5-83a7-54c46818cf04	ebfece72-ca43-41c5-83a7-54c46818cf04	1	CanadaCurseFragileTeam	Glass Bones	Your team gains
+Relics	ed9e16e9-ce68-4d22-9f1f-eb5b84a164c8	ed9e16e9-ce68-4d22-9f1f-eb5b84a164c8	1	Speedy Meta Relic	Cheeto Plushie	+40 Speed\n-200 Checking
+Relics	ee73a989-13ca-49cd-9fc0-b31b90e81e30	ee73a989-13ca-49cd-9fc0-b31b90e81e30	1	Playable Referee	Whistle Blower	Referees join your team and can be player-controlled
+Relics	f04bcfdf-0f5a-4387-9758-bdbe9378a1a4	f04bcfdf-0f5a-4387-9758-bdbe9378a1a4	2	Mortar And Pestle (Level 2)	Mortar and Pestle+	+15 OVR for every opponent injured this game\nInjured this game: 0
+Relics	f12cf48d-ed22-4464-99c2-d71ff3f1cc57	f12cf48d-ed22-4464-99c2-d71ff3f1cc57	1	Merciless	Merciless	+5 OVR for each win in period 1\nMercy wins: 0
+Relics	f19e515c-8f52-4540-ad8a-31bb18a36405	f19e515c-8f52-4540-ad8a-31bb18a36405	1	Golden Showdown	Golden Showdown	Golden Helmet gives +15 OVR against bosses
+Relics	f247d4d7-cf19-4f12-8422-72a0d0ceabbe	f247d4d7-cf19-4f12-8422-72a0d0ceabbe	2	Can Of Worms (Level 2)	Can of Worms+	Training gives +100% attributes\nTimes trained: 0
+Relics	f295e7a3-7b2c-4d3e-9fe6-cf895b6e2eba	f295e7a3-7b2c-4d3e-9fe6-cf895b6e2eba	1	Crit Shot Knockout	Egg Crispies	Crits knock out all opponents
+Relics	f3d25c5b-aa48-4886-b8cc-d5bbdd73b589	f3d25c5b-aa48-4886-b8cc-d5bbdd73b589	1	Crit Shot Frog	Swamp Scoops	Crits frog all opponents for 60s
+Relics	f4b2e9ac-12d4-4e75-8f63-01c9fbfb9c37	f4b2e9ac-12d4-4e75-8f63-01c9fbfb9c37	1	Last Stand Relic	Last Stand	When the clock hits zero, play continues while your team has the puck. The final whistle blows when you lose possession. Your buzzer shots are allowed to finish
+Relics	f5a3d5eb-0c3d-4b55-8b64-d765003587d5	f5a3d5eb-0c3d-4b55-8b64-d765003587d5	2	Lost Fungus (Level 2)	Lost Fungus+	Picking up a loose puck propels your skaters far forward
+Relics	f7133ace-675e-4def-9618-8ea1644fc258	f7133ace-675e-4def-9618-8ea1644fc258	1	Backdraft Relic	Backdraft	Opponents' shots propel them backward
+Relics	f79b5e7b-c137-4d05-9fca-1f68691ec402	f79b5e7b-c137-4d05-9fca-1f68691ec402	1	Golden Resilience	Royal Treatment	Golden Helmet prevents injuries
+Relics	f97f235d-ffd9-441b-b09a-05814c3fc1c3	f97f235d-ffd9-441b-b09a-05814c3fc1c3	1	Mortar And Pestle	Mortar and Pestle	+10 OVR for every opponent injured this game\nInjured this game: 0
+Relics	faf3bcc0-38b7-4b4b-9688-bfa8f50802e7	faf3bcc0-38b7-4b4b-9688-bfa8f50802e7	1	Fusilli	Mush-a-roni	Skaters with at least 50 Shot Power get +30 Speed
+Relics	fbf743fc-0cc3-4c90-a745-81792fa1e240	fbf743fc-0cc3-4c90-a745-81792fa1e240	1	No Entry Relic		
+Relics	fdd9ab50-79d3-47f6-9358-2534ca1ee935	fdd9ab50-79d3-47f6-9358-2534ca1ee935	1	Retro Rocket	Retro Rocket	+40 Speed when skating backward
+Relics	fe7830b2-e2db-4bc1-9307-5efbd81189bd	fe7830b2-e2db-4bc1-9307-5efbd81189bd	2	Buzzer Beater (Level 2)	Buzzer Beater+	Goals scored in the last 30s of a period count as 2 goals
+Relics	ff358466-f146-408e-8049-b4ece03e4e12	ff358466-f146-408e-8049-b4ece03e4e12	1	Whistle Of Time Timer	Whistle of Time	Time goes 2x faster when you lead
+Relics	ff9ac081-9f12-4aad-af75-ea4f19edde93	ff9ac081-9f12-4aad-af75-ea4f19edde93	2	Whisk (Level 2)	Holy Fungus+	Each shot on goal gives +7 Speed. Resets on a goal

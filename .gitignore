@@ -1,41 +1,40 @@
-# Build artefacts
-bin/
-obj/
-*.pdb
-*.cache
-.vs/
-
-# Python build
-__pycache__/
-*.pyc
-_build/
+# Reproducible build output and local dependency payloads
+**/bin/
+**/obj/
 build/
-dist/
-*.spec
-
-# Editor / IDE
-.idea/
-.vscode/
-*.suo
-*.user
-
-# OS
-Thumbs.db
-.DS_Store
-
-# Large dumps / backups / local testing
-BACKUPS/
-interop_backup/
-assembilies/
-release/Custom Campaigns Mod/_build/
-release/Custom Campaigns Mod/__pycache__/
-
-# Installer intermediate
-installer/Output_Linux/
-
-# Local log / debug
+installer/bepinex/
+installer/Output*/
+tools/ffmpeg/ffmpeg.exe
+*.pdb
 *.log
-LogOutput.log
+*.7z
+*.zip
+release/*.exe
+release/Nexus-Beta-1.0/
 
-# Dropbox API secrets (bundled into exe by PyInstaller, never commit)
-release/Custom Campaigns Mod/_dropbox_secrets.py
+# User data, game files and retired development output
+artifacts/
+tests/
+test-campaigns/
+dump_*/
+graphify-out/
+**/graphify-out/
+outputs/
+custom-heads/
+nhl-heads/
+wip/
+worker/
+interop_backup/
+release/T2T_Dumps/
+release/Custom Campaigns Mod/
+
+# Local editor and operating-system files
+.vs/
+.vscode/
+.claude/
+*.user
+*.suo
+__pycache__/
+Thumbs.db
+Desktop.ini
+.DS_Store

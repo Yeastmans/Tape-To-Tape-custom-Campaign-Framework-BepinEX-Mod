@@ -1,0 +1,88 @@
+[size=5][b]Tape to Tape — Campaign Studio Beta 1.0[/b][/size]
+
+Build your own hockey roguelite. Campaign Studio is a visual editor for Tape to Tape campaigns, players, teams, maps and rewards. The bundled Custom Campaign Framework mod loads your creations into the game. No coding required.
+
+[b]Beta 1.0 includes Studio and the mod in one Windows installer.[/b] It starts the new Studio release family; older v2.1.x releases contain the previous creator.
+
+[url=https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod#readme]Illustrated guide[/url] | [url=https://discord.gg/hscxnYghb]Discord help[/url] | [url=https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues]Report a bug[/url]
+
+[size=4][b]Requirements[/b][/size]
+
+[list]
+[*]Windows x64 and your own Steam copy of Tape to Tape.
+[*]Access to Steam's [b]roguelite[/b] branch. This release targets [b]game build 25899138[/b]. Select the branch in Steam → Tape to Tape → Properties → Betas.
+[*]The matching Campaign Studio installer. BepInEx 6 IL2CPP and the editor runtime are included; Python and a separate .NET installation are not required.
+[/list]
+
+[b]Game updates can break the mod.[/b] Studio's compatibility check cannot repair every game change. If it reports an unsupported build, check the release notes or Discord before starting a custom run. This release provides a Windows installer only; native Linux/macOS and Steam Deck/Proton integration are not validated.
+
+[size=4][b]What you can create[/b][/size]
+
+[list]
+[*][b]Campaigns and maps:[/b] copy a native campaign or start a new one, build branching routes with up to two nodes per layer, assign opponents and encounter types, customize random events and choose map artwork.
+[*][b]Playable squads:[/b] configure starting rosters, superstar and bench choices, contracts, rewards and individual squad behaviors. Inherit follows the selected preset; On and Off override a rule.
+[*][b]Opponents:[/b] edit formations, arenas, surfaces, pucks/balls, effects and match rules. Help explains native prerequisites, including node types, abilities, targets and special player identities.
+[*][b]Players and team identity:[/b] edit skaters and goalies, attributes, talents, supported abilities, home/away equipment, colors, logos, jersey number styles and goal celebration audio. Use the Head Editor for custom head artwork.
+[*][b]Rewards and recruitment:[/b] choose separate relic, Regular talent, goalie talent, ability, Chaos talent and free-agent pools.
+[*][b]Reusable creations:[/b] keep a player/team library, import independent copies, share campaign ZIPs and export supported players or teams to Play Now.
+[/list]
+
+[size=4][b]Install[/b][/size]
+
+[list=1]
+[*]Select the roguelite branch in Steam and let it update. Launch Tape to Tape once, then quit it. Close any old creator or Studio window.
+[*]Download and run [b]T2T_Custom_Campaign_Framework_Setup.exe[/b]. Accept the administrator prompt. Choose the Studio application folder, then the separate game folder containing Tape to Tape.exe. Steam's Manage → Browse local files opens the game folder.
+[*]Open [b]T2T Campaign Studio[/b] from the Start menu or optional desktop shortcut.
+[*]On Home, choose [b]Read game artwork[/b] and select your game installation if prompted. Studio reads previews and native catalogs from your own installed game; this download does not replace the game.
+[*]Check the compatibility message on Home before launching a custom run.
+[/list]
+
+Studio normally installs to C:\Program Files\T2T Campaign Studio. Your projects, library and settings live in [b]%LOCALAPPDATA%\T2T Campaign Studio[/b]. BepInEx and the mod are installed in the game folder. The GitHub Source code ZIP is not the installer.
+
+[b]Upgrading from the old creator:[/b] back up your authored content and any existing Studio workspace first. Setup migrates content into the Studio AppData folder, retains existing destination files on name collisions and cleans retired fields/import directives and unsupported choices. Review the migrated content afterward. Successful migration removes the old creator/content folders and retires the old uninstaller; [b]it does not retain an automatic backup[/b].
+
+[size=4][b]Your first campaign[/b][/size]
+
+[list=1]
+[*]On Home, choose [b]Campaigns → Copy vanilla campaign[/b], select a squad and save the copy with a new name.
+[*]Open an opponent or squad, change one thing and save. Each roster player has its own Save changes button.
+[*]Assign a custom opponent to a Match or Boss node, save the maps and save the campaign. Needs attention links help find missing assignments.
+[*]Return Home and choose the saved campaign in [b]Select campaign[/b]. Saving a project does not select it for the game.
+[*]Restart Tape to Tape and choose [b]New Run[/b]. Continue resumes an existing run; it does not regenerate an edited map or starting roster.
+[/list]
+
+Press [b]F1[/b] or click [b]Help[/b] for explanations pointing to the current page's controls. Continue and Previous move between explanations; Point again locates a control. The [b]Studio guide[/b] on Home is searchable. To return to the base campaign, select [b]None (base game)[/b] and restart.
+
+[size=4][b]Recruitment: what the checkboxes mean[/b][/size]
+
+The free-agent talent pool is independent of Regular and Chaos rewards. Begin with native outcomes checked, then add or uncheck exact talent levels.
+
+[list]
+[*]An unchecked level cannot be newly granted by a random recruitment roll or upgrade. Checked base talents retain native upgrade chances only when the result is also checked. Imported recruitment templates' random lists obey the same restriction.
+[*]Fixed talents you authored on a player are preserved. The pool does not strip an already generated offer or signed player. It controls new random extras, including General Manager contract candidates.
+[*]Weights multiply the native direct-roll weight: 1 keeps it, 2 doubles the weight, and 0 prevents a direct roll. A checked level with weight 0 can still be an upgrade result; uncheck it to exclude both. Native eligibility and extra-talent chances still apply.
+[*]An empty custom talent pool gives no random extras. An empty recruitable player selection falls back to native free agents. These are separate controls.
+[/list]
+
+[size=4][b]Native behavior and useful limits[/b][/size]
+
+[list]
+[*][b]Bench and contracts:[/b] No Effects needs Bench draft On, a positive bench size and two-line mode off to allow later bench recruits. An empty starting bench selection can skip the draft while retaining capacity. Contracts use native starting eligibility, countdown, expiry and replacement rules; start a new run to change starting contracts.
+[*][b]Copied native rosters:[/b] Studio exposes five skaters, or ten with two lines, plus a goalie. Native copies retain additional reserves and their native identities/powers: the Golfers keep all 13 forwards when exposed slots are edited. A new custom roster does not automatically gain those extra players or transformation targets. Explicit team-wide Stat Scale still affects the whole roster.
+[*][b]Crusader brawl:[/b] Counts as Prince for Crusader brawls only affects that trigger. It requires an Elite campaign node, Bodycheck brawl enabled on the CPU opponent, and your controlled player checking its Prince/marked player during charged-shot windup. The native two-second delay and offer limits remain. Boss/Challenge nodes and sound effects alone do not qualify.
+[*][b]Helmets:[/b] Home Team colors and Wing equip their native physical helmets without a bonus talent. Empty native fields become None. Native loss/restoration rules remain; talents and transformations can still supply equipment. Away style does not independently equip or replace a physical helmet.
+[*][b]Goalie Pass Read:[/b] native fractional values from 0 to 1 are preserved. Positive values enable quick reading only where difficulty permits; this is not a continuously scaled strength stat.
+[*][b]Abilities:[/b] effects do not equip abilities. Pick a supported opponent ability separately; native AI decides when it can activate. Unsupported imported assignments are preserved and shown, but are not promised to work with opponent AI.
+[*][b]Save and Continue:[/b] supported authored number styles are restored without replacing earned stats, talents or jersey numbers. Changing or deleting source players during a run can prevent old appearance settings from being recovered. Studio projects and native run saves are separate.
+[*][b]Play Now:[/b] team exports contain LW, C, RW, LD, RD and G; extra lines are not exported. Keep the mod installed for additional appearance fields and effective player number styles. Save before exporting and export again after later edits.
+[/list]
+
+This beta's source/data audit checks shared mappings and native prerequisites. It is not a claim that every ability, random trigger or combination has a live gameplay pass. Use a representative case for each distinct behavior or lifecycle you build around; the editor's Help explains the requirements.
+
+[size=4][b]Help, backups and credits[/b][/size]
+
+Back up the whole %LOCALAPPDATA%\T2T Campaign Studio folder to preserve projects and supporting content together. The Studio uninstaller retains AppData content and the shared BepInEx runtime. None (base game) switches campaign selection; it is not a complete mod uninstall.
+
+If something goes wrong, use [b]Report a bug[/b] on Home, [url=https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues]GitHub Issues[/url] or [url=https://discord.gg/hscxnYghb]Discord[/url]. Include the Studio version, game build/branch, reproduction steps, expected/actual results and relevant BepInEx\LogOutput.log lines or screenshots. Review attachments for personal paths before sharing.
+
+Tape to Tape is by Excellent Rectangle. Campaign Studio / Custom Campaign Framework is a community modding project built with BepInEx, HarmonyX and Avalonia. Game artwork and native catalogs are read from your own installed copy of Tape to Tape.

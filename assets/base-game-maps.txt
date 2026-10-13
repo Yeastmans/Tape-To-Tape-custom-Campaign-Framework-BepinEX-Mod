@@ -1,0 +1,1292 @@
+# _game_maps.txt - map layouts read from the game. AUTO-GENERATED, do not edit.
+# Regenerated every launch. Structure: SQUAD > MAP(act) > TEMPLATE > LAYER > NODE
+# NODE: n=<nodeIndex> type=<NodeType> pos=<x>,<y> out=[<nodeIndex>,..]
+#       group='<eliteGroupId>' team='<eliteTeamId>' gm=<n> talents=<n> relics=<n>
+# SHAPE=[nodes per layer] — templates of one map with equal SHAPE are
+# structurally interchangeable; see SUMMARY at the end.
+
+SQUAD 'Gauntlet Meta' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'Gauntlet_MapTemplate_Act1_4Elite' layers=8 SHAPE=[1,1,1,2,1,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=1
+        NODE n=0 type=Elite pos=9.5,10.4 out=[0] group='' team='1ca285e4-4945-4406-8c23-c3f2ea4838ee' gm=1 talents=1 relics=0
+      LAYER 2 nodes=1
+        NODE n=0 type=Elite pos=15.9,10.2 out=[0,1] group='' team='23b70b6c-b757-4445-a75b-b5c1fc3bc103' gm=1 talents=0 relics=1
+      LAYER 3 nodes=2
+        NODE n=0 type=NULL pos=22.3,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=22.3,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=1
+        NODE n=0 type=Elite pos=28.7,10.2 out=[0] group='' team='82dde0f4-4d27-4db4-af49-76a67d8233a8' gm=1 talents=1 relics=0
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='26bcb9b9-7e32-461b-9090-3de829377995' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'Gauntlet_MapTemplate_Act2_4Elite' layers=8 SHAPE=[1,1,1,2,1,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=1
+        NODE n=0 type=Elite pos=9.5,10.4 out=[0] group='' team='3fcb6dc8-f1a6-421c-9645-b14a4566f79b' gm=1 talents=1 relics=0
+      LAYER 2 nodes=1
+        NODE n=0 type=Elite pos=15.9,10.2 out=[0,1] group='' team='ca082292-2446-44ff-a0bb-7c4a6a846057' gm=1 talents=0 relics=1
+      LAYER 3 nodes=2
+        NODE n=0 type=NULL pos=22.3,6.5 out=[0] group='A' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=22.3,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=1
+        NODE n=0 type=Elite pos=28.7,10.2 out=[0] group='' team='fae1eb4a-a488-426b-852f-7dc6d4449e51' gm=1 talents=1 relics=0
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='b33c1c56-7b11-4cdf-90b6-360d1aaa2022' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'Gauntlet_MapTemplate_Act3_3Elite' layers=8 SHAPE=[1,2,1,2,1,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=1
+        NODE n=0 type=Elite pos=15.9,10.4 out=[0,1] group='' team='0ded14f7-eb60-4d7d-896e-fba94f91cc0a' gm=1 talents=1 relics=0
+      LAYER 3 nodes=2
+        NODE n=0 type=NULL pos=22.3,6.8 out=[0] group='A' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=22.3,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=1
+        NODE n=0 type=Elite pos=28.7,10.2 out=[0] group='' team='8652786b-036e-4fd8-9960-380eeaa7adb7' gm=1 talents=0 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='330786e8-67cd-40aa-98b9-f6e46933acb4' gm=1 talents=1 relics=0
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'Speedrun Squad' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Challenge pos=8.8,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=8.8,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.2,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.2,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=21,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=27.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=27.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=33.3,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=40,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=40,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'Old School' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option C' layers=7 SHAPE=[2,2,1,2,1,2,1]
+      LAYER 0 nodes=2
+        NODE n=0 type=Challenge pos=3.1,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=3.1,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Elite pos=10.25,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=10.25,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 2 nodes=1
+        NODE n=0 type=NULL pos=17.4,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 3 nodes=2
+        NODE n=0 type=NULL pos=24.55,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=24.55,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=1
+        NODE n=0 type=Elite pos=31.7,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 5 nodes=2
+        NODE n=0 type=NULL pos=38.85,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Chaos pos=38.85,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 6 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=-1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 3 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Chaos pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=-1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 3 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Chaos pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'Speed' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Challenge pos=8.8,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=8.8,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.2,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.2,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=21,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=27.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=27.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=33.3,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=40,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=40,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'Basic Squad' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Challenge pos=8.8,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=8.8,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.2,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.2,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=21,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=27.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=27.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=33.3,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=40,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=40,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'Defense Squad' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Challenge pos=8.8,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=8.8,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.2,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.2,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=21,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=27.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=27.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=33.3,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=40,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=40,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'Violence Squad' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Challenge pos=8.8,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=8.8,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.2,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.2,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=21,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=27.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=27.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=33.3,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=40,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=40,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'Tchel' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Challenge pos=8.8,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=8.8,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.2,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.2,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=21,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=27.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=27.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=33.3,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=40,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=40,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'Stats' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Challenge pos=8.8,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=8.8,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.2,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.2,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=21,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=27.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=27.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=33.3,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=40,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=40,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'Slapshot Squad' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Challenge pos=8.8,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=8.8,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.2,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.2,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=21,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=27.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=27.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=33.3,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=40,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=40,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'Referee Squad' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Challenge pos=8.8,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=8.8,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.2,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.2,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=21,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=27.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=27.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=33.3,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=40,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=40,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'General Manager' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate GM ACT 1' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=GeneralManager pos=3.09,10.5 out=[0,1] group='' team='' gm=6 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=0 relics=1
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=0 relics=1
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=GeneralManager pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate GM ACT 2,3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=GeneralManager pos=3.09,10.5 out=[0,1] group='' team='' gm=2 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=0 relics=1
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=0 relics=1
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=GeneralManager pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate GM ACT 2,3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=GeneralManager pos=3.09,10.5 out=[0,1] group='' team='' gm=2 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=0 relics=1
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=0 relics=1
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=GeneralManager pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'Trio Meta' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Challenge pos=8.8,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=8.8,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.2,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.2,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=21,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=27.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=27.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=33.3,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=40,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=40,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'Eliminator' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Challenge pos=8.8,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=8.8,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.2,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.2,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=21,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=27.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=27.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=33.3,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=40,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=40,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'Snes' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Challenge pos=8.8,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=8.8,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.2,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.2,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=21,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=27.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=27.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=33.3,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=40,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=40,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'Double Decker' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Challenge pos=8.8,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=8.8,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.2,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.2,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=21,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=27.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=27.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=33.3,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=40,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=40,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'Bum Squad' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Challenge pos=8.8,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=8.8,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.2,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.2,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=21,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=27.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=27.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=33.3,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=40,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=40,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'Solo Meta' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Challenge pos=8.8,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=8.8,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.2,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.2,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=21,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=27.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=27.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=33.3,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=40,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=40,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+
+SQUAD 'All Angus Squad' maps=3
+  MAP index=0 act=1 templates=1
+    TEMPLATE 0 'MapTemplate NEW ACT 1 - Option B' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.1,10.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=Challenge pos=8.8,7 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Challenge pos=8.8,14 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.2,7 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.2,13.5 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=21,10.2 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=27.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=27.5,13.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=33.3,10.2 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=40,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=40,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=1 act=2 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+  MAP index=2 act=3 templates=1
+    TEMPLATE 0 'MapTemplate 6-NEW ACT 3' layers=8 SHAPE=[1,2,2,1,2,1,2,1]
+      LAYER 0 nodes=1
+        NODE n=0 type=Coach pos=3.09,10.5 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 1 nodes=2
+        NODE n=0 type=NULL pos=9.5,6.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=9.5,13.8 out=[1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 2 nodes=2
+        NODE n=0 type=Elite pos=15.9,7.3 out=[0] group='' team='' gm=1 talents=1 relics=0
+        NODE n=1 type=Elite pos=15.9,13.2 out=[0] group='' team='' gm=1 talents=1 relics=0
+      LAYER 3 nodes=1
+        NODE n=0 type=NULL pos=22.3,9.4 out=[0,1] group='' team='' gm=1 talents=1 relics=1
+      LAYER 4 nodes=2
+        NODE n=0 type=NULL pos=28.7,6.8 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=NULL pos=28.7,14.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 5 nodes=1
+        NODE n=0 type=Elite pos=35,10.7 out=[0,1] group='' team='' gm=1 talents=0 relics=1
+      LAYER 6 nodes=2
+        NODE n=0 type=NULL pos=41.4,7.2 out=[0] group='' team='' gm=1 talents=1 relics=1
+        NODE n=1 type=Nurse pos=41.4,13.5 out=[0] group='' team='' gm=1 talents=1 relics=1
+      LAYER 7 nodes=1
+        NODE n=0 type=Boss pos=46,10.4 out=[] group='' team='' gm=1 talents=1 relics=1
+

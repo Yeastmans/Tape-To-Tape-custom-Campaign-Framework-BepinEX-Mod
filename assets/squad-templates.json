@@ -1,0 +1,3205 @@
+{
+  "game_sha256": "b26a7525bf753e9b1c33775f4a754d143ac2bc4af36f68fc21996a1c9b623b25",
+  "templates": [
+    {
+      "id": "allangus",
+      "name": "All Angus Squad",
+      "description": "Every skater is a different version of Angus.",
+      "forward_array_length": 5,
+      "authored_players": 0,
+      "empty_entries": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 1,
+      "free_agent_intro": false,
+      "modes": [
+        "Maxgoal",
+        "Timer"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Default_Level1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28645"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Default_Level2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Default_Level3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [],
+      "team_relics": [
+        {
+          "ref": "resources.assets:28108",
+          "name": "Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        }
+      ],
+      "elite_reward_category": "unnamed mask 2048",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [],
+      "excluded_talents": [],
+      "excluded_abilities": [],
+      "swap_pool_count": 17,
+      "custom_swap_pool": [
+        {
+          "ref": "resources.assets:28430",
+          "name": "Angus McShaggy vanilla squad",
+          "type": "Data.ForwardData"
+        },
+        {
+          "ref": "resources.assets:28424",
+          "name": "Angus McDefense defense meta",
+          "type": "Data.ForwardData"
+        },
+        {
+          "ref": "resources.assets:28429",
+          "name": "Angus McShaggy oldschool squad",
+          "type": "Data.ForwardData"
+        },
+        {
+          "ref": "resources.assets:28435",
+          "name": "Angus McViolence violence squad",
+          "type": "Data.ForwardData"
+        },
+        {
+          "ref": "resources.assets:28439",
+          "name": "Annual McShaggy tchel squad",
+          "type": "Data.ForwardData"
+        },
+        {
+          "ref": "resources.assets:28440",
+          "name": "angus mcshortstuff small team meta",
+          "type": "Data.ForwardData"
+        },
+        {
+          "ref": "resources.assets:28432",
+          "name": "Angus McSharty Slapshot-meta",
+          "type": "Data.ForwardData"
+        },
+        {
+          "ref": "resources.assets:28437",
+          "name": "Angus Skip-Shaggy",
+          "type": "Data.ForwardData"
+        },
+        {
+          "ref": "resources.assets:28425",
+          "name": "Angus McFlurry referee squad",
+          "type": "Data.ForwardData"
+        },
+        {
+          "ref": "resources.assets:28428",
+          "name": "Angus McShaggy general squad",
+          "type": "Data.ForwardData"
+        },
+        {
+          "ref": "resources.assets:28434",
+          "name": "Angus McTrois Trio Meta",
+          "type": "Data.ForwardData"
+        },
+        {
+          "ref": "resources.assets:28426",
+          "name": "Angus McGavin snes squad",
+          "type": "Data.ForwardData"
+        },
+        {
+          "ref": "resources.assets:28427",
+          "name": "Angus McShaggy bum squad",
+          "type": "Data.ForwardData"
+        },
+        {
+          "ref": "resources.assets:28431",
+          "name": "Angus McShaggynator eliminator squad",
+          "type": "Data.ForwardData"
+        },
+        {
+          "ref": "resources.assets:28433",
+          "name": "Angus McStastny stats squad",
+          "type": "Data.ForwardData"
+        },
+        {
+          "ref": "resources.assets:28436",
+          "name": "Angus O'Liner - Double Decker Squad",
+          "type": "Data.ForwardData"
+        },
+        {
+          "ref": "resources.assets:28438",
+          "name": "Angus Solo Meta",
+          "type": "Data.ForwardData"
+        }
+      ],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28422"
+    },
+    {
+      "id": "bum",
+      "name": "Bum Squad",
+      "description": "Three Elite skaters start at 0 OVR but provide unique bonuses from the bench.",
+      "forward_array_length": 5,
+      "authored_players": 3,
+      "empty_entries": [
+        3,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 1,
+      "free_agent_intro": false,
+      "modes": [
+        "Maxgoal",
+        "Timer"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Default_Level1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28645"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Default_Level2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Default_Level3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [],
+      "team_relics": [
+        {
+          "ref": "resources.assets:28127",
+          "name": "Bum Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        }
+      ],
+      "elite_reward_category": "None",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [
+        {
+          "ref": "resources.assets:28346",
+          "name": "Double Bench Bonus",
+          "type": "Rogue.DoubleBenchBonus"
+        }
+      ],
+      "excluded_talents": [],
+      "excluded_abilities": [],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28445"
+    },
+    {
+      "id": "defense",
+      "name": "Defense Squad",
+      "description": "Goals scored by defensemen increase the team's OVR by 2.",
+      "forward_array_length": 5,
+      "authored_players": 1,
+      "empty_entries": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 1,
+      "free_agent_intro": true,
+      "modes": [
+        "Maxgoal",
+        "Timer"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Default_Level1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28645"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Default_Level2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Default_Level3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [
+        {
+          "Relic": {
+            "ref": "resources.assets:28180",
+            "name": "Gerry Boulet",
+            "type": "Rogue.Relics.MetaRelics.DefenseMeta.BrickiePlushie"
+          },
+          "IsUnlockedByDefault": 1,
+          "UnlockCondition": {
+            "mTerm": "",
+            "mRTL_IgnoreArabicFix": 0,
+            "mRTL_MaxLineLength": 0,
+            "mRTL_ConvertNumbers": 0,
+            "m_DontLocalizeParameters": 0
+          }
+        },
+        {
+          "Relic": {
+            "ref": "resources.assets:28120",
+            "name": "Brick Wall",
+            "type": "Rogue.BrickWall"
+          },
+          "IsUnlockedByDefault": 1,
+          "UnlockCondition": {
+            "mTerm": "",
+            "mRTL_IgnoreArabicFix": 0,
+            "mRTL_MaxLineLength": 0,
+            "mRTL_ConvertNumbers": 0,
+            "m_DontLocalizeParameters": 0
+          }
+        }
+      ],
+      "team_relics": [
+        {
+          "ref": "resources.assets:28108",
+          "name": "Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        }
+      ],
+      "elite_reward_category": "unnamed mask 2048",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [],
+      "excluded_talents": [],
+      "excluded_abilities": [],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28449"
+    },
+    {
+      "id": "lines",
+      "name": "Double Decker Squad",
+      "description": "Two full lines that can be manually switched during games.",
+      "forward_array_length": 12,
+      "authored_players": 10,
+      "empty_entries": [
+        10,
+        11
+      ],
+      "authored_lines": [
+        {
+          "Left wing": 4,
+          "Right wing": 0,
+          "Center": 1,
+          "Left defense": 2,
+          "Right defense": 3
+        },
+        {
+          "Left wing": 5,
+          "Right wing": 9,
+          "Center": 8,
+          "Left defense": 6,
+          "Right defense": 7
+        }
+      ],
+      "locked_positions": [],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 5,
+      "free_agent_intro": false,
+      "modes": [
+        "Maxgoal",
+        "Timer"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Default_Level1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28645"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Default_Level2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Default_Level3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [],
+      "team_relics": [],
+      "elite_reward_category": "None",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [
+        {
+          "ref": "resources.assets:28239",
+          "name": "Participation Trophy",
+          "type": "Rogue.ParticipationTrophyRelic"
+        },
+        {
+          "ref": "resources.assets:28238",
+          "name": "Participation Trophy (Level 2)",
+          "type": "Rogue.ParticipationTrophyRelic"
+        },
+        {
+          "ref": "resources.assets:28346",
+          "name": "Double Bench Bonus",
+          "type": "Rogue.DoubleBenchBonus"
+        },
+        {
+          "ref": "resources.assets:28376",
+          "name": "Random Talent Bench Bonus",
+          "type": "Rogue.RandomTalentBenchBonus"
+        },
+        {
+          "ref": "resources.assets:28108",
+          "name": "Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        },
+        {
+          "ref": "resources.assets:28327",
+          "name": "Benchwarmer Ovr Relic",
+          "type": "Rogue.BenchwarmerOvrRelic"
+        },
+        {
+          "ref": "resources.assets:28328",
+          "name": "Benchwarmer Strip",
+          "type": "Rogue.BenchwarmerStrip"
+        },
+        {
+          "ref": "resources.assets:28364",
+          "name": "Golden Helmet Bench Bonus",
+          "type": "Rogue.GoldenHelmetBenchBonus"
+        }
+      ],
+      "excluded_talents": [
+        {
+          "ref": "resources.assets:27851",
+          "name": "Short Contract",
+          "type": "Rogue.ShortContract"
+        },
+        {
+          "ref": "resources.assets:27850",
+          "name": "Short Contract (Level 2)",
+          "type": "Rogue.ShortContract"
+        },
+        {
+          "ref": "resources.assets:27735",
+          "name": "Benchwarmer",
+          "type": "Rogue.Benchwarmer"
+        },
+        {
+          "ref": "resources.assets:27734",
+          "name": "Benchwarmer (Level 2)",
+          "type": "Rogue.Benchwarmer"
+        },
+        {
+          "ref": "resources.assets:28064",
+          "name": "Double Bench Talent",
+          "type": "Rogue.DoubleBenchTalent"
+        },
+        {
+          "ref": "resources.assets:28063",
+          "name": "Double Bench Talent (Level 2)",
+          "type": "Rogue.DoubleBenchTalent"
+        },
+        {
+          "ref": "resources.assets:28055",
+          "name": "Butt Bench Talent",
+          "type": "Rogue.ButtBenchTalent"
+        }
+      ],
+      "excluded_abilities": [],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28453"
+    },
+    {
+      "id": "eliminator",
+      "name": "Eliminator Squad",
+      "description": "4-on-4 hockey with random positive and negative Money Pucks.",
+      "forward_array_length": 6,
+      "authored_players": 1,
+      "empty_entries": [
+        0,
+        1,
+        3,
+        4,
+        5
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 1,
+      "free_agent_intro": true,
+      "modes": [
+        "Maxgoal"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Default_Level1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28645"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Default_Level2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Default_Level3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [],
+      "team_relics": [],
+      "elite_reward_category": "unnamed mask 2048",
+      "excluded_relic_category": "Referee",
+      "excluded_talent_category": "None",
+      "excluded_relics": [
+        {
+          "ref": "resources.assets:28122",
+          "name": "Briefcase",
+          "type": "Rogue.GoalDenier"
+        },
+        {
+          "ref": "resources.assets:28121",
+          "name": "Briefcase (Level 2)",
+          "type": "Rogue.GoalDenier"
+        }
+      ],
+      "excluded_talents": [],
+      "excluded_abilities": [],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28459"
+    },
+    {
+      "id": "gauntlet",
+      "name": "Gauntlet Squad",
+      "description": "Face every team in a single run.",
+      "forward_array_length": 5,
+      "authored_players": 1,
+      "empty_entries": [
+        0,
+        1,
+        3,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 2,
+      "free_agent_intro": false,
+      "modes": [
+        "Maxgoal",
+        "Timer"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "GauntletLevel1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "Gauntlet_MapTemplate_Act1_4Elite",
+              "layers": 8,
+              "nodes": 10,
+              "node_counts": {
+                "Coach": 1,
+                "Elite": 4,
+                "NULL": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28646"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "GauntletLevel2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "Gauntlet_MapTemplate_Act2_4Elite",
+              "layers": 8,
+              "nodes": 10,
+              "node_counts": {
+                "Coach": 1,
+                "Elite": 4,
+                "NULL": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28647"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "GauntletLevel3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "Gauntlet_MapTemplate_Act3_3Elite",
+              "layers": 8,
+              "nodes": 11,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 5,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28648"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [],
+      "team_relics": [
+        {
+          "ref": "resources.assets:28179",
+          "name": "Gauntlet Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        }
+      ],
+      "elite_reward_category": "unnamed mask 2048",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [],
+      "excluded_talents": [],
+      "excluded_abilities": [],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28491"
+    },
+    {
+      "id": "generalmanager",
+      "name": "General Manager Squad",
+      "description": "Hire Free Agents throughout your run.",
+      "forward_array_length": 5,
+      "authored_players": 1,
+      "empty_entries": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 7,
+      "starting_benchwarmer_limit": 0,
+      "free_agent_intro": false,
+      "modes": [
+        "Maxgoal",
+        "Timer"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Level 1 Config GM",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate GM ACT 1",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "GeneralManager": 2,
+                "NULL": 5,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28643"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Level 2 Config GM",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate GM ACT 2,3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "GeneralManager": 2,
+                "NULL": 5,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28644"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Level 3 Config GM",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate GM ACT 2,3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "GeneralManager": 2,
+                "NULL": 5,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28644"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [],
+      "team_relics": [
+        {
+          "ref": "resources.assets:28108",
+          "name": "Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        }
+      ],
+      "elite_reward_category": "None",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [],
+      "excluded_talents": [
+        {
+          "ref": "resources.assets:27851",
+          "name": "Short Contract",
+          "type": "Rogue.ShortContract"
+        },
+        {
+          "ref": "resources.assets:27850",
+          "name": "Short Contract (Level 2)",
+          "type": "Rogue.ShortContract"
+        }
+      ],
+      "excluded_abilities": [],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28463"
+    },
+    {
+      "id": "oldschool",
+      "name": "Oldschool Squad",
+      "description": "No injuries. No bench. Old-school Tape to Tape rules.",
+      "forward_array_length": 5,
+      "authored_players": 1,
+      "empty_entries": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 0,
+      "starting_benchwarmer_limit": 0,
+      "free_agent_intro": false,
+      "modes": [
+        "Maxgoal",
+        "Timer"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "VanillaLevelsConfig Act 1",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option C",
+              "layers": 7,
+              "nodes": 11,
+              "node_counts": {
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Chaos": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28639"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26881",
+            "name": "VanillaNodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "VanillaLevelsConfig",
+          "act": -1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 3 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Chaos": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28641"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26881",
+            "name": "VanillaNodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "VanillaLevelsConfig",
+          "act": -1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 3 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Chaos": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28641"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26881",
+            "name": "VanillaNodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [],
+      "team_relics": [],
+      "elite_reward_category": "None",
+      "excluded_relic_category": "Injury",
+      "excluded_talent_category": "Injury",
+      "excluded_relics": [
+        {
+          "ref": "resources.assets:28239",
+          "name": "Participation Trophy",
+          "type": "Rogue.ParticipationTrophyRelic"
+        },
+        {
+          "ref": "resources.assets:28238",
+          "name": "Participation Trophy (Level 2)",
+          "type": "Rogue.ParticipationTrophyRelic"
+        },
+        {
+          "ref": "resources.assets:28346",
+          "name": "Double Bench Bonus",
+          "type": "Rogue.DoubleBenchBonus"
+        },
+        {
+          "ref": "resources.assets:28376",
+          "name": "Random Talent Bench Bonus",
+          "type": "Rogue.RandomTalentBenchBonus"
+        },
+        {
+          "ref": "resources.assets:28108",
+          "name": "Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        },
+        {
+          "ref": "resources.assets:28327",
+          "name": "Benchwarmer Ovr Relic",
+          "type": "Rogue.BenchwarmerOvrRelic"
+        },
+        {
+          "ref": "resources.assets:28328",
+          "name": "Benchwarmer Strip",
+          "type": "Rogue.BenchwarmerStrip"
+        },
+        {
+          "ref": "resources.assets:28364",
+          "name": "Golden Helmet Bench Bonus",
+          "type": "Rogue.GoldenHelmetBenchBonus"
+        },
+        {
+          "ref": "resources.assets:28267",
+          "name": "Short Stick",
+          "type": "Rogue.ShortStick"
+        }
+      ],
+      "excluded_talents": [
+        {
+          "ref": "resources.assets:27851",
+          "name": "Short Contract",
+          "type": "Rogue.ShortContract"
+        },
+        {
+          "ref": "resources.assets:27850",
+          "name": "Short Contract (Level 2)",
+          "type": "Rogue.ShortContract"
+        },
+        {
+          "ref": "resources.assets:27735",
+          "name": "Benchwarmer",
+          "type": "Rogue.Benchwarmer"
+        },
+        {
+          "ref": "resources.assets:27734",
+          "name": "Benchwarmer (Level 2)",
+          "type": "Rogue.Benchwarmer"
+        },
+        {
+          "ref": "resources.assets:28064",
+          "name": "Double Bench Talent",
+          "type": "Rogue.DoubleBenchTalent"
+        },
+        {
+          "ref": "resources.assets:28063",
+          "name": "Double Bench Talent (Level 2)",
+          "type": "Rogue.DoubleBenchTalent"
+        },
+        {
+          "ref": "resources.assets:28055",
+          "name": "Butt Bench Talent",
+          "type": "Rogue.ButtBenchTalent"
+        }
+      ],
+      "excluded_abilities": [],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28473"
+    },
+    {
+      "id": "referee",
+      "name": "Referee Squad",
+      "description": "Play every game 6-on-5 as a team of referees.",
+      "forward_array_length": 5,
+      "authored_players": 1,
+      "empty_entries": [
+        0,
+        1,
+        3,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 1,
+      "free_agent_intro": true,
+      "modes": [
+        "Maxgoal",
+        "Timer"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Default_Level1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28645"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Default_Level2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Default_Level3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28421",
+        "name": "RefereeCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [
+        {
+          "Relic": {
+            "ref": "resources.assets:28373",
+            "name": "Playable Referee",
+            "type": "Rogue.PlayableReferee"
+          },
+          "IsUnlockedByDefault": 1,
+          "UnlockCondition": {
+            "mTerm": "",
+            "mRTL_IgnoreArabicFix": 0,
+            "mRTL_MaxLineLength": 0,
+            "mRTL_ConvertNumbers": 0,
+            "m_DontLocalizeParameters": 0
+          }
+        },
+        {
+          "Relic": {
+            "ref": "resources.assets:28122",
+            "name": "Briefcase",
+            "type": "Rogue.GoalDenier"
+          },
+          "IsUnlockedByDefault": 1,
+          "UnlockCondition": {
+            "mTerm": "",
+            "mRTL_IgnoreArabicFix": 0,
+            "mRTL_MaxLineLength": 0,
+            "mRTL_ConvertNumbers": 0,
+            "m_DontLocalizeParameters": 0
+          }
+        }
+      ],
+      "team_relics": [
+        {
+          "ref": "resources.assets:28108",
+          "name": "Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        }
+      ],
+      "elite_reward_category": "None",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [
+        {
+          "ref": "resources.assets:28185",
+          "name": "Golf Club",
+          "type": "Rogue.GolfClub"
+        }
+      ],
+      "excluded_talents": [
+        {
+          "ref": "resources.assets:27778",
+          "name": "Fury Stick",
+          "type": "Rogue.FuryStick"
+        },
+        {
+          "ref": "resources.assets:27777",
+          "name": "Fury Stick (Level 2)",
+          "type": "Rogue.FuryStick"
+        },
+        {
+          "ref": "resources.assets:27882",
+          "name": "Triple Twig",
+          "type": "Rogue.StickReservePowerup"
+        },
+        {
+          "ref": "resources.assets:27886",
+          "name": "Twig Tax",
+          "type": "Rogue.TwigTax"
+        },
+        {
+          "ref": "resources.assets:27885",
+          "name": "Twig Tax (Level 2)",
+          "type": "Rogue.TwigTax"
+        },
+        {
+          "ref": "resources.assets:28035",
+          "name": "Goalie Throw Stick",
+          "type": "Rogue.GoalieThrowStick"
+        }
+      ],
+      "excluded_abilities": [
+        {
+          "ref": "resources.assets:27946",
+          "name": "throwingStick",
+          "type": "Rogue.ThrowingStick"
+        },
+        {
+          "ref": "resources.assets:27945",
+          "name": "throwingStick LVL2",
+          "type": "Rogue.ThrowingStick"
+        },
+        {
+          "ref": "resources.assets:27920",
+          "name": "StickThief",
+          "type": "Rogue.StickThief"
+        }
+      ],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28479"
+    },
+    {
+      "id": "snes",
+      "name": "SNES Squad",
+      "description": "Skaters have very low turning speed",
+      "forward_array_length": 5,
+      "authored_players": 1,
+      "empty_entries": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 1,
+      "free_agent_intro": true,
+      "modes": [
+        "Timer",
+        "Maxgoal"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Default_Level1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28645"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Default_Level2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Default_Level3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [],
+      "team_relics": [
+        {
+          "ref": "resources.assets:28108",
+          "name": "Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        }
+      ],
+      "elite_reward_category": "unnamed mask 2048",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [],
+      "excluded_talents": [],
+      "excluded_abilities": [
+        {
+          "ref": "resources.assets:27899",
+          "name": "Dash",
+          "type": "Rogue.Dash"
+        },
+        {
+          "ref": "resources.assets:27898",
+          "name": "Dash LVL2",
+          "type": "Rogue.Dash"
+        }
+      ],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": {
+        "r": 0.7764706611633301,
+        "g": 0.9058824181556702,
+        "b": 1.0,
+        "a": 1.0
+      },
+      "skater_marker": {
+        "ref": "resources.assets:10006",
+        "name": "Star94Marker",
+        "type": "GameObject"
+      },
+      "code_methods": [],
+      "source": "resources.assets:28500"
+    },
+    {
+      "id": "slapshot",
+      "name": "Slapshot Squad",
+      "description": "Slapshots are your only effective shots. All other shots are weak.",
+      "forward_array_length": 5,
+      "authored_players": 1,
+      "empty_entries": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 1,
+      "free_agent_intro": true,
+      "modes": [
+        "Maxgoal",
+        "Timer"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Default_Level1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28645"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Default_Level2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Default_Level3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [
+        {
+          "Relic": {
+            "ref": "resources.assets:28147",
+            "name": "Corn dog-stic",
+            "type": "Rogue.CornDog"
+          },
+          "IsUnlockedByDefault": 1,
+          "UnlockCondition": {
+            "mTerm": "",
+            "mRTL_IgnoreArabicFix": 0,
+            "mRTL_MaxLineLength": 0,
+            "mRTL_ConvertNumbers": 0,
+            "m_DontLocalizeParameters": 0
+          }
+        },
+        {
+          "Relic": {
+            "ref": "resources.assets:28386",
+            "name": "Slapshot Plushie",
+            "type": "Rogue.SlapshotPlushie"
+          },
+          "IsUnlockedByDefault": 1,
+          "UnlockCondition": {
+            "mTerm": "",
+            "mRTL_IgnoreArabicFix": 0,
+            "mRTL_MaxLineLength": 0,
+            "mRTL_ConvertNumbers": 0,
+            "m_DontLocalizeParameters": 0
+          }
+        }
+      ],
+      "team_relics": [
+        {
+          "ref": "resources.assets:28108",
+          "name": "Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        }
+      ],
+      "elite_reward_category": "None",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [
+        {
+          "ref": "resources.assets:28344",
+          "name": "Critical One Timer Relic",
+          "type": "Rogue.CriticalOneTimerRelic"
+        },
+        {
+          "ref": "resources.assets:28343",
+          "name": "Critical One Timer Relic (Level 2)",
+          "type": "Rogue.CriticalOneTimerRelic"
+        }
+      ],
+      "excluded_talents": [],
+      "excluded_abilities": [],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28495"
+    },
+    {
+      "id": "solo",
+      "name": "Solo Squad",
+      "description": "You are Player Locked to Angus throughout the entire run.",
+      "forward_array_length": 5,
+      "authored_players": 1,
+      "empty_entries": [
+        0,
+        1,
+        3,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 1,
+      "free_agent_intro": true,
+      "modes": [
+        "Maxgoal",
+        "Timer"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Default_Level1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28645"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Default_Level2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Default_Level3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [],
+      "team_relics": [
+        {
+          "ref": "resources.assets:28108",
+          "name": "Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        }
+      ],
+      "elite_reward_category": "None",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [
+        {
+          "ref": "resources.assets:28239",
+          "name": "Participation Trophy",
+          "type": "Rogue.ParticipationTrophyRelic"
+        },
+        {
+          "ref": "resources.assets:28238",
+          "name": "Participation Trophy (Level 2)",
+          "type": "Rogue.ParticipationTrophyRelic"
+        }
+      ],
+      "excluded_talents": [
+        {
+          "ref": "resources.assets:27851",
+          "name": "Short Contract",
+          "type": "Rogue.ShortContract"
+        },
+        {
+          "ref": "resources.assets:27850",
+          "name": "Short Contract (Level 2)",
+          "type": "Rogue.ShortContract"
+        }
+      ],
+      "excluded_abilities": [],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28503"
+    },
+    {
+      "id": "speedrun",
+      "name": "Speedrun Squad",
+      "description": "Win before the end of the first period or lose the game.",
+      "forward_array_length": 5,
+      "authored_players": 1,
+      "empty_entries": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 1,
+      "free_agent_intro": true,
+      "modes": [
+        "Maxgoal"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Default_Level1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28645"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Default_Level2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Default_Level3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [
+        {
+          "Relic": {
+            "ref": "resources.assets:28206",
+            "name": "Indecisive",
+            "type": "Rogue.Indecisive"
+          },
+          "IsUnlockedByDefault": 1,
+          "UnlockCondition": {
+            "mTerm": "",
+            "mRTL_IgnoreArabicFix": 0,
+            "mRTL_MaxLineLength": 0,
+            "mRTL_ConvertNumbers": 0,
+            "m_DontLocalizeParameters": 0
+          }
+        },
+        {
+          "Relic": {
+            "ref": "resources.assets:28256",
+            "name": "Remarkable Rock",
+            "type": "Rogue.FirstBlood"
+          },
+          "IsUnlockedByDefault": 1,
+          "UnlockCondition": {
+            "mTerm": "",
+            "mRTL_IgnoreArabicFix": 0,
+            "mRTL_MaxLineLength": 0,
+            "mRTL_ConvertNumbers": 0,
+            "m_DontLocalizeParameters": 0
+          }
+        }
+      ],
+      "team_relics": [
+        {
+          "ref": "resources.assets:28108",
+          "name": "Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        }
+      ],
+      "elite_reward_category": "unnamed mask 2048",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [],
+      "excluded_talents": [],
+      "excluded_abilities": [],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28509"
+    },
+    {
+      "id": "speedy",
+      "name": "Speedy Squad",
+      "description": "Skaters are extremely fast but easily knocked down.",
+      "forward_array_length": 5,
+      "authored_players": 1,
+      "empty_entries": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 1,
+      "free_agent_intro": true,
+      "modes": [
+        "Maxgoal",
+        "Timer"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Default_Level1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28645"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Default_Level2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Default_Level3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [
+        {
+          "Relic": {
+            "ref": "resources.assets:28280",
+            "name": "Speedy Meta Relic",
+            "type": "Rogue.SpeedyMetaRelic"
+          },
+          "IsUnlockedByDefault": 1,
+          "UnlockCondition": {
+            "mTerm": "",
+            "mRTL_IgnoreArabicFix": 0,
+            "mRTL_MaxLineLength": 0,
+            "mRTL_ConvertNumbers": 0,
+            "m_DontLocalizeParameters": 0
+          }
+        }
+      ],
+      "team_relics": [
+        {
+          "ref": "resources.assets:28108",
+          "name": "Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        }
+      ],
+      "elite_reward_category": "None",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [],
+      "excluded_talents": [
+        {
+          "ref": "resources.assets:27723",
+          "name": "Armor",
+          "type": "Rogue.Armor"
+        },
+        {
+          "ref": "resources.assets:27722",
+          "name": "Armor (Level 2)",
+          "type": "Rogue.Armor"
+        }
+      ],
+      "excluded_abilities": [],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28514"
+    },
+    {
+      "id": "statrewards",
+      "name": "Stats Squad",
+      "description": "All skater rewards are replaced with Attribute upgrades.",
+      "forward_array_length": 5,
+      "authored_players": 1,
+      "empty_entries": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 1,
+      "free_agent_intro": true,
+      "modes": [
+        "Maxgoal",
+        "Timer"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Default_Level1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28645"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Default_Level2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Default_Level3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [],
+      "team_relics": [
+        {
+          "ref": "resources.assets:28108",
+          "name": "Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        }
+      ],
+      "elite_reward_category": "unnamed mask 2048",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [],
+      "excluded_talents": [],
+      "excluded_abilities": [],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28518"
+    },
+    {
+      "id": "tchel",
+      "name": "Tchel Squad",
+      "description": "Modern hockey mechanics with offsides and manual pokechecks.",
+      "forward_array_length": 5,
+      "authored_players": 1,
+      "empty_entries": [
+        0,
+        1,
+        3,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 1,
+      "free_agent_intro": true,
+      "modes": [
+        "Maxgoal",
+        "Timer"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Default_Level1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28645"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Default_Level2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Default_Level3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [],
+      "team_relics": [
+        {
+          "ref": "resources.assets:28108",
+          "name": "Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        }
+      ],
+      "elite_reward_category": "unnamed mask 2048",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [
+        {
+          "ref": "resources.assets:28178",
+          "name": "Gain Random Ability Relic",
+          "type": "Rogue.GainRandomAbilityRelic"
+        }
+      ],
+      "excluded_talents": [
+        {
+          "ref": "resources.assets:27843",
+          "name": "Random Skill",
+          "type": "Rogue.RandomAbility"
+        },
+        {
+          "ref": "resources.assets:27842",
+          "name": "Random Skill (Level 2)",
+          "type": "Rogue.RandomAbility"
+        }
+      ],
+      "excluded_abilities": [
+        {
+          "ref": "resources.assets:27917",
+          "name": "Polymorphic Ability",
+          "type": "Rogue.PolymorphicAbility"
+        },
+        {
+          "ref": "resources.assets:27916",
+          "name": "Polymorphic Ability LVL2",
+          "type": "Rogue.PolymorphicAbility"
+        }
+      ],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28523"
+    },
+    {
+      "id": "trio",
+      "name": "Trio Squad",
+      "description": "Play with only three skaters. Goals assisted by both teammates increase the team's OVR by 2.",
+      "forward_array_length": 5,
+      "authored_players": 2,
+      "empty_entries": [
+        0,
+        1,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [
+        "Left wing",
+        "Right defense"
+      ],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 3,
+      "free_agent_intro": true,
+      "modes": [
+        "Maxgoal",
+        "Timer"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Default_Level1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28645"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Default_Level2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Default_Level3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [
+        {
+          "Relic": {
+            "ref": "resources.assets:28296",
+            "name": "Triple Threat",
+            "type": "Rogue.Relics.MetaRelics.TrioMeta.TripleThreat"
+          },
+          "IsUnlockedByDefault": 1,
+          "UnlockCondition": {
+            "mTerm": "",
+            "mRTL_IgnoreArabicFix": 0,
+            "mRTL_MaxLineLength": 0,
+            "mRTL_ConvertNumbers": 0,
+            "m_DontLocalizeParameters": 0
+          }
+        }
+      ],
+      "team_relics": [
+        {
+          "ref": "resources.assets:28108",
+          "name": "Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        }
+      ],
+      "elite_reward_category": "None",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [],
+      "excluded_talents": [],
+      "excluded_abilities": [],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28527"
+    },
+    {
+      "id": "vanilla",
+      "name": "Vanilla Squad",
+      "description": "A simple, balanced team built for any playstyle",
+      "forward_array_length": 5,
+      "authored_players": 1,
+      "empty_entries": [
+        0,
+        1,
+        2,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 1,
+      "free_agent_intro": true,
+      "modes": [
+        "Maxgoal",
+        "Timer"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Default_Level1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28645"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Default_Level2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Default_Level3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [],
+      "team_relics": [
+        {
+          "ref": "resources.assets:28108",
+          "name": "Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        }
+      ],
+      "elite_reward_category": "None",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [],
+      "excluded_talents": [],
+      "excluded_abilities": [],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28547"
+    },
+    {
+      "id": "violence",
+      "name": "Violence Squad",
+      "description": "Every bodycheck causes a knockout. Skaters recover from knockouts quickly.",
+      "forward_array_length": 5,
+      "authored_players": 1,
+      "empty_entries": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "authored_lines": [],
+      "locked_positions": [],
+      "bench_capacity": 5,
+      "starting_benchwarmer_limit": 1,
+      "free_agent_intro": true,
+      "modes": [
+        "Maxgoal",
+        "Timer"
+      ],
+      "maps": [
+        {
+          "sequence": 1,
+          "asset": "Default_Level1Config",
+          "act": 1,
+          "variants": [
+            {
+              "name": "MapTemplate NEW ACT 1 - Option B",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "Challenge": 2,
+                "Elite": 3,
+                "NULL": 4,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28645"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 2,
+          "asset": "Default_Level2Config",
+          "act": 2,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        },
+        {
+          "sequence": 3,
+          "asset": "Default_Level3Config",
+          "act": 3,
+          "variants": [
+            {
+              "name": "MapTemplate 6-NEW ACT 3",
+              "layers": 8,
+              "nodes": 12,
+              "node_counts": {
+                "Coach": 1,
+                "NULL": 6,
+                "Elite": 3,
+                "Nurse": 1,
+                "Boss": 1
+              },
+              "layout_ref": "resources.assets:28640"
+            }
+          ],
+          "random_node_config": {
+            "ref": "resources.assets:26584",
+            "name": "NodeTypeConfig",
+            "type": "DAGG.Config.NodeTypeConfig"
+          },
+          "scale": {
+            "x": 0.6000000238418579,
+            "y": 0.44999998807907104
+          }
+        }
+      ],
+      "opponents": {
+        "ref": "resources.assets:28420",
+        "name": "DefaultCampaignOpponents",
+        "type": "Data.CampaignOpponentsConfig"
+      },
+      "starting_relics": [
+        {
+          "Relic": {
+            "ref": "resources.assets:28297",
+            "name": "Violent Plushie",
+            "type": "Rogue.ViolentPlushie"
+          },
+          "IsUnlockedByDefault": 1,
+          "UnlockCondition": {
+            "mTerm": "",
+            "mRTL_IgnoreArabicFix": 0,
+            "mRTL_MaxLineLength": 0,
+            "mRTL_ConvertNumbers": 0,
+            "m_DontLocalizeParameters": 0
+          }
+        },
+        {
+          "Relic": {
+            "ref": "resources.assets:28117",
+            "name": "Bowling Relic",
+            "type": "Rogue.BowlingRelic"
+          },
+          "IsUnlockedByDefault": 1,
+          "UnlockCondition": {
+            "mTerm": "",
+            "mRTL_IgnoreArabicFix": 0,
+            "mRTL_MaxLineLength": 0,
+            "mRTL_ConvertNumbers": 0,
+            "m_DontLocalizeParameters": 0
+          }
+        }
+      ],
+      "team_relics": [
+        {
+          "ref": "resources.assets:28108",
+          "name": "Bench Bonus",
+          "type": "Rogue.BenchBonus"
+        }
+      ],
+      "elite_reward_category": "unnamed mask 2048",
+      "excluded_relic_category": "None",
+      "excluded_talent_category": "None",
+      "excluded_relics": [],
+      "excluded_talents": [],
+      "excluded_abilities": [],
+      "swap_pool_count": 0,
+      "custom_swap_pool": [],
+      "ice_tint": null,
+      "skater_marker": null,
+      "code_methods": [],
+      "source": "resources.assets:28551"
+    }
+  ]
+}

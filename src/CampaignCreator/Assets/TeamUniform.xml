@@ -1,0 +1,156 @@
+<uniform>
+  <svg style="position: absolute; left: 394px; top: 0px;" viewBox="0 0 140 110" width="132" height="104" role="img" aria-label="Helmet">
+    <defs>
+      <clipPath id="helmetClip">
+        <path d="M10 62 C10 24 38 6 70 6 C102 6 130 24 130 62 L130 70 C130 77 124 82 117 82 L23 82 C16 82 10 77 10 70 Z" />
+      </clipPath>
+    </defs>
+    <path d="M30 80 Q70 106 110 80" fill="none" stroke="{{ col.helmet2 }}" stroke-width="5" stroke-linecap="round" />
+    <path d="M10 62 C10 24 38 6 70 6 C102 6 130 24 130 62 L130 70 C130 77 124 82 117 82 L23 82 C16 82 10 77 10 70 Z" fill="{{ col.helmet0 }}" stroke="#0A1620" stroke-width="2.5" stroke-linejoin="round" />
+    <circle cx="17" cy="65" r="3" fill="{{ col.helmet1 }}" />
+    <circle cx="123" cy="65" r="3" fill="{{ col.helmet1 }}" />
+  </svg>
+  <svg style="position: absolute; left: 300px; top: 90px;" viewBox="0 0 300 330" width="320" height="352" role="img" aria-label="Jersey front">
+    <defs>
+      <clipPath id="jerseyFront">
+        <path d="M128 44 C137 68 163 68 172 44 L205 50 L262 88 L288 196 L232 214 L216 142 L224 300 L76 300 L84 142 L68 214 L12 196 L38 88 L95 50 Z" />
+      </clipPath>
+    </defs>
+    <path d="M128 44 C137 68 163 68 172 44 L205 50 L262 88 L288 196 L232 214 L216 142 L224 300 L76 300 L84 142 L68 214 L12 196 L38 88 L95 50 Z" fill="{{ col.jersey0 }}" stroke="#0A1620" stroke-width="2.5" stroke-linejoin="round" />
+    <g clip-path="url(#jerseyFront)">
+      <rect x="50" y="254" width="200" height="6" fill="{{ col.jersey1 }}" />
+      <rect x="50" y="260" width="200" height="16" fill="{{ col.jersey2 }}" />
+      <rect x="50" y="276" width="200" height="6" fill="{{ col.jersey1 }}" />
+      <polygon points="280.5,164.4 224.5,182.4 226,189 282,171" fill="{{ col.jersey1 }}" />
+      <polygon points="282,171 226,189 230,205 286,187" fill="{{ col.jersey2 }}" />
+      <polygon points="286,187 230,205 231.5,211.5 287.5,193.5" fill="{{ col.jersey1 }}" />
+      <polygon points="19.5,164.4 75.5,182.4 74,189 18,171" fill="{{ col.jersey1 }}" />
+      <polygon points="18,171 74,189 70,205 14,187" fill="{{ col.jersey2 }}" />
+      <polygon points="14,187 70,205 68.5,211.5 12.5,193.5" fill="{{ col.jersey1 }}" />
+    </g>
+    <path d="M128 44 C137 68 163 68 172 44" fill="none" stroke="{{ col.jersey1 }}" stroke-width="7" stroke-linecap="round" />
+    <circle cx="150" cy="168" r="45" fill="#0C2B52" stroke="{{ col.jersey2 }}" stroke-width="3" />
+    <text x="150" y="179" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="27" font-weight="800" letter-spacing="1.5" fill="#FFFFFF">VAN</text>
+  </svg>
+  <svg style="position: absolute; left: 300px; top: 90px;" viewBox="0 0 300 330" width="320" height="352" role="img" aria-label="Jersey back">
+    <defs>
+      <clipPath id="jerseyBack">
+        <path d="M128 44 C137 68 163 68 172 44 L205 50 L262 88 L288 196 L232 214 L216 142 L224 300 L76 300 L84 142 L68 214 L12 196 L38 88 L95 50 Z" />
+      </clipPath>
+    </defs>
+    <path d="M128 44 C137 68 163 68 172 44 L205 50 L262 88 L288 196 L232 214 L216 142 L224 300 L76 300 L84 142 L68 214 L12 196 L38 88 L95 50 Z" fill="{{ col.jersey0 }}" stroke="#0A1620" stroke-width="2.5" stroke-linejoin="round" />
+    <g clip-path="url(#jerseyBack)">
+      <rect x="50" y="254" width="200" height="6" fill="{{ col.jersey1 }}" />
+      <rect x="50" y="260" width="200" height="16" fill="{{ col.jersey2 }}" />
+      <rect x="50" y="276" width="200" height="6" fill="{{ col.jersey1 }}" />
+      <polygon points="280.5,164.4 224.5,182.4 226,189 282,171" fill="{{ col.jersey1 }}" />
+      <polygon points="282,171 226,189 230,205 286,187" fill="{{ col.jersey2 }}" />
+      <polygon points="286,187 230,205 231.5,211.5 287.5,193.5" fill="{{ col.jersey1 }}" />
+      <polygon points="19.5,164.4 75.5,182.4 74,189 18,171" fill="{{ col.jersey1 }}" />
+      <polygon points="18,171 74,189 70,205 14,187" fill="{{ col.jersey2 }}" />
+      <polygon points="14,187 70,205 68.5,211.5 12.5,193.5" fill="{{ col.jersey1 }}" />
+    </g>
+    <path d="M128 44 C137 68 163 68 172 44" fill="none" stroke="{{ col.jersey1 }}" stroke-width="7" stroke-linecap="round" />
+    <text x="150" y="112" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-size="23" font-weight="800" letter-spacing="3" fill="{{ col.numbers0 }}">CANUCKS</text>
+  </svg>
+  <svg style="position: absolute; left: 300px; top: 326px;" viewBox="0 0 80 92" width="76" height="86" role="img" aria-label="Glove">
+    <path d="M14 8 C14 4 18 2 24 2 L56 2 C62 2 66 4 66 8 L70 44 C72 56 66 62 56 62 L24 62 C14 62 8 56 10 44 Z" fill="{{ col.gloves0 }}" stroke="#0A1620" stroke-width="2.5" stroke-linejoin="round" />
+    <path d="M8 62 L72 62 L76 84 C77 89 74 90 70 90 L10 90 C6 90 3 89 4 84 Z" fill="{{ col.gloves0 }}" stroke="#0A1620" stroke-width="2.5" stroke-linejoin="round" />
+    <rect x="19" y="16" width="13" height="25" rx="5" fill="{{ col.gloves1 }}" />
+    <rect x="37" y="16" width="13" height="25" rx="5" fill="{{ col.gloves1 }}" />
+    <rect x="55" y="16" width="13" height="25" rx="5" fill="{{ col.gloves1 }}" />
+    <path d="M8 65 L72 65" fill="none" stroke="{{ col.gloves1 }}" stroke-width="4" />
+    <path d="M8 78 L72 78" fill="none" stroke="{{ col.gloves1 }}" stroke-width="4" />
+  </svg>
+  <svg style="position: absolute; left: 544px; top: 326px;" viewBox="0 0 80 92" width="76" height="86" role="img" aria-label="Glove">
+    <g transform="translate(80, 0) scale(-1, 1)">
+      <path d="M14 8 C14 4 18 2 24 2 L56 2 C62 2 66 4 66 8 L70 44 C72 56 66 62 56 62 L24 62 C14 62 8 56 10 44 Z" fill="{{ col.gloves0 }}" stroke="#0A1620" stroke-width="2.5" stroke-linejoin="round" />
+      <path d="M8 62 L72 62 L76 84 C77 89 74 90 70 90 L10 90 C6 90 3 89 4 84 Z" fill="{{ col.gloves0 }}" stroke="#0A1620" stroke-width="2.5" stroke-linejoin="round" />
+      <rect x="19" y="16" width="13" height="25" rx="5" fill="{{ col.gloves1 }}" />
+      <rect x="37" y="16" width="13" height="25" rx="5" fill="{{ col.gloves1 }}" />
+      <rect x="55" y="16" width="13" height="25" rx="5" fill="{{ col.gloves1 }}" />
+      <path d="M8 65 L72 65" fill="none" stroke="{{ col.gloves1 }}" stroke-width="4" />
+      <path d="M8 78 L72 78" fill="none" stroke="{{ col.gloves1 }}" stroke-width="4" />
+    </g>
+  </svg>
+  <svg style="position: absolute; left: 345px; top: 462px;" viewBox="0 0 300 180" width="230" height="138" role="img" aria-label="Pants">
+    <defs>
+      <clipPath id="pantsClip">
+        <path d="M44 8 L256 8 L264 98 L252 170 L168 170 L150 112 L132 170 L48 170 L36 98 Z" />
+      </clipPath>
+    </defs>
+    <path d="M44 8 L256 8 L264 98 L252 170 L168 170 L150 112 L132 170 L48 170 L36 98 Z" fill="{{ col.pants0 }}" stroke="#0A1620" stroke-width="2.5" stroke-linejoin="round" />
+    <g clip-path="url(#pantsClip)">
+      <rect x="30" y="8" width="240" height="26" fill="{{ col.pants1 }}" />
+      <rect x="30" y="34" width="240" height="6" fill="{{ col.pants2 }}" />
+      <polygon points="36,40 58,40 50,172 28,172" fill="{{ col.pants1 }}" />
+      <polygon points="242,40 264,40 272,172 250,172" fill="{{ col.pants1 }}" />
+    </g>
+  </svg>
+  <svg style="position: absolute; left: 345px; top: 604px;" viewBox="0 0 300 90" width="230" height="69" role="img" aria-label="Socks">
+    <rect x="60" y="0" width="68" height="88" rx="6" fill="{{ col.socks0 }}" stroke="#0A1620" stroke-width="3" />
+    <rect x="172" y="0" width="68" height="88" rx="6" fill="{{ col.socks0 }}" stroke="#0A1620" stroke-width="3" />
+    <rect x="61.5" y="28" width="65" height="7" fill="{{ col.socks1 }}" />
+    <rect x="61.5" y="39" width="65" height="19" fill="{{ col.socks2 }}" />
+    <rect x="61.5" y="62" width="65" height="7" fill="{{ col.socks1 }}" />
+    <rect x="173.5" y="28" width="65" height="7" fill="{{ col.socks1 }}" />
+    <rect x="173.5" y="39" width="65" height="19" fill="{{ col.socks2 }}" />
+    <rect x="173.5" y="62" width="65" height="7" fill="{{ col.socks1 }}" />
+  </svg>
+  <svg style="position: absolute; left: 310px; top: 680px;" viewBox="0 0 320 120" width="300" height="113" role="img" aria-label="Skates">
+    <g>
+      <path d="M16 10 L92 10 C106 10 112 20 116 34 L124 64 C127 76 120 82 108 82 L24 82 C16 82 12 76 12 66 L12 18 C12 13 13 10 16 10 Z" fill="{{ col.skates0 }}" stroke="#0A1620" stroke-width="2" />
+      <g stroke="{{ col.skates2 }}" stroke-width="3" stroke-linecap="round">
+        <line x1="28" y1="24" x2="66" y2="32" />
+        <line x1="28" y1="38" x2="66" y2="46" />
+        <line x1="28" y1="52" x2="66" y2="60" />
+      </g>
+      <polygon points="34,82 52,82 50,100 30,100" fill="#243645" />
+      <polygon points="92,82 110,82 114,100 96,100" fill="#243645" />
+      <rect x="12" y="99" width="120" height="9" rx="4.5" fill="{{ col.skates1 }}" />
+    </g>
+    <g transform="translate(166, 0)">
+      <path d="M16 10 L92 10 C106 10 112 20 116 34 L124 64 C127 76 120 82 108 82 L24 82 C16 82 12 76 12 66 L12 18 C12 13 13 10 16 10 Z" fill="{{ col.skates0 }}" stroke="#0A1620" stroke-width="2" />
+      <g stroke="{{ col.skates2 }}" stroke-width="3" stroke-linecap="round">
+        <line x1="28" y1="24" x2="66" y2="32" />
+        <line x1="28" y1="38" x2="66" y2="46" />
+        <line x1="28" y1="52" x2="66" y2="60" />
+      </g>
+      <polygon points="34,82 52,82 50,100 30,100" fill="#243645" />
+      <polygon points="92,82 110,82 114,100 96,100" fill="#243645" />
+      <rect x="12" y="99" width="120" height="9" rx="4.5" fill="{{ col.skates1 }}" />
+    </g>
+  </svg>
+  <svg style="position: absolute; left: 680px; top: 90px;" viewBox="0 0 70 460" width="65" height="430" role="img" aria-label="Stick">
+    <rect x="24" y="10" width="20" height="392" rx="5" fill="{{ col.stick0 }}" stroke="{{ col.stick2 }}" stroke-width="2" />
+    <rect x="19" y="10" width="30" height="22" rx="7" fill="{{ col.stick1 }}" stroke="{{ col.stick2 }}" stroke-width="2" />
+    <path d="M24 394 H52 C62 394 66 400 66 410 C66 420 62 426 52 426 H24 Z" fill="{{ col.stick0 }}" stroke="{{ col.stick2 }}" stroke-width="2" stroke-linejoin="round" />
+    <g stroke="{{ col.stick1 }}" stroke-width="4" stroke-linecap="round">
+      <line x1="33" y1="398" x2="33" y2="422" />
+      <line x1="43" y1="398" x2="43" y2="422" />
+      <line x1="53" y1="399" x2="53" y2="421" />
+    </g>
+  </svg>
+  <svg style="position: absolute; left: -1px; top: -2px; pointer-events: none" viewBox="0 0 1272 830" width="1272" height="830" aria-hidden="true">
+    <g stroke="#3C5568" stroke-width="1.5">
+      <line x1="900" y1="45" x2="515" y2="47" />
+      <line x1="250" y1="200" x2="353" y2="261" />
+      <line x1="250" y1="330" x2="401" y2="346" />
+      <line x1="250" y1="450" x2="303" y2="370" />
+      <line x1="900" y1="200" x2="712" y2="200" />
+      <line x1="900" y1="560" x2="540" y2="531" />
+      <line x1="900" y1="745" x2="577" y2="727" />
+      <line x1="250" y1="642" x2="405" y2="636" />
+    </g>
+    <g fill="{{ accent }}">
+      <circle cx="515" cy="47" r="4.5" />
+      <circle cx="353" cy="261" r="4.5" />
+      <circle cx="401" cy="346" r="4.5" />
+      <circle cx="303" cy="370" r="4.5" />
+      <circle cx="712" cy="200" r="4.5" />
+      <circle cx="540" cy="531" r="4.5" />
+      <circle cx="577" cy="727" r="4.5" />
+      <circle cx="405" cy="636" r="4.5" />
+    </g>
+  </svg>
+</uniform>

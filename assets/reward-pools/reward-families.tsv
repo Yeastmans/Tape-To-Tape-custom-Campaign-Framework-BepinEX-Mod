@@ -1,0 +1,678 @@
+# kind	id	family	level	asset	category
+Abilities	0089c63f-29c9-4777-b383-f55d6293ebbd	Rogue.HeadShotRedirect	1	Headshot Redirect	4194625
+Abilities	03d8b551-575c-405d-8179-619ccf5bc23e	Rogue.Yoyo	2	YoYo LVL2	65
+Abilities	049fa5ca-7d30-4f59-b60d-33e625389a62	Rogue.PolymorphicAbility	1	Polymorphic Ability	0
+Abilities	05a601c9-46a3-48d6-b373-f8f3ba3e8df3	Rogue.HeadShotRedirect	2	Headshot Redirect LVL2	65
+Abilities	0981a764-4e19-4b6e-a0a1-15b143996c9b	Rogue.YoyoShot	1	yoyoShot	0
+Abilities	0cd099b6-7758-4025-be8b-8181b2d3cb0e	Rogue.EnrageAbility	1	enrageAbility	4718849
+Abilities	0de460c4-42e0-4bf0-95fa-60bb1b685ec6	Rogue.Spinorama	1	spinorama Shooting Stars	10
+Abilities	0fab2d24-8aec-42b9-b8c6-0ad75aa6c75a	Rogue.Kazoo	1	kazoo	4194566
+Abilities	15e35579-bd6e-4ce4-82dd-d7fe0697da4b	Rogue.Spinorama	1	spinorama	4194570
+Abilities	202ef0e6-d782-4387-ae35-d4bd1a0b7048	Rogue.Tornado	1	tornado	4194593
+Abilities	2300e726-cd44-48ac-8fdf-438642d79927	Rogue.Probe	1	probe	4227345
+Abilities	2428ff88-071f-4c51-a88f-9d5adb28e5f0	Rogue.GravityWell	1	gravityWell	4194564
+Abilities	2705e1d3-bc6c-4363-a4a3-77e18da75c2f	Rogue.YoyoShot	1	yoyoShot	50331904
+Abilities	3b9b84e9-d657-4536-86f1-f9c23c2bd844	Rogue.StickThief	1	StickThief	4194577
+Abilities	40a2b402-4d46-424c-bb15-ad29f09d119b	Rogue.GrapplingHookPowerup	1	Grappling Hook Mountaineer	12
+Abilities	41ca591a-3b74-461b-8c92-2f3846dc155d	Rogue.Zap	1	zap	4194565
+Abilities	443f0f0e-176c-4482-9c62-ffb7755e7fbf	Rogue.HeadShot	1	Head Smasher	4194625
+Abilities	4b921c9a-95f3-4034-b11b-749c27a04fa6	Rogue.ExplodingPuck	1	explodingPuck	4194593
+Abilities	4d877b9a-3f0a-49ce-a682-31ae5a032502	Rogue.Yoyo	1	yoyo	4194625
+Abilities	4ffa0a0b-fc77-48f4-8b75-93be24f4e415	Rogue.Immunity	2	immunity LVL2	2
+Abilities	500c2055-17da-4b45-9d35-aa1feea47002	Rogue.DefenseTeleportAbility	1	defenseTeleport	256
+Abilities	588da941-34ae-4243-9708-37ee9adba2fc	Rogue.DancingFreeze	2	Disco Dance LVL2	6
+Abilities	5ef2e6ec-c013-49da-b99f-00ddbc25f704	Rogue.Dash	1	Dash	4194568
+Abilities	6ffae56f-fc78-4b0d-9153-fbd154cc253c	Rogue.Shove	1	Yeet	4194577
+Abilities	70339bc7-8375-4f5c-a527-0d3a25996c76	Rogue.ThrowingStick	1	throwingStick	4194577
+Abilities	72d2658a-0a66-4010-88a8-043514b31dc6	Rogue.FartRepellent	2	Gas LVL2	262148
+Abilities	7aba9b4a-ca31-44ce-ace4-098a255f2943	Rogue.ToeDrag	1	toedrag	4194316
+Abilities	7e003538-2bd8-48ff-bcb1-5d67ceb2165a	Rogue.Immunity	1	immunity	4194562
+Abilities	80ecf6b7-e548-4e65-b032-2666b0015939	Rogue.SlowmoPowerup	2	Slowmo LVL2	4
+Abilities	878a9f6b-22e6-4379-81fd-b62351e619c0	Rogue.HeadShot	2	Head Smasher LVL2	65
+Abilities	89222bed-dad4-443d-8303-6a7c6e35981e	Rogue.MegaPokecheck	1	megaPokecheck	2
+Abilities	89f932b3-b2b3-4259-b439-6fce37e3b627	Rogue.GravityWell	2	gravityWell LVL2	4
+Abilities	8c566296-bda4-496e-bf26-4893a92ecb54	Rogue.DancingFreeze	1	Disco Dance	4194566
+Abilities	8cbf3984-686c-48e5-9dcd-52e8abc425da	Rogue.GrapplingHookPowerup	2	Grappling Hook LVL2	12
+Abilities	8f544297-441b-4ef1-9065-930bf9256577	Rogue.ThrowingStick	2	throwingStick LVL2	17
+Abilities	95c266d9-b137-4702-aa6c-17faf0cab82e	Rogue.Shove	2	Yeet LVL2	17
+Abilities	96430453-7cef-4d2f-9964-735a40105022	Rogue.FusRoDah	1	Dragon Shout	4194593
+Abilities	988b72a1-cf67-4bde-80c6-92d45a558d20	Rogue.Deke	1	deke	4194569
+Abilities	9dc4c46a-43d3-42f4-8613-41d5c891244a	Rogue.WetTowel	1	wet_towel	274
+Abilities	a0a3b01c-b362-4672-847f-18a6734bdf01	Rogue.FakePuck	1	fakePuck	4194565
+Abilities	ae332012-6302-4173-b69d-8cceb7de4013	Rogue.FakePuck	2	fakePuck LVL2	5
+Abilities	af9fc1a0-e3b7-41ae-8c1c-bc219e22f003	Rogue.PolymorphicAbility	2	Polymorphic Ability LVL2	0
+Abilities	b1c48828-542f-49d1-9236-8303d5b17736	Rogue.Flop	1	flop	68
+Abilities	bae09728-f7df-4060-a23b-e7cf34fb80b6	Rogue.FartRepellent	1	Gas	4456708
+Abilities	bbc2017a-db0c-4c3b-ab63-ef99009904d4	Rogue.Jump	2	Jump LVL2	12
+Abilities	c2814ee5-b13b-44ae-aa04-48af6b555990	Rogue.Jump	1	jump	4194572
+Abilities	c539a67f-695e-4b41-bf27-edad2e7d2cca	Rogue.Magneto	1	magneto	4194564
+Abilities	c8397f69-b768-4867-a4a5-4506cb54fea4	Rogue.FakeShot	1	fakeshot	4194309
+Abilities	cd2a97cc-ec8c-4b36-8fe9-8e63c60580d9	Rogue.ThrowingHelmet	1	throwingHelmet	67109120
+Abilities	cfbc7ebe-3ed1-4c9b-9f13-8c424d091799	Rogue.GrapplingHookPowerup	1	Grappling Hook	4194572
+Abilities	d2c7adeb-cbe6-4999-a085-cf0abe236098	Rogue.Magneto	2	Magneto LVL2	4
+Abilities	dcc4c93c-8589-4503-9315-6b498c8d7de4	Rogue.Dash	2	Dash LVL2	8
+Abilities	e1b3dfc2-9432-474d-80a9-7dbb309a29eb	Rogue.FusRoDah	2	Dragon Shout LVL2	33
+Abilities	e1dcfbc9-8a42-4144-82c3-4e62d6298977	Rogue.SlowmoPowerup	1	Slowmo	4194564
+Abilities	e5a11035-aa7f-4f1d-83ae-9cd5b5e6ecb7	Rogue.Kazoo	2	Kazoo LVL2	6
+Abilities	f747ded7-f902-4fe1-9b88-d0508e528dfe	Rogue.MegaLob	1	megaLob	4194625
+Goalie Talents	2835afab-4b2b-4275-9005-5f774f2bdfed	Rogue.GoalieAssist	1	Goalie Assist	132096
+Goalie Talents	2ab64669-eba6-4ef5-85b1-98cb6b83e8e0	Rogue.GoalieSpeedTalent	1	Goalie Speed Talent	8520704
+Goalie Talents	2daeb88e-ffb8-4df8-922b-5ab16297d8ba	Rogue.GoaliePassPropel	1	Goalie Pass Proepl	8520704
+Goalie Talents	37a51935-df91-4b28-8798-04c4154eb30c	Rogue.GoalieEnrageLast30Sec	1	Goalie Enrage Last30Sec	8528896
+Goalie Talents	386ebfd6-ca12-42db-84d2-c5d3d56d66a4	Rogue.GoalieEnragedOnBreakaway	1	Goalie Enraged On Breakaway	8520704
+Goalie Talents	4146ec2b-98ca-4c4b-a2a8-54a5c5b6d801	Rogue.AlwaysCatchPuck	1	Always Catch Pucks	8520704
+Goalie Talents	4fb909ae-2915-4076-97a8-6355472f6450	Rogue.MusicalNets	1	Musical Nets	132096
+Goalie Talents	71de331f-74dc-4929-9f02-c6e6b3bee049	Rogue.GoalieThrowStick	1	Goalie Throw Stick	8520704
+Goalie Talents	7542b61f-9309-4c32-937b-013e6cba1f12	Rogue.CrackedMask	1	Cracked Mask	9044992
+Goalie Talents	7e38d68d-e883-4c63-8c7a-0f47db9c6bab	Rogue.CrackedMask	2	Cracked Mask (Level 2)	525312
+Goalie Talents	8454fe7d-73e0-4417-8355-dc7eb747c70c	Rogue.GoalieEnragedOnShot	1	Goalie Enraged On Shot	8520704
+Goalie Talents	9f530de2-25b8-47e1-bfba-91f2d25acf7b	Rogue.CreaseClearer	1	Crease Clearer	8520704
+Goalie Talents	ca24ccd5-0fa0-477d-a230-68a5974e8629	Rogue.GoalieDance	1	Goalie Dance	8520704
+Goalie Talents	cc5deede-73e2-4bd0-b973-55d5ce6c2070	Rogue.MegaRebound	1	Mega Rebound	8520704
+Goalie Talents	d1f1aab7-a7e3-464b-bf6c-998b1d8e041b	Rogue.GoalieEnrageFirst30Sec	1	Goalie Enrage First30Sec	8528896
+Goalie Talents	da4359ff-6dcc-4641-aa64-b844b6e7aa90	Rogue.GoalieEnragedOnGoal	1	Goalie Enraged On Goal	8520704
+Goalie Talents	dc54c45d-a979-4389-860a-eb9ff873c005	Rogue.Powerups.AI.GoaltenderFart	1	Goalie Fart	8520704
+Goalie Talents	f39ac5c7-ba29-4014-90b1-ff4d68ee24e4	Rogue.Shutout	1	Shutout	132096
+Goalie Talents	ff36b448-9a62-4a24-8c29-e90d9e28486f	Rogue.GoalieHeadShot	1	Goalie Headshot	8520704
+Relics	00cd536e-631b-4c32-8edf-856770b340ce	Rogue.BloodBonus	2	Blood Bonus (Level 2)	65536
+Relics	017ad3d7-4d17-4d8f-8613-d3d1e8f30e79	Rogue.SpikeArmorRelic	1	Spike Armor Relic	4096
+Relics	02eb9cec-4846-4a6c-b10a-7179867dd3c0	Rogue.FartingPuck	1	Farting Puck	0
+Relics	02f24b1c-d1e9-4978-be9e-1d2fe94271c0	Rogue.SilkyMitts	1	Silky Mitts	1049600
+Relics	041f4fb1-edcf-4f39-9375-728118bc4fe9	Rogue.CrashTestDummy	2	Crash Test Dummy (Level 2)	4096
+Relics	06023a54-565e-408f-b498-1cd8e23cce79	Rogue.BubbleWrap	1	Bubble Wrap	17892352
+Relics	0683e583-a895-4a08-8a19-f6e00002f411	Rogue.SlapshotPlushie	1	Slapshot Plushie	0
+Relics	07339bea-4032-45f5-954e-7370e22ff1b4	Rogue.RageSwitch	1	Rage Switch	18088960
+Relics	0855e258-445c-4b91-8a9e-a51dca80a02d	Rogue.RefHitOtherTeam	1	briberee	2101248
+Relics	09295f23-4405-4a23-a513-295721c1d487	Rogue.RefBlockShot	1	Ref Block Shot	2098176
+Relics	0a29f353-8e00-4863-a1ee-7616457e6048	Rogue.StatRewardRelic	1	Stat Reward Relic	1024
+Relics	0a3f46ba-de59-4467-bda7-749a970f0fa2	Rogue.NoStickSoccerRelic	1	NoStickSoccerRelic	0
+Relics	0ae9759c-ee7a-4a59-8e64-af3f5c4239c1	Rogue.ParticipationTrophyRelic	1	Participation Trophy	0
+Relics	0cc828d7-7a74-41ee-b359-29608d82aaa2	Rogue.EnrageOnPost	2	Metallic Fury (Level 2)	262144
+Relics	0d1f3b17-1c27-4ca7-8c5b-1684d8785fb3	Rogue.InkBottle	1	Ink Bottle	0
+Relics	0d501341-6f3e-4721-8223-0942b1dc495a	Rogue.Cushioned	1	Cushioned	1115138
+Relics	0dad63bd-74d5-498e-87cb-44c2af0651d3	Rogue.Halo	1	Halo	1050112
+Relics	0eb9bdcd-30ac-489e-abda-56f842547a13	Rogue.CriticalOneTimerRelic	1	Critical One Timer Relic	18351104
+Relics	101f1540-d3d6-4346-bf87-c1bdd0967f50	Rogue.SoccerNet	1	soccerNet	0
+Relics	10a4d42c-149b-4d2c-9dbc-7aa1b62702ad	Rogue.GolfClub	1	Golf Club	17826816
+Relics	1201437e-8029-418a-b5e5-9dc4440ca906	Rogue.Fragile	2	Fragile (Level 2)	65536
+Relics	1230905c-a4d2-4f92-bba7-0846f404cc13	Rogue.RefHitOtherTeam	2	Briberee (Level 2)	2101248
+Relics	13be52a9-ddc0-45c6-a348-e4333a53120f	Rogue.FragileSpeedBonusRelic	2	Fragile Speed Bonus Relic (Level 2)	66048
+Relics	14024758-1149-49e1-8a5b-a667d5c2e6f2	Rogue.EggShellHands	1	Egg Shell Hands	1115136
+Relics	161a0474-2539-48d3-81ac-1e68ef4d512d	Rogue.Relics.RelicFreezer	1	Relic Freezer	4096
+Relics	1726d194-1ab4-45dc-895d-c07013d290f6	Rogue.FrogOnHitRef	1	Frog On Hit Ref	17826816
+Relics	18db5598-ee2f-4066-b406-6a0e48d04030	Rogue.FirstBlood	2	Remarkable Rock LVL2	0
+Relics	1a89e56a-5b4f-404d-bef0-9143297a17fd	Rogue.CounterRageSwitch	1	Counter Rage Switch	262144
+Relics	1b0faea9-b138-41d8-a2cf-5905408967b3	Rogue.LaserPointer	1	Laser Pointer	1082368
+Relics	1b2f09bb-f1c0-4585-a831-12d10b43d293	Rogue.Relics.MetaRelics.BigHeadsMeta.EnrageRelic	1	startingRelicBigHeadsEnrageRelic	18092032
+Relics	1b2f20d7-8b1a-4d82-8808-7148ba467a20	Rogue.SparklyElectrolyte	1	Sparky Electrolyte	1082880
+Relics	1c904bd7-f698-45fb-9101-6da24753fd5f	Rogue.HoliestGrenade	2	Holiest Grenade (Level 2)	528
+Relics	1d190d0d-ab74-4f04-a877-eb4aebbead2d	Rogue.OakyElectrolyte	1	Oaky Electrolyte	1082880
+Relics	1d4a7c6d-f44c-4029-896c-ba169aa25f3b	Rogue.GlassStick	1	Glass Stick	1049600
+Relics	1f1d78e5-6e3f-4e76-9056-583f1839a214	Rogue.RareBerry	2	Rare Berry (Level 2)	0
+Relics	20428ce7-db54-4c20-891a-fb7e4d9cf0ff	Rogue.SelfPassPropel	1	odd_fungus_reverse	1024
+Relics	20c7dc28-8554-4fbe-9ed0-970200867430	Rogue.BuzzerBeater	1	Buzzer Beater	36864
+Relics	211959b1-50df-4d20-98e4-f46033a449b6	Rogue.HoliestGrenade	1	Holiest Grenade	1050128
+Relics	218aa072-e459-4e55-97e5-bd511b8f5c67	Rogue.FrogGoldenHelmetRelic	1	Frog Golden Helmet Relic	8388608
+Relics	23a405dd-f237-4bd4-83f2-e7acf9497080	Rogue.FrogOnAbility	1	Frog On Ability	1049600
+Relics	242403e7-7113-4d8e-a6cb-b6cefdd7ef29	Rogue.BananaFaceoff	1	Banana Faceoff	1048576
+Relics	25f60be7-7ab9-46a2-a562-f72b56d245a3	Rogue.CornDog	1	Corn dog-stic	1050144
+Relics	29b0858a-5637-468e-9ad8-a7300a154f2f	Rogue.AromaticElectrolyteTimer	2	Aromatic Electrolyte Timer (Level 2)	16896
+Relics	2b145b00-f326-4ccd-911f-770ec9aaaedf	Rogue.RagedCritical	1	Raged Critical	1311744
+Relics	2b4832f8-24bb-4ec7-922b-e098623e5953	Rogue.IceSlapshot	1	Ice Slapshot	0
+Relics	2d0c11ce-b2f8-4ac8-a093-b91bf476f8dd	Rogue.CanadaCurses.CanadaCurseXsTeam	1	CanadaCurseXsTeam	0
+Relics	2fc4428f-6b47-4dbb-830a-ca00f9241fcf	Rogue.BenchBonus	1	Gauntlet Bench Bonus	0
+Relics	31618a31-edd6-4a60-822a-9845482472f5	Rogue.WasabiPaste	1	Wasabi Paste	18088960
+Relics	32c59a2c-cd88-48ae-b5e9-6e061c7fc139	Rogue.ShrimpCocktail	2	Shrimp Cocktail (Level 2)	16896
+Relics	33a5392f-5c0f-4e76-acfa-50f967ebf35c	Rogue.WhistleOfTimeTimer	2	Whistle Of Time Timer (Level 2)	16384
+Relics	347a8747-25aa-400f-ba6d-c54698557ab6	Rogue.SoccerField	1	soccerField	0
+Relics	361e09f4-d712-4208-8899-828752d985dc	Rogue.Relics.ChaosRelics.YipsRelic	2	Yips Relic (Level 2)	0
+Relics	36b7a780-299b-4063-b7ab-4b5b830917b8	Rogue.NutJob	1	Nut Job	17892352
+Relics	36dd9911-7304-4758-ab24-4a70e4944687	Rogue.SpeedrunConcededBonus	1	Comeback Clock	0
+Relics	37ab03f9-1af9-4af4-9c8c-76edfe34304a	Rogue.Relics.HotColdRelic	2	Hot & Cold (Level 2)	512
+Relics	38af34e7-3357-41f3-8773-31aaf7123890	Rogue.Relics.StopWatch	1	Stopwatch	1082368
+Relics	3aa903b4-22a3-4940-a200-f3b221f7242c	Rogue.Relics.InvisibleThread	1	Invisible Thread	0
+Relics	3d89a837-4296-48ab-8e43-04fc512a229d	Rogue.SelfDefense	2	Self Defense (Level 2)	512
+Relics	3e317390-80db-4ea2-bbb2-12297a72c460	Rogue.OakyElectrolyteTimer	2	Oaky Electrolyte Timer (Level 2)	16896
+Relics	3e4ade06-8e13-429f-a2f4-8b4c3bdd1ac7	Rogue.RandomTalentBenchBonus	1	Random Talent Bench Bonus	4096
+Relics	3e7a23a2-741f-42a2-9784-d026c58a84ca	Rogue.AromaticElectrolyteTimer	1	Aromatic Electrolyte Timer	17920
+Relics	3e863cb0-b5c1-4905-8a95-896a50dc1602	Rogue.GreasyStick	1	Greasy Stick	1049600
+Relics	3f7a7286-58d2-4897-b9cc-b799cbbc3f1d	Rogue.SparklyElectrolyteTimer	2	Sparkly Electrolyte Timer (Level 2)	16896
+Relics	3fd3a7a2-cffa-44b4-89ca-ee064af84f3f	Rogue.Relics.OvenMitts	1	Oven Mitts	1049600
+Relics	3ff3fdb2-d4d7-4ef6-b4c8-ee91e7fcb508	Rogue.Relics.HotColdRelic	1	Hot & Cold	1050112
+Relics	410cf1b1-4f06-49ab-b23c-8cde6de494cd	Rogue.ExpressDelivery	1	Express Delivery	1049600
+Relics	4113d9ad-c794-4bbf-9988-08ac76c304b3	Rogue.ProlongedRage	1	Short Fuse	18088960
+Relics	42198d8d-e419-4af5-b02a-b8ba08c2fe1d	Rogue.ZebraHoof	1	Zebra Hoof	2097152
+Relics	424fd86c-f78a-4315-8497-59c24dca9585	Rogue.Needle	1	needle	0
+Relics	4280dce1-5ecc-4765-949d-af45dbffbdaa	Rogue.ProlongedRage	2	Short Fuse (Level 2)	262144
+Relics	445e4b3e-7b3c-4594-a333-652e20545abe	Rogue.DoubleReward	1	Double reward	4096
+Relics	44b58bf8-592a-4282-a1d3-a0d169fdbf5b	Rogue.DentistDrill	2	Dentist Drill (Level 2)	65536
+Relics	4548d4a5-14d7-462e-a6dc-3b4635a64801	Rogue.OakyElectrolyte	2	Oaky Electrolyte (Level 2)	33280
+Relics	459d1221-ff00-4066-a4e5-66aac93ed57a	Rogue.Relics.TrainingWhistle	2	Training Whistle (Level 2)	512
+Relics	46f76a31-f3c1-4127-993f-bdcbaa90de16	Rogue.RefHandsRelic	1	Ref Hands Relic	2097152
+Relics	4782c6ce-a7fb-499e-8a37-02d81813276d	Rogue.SpecialHelmetOvrRelic	1	Special Helmet Ovr Relic	8389632
+Relics	47be8f03-fedd-4179-9a82-e06af59b01de	Rogue.BenchwarmerStrip	1	Benchwarmer Strip	4096
+Relics	48d038a1-6c91-428e-b1fc-1d6a17ebf355	Rogue.CritShotDoubleGoal	1	Crit Shot Double Goal	1576960
+Relics	491d625b-dcd1-4d5c-949b-550e13528387	Rogue.JumboJuice	1	Gigantism	17829888
+Relics	4b098570-8e09-4fc4-860e-e80d65ee666d	Rogue.Fragile	1	Fragile	16843776
+Relics	4c72f7e8-0e03-49ad-a082-179bdd45d693	Rogue.Stethoscope	1	Stethoscope	66560
+Relics	4c83080d-a0b9-42ba-8477-53f4d564c403	Rogue.GoldenHelmetCheckingRelic	1	Golden Hits	25167376
+Relics	4ca70e53-1064-4ed4-91fb-5b3da35da9b5	Rogue.EnrageOnPost	1	Metallic Fury	1310720
+Relics	4d3482b4-764b-405c-9c5a-504ead4fd300	Rogue.BlackCoffee	1	Black Coffee	0
+Relics	4de5b9a5-6aca-41b4-a975-d7b966b949ae	Rogue.CriticalMass	1	Critical Mass	525312
+Relics	4e43a3d9-b3f3-430b-a447-219fa2f22e2f	Rogue.GainRandomAbilityRelic	1	Gain Random Ability Relic	4096
+Relics	4fa1a250-a9b8-496a-b039-3244ea8ef159	Rogue.FossilizedStar	1	Fossilized Star	1050120
+Relics	52793fd7-5999-4cc7-9d00-f2eb62b6624c	Rogue.BrickWall	2	Brick Wall (Level 2)	512
+Relics	52b4a81b-85c7-40e6-9b41-dbbe383d152d	Rogue.ShrimpSquad	2	Shrimp Basket (Level 2)	0
+Relics	53242bc2-fc26-4660-a048-8bdb88bf18ca	Rogue.WhistleOfTime	1	Whistle of time	0
+Relics	56613739-c2d3-4976-854c-8a974c03fdf7	Rogue.CompanionPuck	2	Companion Puck (Level 2)	4096
+Relics	56d138a3-2e66-4c66-82cb-60ceffe4d266	Rogue.DanceFloorRelic	1	DanceFloorRelic	0
+Relics	570762fe-d062-4ddb-b50b-14b7290c4acf	Rogue.GhostVision	1	Polarized Glasses	1049600
+Relics	57d8f8cd-a435-41f8-919e-69d06505428d	Rogue.StickBreakingKnockoutRelic	1	Stick Breaking Knockout Relic	4096
+Relics	5942b35f-a1ff-4aec-937c-a45a227b5542	Rogue.FossilizedStar	2	Fossilized Star (Level 2)	520
+Relics	5991da44-7bb4-46dc-8ff4-6a1d12d1845e	Rogue.CanadaCurses.CanadaCurseFrogTwo	1	CanadaCurseFrogTwo	0
+Relics	5a9d27c1-6eee-48e6-8098-09ba9d80bf76	Rogue.RandomUpgrade	2	Random Upgrade (Level 2)	4096
+Relics	5c1796ef-624b-4f6f-923d-e6df6e08a130	Rogue.SlapChop4000	1	Slap Chot 4000	0
+Relics	5c68e9be-b90c-43c7-b2c7-a3a21e9c5a51	Rogue.GoalDenier	1	Briefcase	17826816
+Relics	5c9577ec-7c67-41e9-b87b-c4e020394308	Rogue.CritShotEnrage	1	Crit Shot Enrage	1836032
+Relics	5d9486af-5cc9-4c1c-a283-3400b3e97dcd	Rogue.LoosePuckPropel	1	Lost Fungus	1049600
+Relics	5dff0a71-ffd4-45b9-8368-65013bd6e6fc	Rogue.OriginalPuck	1	The Original Puck	69632
+Relics	5e20ed1d-06c6-4bc3-aacb-1700530d1b5b	Rogue.Revenge	1	Revenge	1115136
+Relics	5fa8c37c-b040-4f34-a09a-8bb0e3f465da	Rogue.ParticipationTrophyRelic	2	Participation Trophy (Level 2)	0
+Relics	5fce1934-fcb2-4e96-a756-3b9f0348d401	Rogue.GoldenHelmetCritRelic	1	Golden Sniper	25691136
+Relics	5ff98e97-b482-430f-aa62-d2055734aecc	Rogue.WetNoodle	1	Wet Noodle	4096
+Relics	60b499e7-cfa2-4d46-960d-af505f6c3c8d	Rogue.SnoozeAlarm	2	Broken Alarm (Level 2)	0
+Relics	619b6056-b71f-48ad-afb4-ef8367ed8b31	Rogue.SecondReferee	1	Second Referee	2098176
+Relics	6221b17a-8349-418a-83b3-86e8317b0bcd	Rogue.Relics.MetaRelics.TrioMeta.TripleThreat	1	Triple Threat	0
+Relics	6375483d-838d-43bc-91fa-33bafc8dab96	Rogue.BenchBonus	1	Bench Bonus	0
+Relics	6375483d-838d-43bc-91fa-33bafc8dab96	Rogue.BenchBonus	1	Bum Bench Bonus	0
+Relics	63eba90e-8f00-4147-ab8d-52f8405c500f	Rogue.BowlingRelic	1	Bowling Relic	1168
+Relics	64b6228a-122e-4a14-8533-9a40a3125e23	Rogue.GoalDenierEmpty	1	Empty Briefcase	0
+Relics	6507a6fe-47f5-48e6-9faa-29c1f92b211c	Rogue.Cushioned	2	Cushioned (Level 2)	65538
+Relics	68591c92-d2b7-415a-81ad-235eea15285d	Rogue.Relics.Whisk	1	Whisk	1052672
+Relics	68670f5c-626f-411d-b4fe-0f73b6bd97f4	Rogue.GreaterCooldownRelic	1	Greater Cooldown	16778240
+Relics	6a238c06-3a8d-4dae-aa32-a201ab5ff278	Rogue.BeanDiet	1	Bean Diet	1180672
+Relics	6d6ecb13-7f80-47d1-821c-f28d4e2bf89b	Rogue.Indecisive	2	Indecisive (Level 2)	0
+Relics	6e5c5983-70a7-441c-80d2-69cf6c9c7a83	Rogue.Protection	1	Protection	0
+Relics	6ebe1537-9f32-4842-b36d-6c22ea82960d	Rogue.Stethoscope	2	Stethoscope (Level 2)	65536
+Relics	6ed1127c-2127-454b-8eeb-63af517dae07	Rogue.RedMarker	1	Red Marker	1050112
+Relics	6f00e6c6-c03e-4562-952a-c0d813bd312c	Rogue.CanadaCurses.CanadaCurseAngusZeroOvr	1	CanadaCurseAngusZeroOvr	0
+Relics	6f5bd97f-0ae6-4997-b86b-dc53167fd3bb	Rogue.Relics.OvenMitts	2	Oven Mitts (Level 2)	0
+Relics	71c7036b-ba18-46e0-8fef-d25217d5ca17	Rogue.GolfFairway	1	golfFairway	0
+Relics	7235540f-4497-4c4c-8b5b-625f954b49f7	Rogue.CornDog	2	Corn dog-stic (Level 2)	544
+Relics	727e0295-7626-4057-8e7d-728a17f20cfd	Rogue.ViolentPlushie	1	Violent Plushie	0
+Relics	72c65f7d-1be8-4669-98c3-4b580751f687	Rogue.BlueBanana	1	Blue Banana	1049600
+Relics	733da43b-1c11-4c0c-94bf-d52a8b22d6c3	Rogue.CanadaCurses.CanadaCurseTeamOvrMinus20	1	CanadaCurseTeamOvrMinus20	0
+Relics	75a96514-8b4f-48a7-a191-9f0bafe02210	Rogue.PitilessTimer	2	Merciless Timer (Level 2)	16384
+Relics	7630ed1b-d222-442c-979b-b315fdd7c2a7	Rogue.AnnoyingAd	1	annoyingAd	0
+Relics	76abd0b9-ce32-49dd-8cf5-b5a469704e49	Rogue.JumboJuice	2	Gigantism LVL2	0
+Relics	778330c5-7df2-41c1-8583-b15604f9c21c	Rogue.ShortStick	1	Short Stick	1536
+Relics	78f3fae3-b71f-4e6e-8742-e9781ac95a90	Rogue.CanadaCurses.CanadaCurseOpponentBriefcase	1	CanadaCurseOpponentBriefcase	0
+Relics	7b71666a-6a7c-4852-9aa1-22e950e99fdd	Rogue.LastMinuteBonus	1	Last Minute	4608
+Relics	7be5fe1e-6709-4111-8d82-7213d678282b	Rogue.FatShrimp	2	Fat Shrimp (Level 2)	512
+Relics	7e159de2-2d6d-4b2a-9ce9-18cc39a75933	Rogue.LastMinuteBonus	2	Last Minute Bonus (Level 2)	4608
+Relics	7ea7be80-1691-4967-99cc-1b4736c6d9e4	Rogue.SorestLoser	1	Sorest Loser	66560
+Relics	7f07cefb-bab7-4807-b8c7-f47b7c2df416	Rogue.Pizzaghetti	1	Pizzaghetti	65536
+Relics	7f1ecbb6-db92-4e73-ad66-60fdd7af7bfc	Rogue.FirstBlood	1	Remarkable Rock	4096
+Relics	7f681d6a-a1ea-4c31-8b3a-4b1ccbc5c8cf	Rogue.BlueCone	1	Blue Cone	17827344
+Relics	7fca4582-620a-4acc-8ba0-9b121f5e4c41	Rogue.CompanionPuck	1	Companion Puck	0
+Relics	8047d884-a4a3-4596-94bf-da2b92ecb655	Rogue.BubbleWrap	2	Bubble Wrap (Level 2)	65536
+Relics	80e81cc6-fcff-4009-8401-1a912975fc83	Rogue.SoccerWall	1	soccerWall	0
+Relics	820af6ec-1651-4a0c-ba02-624cfedd65e2	Rogue.BreakawayBoostRelic	1	Breakaway Boost Relic	1573888
+Relics	82b895d4-bdd7-41d9-b46e-1d2d56e9e2c4	Rogue.Relics.StopWatch	2	Stop Watch (Level 2)	32768
+Relics	840b6ecb-77d8-4a2b-82ba-cd57a73fcea5	Rogue.SlapStickRelic	2	Slap Stick Relic (Level 2)	0
+Relics	847d84d3-4cbf-4ce5-8646-4dabe3b8177e	Rogue.GoalDenier	1	RefereeBriefcase	0
+Relics	8552fc83-5c1b-4ba9-9490-9f9eac0eae5d	Rogue.VanillaTraining	1	Can of Worms	16778240
+Relics	88226e2f-45ce-4a66-92a3-edc3b86f49fa	Rogue.WasabiPaste	2	Wasabi Paste (Level 2)	262144
+Relics	89d3ea78-6fb0-4d49-8bfd-8fe12092e001	Rogue.ShrinkSerum	1	Shrink Serum	17826816
+Relics	8add8d50-2c98-4e73-9655-1e6d1f079ef2	Rogue.Reroll	2	Weighted Die (Level 2)	0
+Relics	8af787d1-a196-4c1f-bc55-4cad272c4f3e	Rogue.CriticalRelic	1	Critical Relic	17826816
+Relics	8bee35df-3552-4afa-9f8a-51e8cf158ff3	Rogue.BlueBanana	2	Blue Banana (Level 2)	0
+Relics	8cb96216-e1f6-4bfe-a626-50726936d538	Rogue.CrashTestDummy	1	Crash Test Dummy	0
+Relics	8dc55401-8077-4eef-a50b-32eca83712c7	Rogue.AromaticElectrolyte	1	Aromatic Electrolyte	1082880
+Relics	8e1ae372-a6cd-43a4-8dd3-20b12e2fed38	Rogue.BrickWall	1	Brick Wall	1050112
+Relics	8e9727ad-290f-4ce1-b87a-f8fde420706c	Rogue.Relics.TrainingWhistle	1	Training Whistle	16778752
+Relics	8ee2d786-f671-4208-aab0-ce5da57db344	Rogue.SpeedrunGameStartBonus	1	Head Start	0
+Relics	8f587e3b-0862-4fd2-99d8-e0a3b54a486f	Rogue.FrogOnGoal	1	Frog On Goal	1049600
+Relics	8f773bf5-45cf-459f-91e5-81957a8e483d	Rogue.FragileSpeedBonusRelic	1	Fragile Speed Bonus Relic	1115648
+Relics	8fe59fdd-c68e-4caa-922d-3810948c593e	Rogue.Relics.HotCake	1	Hot Cake	1049600
+Relics	8fee9dab-7fef-4a17-8c33-2bf225f5dc74	Rogue.SparklyElectrolyte	2	Sparky Electrolyte (Level 2)	33280
+Relics	90698505-8e45-4e8b-8f41-00cbd4204d97	Rogue.ShrimpCocktail	1	Shrimp Cocktail	1050112
+Relics	90c318b2-c3a5-4677-a81c-153f8ca0b954	Rogue.DoubleCoaching	1	Coach Coupon	0
+Relics	90db2d73-f6e7-444c-baa3-4f5685f3615e	Rogue.PlayerGetUpFaster	1	Lifeless Branch	1049600
+Relics	9221c750-920d-44b1-90d9-a2ea89f91210	Rogue.QuantumSextant	1	Quantum Sextant	4096
+Relics	92730526-7fe8-49f9-bbb4-ab16e609450b	Rogue.SlapStickRelic	1	Slap Stick Relic	4096
+Relics	942c8339-9c4a-4ad0-89ea-6ab43d9149be	Rogue.SoreLoser	2	Tribal Mask (Level 2)	512
+Relics	94917983-d166-4883-bad8-f978904199ff	Rogue.FrogOnFaceoff	1	Frog On Faceoff	1049600
+Relics	94aa29fb-d25e-4f91-8bba-bcaeec13838d	Rogue.Revenge	2	Revenge (Level 2)	65536
+Relics	9542d9a4-27b0-43a9-b578-28101f1449c2	Rogue.CanadaCurses.CanadaCurseTeamSpeedMinus40	1	CanadaCurseTeamSpeedMinus40	0
+Relics	954e9106-af13-404f-b3f2-c8621239d88d	Rogue.EnragedInjuryRelic	1	Enraged Injury Relic	17105920
+Relics	956100f1-9bba-425a-b1fe-4984684bf5c5	Rogue.Relics.MetaRelics.DefenseMeta.BrickiePlushie	1	Gerry Boulet	0
+Relics	9574b033-21e6-4416-a2f5-82073298a6eb	Rogue.RandomUpgrade	1	Random Upgrade	4096
+Relics	968eacc9-33e7-42b4-8595-68ce3d7e12db	Rogue.GoalPlankRelic	1	GoalPlankRelic	0
+Relics	96aab4e1-be88-4b76-84d9-b8f1fc1fef6b	Rogue.RareBerry	1	Rare Berry	1048576
+Relics	98cfbee6-c14d-4e6a-8f35-4e58f88d78c0	Rogue.GhostVision	2	Polarized Glasses (Level 2)	0
+Relics	9908344a-ce9f-4a68-996c-26605b30f16c	Rogue.Cripple	2	Cripple (Level 2)	0
+Relics	996c5d71-24d0-4c43-aa7e-43c997e0a359	Rogue.BuzzerBeaterTimer	2	Buzzer Beater Timer (Level 2)	20480
+Relics	9bbc4786-cb02-480d-8093-ee52ba014c08	Rogue.PitilessMaxGoal	2	Merciless (Level 2)	32768
+Relics	9c2c69a4-fcf1-403f-b575-a46fee710f03	Rogue.Toothpick	1	Toothpick	1049600
+Relics	9c5ae2ce-6ca6-4041-a9c5-caa273b1bafe	Rogue.Indecisive	1	Indecisive	0
+Relics	9cba5384-e2b4-4574-ba67-214f964d94b4	Rogue.Relics.VoodooDoll	2	Voodoo Doll (Level 2)	0
+Relics	9d9897da-f391-4eb2-a5c8-fb0636b2ed8c	Rogue.RubberBand	1	Rubberband	1050176
+Relics	9e03f7ad-7fa4-4405-a77a-b45c97e9f14d	Rogue.ExpressDelivery	2	Express Delivery (Level 2)	0
+Relics	9e44ded7-39ba-4bf7-9f5d-a73d9960e16b	Rogue.GreenMarker	1	Green Marker	1050112
+Relics	9f1cd745-75ed-49c0-ae2a-b362d62da828	Rogue.SelfDefense	1	Self Defense	1050112
+Relics	9f5809f2-e15a-4014-82dc-d36da1251f01	Rogue.Helmetless	2	Helmetless (Level 2)	0
+Relics	a0f2f9ae-0ee1-4492-945e-88ad697c83e4	Rogue.SmallPlayerCrit	1	Small Player Crit	1573888
+Relics	a17ae6bd-cbd1-4935-abb6-f7d909245dcc	Rogue.BoltRelic	1	Bolt Relic	18351104
+Relics	a1f1194a-1242-479f-8c77-b7bba33b9784	Rogue.ShrinkSerum	2	Shrink Serum (Level 2)	0
+Relics	a29c33ea-34e1-44e2-9389-df36920037e5	Rogue.HardBoiledEgg	1	Hard Boiled Egg	66560
+Relics	a2f3a09d-b4bb-46d5-86ec-c0d7be3d2eaf	Rogue.CriticalOneTimerRelic	2	Critical One Timer Relic (Level 2)	0
+Relics	a51aeda7-b715-4235-b6cb-4eebdceee1a8	Rogue.LaserPointer	2	Laser Pointer (Level 2)	32768
+Relics	a71e3979-c7d5-41a2-a385-494c75f87d0c	Rogue.Handcuffs	1	Handcuffs	0
+Relics	a877a97a-c064-4bab-b64b-7be8f5981fb8	Rogue.BlueCone	2	Blue Cone (Level 2)	512
+Relics	a8bc1a0e-4e72-4551-8b43-0cde85a0a577	Rogue.RageSwitch	2	Rage Switch (Level 2)	262144
+Relics	aa57e8fe-94d8-429a-8af0-443690b6d404	Rogue.GoldenHelmetSecondScorerRelic	1	Golden Duo	8392704
+Relics	ab2581e1-5430-4e13-a47a-61bdb4d9b6cb	Rogue.DryNoodle	2	Dry Noodle (Level 2)	4096
+Relics	ab3c468a-e3a0-4812-b0aa-e384497175c8	Rogue.Relics.FrozenRelic	1	Frozen Relic	0
+Relics	ac1066c4-054b-4862-bba7-25252847eae6	Rogue.DentistDrill	1	Dentist Drill	1115136
+Relics	acbeab28-21f6-41d0-9db8-c8face7aa8e2	Rogue.WetNoodle	2	Wet Noodle (Level 2)	4096
+Relics	adc04619-9ebe-454d-8efe-3fa341737197	Rogue.PassPropel	2	Odd Fungus (Level 2)	0
+Relics	b01fbcde-a00d-4bfd-b592-706d3349675e	Rogue.Protection	2	Protection (Level 2)	512
+Relics	b1390d04-e654-4a79-aa96-7d7a007fc232	Rogue.FartKnockout	1	Fart Knockout	1183744
+Relics	b2dbfd59-72a3-4e8b-b615-76d7a37f817a	Rogue.RubberBand	2	Rubberband (Level 2)	512
+Relics	b3e0ce15-f424-4400-8e03-d7bd9ca9f59b	Rogue.DefenseCrit	1	Defense Crit	18351104
+Relics	b4592c2a-160d-4a17-91c4-31c77c693b9f	Rogue.GoldenHelmetBenchBonus	1	Golden Helmet Bench Bonus	8389632
+Relics	b50d20ef-141c-4eae-8dde-1736ab233dbe	Rogue.RiggedFaceoff	1	Rigged Faceoff	0
+Relics	b5e83e72-3947-41c0-80da-62dc0ecc42da	Rogue.PassPropel	1	Odd Fungus	1052672
+Relics	b728b878-f5b9-4247-abfa-b2f28c6e72d8	Rogue.BenchwarmerOvrRelic	1	Benchwarmer Ovr Relic	4608
+Relics	b76244a9-d4e8-4b23-b1d7-0e83a6678530	Rogue.ChipPass	1	High Flyer	0
+Relics	b808090f-9a29-4e33-9702-d421b72d5618	Rogue.HotPotato	1	hotPotato	0
+Relics	b84a161b-0b35-4cc8-a86f-08d9f82726bf	Rogue.SparklyElectrolyteTimer	1	Sparkly Electrolyte Timer	17920
+Relics	bc623321-2e5c-43bd-9484-29ad93c9dca1	Rogue.ShrinkSerumOpponent	1	The Squeezer	4096
+Relics	bd11acbc-8cb9-403d-8cbd-cf5510df4e2b	Rogue.PitilessTimer	1	Merciless Timer	17408
+Relics	bec22419-80cc-4f22-af28-5d73ed46fc17	Rogue.FatShrimp	1	Fat Shrimp	1050112
+Relics	bfc8f647-32b4-410e-96f2-1e409eb39081	Rogue.OpponentGainShartRecoil	2	Backdraft Relic (Level 2)	131072
+Relics	c03631a3-8962-42e5-8caa-f86df4a6085a	Rogue.Relics.HotCake	2	Hot Cake (Level 2)	0
+Relics	c14d5b61-29d3-48f8-aa83-a4933793a26c	Rogue.DoubleIncision	1	Double Incision	17892352
+Relics	c2772cc6-5251-474c-8f4c-5d59180c4f89	Rogue.BoltRelic	2	Bolt Relic (Level 2)	0
+Relics	c356fd2f-440e-4394-b1a4-7cf0991114e2	Rogue.TieDomi	1	Tied Homie	0
+Relics	c482a0fc-951c-43e7-b101-2b6cb6a2a78f	Rogue.DoubleBenchBonus	1	Double Bench Bonus	4096
+Relics	c6a74545-d6e6-4206-9af7-c2466e46bcdc	Rogue.DoubleReward	2	Double Reward (Level 2)	4096
+Relics	c78e4123-2a27-438b-8873-fcac1da8233f	Rogue.BothTeamCrit	1	Both Team Crit	18351104
+Relics	c82b7394-4d8d-489f-bbb9-ba2fbe045d7e	Rogue.Toothpick	2	Toothpick (Level 2)	0
+Relics	c8dbe4ba-e07a-45e4-905a-497f39f3a044	Rogue.SoreLoser	1	Tribal Mask	1050112
+Relics	c930bd48-ddbe-430c-9cf8-9fdc98a8cfb7	Rogue.Tong	2	Tong (Level 2)	0
+Relics	cad50d30-21e8-4c45-b165-16fc7479d3d0	Rogue.Relics.ChaosRelics.YipsRelic	1	Yips	1049600
+Relics	cb19f0da-d852-46ba-a8a8-48d97cdf8e2c	Rogue.Tong	1	Tong	1040
+Relics	cbf019bf-c3c3-477f-bca4-e4f4d9e3a371	Rogue.CanadaCurses.CanadaCurseOpponentBonecrusher	1	CanadaCurseOpponentBonecrusher	0
+Relics	cbf1d6c7-0b0e-452e-ba8e-6882dba44bc0	Rogue.BreakawayBoostRelic	2	Breakaway Boost Relic (Level 2)	0
+Relics	cc0fc484-dcba-4230-8a34-f7b6f989da2d	Rogue.AngusAscension	1	Angus Ascension	4096
+Relics	cd547186-bdd6-4635-9b5d-d36c975f4351	Rogue.Relics.VoodooDoll	1	Voodo Doll	1049600
+Relics	cdc68a1c-0d44-4b9a-83b3-829006a556a8	Rogue.GreaterCooldownRelic	2	Greater Cooldown Relic (Level 2)	1024
+Relics	cfcb6e4c-66c5-45b4-8dda-7bbe6be2177b	Rogue.Cripple	1	Cripple	1049600
+Relics	d07ad9ad-5431-4bbe-a6ce-70b771f20da7	Rogue.BlueLineBounceRelic	1	Blue Line Bounce Relic	0
+Relics	d08f68e9-2fad-498f-829c-0fdf50ba3b17	Rogue.Helmetless	1	Helmetless	0
+Relics	d0f6ed97-624e-4ddf-a6f8-99f47f8c0ad4	Rogue.Relics.RelicStealer	1	Relic Copier	0
+Relics	d1a7dc0b-cfc0-4f10-b094-b3a113d70f1f	Rogue.Fusilli	2	Fusilli (Level 2)	512
+Relics	d354ee73-975a-4b73-a5e0-e8d123230318	Rogue.BloodBonus	1	Blood Bonus	69632
+Relics	d3904cee-79e1-48fe-ae51-003072746f57	Rogue.InkBottle	2	Ink Bottle (Level 2)	4096
+Relics	d3cdaeec-e353-485d-b284-e29fb0e3c663	Rogue.BlackCoffee	2	Black Coffee (Level 2)	0
+Relics	d4ca95dc-fc6d-4430-abf6-05535286ee06	Rogue.GoldenHelmetStartTalentRelic	1	Golden Potential	8389632
+Relics	d637f9e3-3b3b-44a2-b845-05df5770e0b8	Rogue.FartOvr	1	Fart Ovr	132096
+Relics	d72bebe2-0fc3-48a4-af10-4f6d6f64ab01	Rogue.Halo	2	Halo (Level 2)	512
+Relics	d79c7c9b-d400-4763-a930-95cac23549a3	Rogue.DoubleIncision	2	Double Incision (Level 2)	65536
+Relics	d7c5b8fa-9959-48ba-9f34-8223ffe363e7	Rogue.Gurney	1	Gurney	1049600
+Relics	d95280ef-38b8-4c34-b463-7dabddaa53e1	Rogue.SpeedrunSaveBonus	1	Robbed	0
+Relics	d9a18fc0-ae7f-471b-9beb-182067ec1756	Rogue.DryNoodle	1	Dry Noodle	4096
+Relics	dac24d59-ae55-41f7-8eae-eb20f9386371	Rogue.Reroll	1	Weighted Die	1024
+Relics	dbd2ff78-ac54-406c-8e90-b7e06ede1f96	Rogue.FalseGoalOnPost	1	falseGoalOnPost	0
+Relics	dc7840fc-016b-44b2-a0f2-ffa8c43c3994	Rogue.FartImmunity	1	Fart Immunity	1180672
+Relics	dd96d90a-5ec4-4552-bbdb-cc8afb1df5da	Rogue.GoalDenier	2	Briefcase (Level 2)	0
+Relics	ddd1c7bb-5217-4c19-ae9f-b087e809b416	Rogue.AromaticElectrolyte	2	Aromatic Electrolyte (Level 2)	33280
+Relics	de3c2b70-d2dd-4d9d-8cf9-3a16bb55c982	Rogue.EggTimer	1	Egg Timer	17895424
+Relics	de9f694d-3846-4e47-9b91-c4f91dbc68b6	Rogue.SpeedrunKnockoutBonus	1	Crunch Time	0
+Relics	dee979af-6901-4b07-ab3e-46bb9bdf2298	Rogue.CanadaCurses.CanadaCurseFreezeTwoRelics	1	CanadaCurseFreezeTwoRelics	0
+Relics	df1857c4-23b3-4765-addf-fe7fbff541de	Rogue.EnrageBonus	1	Enrage Bonus	266240
+Relics	df98ad6e-c327-424f-ab4b-4a07ac985b4b	Rogue.TycoonsIce	1	tycoonsIce	0
+Relics	e153cd57-b035-487d-b5cb-eb4b0ab3d949	Rogue.FastShoulder	1	Fast Shoulder	1049616
+Relics	e237b920-8800-4f42-80d3-fe7a8852a3d3	Rogue.Relics.RelicStealer	1	Relic Stealer	0
+Relics	e306f00d-56f3-4b82-abc7-3b3c8e30a15f	Rogue.OakyElectrolyteTimer	1	Oaky Electrolyte Timer	17920
+Relics	e43647f5-61bc-4b0c-9cca-f1bac664d238	Rogue.RefereeRumble	1	Referee Rumble	2360320
+Relics	e45f5232-0bca-4bd3-9d26-b043d142ed31	Rogue.ShrimpSquad	1	Shrimp Basket	17826816
+Relics	e5365aff-d340-4ee9-9271-fbf51813ad3b	Rogue.SpeedrunInjuryBonus	1	Triage	0
+Relics	e5f29525-6468-47e1-b1d2-4deb87573bc9	Rogue.BuzzerBeaterTimer	1	Buzzer Beater Timer	20480
+Relics	e61fc149-89ec-4043-88d6-305b77805dc9	Rogue.EnragedOvr	1	Enraged Ovr	263168
+Relics	e65241a8-3736-4b49-8a30-8fbfd596338c	Rogue.SnoozeAlarm	1	Broken Alarm	1049600
+Relics	e6f71ded-8515-4baf-ada3-97b6ddce7499	Rogue.BlueLineLaunchRelic	1	Blue Line Launch Relic	0
+Relics	e7fcea58-4747-4891-be46-bd432111e8bc	Rogue.OctopusAttackRelic	1	OctopusAttackRelic	0
+Relics	e8ec67b8-2ff5-4032-bd04-7404639de568	Rogue.PowerSurge	1	Lucky Molar	1049600
+Relics	eb3dcaf9-2b10-4a3c-a5a4-80904b5fc48a	Rogue.PlayerGetUpFaster	2	Lifeless Branch (Level 2)	0
+Relics	ebfece72-ca43-41c5-83a7-54c46818cf04	Rogue.CanadaCurses.CanadaCurseFragileTeam	1	CanadaCurseFragileTeam	0
+Relics	ed9e16e9-ce68-4d22-9f1f-eb5b84a164c8	Rogue.SpeedyMetaRelic	1	Speedy Meta Relic	0
+Relics	ee73a989-13ca-49cd-9fc0-b31b90e81e30	Rogue.PlayableReferee	1	Playable Referee	2101248
+Relics	f04bcfdf-0f5a-4387-9758-bdbe9378a1a4	Rogue.MortarAndPestle	2	Mortar And Pestle (Level 2)	65536
+Relics	f12cf48d-ed22-4464-99c2-d71ff3f1cc57	Rogue.PitilessMaxGoal	1	Merciless	33792
+Relics	f19e515c-8f52-4540-ad8a-31bb18a36405	Rogue.GoldenHelmetBossOvrRelic	1	Golden Showdown	8389632
+Relics	f247d4d7-cf19-4f12-8422-72a0d0ceabbe	Rogue.VanillaTraining	2	Can Of Worms (Level 2)	0
+Relics	f295e7a3-7b2c-4d3e-9fe6-cf895b6e2eba	Rogue.CritShotKnockout	1	Crit Shot Knockout	1573888
+Relics	f3d25c5b-aa48-4886-b8cc-d5bbdd73b589	Rogue.CritShotFrog	1	Crit Shot Frog	1573888
+Relics	f4b2e9ac-12d4-4e75-8f63-01c9fbfb9c37	Rogue.LastStand	1	Last Stand Relic	0
+Relics	f5a3d5eb-0c3d-4b55-8b64-d765003587d5	Rogue.LoosePuckPropel	2	Lost Fungus (Level 2)	0
+Relics	f7133ace-675e-4def-9618-8ea1644fc258	Rogue.OpponentGainShartRecoil	1	Backdraft Relic	1180672
+Relics	f79b5e7b-c137-4d05-9fca-1f68691ec402	Rogue.GoldenHelmetInjuryImmuneRelic	1	Golden Resilience	25232384
+Relics	f97f235d-ffd9-441b-b09a-05814c3fc1c3	Rogue.MortarAndPestle	1	Mortar And Pestle	1115136
+Relics	faf3bcc0-38b7-4b4b-9688-bfa8f50802e7	Rogue.Fusilli	1	Fusilli	1050112
+Relics	fbf743fc-0cc3-4c90-a745-81792fa1e240	Rogue.BlueLineKnockoutRelic	1	No Entry Relic	0
+Relics	fbf743fc-0cc3-4c90-a745-81792fa1e240	Rogue.BlueLineKnockoutRelic	1	Ringette Relic	0
+Relics	fdd9ab50-79d3-47f6-9358-2534ca1ee935	Rogue.RetroRocket	1	Retro Rocket	1050120
+Relics	fe7830b2-e2db-4bc1-9307-5efbd81189bd	Rogue.BuzzerBeater	2	Buzzer Beater (Level 2)	36864
+Relics	ff358466-f146-408e-8049-b4ece03e4e12	Rogue.WhistleOfTimeTimer	1	Whistle Of Time Timer	1065984
+Relics	ff9ac081-9f12-4aad-af75-ea4f19edde93	Rogue.Relics.Whisk	2	Whisk (Level 2)	0
+Talents	00e6e2f9-cfbe-438a-9ebe-7f2287f68436	Rogue.EnGarde	1	En Garde!	4194562
+Talents	046ff93c-c3a4-420f-8ed9-fbe3068a367f	Rogue.BalancedTalent	1	Balanced Talent	1048576
+Talents	0594f81a-2f37-46e0-a46a-04f83c75e0ab	Rogue.Linesman	1	Linesman	0
+Talents	05ab70d6-9387-4fa8-9386-ac531612e7cd	Rogue.AttractRebound	2	Rebound Magnet (Level 2)	5
+Talents	05e1d389-e157-443e-81c9-27c0b26d716d	Rogue.ButtBoostTalent	1	Butt Boost Talent	0
+Talents	0610ec4e-ec72-4f47-a3b5-947591a6893f	Rogue.Momentum	2	Momentum LVL2	65536
+Talents	06960c90-b754-47a2-a0f7-7c275e649482	Rogue.IronHelmet	2	Iron Helmet (Level 2)	67174432
+Talents	0699923d-3d4c-4ba6-9d4a-2ef1a629b8c9	Rogue.TrickShot	2	Trick Shot (Level 2)	512
+Talents	075f3566-7318-46ed-b1fc-afb604bc5725	Rogue.EscalatingCrit	1	Escalating Crit	6291712
+Talents	07833f45-37de-4a25-bd47-d3f144fc5df8	Rogue.GreaterCooldown	2	Greater Cooldown (Level 2)	4194560
+Talents	090802e3-7f25-45c6-84e4-8d7edf0a65b6	Rogue.BodycheckAoe	2	Chexplosion (Level 2)	16
+Talents	090ea889-96c8-4f9d-a3bb-f4ee2bbe4019	Rogue.SlapShart	1	slapShart	21234436
+Talents	092a36f6-a9fa-4c8f-8d50-25ae830ee88f	Rogue.BigBodycheck	2	BoneCrusher (Level 2)	16
+Talents	09d54ce8-a17b-4a92-aba9-3839e4d70ed2	Rogue.SkaterStatChange	1	WeakMode	0
+Talents	09e78225-217d-4627-9af4-db8465064493	Rogue.FlawlessFeeder	2	Flawless Feeder (Level 2)	4
+Talents	0a086128-8515-4aa9-beac-9b12685ffb6a	Rogue.SilentHero	1	Silent Hero	33620224
+Talents	0a2ba8af-1f12-4e2f-93de-4e91d7027263	Rogue.KarlsonBehavior	1	karlsonBehavior	2048
+Talents	0ae0451b-77c7-4b76-b460-63ab76616a7d	Rogue.RandomAbility	1	Random Skill	4194564
+Talents	0be2d6a4-eb47-4562-87a1-4c87818be248	Rogue.ShartSlap	2	Shart Slap (Level 2)	262148
+Talents	0bf5028c-2577-4c40-953f-562ddf2633bb	Rogue.SilentHero	2	Silent Hero (Level 2)	65536
+Talents	0c89e132-f9b3-4fec-a692-3dd60c8e0134	Rogue.Trenchcoat	1	Trenchcoat	0
+Talents	0c8da1e2-0681-4ebb-826e-189a5790db4d	Rogue.FuryStick	2	Fury Stick (Level 2)	4
+Talents	0cadb72e-602e-4645-b0f5-f67cbaa4918b	Rogue.PowerUpRetentionTalent	2	Power Up Retention Talent (Level 2)	0
+Talents	0d6b04ec-adf6-4390-86cb-88858a9425f1	Rogue.TwigTax	1	Twig Tax	4194560
+Talents	0d81ea6f-4c2b-42b0-a60a-3510fdcf54a6	Rogue.IronHelmet	1	Iron Helmet	71368992
+Talents	0deabd38-03b4-431c-8295-d764f9993fad	Rogue.XRayShot	2	XRay Shot (Level 2)	576
+Talents	0f934511-8f18-4a56-b63e-d6ed4e7c22d7	Rogue.BigSlapshot	1	Sonic Slap	20972292
+Talents	0fc02257-1064-4333-bf39-d5dafdfc8c66	Rogue.Feed	1	Feed	4718864
+Talents	112784c6-6723-44e4-931c-290e65f51c44	Rogue.BenchBorrower	1	Bench Borrower	0
+Talents	114f0f42-1ede-4600-87ff-b5feba92ce0e	Rogue.GoldenPuck	1	Hidden Ace	5243136
+Talents	12d0243c-410e-48b3-8077-b9193bcd22df	Rogue.BigSlapshot	2	Sonic Slap (Level 2)	516
+Talents	13baf0db-7f44-4ce5-9b3a-4f3ffd6e97fe	Rogue.Powerups.BenchQuestPowerups.SallyBenchQuestTalent	1	Sally Bench Quest Talent	0
+Talents	13d8b6e0-eab5-497a-8f1b-6fabfb9438bf	Rogue.LoadedPuck	1	Loaded Puck	0
+Talents	152180c5-354e-4ca8-87a3-e1e9fdeafc8b	Rogue.NumberChaser	1	Pressure Cooker	4260100
+Talents	165117d1-1f09-4780-b648-264526da094d	Tape2Tape.Hockey.ForwardStatBonusOnPickup	1	Talent_ForwardStatBonus_Spd	65536
+Talents	16fed9a0-84bf-43d1-b103-c49310275a32	Rogue.CanonArm	1	Cannon Arm	65824
+Talents	17976a29-7049-4986-8a34-42839db71796	Rogue.Powerups.Chaos.Bedrock	1	Bedrock	16384
+Talents	17e71ee4-a59f-4f94-9a66-3197f728aa42	Rogue.HelmetStackOvrTalent	1	Helmet Stack	4194592
+Talents	189ff00c-bfe1-4efd-b846-fd972913d2e4	Rogue.HotTalent	1	hotTalent	65536
+Talents	193c5c71-fe36-4a3a-a591-fb546d058fff	Rogue.HatTrick	2	Hat Trick (Level 2)	65536
+Talents	19bdf186-315b-405c-9e4d-626793a61b93	Rogue.SupernovaTalent	1	Supernova Talent	4194568
+Talents	1a3f79e6-5551-4f45-a142-606cd0c81e09	Rogue.Kettle	1	Kettle	65796
+Talents	1b59fdd9-6293-4580-8b28-ab7136fd869f	Rogue.EnrageOnPokecheck	1	Poke Rage	4718850
+Talents	1b746d12-f385-420f-b7f7-d362398692ca	Rogue.AttractRebound	1	Rebound Magnet	4194565
+Talents	1bcdaf65-2f9d-479a-9ec1-7af48ab6d656	Rogue.CenterBonecrusherTalent	2	Center Bonecrusher Talent (Level 2)	16
+Talents	1cd489df-70c0-4f76-8223-00c5c83b30fe	Rogue.StickReservePowerup	1	Triple Twig	4
+Talents	1d2853ff-abb8-4b39-b045-85015c06e080	Rogue.Deadzone	2	Deadzone (Level 2)	0
+Talents	1da847fe-41c2-40b1-a9ec-8226aea2c71d	Rogue.Windup	2	Windup (Level 2)	262144
+Talents	1f1e5b98-f66f-4278-bce7-f868d64e4ddb	Rogue.Powerups.BenchQuestPowerups.KirbyBenchQuestTalent	1	Kirby Bench Quest Talent	0
+Talents	1fa21e6e-2419-41c5-aabc-3db2c214d9aa	Rogue.HyperDrive	2	Rocket Skates (Level 2)	16384
+Talents	1fcac925-2f2a-410b-87f0-1e034603b1a2	Rogue.FairwayImmunity	1	FairwayImmunity	0
+Talents	2044ed62-8626-4966-adf8-24aa28dbae87	Rogue.PassingDomino	2	Passing Domino (Level 2)	0
+Talents	212e5b5f-127d-45ed-b960-ee6779588edb	Rogue.WonderWall	1	The Wall	0
+Talents	2230fb81-6439-4e3f-b717-40438005ead5	Rogue.SlapshotSlowmo	2	Slapshot Slowmo (Level 2)	4
+Talents	23cd75aa-9335-4771-9de7-8dee9c4f72e1	Rogue.SonicInterception	1	Sonic Interception	4194560
+Talents	23eb930a-4327-449b-8872-6633624041e7	Rogue.OffensiveBodycheck	1	Offensive Bodycheck	4194320
+Talents	2651b21a-013f-4749-80ec-0e01003646e4	Rogue.HitStreak	2	Hit Streak (Level 2)	65552
+Talents	28158966-5b28-4a8b-bed4-7d0ee04b929f	Rogue.NoGoalTalent	1	No Goal	0
+Talents	28550c2a-af72-4dd2-879e-c8760820a643	Rogue.Cultist	1	cultistPowerLD	0
+Talents	28add2b6-eccd-46bd-9e9f-db221c7f8703	Rogue.CritBoost	1	Crit Boost	6291712
+Talents	291a967e-6c5a-47c0-a7dd-363086f10e16	Rogue.Powerups.Chaos.BeeSting	1	Bee Sting	49152
+Talents	29759d20-399b-46e1-9434-ef33ca3f49a4	Rogue.SplitPersonality	2	Split Personality (Level 2)	16384
+Talents	29a517b8-9990-43c6-8c3d-9515c0921c69	Rogue.SpeedTransfer	1	Speed Transfer	8
+Talents	29dab3df-f06e-4383-a9af-b032d562416c	Rogue.Padlock	1	Padlock	0
+Talents	29e9fdd5-50e5-47c3-9502-f64bb018e426	Rogue.ToupieQuebecoise	1	Toupie	0
+Talents	2a11c469-45da-4003-8859-865e47963996	Rogue.Powerups.BenchQuestPowerups.MarkBenchQuestTalent	1	Mark Bench Quest Talent	0
+Talents	2adc26e7-c625-4b09-b7ec-0350d8e5be21	Rogue.PointSniper	2	Point Sniper (Level 2)	576
+Talents	2c05f9e2-2a2c-4de0-b399-3af96a7a546e	Rogue.NoHit	1	nohit	0
+Talents	2cb6019f-de96-44dd-9b99-807544f44514	Rogue.TryHard	2	Try Hard (Level 2)	65540
+Talents	2d5645fa-69cf-4aab-86be-014d0a62e0dc	Rogue.PrinceAI	1	princeAI	0
+Talents	2f0d3d32-4081-4a42-a62c-23e8cff99314	Rogue.SuperPassPropelTalent	1	Divine Passes	0
+Talents	2f85a325-ce70-40b3-8cf2-1eb650f89d6a	Rogue.FirstPeriodFever	1	First Period Fever	0
+Talents	2fc3cd85-88b5-4aae-8c02-e72ee0a888d5	Rogue.GreaterCooldown	1	Greater Cooldown	4194560
+Talents	2ff5ae22-22db-4998-941a-7840248ab75d	Rogue.SplitPersonality	1	Split Personality	16384
+Talents	32d4539a-f5ad-4b58-88f3-1f215064793d	Rogue.CantLeverLaPuck	1	Flat puck	1048576
+Talents	3390f71c-2940-49d3-b415-4bd4db66842d	Rogue.Gambler	1	Wild Shot	4195168
+Talents	33984bd4-97ce-4450-8c0a-2f071529a253	Rogue.PassPuncher	2	Pass Puncher (Level 2)	512
+Talents	33f469a6-5ca2-4cb8-8b77-7770d799b528	Rogue.Kettle	2	Kettle (Level 2)	65540
+Talents	3556c58e-2987-40c6-89e2-ccce86a907bc	Rogue.TransformationIncantation	1	transformationEvilCornelius	None
+Talents	35e52ce8-abfa-4fd1-81c4-209271f5f646	Rogue.Sword	2	Sword (Level 2)	65568
+Talents	38c39df7-4a5a-446d-8a35-fa5c64431338	Rogue.BlueMarkerTalent	1	Blue Marker Talent	65792
+Talents	3a34b062-e8ff-4f19-b9ff-9b74f9cd0f6b	Rogue.ShatterStrike	1	Glass Cannon	16384
+Talents	3b85e306-cf76-4aa8-862e-aff3c7192c91	Rogue.Marauder	2	Marauder (Level 2)	0
+Talents	3be37e41-ecc1-4455-8051-af281a150905	Rogue.TriangleOffense	1	Triangle Offense	0
+Talents	3bf7a894-1271-4cc1-bdc8-cbe4d0e47c79	Rogue.PingKing	1	Ping King	0
+Talents	3cffacda-84b9-44fe-a983-db6efdc78abe	Rogue.ReverseWindup	1	Wind Down	21233924
+Talents	3dcd15a4-6cbd-4760-8cac-847ea7972b64	Rogue.Cultist	1	cultistPowerRD	0
+Talents	3f31fd15-0c4b-4ce8-983b-2561ebc793e4	Rogue.NoStick	1	noStick	0
+Talents	4141b927-151c-4954-950c-9a3828bf4726	Rogue.BackwardTurbo	2	Backward Turbo (Level 2)	8
+Talents	422d4a16-7b61-42f8-b6c8-5bfe43c262a8	Rogue.ButtBenchTalent	1	Butt Bench Talent	0
+Talents	427a4542-6b4b-4ac2-8d2c-66198e7286a5	Rogue.SpringBoard	1	Spring Board	5243136
+Talents	43441d15-7922-44be-9318-27adae460449	Rogue.PointSniper	1	Point Sniper	20972352
+Talents	43a4d8cf-ba45-48fa-8ee3-128e00b5e81f	Rogue.Powerups.Chaos.ShellFish	1	Shell Fish	16384
+Talents	45b6cdd8-8f40-45c7-a337-83ff34a01e3a	Rogue.BlockShot	1	Human Shield	0
+Talents	4693028b-232e-4264-aa61-0d5a04a4ccda	Rogue.EnGarde	2	En Garde! (Level 2)	2
+Talents	47f55fbc-66f6-48f1-94f7-20efa5669441	Rogue.PowerTransfer	2	Power Transfer (Level 2)	512
+Talents	48f4938a-957c-472e-bf10-66fb6e3fdb60	Rogue.ShartRecoil	1	Backdraft	262144
+Talents	4a1abed4-86ab-46fb-b66d-e2dde7bde413	Rogue.ExplosionOnLanding	2	Explosion On Landing (Level 2)	0
+Talents	4a499143-7809-4ca3-8bc1-199136bceb53	Rogue.DefensiveDeflect	1	Defensive Deflect	5243138
+Talents	4a97fabd-9ea4-4ee5-8fb8-3e2a48b3b8c6	Rogue.Powerups.Chaos.FireCracker	1	Fire Cracker	16384
+Talents	4cc926ea-0533-4107-ac50-5d04ead3c7ef	Rogue.PuckHunter	2	Puck Hunter (Level 2)	65544
+Talents	4dcd17bd-0789-4feb-886f-8aea4ffeaade	Rogue.XRayGoalie	1	xRayGoalie	0
+Talents	4e72b9f8-b680-4007-ac18-7d6361d3274d	Rogue.TargetPractice	2	Target Practice LVL2	65536
+Talents	4ecf038e-f793-45e9-bc69-64c499b8ac96	Rogue.Momentum	1	Momentum	65800
+Talents	515ef729-6026-4c09-8a87-2e9605f3480d	Rogue.CurveBall	2	Curve Ball (Level 2)	512
+Talents	5172afdc-0403-446a-8f52-cc8b0d23a713	Rogue.FacelessTalent	1	Faceless Talent	0
+Talents	5181bbd5-4de5-44e5-8032-f86da733c1a3	Rogue.PropellerHelmet	2	Propeller Helmet (Level 2)	67174408
+Talents	519b80ea-3cf2-46a0-aab1-1f2a1fd675cf	Rogue.ReboundBouncer	1	Bouncy McBounce	22020356
+Talents	523f1507-3bc8-4972-b35a-946eccf8fcd4	Rogue.ReboundBouncer	2	Bouncy McBounce (Level 2)	4
+Talents	52f5a1f5-3492-42a7-b101-2f0089be3cb3	Rogue.SkaterStatChange	1	GodMode	0
+Talents	5301fb0f-caae-4b37-b269-de9b911983c4	Rogue.FasterWithPossession	1	Puck Rocket	4260104
+Talents	54950cc8-5abb-41a5-9eed-148d50dfd43e	Rogue.FrogIncantation	1	frogIncantation	None
+Talents	55e0bf3e-f8e1-4c89-a1a5-d25d13836361	Rogue.FlawlessFeeder	1	Flawless Feeder	38797572
+Talents	55ef9949-a00b-497f-a560-d74288580010	Rogue.Slingshot	1	Slingshot	0
+Talents	566716d1-0cd2-4445-98c1-aca86fd8feac	Rogue.Velcro	1	Velcro	4194560
+Talents	56702518-052c-4bd7-bfba-4d100ab7ec67	Rogue.HatTrick	1	Hat Trick	65792
+Talents	56e92c51-54f6-4dbc-ba54-d39b631e2821	Rogue.PuckPuncher	1	Puck Puncher	4194564
+Talents	595413df-1cfe-4091-8ca2-d8d883ef082f	Rogue.BoardBumper	1	Board Bumper	4194568
+Talents	5958c85a-16cd-4441-8794-bb640c8f069c	Rogue.Powerups.Chaos.TopGear	1	Top Gear	16384
+Talents	59de64b1-7e7d-404c-8543-abf595210a5e	Rogue.Krill	1	Krill	16384
+Talents	5ae82a10-7cce-42f6-8fc5-c263e78bdf56	Rogue.SadoMaso	1	Sado Maso	32768
+Talents	5b2dfd5c-be7a-4b20-b63b-92ee3565bbc3	Rogue.Masquerade	1	Masquerade	0
+Talents	5b8581a5-ba07-4628-9df8-d4798646f8fa	Rogue.Powerups.Chaos.LiveWire	1	Live Wire	16384
+Talents	5baa8b96-a6b8-417a-9691-0dcef10dc7db	Rogue.NumberChaser	2	Pressure Coooker (Level 2)	65540
+Talents	5e59d04a-582f-4f5b-88aa-4f3f6f69e323	Rogue.SpikedArmor	1	Spiked Armor	5275908
+Talents	5fcbecb4-f5a7-4516-87f3-e2ce5e9bfa89	Rogue.Gambler	2	Wild Shot (Level 2)	608
+Talents	608676e6-d466-458b-b00e-abfd45011ade	Rogue.Powerups.BenchQuestPowerups.CassouletBenchQuestTalent	1	Cassoulet Bench Quest Talent	0
+Talents	60e7dd3a-cbda-4992-a6ff-c7dccdf122b1	Rogue.CrippleTalent	1	Cripple Talent	0
+Talents	61419e51-e66d-4bae-8309-98a6c9384727	Rogue.ButtRewardTalent	1	Butt Reward Talent	0
+Talents	62944f1b-6c6b-457b-9323-69f3bf9e4cec	Rogue.KnightAIPowerup	1	knightAI	0
+Talents	62dac533-57ea-452f-ba2b-bfa3bb9acbae	Rogue.LancelovHelmet	1	loseHelmetLancelov	67108864
+Talents	63ab8101-3e32-4bcb-a1cd-84496d60a8c0	Rogue.NeverRewarded	1	Never Rewarded	0
+Talents	64cc3039-04e6-46a9-9608-e1368427c2bf	Rogue.Kick	1	dribbler	4194564
+Talents	651dea18-ac1f-4005-a749-4d8672a0f0b4	Rogue.Froggified	1	Froggified	0
+Talents	65b241e8-f044-4ef3-97f5-43849df96cf9	Rogue.Charge	1	berserk	256
+Talents	670a373f-1f20-4185-be09-ee4db2e14a51	Rogue.Sword	1	Sword	4260128
+Talents	67aeb5ce-e4ed-4065-a7d1-673c102c7547	Rogue.HitStreak	1	Hit Streak	65808
+Talents	67f6fd51-8d97-416d-a139-ee4d3f42801c	Rogue.Powerups.Chaos.FragileTalent	1	Fragile Talent	0
+Talents	68c6c1eb-c8c4-4493-8fca-a038f6626864	Rogue.LightningRod	1	Lightning Rod	0
+Talents	697c1c09-0bc9-413b-841c-0cd175bc6faa	Rogue.XRayShot	1	X-Ray Shot	20972352
+Talents	69856ca3-7996-442c-bd91-7e209bfac1a4	Rogue.StatusExtender	1	Status Extender	0
+Talents	69e5c0cd-7faf-411d-ad4f-1ad089d2660d	Rogue.InflatedEgo	2	Inflated Ego (Level 2)	65540
+Talents	6b7cc13b-e020-4fa2-b377-c86894a6ee90	Rogue.MegaRedirect	1	Mega Deflect	4194624
+Talents	6cd8b5b6-77c3-45f3-ab41-7bc9bea9fdb6	Rogue.FastRebound	1	Fast Rebound	6291712
+Talents	6d90cef5-5ee4-4a76-9c50-46b471285b28	Rogue.Zoomer	2	Zoomer (Level 2)	65544
+Talents	6e3ed39b-3ae2-4133-b7df-f9b9920811a6	Rogue.Powerups.Chaos.PaperJet	1	Paper Jet	49152
+Talents	6fb39260-9e3b-4eb3-9700-253cd8dda6e1	Rogue.Cultist	1	cultistPowerC	0
+Talents	6fbfc473-7b61-4cba-96be-b7198eef0295	Rogue.SlapChop4000Talent	1	Slap Chop4000Talent	0
+Talents	6fcfb5fc-9ae8-42cf-96e4-a56818788fd5	Rogue.MegaRedirect	2	Mega Deflect (Level 2)	64
+Talents	6fe1c456-a7da-41ab-9c89-1d63ae559fb3	Rogue.ShartSlap	1	ShartSlap	21233924
+Talents	72479775-05e8-457d-abbf-0bd876265fb4	Tape2Tape.Hockey.ForwardStatBonusOnPickup	1	Talent_ForwardStatBonus_Chk	65536
+Talents	733844ee-899d-4d2b-b0de-ff18622e9383	Rogue.ShatterStrike	2	Glass Cannon (Level 2)	16384
+Talents	756ccfc3-f339-4905-9bcd-ccb14cc7efa6	Rogue.DefenseTeleportPowerup	1	defenseTeleport	0
+Talents	75a92c3f-00af-4c98-9919-da876e082716	Rogue.Zoomer	1	Zoomer	65800
+Talents	75b300b6-06a5-448f-857f-4120fbd1ef7e	Rogue.PuckRepellent	1	Puck Repellent	1048576
+Talents	75d67393-621f-4cc2-98f0-a9dc064984ee	Rogue.Enrage	1	Enraged	5767440
+Talents	7772f86e-ce56-466b-8fd0-729d14aad709	Rogue.Redirector	1	Redirector	0
+Talents	7786daae-b270-4179-b2d7-d0f99c7799be	Rogue.InjuredTeammatesOvrTalent	1	Injured Teammates Ovr Talent	33024
+Talents	77ff973f-e76b-4935-af93-18b6aed2e98b	Rogue.BoringTalent	1	BoringTalent	0
+Talents	78023445-c99b-4b32-9e2b-083d16342b2c	Rogue.GameWinnerBonus	2	Game Winner Bonus (Level 2)	65536
+Talents	7a817813-0a7b-4025-b193-f35234415b87	Rogue.Benchwarmer	1	Benchwarmer	256
+Talents	7bf44df5-0f15-430c-919e-82bb4e254b9c	Rogue.FasterWithPossession	2	Puck Rocket (Level 2)	65544
+Talents	7c23e3c2-cd42-4b19-9c61-3b330678968d	Rogue.Scrambled	1	Scrambled	256
+Talents	7c53dd88-858f-4a8c-bcd8-04f3c7be227f	Rogue.EvenSteven	2	Even Steven (Level 2)	16384
+Talents	7f93a2f8-1cc4-4b25-b3ac-39f8d4a423d3	Rogue.Scrambled	2	Scrambled (Level 2)	0
+Talents	811ae7b8-2a56-4e2e-9697-a321fbdb0788	Rogue.PassBack	1	Pass Back	0
+Talents	8125b906-8171-4ac7-9106-e153ff15cd82	Rogue.OriginalStick	1	Original Stick	49152
+Talents	8126c12e-0406-4e8d-94ce-f53fcf72e3b3	Rogue.TransformationIncantation	1	transformationEvilRory	None
+Talents	81b47742-0fe9-4c64-8175-651dd7f0108e	Rogue.SpikedArmor	2	Spiked Armor (Level 2)	32772
+Talents	81fa843b-d48c-4816-a0de-5bf14515b6c0	Rogue.Onepunch	1	Onepunch	272
+Talents	8507f860-4b42-4646-b80c-acb6d31fad25	Rogue.Powerups.Chaos.Railgun	1	Railgun	16384
+Talents	85236398-7676-4f60-a3b6-1e23ab85d7c0	Rogue.PropellerHelmet	1	Propeller Helmet	71368968
+Talents	86f03bc1-3034-4abb-b687-a2c204af3268	Rogue.ChargeShot	2	Charge Shot (Level 2)	32
+Talents	88d882ea-96a7-4c8a-a087-29200bbf57bf	Rogue.OriginalSkate	1	Original Skate	16384
+Talents	89395865-bf51-42bc-a24c-03f148b9da27	Rogue.SlapshotSlowmo	1	Slapshot Slowmo	20971780
+Talents	8b0a2cfd-91c0-4055-8384-585e4d662da2	Rogue.Powerups.Chaos.MonkeysPaw	1	Monkeys Paw	16384
+Talents	8bd271cd-ed65-418e-b3aa-5fec65e784da	Rogue.AlwaysRewarded	1	Always Rewarded	1048832
+Talents	8deff2b0-cff0-4e36-974a-d43a5610201f	Rogue.Cultist	1	cultistPowerPam	0
+Talents	8df34c3f-3959-4575-8d83-3590fd8337cc	Rogue.BlueLineTurbo	1	Blue Line Boost	4194568
+Talents	8e0a364a-0cb8-4ce6-a1ed-63a80dc6ea08	Rogue.GrowthSpurt	1	Growth Spurt	256
+Talents	8e6ff25c-dbc2-441b-babc-ffc9a88171e2	Rogue.PowerUpRetentionTalent	1	Power Up Retention Talent	0
+Talents	8e787751-45b6-4f4d-9732-0158306729ed	Rogue.Powerups.Chaos.UnstableChaos	1	Unstable Chaos	16384
+Talents	90503d13-89f4-4843-811f-6e8ed48c05ce	Rogue.PassPuncher	1	Pass Puncher	37749504
+Talents	91129e54-1743-41af-ad01-794ff4e6e5e8	Rogue.ColdTalent	1	coldTalent	0
+Talents	9168222a-87fe-4f6e-b4e8-851aaa1f3a1a	Rogue.BodycheckAoe	1	Chexplosion	4194576
+Talents	93137c53-e541-4bb5-917e-208a8b55c943	Rogue.Powerups.BenchQuestPowerups.StumpleBenchQuestTalent	1	Stumple Bench Quest Talent	0
+Talents	94fcb9b2-98b9-48da-8a1e-c44b996e2dbd	Rogue.Homewrecker	1	Homewrecker	0
+Talents	951f6be9-3c93-4be1-9ae4-686e03dfa97d	Rogue.Evolution	1	evolution	1048576
+Talents	96848e87-7ab8-45d1-914d-db3649ec12c5	Rogue.Powerups.Chaos.MoldPowerup	1	Mold Powerup	16384
+Talents	983223b3-b055-486f-acf2-99e30820fee7	Rogue.GreenMarkerTalent	1	Green Marker Talent	65792
+Talents	98f91f67-88f2-4058-81d6-dcf512c61cad	Rogue.RefHands	1	refHands	0
+Talents	9acb3ff4-bc9e-4e26-aade-80b5f27707d4	Rogue.EnrageAllies	2	Avenge Me! (Level 2)	524288
+Talents	9adae0fb-5cd1-44f5-91a3-75c4c9bbb940	Rogue.PuckPuncher	2	Puck Puncher (Level 2)	4
+Talents	9ae0056e-75f2-4fce-b4ca-db53be0fb665	Rogue.ExplosionOnLanding	1	Explosion On Landing	5243136
+Talents	9af2fb5b-5b17-495a-935c-1ba2d0822a3f	Rogue.Playmaker	2	Playmaker (Level 2)	65536
+Talents	9b57d62e-e1a6-4d58-a80d-dec5f2c58037	Rogue.RandomAbility	2	Random Skill (Level 2)	4
+Talents	9ba0c2c8-53eb-41d1-b34c-a881ca627c59	Rogue.Marauder	1	marauder	0
+Talents	9be1ffeb-6e70-4d1e-8ae1-13b9c087b569	Rogue.DefensiveDeflect	2	Defensive Deflect (Level 2)	2
+Talents	9c1f6499-fbde-49ab-a67a-27b8a86fca4a	Rogue.Powerups.Chaos.Anchor	1	Anchor	16384
+Talents	9c989acb-f74a-4711-9143-84dfaf081e91	Rogue.AssistedByPlaymaker	1	Assisted By Playmaker	0
+Talents	9ca145a9-c0ea-4f5b-97b0-b8507e5e5ef4	Rogue.StatPadder	1	Stat Padder	0
+Talents	9d02b113-dac6-43b1-a557-20d224da839e	Rogue.BackwardTurbo	1	Backward Turbo	4194568
+Talents	9d5b0ea5-e4f5-4e43-a6c6-f217890d8c12	Rogue.FigureCheck	1	figureCheck	0
+Talents	9ddef18d-e30f-434f-a80f-7c0a9d465124	Rogue.PassingDomino	1	Passing Domino	33554688
+Talents	9e1388f5-d411-432d-9a6c-8fa3f8512438	Rogue.DestroyerShot	2	The Howitzer (Level 2)	516
+Talents	9e2c7c75-4185-4183-ab6d-a6b83c18fd80	Tape2Tape.Hockey.ForwardStatBonusOnPickup	1	Talent_ForwardStatBonus_Acc	65536
+Talents	9e5191ce-52a7-407d-8007-81c9ea69aacd	Rogue.DestroyerShot	1	The Howitzer	20972292
+Talents	a09f6773-88d8-4cfd-8265-d9179c127b62	Rogue.BallChaser	1	Ball Chaser	0
+Talents	a1a932cd-299f-4969-9212-f68cbfa7036c	Rogue.CherryPicker	1	Cherry Picker	0
+Talents	a1b2c3d4e5f6708192a3b4c5d6e7f802	Rogue.TransformationIncantation	1	transformationEvilRory	None
+Talents	a1b2c3d4e5f6708192a3b4c5d6e7f803	Rogue.Cultist	1	cultistPowerRD	0
+Talents	a287385b-88d3-4438-a5da-cc006f95f72d	Rogue.PowerTransfer	1	Power Transfer	37749504
+Talents	a2f20da0-0e73-481f-848e-76eb61f58e16	Rogue.Homewrecker	2	Homewrecker (Level 2)	0
+Talents	a3066b41-4f21-4c5f-956f-a000662c47f0	Rogue.Powerups.AI.Diarrhea	1	diarrhea	262144
+Talents	a313c2d7-70e4-4249-97f8-b1d4cf1e17cd	Rogue.TransformationIncantation	1	transformationEvilPam	None
+Talents	a470e536-f8f4-4937-826c-3046b558f8d9	Rogue.GoldenHelmetTalent	1	Golden Helmet	67109120
+Talents	a708ff2f-7de5-41e0-b868-d9103c429073	Rogue.GrowingAnger	2	Growing Anger LVL2	65536
+Talents	a7f62324-dc47-4f2f-8b35-2127cfee8f67	Rogue.SadoMaso	2	Sado Maso (Level 2)	32768
+Talents	a808bd99-53ce-4825-b46a-9634619570f3	Rogue.Powerups.MiddleManagement	2	Middle Management (Level 2)	65536
+Talents	a8823831-f570-4f95-a4e9-a835d0a80220	Rogue.CanonArm	2	Cannon Arm (Level 2)	65568
+Talents	a984b08c-b099-4105-ac8f-4d696dcc08aa	Rogue.Charge	2	Berserk (Level 2)	0
+Talents	a9d0548c-60fb-45ce-a4e5-5d299205c604	Rogue.GoalCritAccumulator	1	Goal Crit Accumulator	6291712
+Talents	ac8bef68-f3b5-4ef3-b3a6-4c397fcc68eb	Rogue.LoneWolf	1	Lone Wolf	0
+Talents	afa061df-55d0-44d0-bfdd-b6a49117a2ad	Rogue.Powerups.Chaos.PorcelainHammer	1	Porcelain Hammer	49152
+Talents	afa4d35e-f814-4b88-bc78-30f6d6d111f3	Rogue.Deadzone	1	Deadzone	22020864
+Talents	b04ba0c2-164c-45da-8386-d53c52e83031	Rogue.SafetyFirst	1	Safety First	0
+Talents	b16cb603-947a-4d78-96a7-102271b1c07b	Rogue.SlowBall	1	Changeup	0
+Talents	b1e9d387-32c7-4d1e-beea-7ea45f17d903	Rogue.Cultist	1	cultistPowerLW	0
+Talents	b2c9a705-e8ca-4806-aa3f-5359765715ae	Rogue.Powerups.BenchQuestPowerups.KovalskiBenchQuestTalent	1	Kovalski Bench Quest Talent	0
+Talents	b38696d2-fa29-42fd-85cb-610f3ff3339a	Rogue.ImperviousOnPass	1	ImperviousOnPass	5243136
+Talents	b4437abd-0765-48da-aa8b-f45b32407924	Rogue.TransformationIncantation	1	transformationEvilJelly	None
+Talents	b7239f5a-8a8a-41f7-8f40-c6212dc81bdb	Rogue.EvenSteven	1	Even Steven	16384
+Talents	b74b1d64-b508-4ab7-b976-e84243845098	Rogue.FrozenIncantation	1	frozenIncantation	None
+Talents	b7685862-83ea-4e41-81d4-57e8f066eab9	Rogue.GoaliePassRebound	1	Goalie Pass Rebound	0
+Talents	b8532717-96dc-4793-83a3-463457e6eadf	Rogue.HyperDrive	1	Rocket Skates	16384
+Talents	b9078d20-1355-4106-9b54-9f7fbf78c7aa	Rogue.BigBodycheck	1	Bonecrusher	4194576
+Talents	ba0af0a4-06f6-4025-811f-6b24e78aec41	Rogue.Powerups.BenchQuestPowerups.BrewsterBenchQuestTalent	1	Brewster Bench Quest Talent	0
+Talents	bde3a8bd-a2c4-43e8-a610-48af1051a015	Rogue.CritBoost	2	Crit Boost (Level 2)	6291456
+Talents	bfe4b819-7866-457b-ade0-1ec98fc7e239	Rogue.ImperviousOnPass	2	Impervious On Pass (Level 2)	0
+Talents	c00b7922-7b89-4589-b806-d62c1559fe39	Rogue.SonicPass	1	Sonic Pass	37748992
+Talents	c0dbe381-7cbf-4097-87a4-d84de715289a	Rogue.Feed	2	Feed (Level 2)	524304
+Talents	c0e20799-6fed-492d-8695-fb74a2a88615	Rogue.TwigTax	2	Twig Tax (Level 2)	0
+Talents	c1e6d523-e7a3-4183-b936-4f7829d7e796	Rogue.InflatedEgo	1	Inflated Ego	65796
+Talents	c22dd2c6-7315-4639-acf3-48621b21bc17	Rogue.HeavyHelmet	1	Heavy Helmet	71368976
+Talents	c2aa0104-4178-4f37-a6a6-d0e0f98867d9	Rogue.GoalBasedStatChange	1	Goal Based Stat Change	0
+Talents	c41d2ad4-b42c-4d16-a946-70a66ee60863	Rogue.SteadyEddie	1	Steady Eddie	0
+Talents	c43b2209-da6b-487d-b538-f883bbe31804	Tape2Tape.Hockey.ForwardStatBonusOnPickup	1	Talent_ForwardStatBonus_Spwr	65536
+Talents	c48b3f6b-e014-458a-8959-92ef4b8682d3	Rogue.StrayShot	1	Stray Shot	0
+Talents	c4fa7193-c2ad-4fe7-a0a1-471ad013fd67	Rogue.TryHard	1	Try Hard	65796
+Talents	c5c28a01-8a67-4957-a6e3-d98bd80327c4	Rogue.BallAndChain	1	ballAndChain	134217728
+Talents	c6aeb029-9e63-45ca-b81a-f5922bff6507	Rogue.Armor	1	Armor	4260112
+Talents	c6f447dd-2151-4cd2-b0ca-aed167fe1094	Rogue.Cultist	1	cultistPowerRW	0
+Talents	c70fd562-f02b-4448-a4c4-7bf87dc23fa2	Rogue.MagnetInterception	1	magnetInterception	5243136
+Talents	c7270149-ad1d-4c4c-a8f1-747156a75956	Rogue.TrickShot	1	Trick Shot	5243648
+Talents	c7d92c91-bc04-4efd-8083-0d516fd98bdd	Rogue.BlueLineTurbo	2	Blue Line Boost (Level 2)	0
+Talents	c8444521-9ed8-4da1-b991-80e8c53b3bc7	Rogue.Powerups.BenchQuestPowerups.BoringDudeBenchQuestTalent	1	Boring Dude Bench Quest Talent	0
+Talents	c8fd4a31-0a82-4d02-896a-84be06a76337	Rogue.TargetPractice	1	Target Practice	65856
+Talents	cbc44788-68d0-48e8-9ff6-aabfae3e7ae2	Rogue.TemporaryContract	1	Temporary Contract	0
+Talents	cc2d2fa1-58b0-4d67-b212-f3de675493a0	Rogue.BuiltDifferent	1	Built Different	5275904
+Talents	cc706e93-7bd4-4a8d-a84d-83315e0a7055	Rogue.ShortContract	2	Short Contract (Level 2)	16384
+Talents	cd0ab866-47f0-4160-8531-ee4bc80f53a3	Rogue.FasterWithoutPossession	1	Puckless Rocket	4260104
+Talents	cf498e7a-4cf6-4d66-a8b7-1b1681ac404a	Rogue.Playmaker	1	Playmaker	37814528
+Talents	d0c260eb-8881-436c-8330-36f47b2a5272	Rogue.Slugger	1	slugger	4194564
+Talents	d39a1bea-68ca-4024-960b-84de963305ab	Rogue.CurveBall	1	Curve Ball	5243648
+Talents	d4679af2-fb8d-4287-b327-6573cb50d512	Rogue.Powerups.Chaos.CursedNoodle	1	Cursed Noodle	16384
+Talents	d476c4b1-062d-4b83-b3c5-38c30d479518	Rogue.KnockedOutOvrTalent	1	Knocked Out Ovr Talent	256
+Talents	d52cad4f-e4f2-4159-933b-aa32aeb22e3f	Rogue.EnrageOnShot	2	Enrage On Shot (Level 2)	524288
+Talents	d52ef6de-216c-47f0-a634-d8b63c77425b	Rogue.Spasm	1	spasm	0
+Talents	d5757894-fe83-4d69-becc-9228c4783bd1	Tape2Tape.Hockey.ForwardStatBonusOnPickup	1	Talent_ForwardStatBonus_Ovr	65536
+Talents	d66a78a8-ab88-44ff-a629-520d5b7cb340	Rogue.BallChaser	2	Ball Chaser (Level 2)	0
+Talents	d71e9be3-208d-4f02-8cd3-33f4a9fdd964	Rogue.DyingBreath	1	Dying Breath	262144
+Talents	d8329bc1-0cc8-4601-a7c3-d819801eb8e3	Rogue.StatusExtender	2	Status Extender (Level 2)	0
+Talents	da0bcd09-1fe6-4c17-992a-eab8380185d2	Rogue.TransformationIncantation	1	transformationEvilDord	None
+Talents	da5d53fd-017d-4dc6-83f8-532fe596439b	Rogue.Benchwarmer	2	Benchwarmer (Level 2)	0
+Talents	dabf930f-71e0-4b84-8d3c-9001c4eeeffa	Rogue.SlowBall	2	Changeup (Level 2)	0
+Talents	dad5d89d-f0b0-404f-9d52-a6aada2d85f8	Rogue.Armor	2	Armor (Level 2)	65552
+Talents	df2a634a-c4fd-4777-bbb3-8812bad47a1e	Rogue.Powerups.MiddleManagement	1	Middle Management	65536
+Talents	e1b8c52a-c435-4db0-b60c-267907087e2b	Rogue.RedMarkerTalent	1	Red Marker Talent	65792
+Talents	e4d647f3-82d3-4224-893e-6dc4e57abdb4	Rogue.DoubleBenchTalent	1	Double Bench Talent	0
+Talents	e57752ca-c772-4bc3-9f0f-7af74b357970	Rogue.CenterBonecrusherTalent	1	Center Bonecrusher Talent	272
+Talents	e657362c-e30e-442b-b91d-58f625346e01	Rogue.HelmetStackOvrTalent	2	Helmet Stack (Level 2)	4194336
+Talents	e71790b3-0d29-4f9a-9e02-0b5be5fbbfd4	Rogue.EnrageAllies	1	Avenge Me!	4718848
+Talents	e745811a-a750-42b6-b386-18edaccbe35a	Rogue.ShortContract	1	Short Contract	16384
+Talents	e7b2bb8c-7619-439e-880c-d680140b8123	Rogue.GrowingAnger	1	Growing Anger	65808
+Talents	e87a7b0d-3e59-4b02-afff-910e18ee1db6	Rogue.SlapShart	2	Slap Shart (Level 2)	262660
+Talents	e885bb1e-5e08-41fa-857f-41fe0dd481e3	Rogue.Powerups.Chaos.Liquidation	1	Liquidation	16384
+Talents	ecc910c1-9068-4b25-90a3-ba5e05a52f63	Rogue.HeavyHelmet	2	Heavy Helmet (Level 2)	67174416
+Talents	f0a1b9ec-2a21-483c-8fb3-b25cfdc3852b	Rogue.Alzheimer	1	alzheimer	0
+Talents	f285dcb1-c942-4dd0-bacb-2cbb19a0029c	Rogue.ChargeShot	1	Charge Shot	22020384
+Talents	f327f16f-b5b3-4e62-af65-4719f4d59cac	Rogue.Windup	1	Wind up	21233920
+Talents	f37eda19-5a22-4c1a-bffa-b41833bbd1bb	Rogue.PuckHunter	1	Puck Hunter	4260104
+Talents	f3c8a260-250f-498e-ba5e-37d168333de4	Rogue.SkaterStatChange	1	SpeedBoost	0
+Talents	f5e56b54-474c-4536-9c62-f46b00e06f99	Rogue.PingKing	2	Ping King (Level 2)	0
+Talents	f6738262-b740-4664-8526-d80cfcb0b114	Rogue.DoubleBenchTalent	2	Double Bench Talent (Level 2)	0
+Talents	f693204d-b49a-4026-b8d9-c16d78c1c919	Rogue.ExpressLane	1	Express Delivery	37748996
+Talents	f7136786-2dff-4af5-92aa-7a2efd27bf51	Rogue.SonicPass	2	Sonic Pass (Level 2)	0
+Talents	f85ba803-2c92-41eb-afa6-da9569f4724b	Rogue.Cultist	1	cultistPowerCornelius	0
+Talents	f8b0af03-c5c2-460f-88da-26f74033c81e	Rogue.ReverseWindup	2	Wind Down (Level 2)	262148
+Talents	f8eea5c6-b475-496a-8440-f24aadaa2ed8	Rogue.Powerups.Chaos.TailWind	1	Tail Wind	16384
+Talents	fa72eacd-20fb-41c9-a679-137e314a5ef6	Rogue.Powerups.Chaos.CriticalChaos	1	Critical Chaos	16384
+Talents	fc335e10-9d98-4f51-a214-5c3fd9e34fb0	Rogue.Powerups.Chaos.HeavyPuck	1	Heavy Puck	16384
+Talents	fc516d5a-38c4-47f6-933c-2e3a6c78f31a	Rogue.ShartRecoil	2	Backdraft (Level 2)	262144
+Talents	fc57b141-1243-470a-ba08-14ff168c56cc	Rogue.FuryStick	1	Fury Stick	0
+Talents	fd23bf49-c0b0-40ca-b8fe-2687e260d282	Rogue.OriginalGlove	1	Original Glove	49152
+Talents	fee08e10-d6da-4b46-881b-878168f0513d	Rogue.EnrageOnShot	1	Enrage On Shot	21496064
+Talents	ff0e52bb-d231-4c2b-98f0-fb0f9e11e566	Rogue.GameWinnerBonus	1	Game Winner Bonus	73984
+Talents	ff899bcd-994c-4b80-b57b-5b4717e3e16c	Rogue.Kick	2	Dribbler (Level 2)	4
+Talents	ffc07636-dce7-48d6-ba8c-6f7dd3cf0a48	Rogue.FasterWithoutPossession	2	Puckless Rocket (Level 2)	65544

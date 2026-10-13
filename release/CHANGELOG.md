@@ -1,5 +1,96 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 — 2026-10-13
+
+**Campaign Studio and the bundled Custom Campaign Framework mod, for Windows
+x64 and Tape to Tape's Steam `roguelite` branch, build 25899138.** Beta 1.0 starts
+the Studio release family; v2.1.x below refers to the previous creator. This
+release contains the Windows installer only; native Linux/macOS and Steam
+Deck/Proton integration are not validated.
+
+### Campaign Studio
+
+- Up to two nodes per layer, connected routes and a single final Boss.
+  Editor fit and zoom controls change the builder view, not the in-game camera zoom.
+- Goalie Pass Read accepts native fractional values from 0 to 1.
+- Empty imported native helmet fields become None; ordinary Team colors and
+  Wing choices equip native physical helmets, while internal reference art is hidden.
+
+- A visual editor for campaigns, branching maps, opponents, playable squads,
+  players, goalies, equipment, custom heads and reward pools. Copy native
+  campaigns, keep reusable library content, import/share campaign ZIPs and
+  export supported players and teams to Play Now.
+- Built-in **Help / F1** points to controls on the current page. The searchable
+  **Studio guide**, validation messages and **Needs attention** links explain
+  requirements and take you to content that needs an assignment or repair.
+- Squad rules show **Inherit / On / Off** and their effective setting.
+  Opponent help describes native trigger conditions, required abilities and
+  identity-dependent behavior. Supported opponent abilities are filtered;
+  unsupported imported assignments remain visible and preserved until edited.
+- **Read game artwork** reads previews and native catalogs from the user's own
+  installed game. Current installed map data takes priority over stale runtime
+  dumps when importing and validating maps.
+
+### Recruitment and native behavior
+
+- Free-agent talent choices are independent of Regular and Chaos rewards.
+  Begin with native outcomes checked, then choose exact allowed levels. Newly
+  generated random recruitment extras and upgrade outcomes cannot use
+  unchecked levels. Checked base talents retain native upgrade chances only
+  when the resulting level is also checked.
+- Recruitment weights multiply the native direct-roll weight. Weight zero
+  blocks a direct roll, while a checked level can still be an upgrade result;
+  unchecking excludes both. Fixed authored player talents and already generated
+  offers are unchanged. Imported random recruitment-template lists now obey
+  the same allowlist and native eligibility rules.
+- General Manager recruitment nodes no longer consume Regular talent reserve.
+  Fixed compact native talent IDs changing format when selected in the
+  recruitment editor.
+- Bench help now explains that No Effects needs **Bench draft On** and a
+  positive bench size to allow later recruits, with two-line mode off. Contract
+  help distinguishes native starting contracts, countdown, expiry and
+  replacement eligibility from recruitment pools and match rewards.
+- Added **Counts as Prince for Crusader brawls**. This only extends the native
+  Prince check in that trigger: an Elite campaign node, the controlled player's
+  bodycheck against a charging CPU opponent, the Bodycheck brawl effect and
+  native delay/offer limits remain required.
+- Edited copies of native opponent teams now retain their extra reserves,
+  identities, powers and native flags outside the five or ten authored slots.
+  The native Golfers' 13 forwards are preserved; custom rosters are not expanded
+  into native boss rosters automatically. Explicit team-wide Stat Scale still
+  applies to the entire roster.
+- Helmet handling follows native head restrictions and equipment state instead
+  of treating a fitted head as permanent appearance. Native helmet loss and
+  restoration remain gameplay operations.
+- Per-player number styles can inherit the team default or preserve an explicit
+  native style. Continue restores supported authored number styles without
+  overwriting earned stats, talents or jersey numbers. Play Now exports retain
+  each exported player's effective style through the installed mod.
+
+### Installation and upgrade
+
+- The installer includes the editor runtime and BepInEx 6 IL2CPP. Studio is
+  installed separately from the game; projects, library and settings live in
+  `%LOCALAPPDATA%\T2T Campaign Studio`. No Python or separate .NET installation
+  is required to use the Windows package.
+- Existing authored content is migrated, retired fields/import directives are
+  cleaned up and unsupported choices are cleared. Back up the old content and
+  existing Studio workspace first, then review migrated content. Successful
+  migration removes the old folders and old uninstaller; it does not retain an
+  automatic backup.
+- Native catalogs replace the old launch-time library dumps. Windows Studio
+  content no longer uses `defaults.txt`; new-content look defaults are set in
+  Studio, while unchanged imported templates retain their own appearance.
+
+### Validation scope
+
+The source/data audit and technical checks cover shared mappings, eligibility,
+pool isolation, native prerequisites and persistence boundaries. Existing
+human reports confirm Crusader shot/charge sounds and contract countdown and
+expiry. These are not a claim that every ability, stochastic trigger or rule
+combination has been observed in gameplay. Beta feedback remains useful for
+distinct native triggers and final installation/save/Continue behavior.
+
 ## v2.1.35 — 2026-08-19
 
 Rebuilt for the **2026-08-18 game update**. If the mod stopped loading after that

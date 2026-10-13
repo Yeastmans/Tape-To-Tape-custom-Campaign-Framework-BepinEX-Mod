@@ -1,0 +1,124 @@
+# Base head	Helmet-compatible variant; extracted from Player_Sprite skeleton 2026-09-23
+Faces/Angus_Events/Angus_All	Faces/Angus_Events/Angus_All_Helmet
+Faces/Angus_Events/Angus_Bald	Faces/Angus_Events/Angus_Bald_Helmet
+Faces/Angus_Events/Angus_Chad	Faces/Angus_Events/Angus_Chad_Helmet
+Faces/Angus_Events/Angus_Decker	Faces/Angus_Events/Angus_Decker_Helmet
+Faces/Angus_Events/Angus_Eating	Faces/Angus_Events/Angus_Eating_Helmet
+Faces/Angus_Events/Angus_Gauntlet	Faces/Angus_Events/Angus_Gauntlet_Helmet
+Faces/Angus_Events/Angus_GM	Faces/Angus_Events/Angus_GM_Helmet
+Faces/Angus_Events/Angus_Intimidator	Faces/Angus_Events/Angus_Intimidator_Helmet
+Faces/Angus_Events/Angus_Liquidator	Faces/Angus_Events/Angus_Liquidator_Helmet
+Faces/Angus_Events/Angus_Moongus	Faces/Angus_Events/Angus_Moongus_Helmet
+Faces/Angus_Events/Angus_Oldschool	Faces/Angus_Events/Angus_Oldschool_Helmet
+Faces/Angus_Events/Angus_Ref	Faces/Angus_Events/Angus_Ref_Helmet
+Faces/Angus_Events/Angus_Slapshot	Faces/Angus_Events/Angus_Slapshot_Helmet
+Faces/Angus_Events/Angus_Solo	Faces/Angus_Events/Angus_Solo_Helmet
+Faces/Angus_Events/Angus_Speed	Faces/Angus_Events/Angus_Speed_Helmet
+Faces/Angus_Events/Angus_Stat	Faces/Angus_Events/Angus_Stat_Helmet
+Faces/Angus_Events/Angus_Superwall	Faces/Angus_Events/Angus_Superwall_Helmet
+Faces/Angus_Events/Angus_Tchel	Faces/Angus_Events/Angus_Tchel_Helmet
+Faces/Angus_Events/Angus_Test	
+Faces/Angus_Events/Angus_Trio	Faces/Angus_Events/Angus_Trio_Helmet
+Faces/Angus_Events/Angus_Violence	Faces/Angus_Events/Angus_Violence_Helmet
+Faces/Anyteam/Bench_Bench	Faces/Anyteam/Bench_Bench_Helmet
+Faces/Anyteam/Bench_BenchZZZZZ	
+Faces/Anyteam/Bench_Brewster	Faces/Anyteam/Bench_Brewster_Helmet
+Faces/Anyteam/Bench_BrewsterZZZZ	
+Faces/Anyteam/Bench_Buttface	Faces/Anyteam/Bench_Buttface_Helmet
+Faces/Anyteam/Bench_Buttface_Angus	Faces/Anyteam/Bench_Buttface_Angus_Helmet
+Faces/Anyteam/Bench_Buttface_Rambo	Faces/Anyteam/Bench_Buttface_Rambo_Helmet
+Faces/Anyteam/Bench_Kirby	Faces/Anyteam/Bench_Kirby_Helmet
+Faces/Anyteam/Bench_KirbyZZZZZ	
+Faces/Anyteam/Bench_Kovalski	Faces/Anyteam/Bench_Kovalski_Helmet
+Faces/Anyteam/Bench_KovalskiZZZZZZ	
+Faces/Anyteam/Bench_Stumple	Faces/Anyteam/Bench_Stumple_Helmet
+Faces/Anyteam/Chickensneeze	Faces/Anyteam/Chickensneeze_Helmet
+Faces/Anyteam/Heavy_Helmet	
+Faces/Anyteam/Nasher	Faces/Anyteam/Nasher_Helmet
+Faces/Anyteam/Onepunch	Faces/Anyteam/Onepunch_Helmet
+Faces/Anyteam/Propeller_Helmet	
+Faces/Anyteam/Referee_Old	Faces/Anyteam/Referee_Old_Helmet
+Faces/Canadians/Captain	
+Faces/Canadians/Gratz	
+Faces/Canadians/Poule	
+Faces/Chicago/Angus	Faces/Chicago/Angus_Helmet
+Faces/Chicago/Angus2_Dialogue	
+Faces/Chicago/Angus_Large	
+Faces/Chicago/Angus_Pixel	Faces/Chicago/Angus_Pixel_Helmet
+Faces/Chicago/Chapstick	Faces/Chicago/Chapstick_Helmet
+Faces/Chicago/ChapstickZZZZ	
+Faces/Chicago/Chicos	Faces/Chicago/Chicos_Helmet
+Faces/Chicago/ChicosZZZZ	
+Faces/Chicago/Grohl	Faces/Chicago/Grohl_Helmet
+Faces/Chicago/Louder	Faces/Chicago/Louder_Helmet
+Faces/Chicago/LouderZZZZZ	
+Faces/Chicago/Rory	Faces/Chicago/Rory_Helmet
+Faces/Cultists/Cultist	Faces/Cultists/Cultist_Helmet
+Faces/Cultists/Dord_Evil	Faces/Cultists/Dord_Evil_Helmet
+Faces/Cultists/Jelly_Evil	Faces/Cultists/Jelly_Evil_Helmet
+Faces/Cultists/Rory_Evil	Faces/Cultists/Rory_Evil_Helmet
+Faces/Disco/Oioioi	Faces/Disco/Oioioi_Helmet
+Faces/Figure_Skaters/FigureSkaterbig	Faces/Figure_Skaters/FigureSkaterbig_Helmet
+Faces/Figure_Skaters/FigureSkatersmall	Faces/Figure_Skaters/FigureSkatersmall_Helmet
+Faces/Figure_Skaters/Figure_Skater_Vanilla	Faces/Figure_Skaters/Figure_Skater_Vanilla_Helmet
+Faces/Golfers/Golfer_Elite	Faces/Golfers/Golfer_Elite_Helmet
+Faces/Golfers/Golfer_Elite_Mutant	Faces/Golfers/Golfer_Elite_Mutant_Helmet
+Faces/Golfers/Golfer_Gillman	Faces/Golfers/Golfer_Gillman_Helmet
+Faces/Golfers/Golfer_Lady	Faces/Golfers/Golfer_Lady_Helmet
+Faces/Golfers/Golfer_Lady_Mutant	Faces/Golfers/Golfer_Lady_Mutant_Helmet
+Faces/Golfers/Golfer_Ramirez	Faces/Golfers/Golfer_Ramirez_Helmet
+Faces/Golfers/Golfer_Whacker	Faces/Golfers/Golfer_Whacker_Helmet
+Faces/Helmets/Heavy_Helmet	
+Faces/Helmets/Knight_Helmet	
+Faces/Helmets/Propeller_Helmet	
+Faces/HockeyFC/Backham	Faces/HockeyFC/Backham_Helmet
+Faces/HockeyFC/Ehrhoffaldo	Faces/HockeyFC/Ehrhoffaldo_Helmet
+Faces/HockeyFC/Icekicks	Faces/HockeyFC/Icekicks_Helmet
+Faces/HockeyFC/Knudribble	Faces/HockeyFC/Knudribble_Helmet
+Faces/HockeyFC/Maroondona	Faces/HockeyFC/Maroondona_Helmet
+Faces/HockeyFC/Messier	Faces/HockeyFC/Messier_Helmet
+Faces/HockeyFC/OHenry	Faces/HockeyFC/OHenry_Helmet
+Faces/HockeyFC/Ronaldo	Faces/HockeyFC/Ronaldo_Helmet
+Faces/HockeyFC/Zidanejad	Faces/HockeyFC/Zidanejad_Helmet
+Faces/Knights/Lancelov	
+Faces/Knights/Lancelov_Helmless	Faces/Knights/Lancelov_Helmless_Helmet
+Faces/Knights/Prince	Faces/Knights/Prince_Helmet
+Faces/Knights/Red_Knight	
+Faces/Knights/Red_Knight_Helmetless	Faces/Knights/Red_Knight_Helmetless_Helmet
+Faces/Midwest/Amber	Faces/Midwest/Amber_Helmet
+Faces/Midwest/Brie	Faces/Midwest/Brie_Helmet
+Faces/Midwest/Mental	Faces/Midwest/Mental_Helmet
+Faces/Midwest/Mentalzzzzz	
+Faces/Midwest/Rochefort	Faces/Midwest/Rochefort_Helmet
+Faces/Moutaineers/Furter	Faces/Moutaineers/Furter_Helmet
+Faces/Moutaineers/Krupp	Faces/Moutaineers/Krupp_Helmet
+Faces/Moutaineers/Pianist	Faces/Moutaineers/Pianist_Helmet
+Faces/Moutaineers/Torte	Faces/Moutaineers/Torte_Helmet
+Faces/Moutaineers/Wurst	Faces/Moutaineers/Wurst_Helmet
+Faces/Princess/Boni	Faces/Princess/Boni_Helmet
+Faces/Princess/BoniZZZZZ	
+Faces/Princess/Clementine	Faces/Princess/Clementine_Helmet
+Faces/Princess/Joan	Faces/Princess/Joan_Helmet
+Faces/Prisoners/Averell	Faces/Prisoners/Averell_Helmet
+Faces/Prisoners/Dalton	Faces/Prisoners/Dalton_Helmet
+Faces/Prisoners/Joe	Faces/Prisoners/Joe_Helmet
+Faces/Prisoners/Ma	Faces/Prisoners/Ma_Helmet
+Faces/Referees/Gedeon	Faces/Referees/Gedeon_Helmet
+Faces/Toronto/Dord	Faces/Toronto/Dord_Helmet
+Faces/Toronto/Jelly	Faces/Toronto/Jelly_Helmet
+Faces/Toronto/Kilmore	Faces/Toronto/Kilmore_Helmet
+Faces/Toronto/KilmoreZZZZZ	
+Faces/Toronto/Mathieu	Faces/Toronto/Mathieu_Helmet
+Faces/Toronto/MathieuZZZZZ	
+Faces/Toronto/Popping	Faces/Toronto/Popping_Helmet
+Faces/Toronto/Spark	Faces/Toronto/Spark_Helmet
+Faces/Toronto/SparkZZZZ	
+Faces/Twinfalls/Crockett	Faces/Twinfalls/Crockett_Helmet
+Faces/Twinfalls/Haggis	Faces/Twinfalls/Haggis_Helmet
+Faces/Twinfalls/Jerky	Faces/Twinfalls/Jerky_Helmet
+Faces/Twinfalls/Wiener	Faces/Twinfalls/Wiener_Helmet
+Faces/Twinfalls/WienerZZZZ	
+Faces/Tycoons/Tycoons_Elite	Faces/Tycoons/Tycoons_Elite_Helmet
+Faces/Tycoons/Tycoons_Lady	Faces/Tycoons/Tycoons_Lady_Helmet
+Faces/Tycoons/Tycoons_Large	Faces/Tycoons/Tycoons_Large_Helmet
+Faces/Tycoons/Tycoons_Small	Faces/Tycoons/Tycoons_Small_Helmet

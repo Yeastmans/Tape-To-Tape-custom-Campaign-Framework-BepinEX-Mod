@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Version>1.0.0-beta</Version>
+    <InformationalVersion>Beta 1.0</InformationalVersion>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>T2T Campaign Studio</AssemblyName>
+    <ApplicationIcon>../../assets/branding/CampaignStudio.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="../../assets/branding/CampaignStudio.ico" LogicalName="CampaignStudioIcon" />
+    <AvaloniaResource Include="../../assets/studio-guide/*.png" Link="Assets/StudioGuide/%(Filename)%(Extension)" />
+    <Compile Include="../CustomHeads/CustomHeadCatalog.cs" Link="Core/CustomHeadCatalog.cs" />
+    <Content Include="../../tools/ffmpeg/ffmpeg.exe;../../tools/ffmpeg/LICENSE;../../tools/ffmpeg/README.txt" Link="audio-tools/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <EmbeddedResource Include="../../assets/upgrade-fields.json" LogicalName="CampaignCreator.UpgradeFields.json" />
+    <EmbeddedResource Include="../../assets/squad-mascots.tsv" LogicalName="CampaignCreator.SquadMascots.tsv" />
+    <Content Include="../../assets/reward-pools/reward_catalog.tsv" Link="reward-data/_reward_catalog.tsv" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../../assets/reward-pools/normal_run_pool.tsv" Link="reward-data/normal_run_pool.tsv" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <EmbeddedResource Include="../../assets/reward-pools/free_agent_base_pool.tsv" LogicalName="CampaignCreator.FreeAgentBasePool.tsv" />
+    <!-- Seam patches are the user-approved exception; all other game pictures come from GameArt. -->
+    <AvaloniaResource Include="../CustomCampaignFramework/Assets/MapSeams/*.png" Link="Assets/MapPreview/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../assets/equipment-catalog.tsv" LogicalName="CampaignCreator.EquipmentCatalog.tsv" />
+    <EmbeddedResource Include="../../assets/squad-templates.json" LogicalName="CampaignCreator.SquadTemplates.json" />
+    <EmbeddedResource Include="../../assets/template-starting-relics.tsv" LogicalName="CampaignCreator.TemplateStartingRelics.tsv" />
+    <EmbeddedResource Include="../../assets/template-starting-rewards.tsv" LogicalName="CampaignCreator.TemplateStartingRewards.tsv" />
+    <EmbeddedResource Include="../../assets/reward-pools/reward-families.tsv" LogicalName="CampaignCreator.RewardFamilies.tsv" />
+    <EmbeddedResource Include="../../assets/squad-transition-colors.tsv" LogicalName="CampaignCreator.SquadTransitionColors.tsv" />
+    <EmbeddedResource Include="../../assets/free-agents.txt" LogicalName="CampaignCreator.FreeAgents.txt" />
+    <EmbeddedResource Include="../../assets/native-starting-players.tsv" LogicalName="CampaignCreator.NativeStartingPlayers.tsv" />
+    <EmbeddedResource Include="../../assets/base-game-maps.txt" LogicalName="CampaignCreator.BaseGameMaps.txt" />
+    <Content Include="../GameArt/THIRD_PARTY_NOTICES.txt" Link="THIRD_PARTY_NOTICES-GameArt.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <PackageReference Include="Avalonia.Controls.ColorPicker" Version="11.3.22" />
+    <ProjectReference Include="../CampaignCore/CampaignCore.csproj" />
+    <ProjectReference Include="../GameArt/GameArt.csproj" />
+    <ProjectReference Include="../ModCompatibility/ModCompatibility.csproj" />
+    <Content Include="../ModCompatibility/Assets/native-baseline.json" Link="mod-runtime/native-baseline.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../../release/CustomCampaignFramework.dll" Link="mod-runtime/CustomCampaignFramework.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../ModCompatibility/Assets/runtime-sha256.txt" Link="mod-runtime/runtime-sha256.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../ModCompatibility/Assets/replaces-sha256.txt" Link="mod-runtime/replaces-sha256.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../ModCompatibility/THIRD_PARTY_NOTICES.txt" Link="THIRD_PARTY_NOTICES-ModCompatibility.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
+  </ItemGroup>
+</Project>
+

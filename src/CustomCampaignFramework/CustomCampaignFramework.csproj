@@ -1,34 +1,81 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <Version>1.0.0-beta</Version>
+    <InformationalVersion>Beta 1.0</InformationalVersion>
     <TargetFramework>net6.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <AssemblyName>CustomCampaignFramework</AssemblyName>
     <RootNamespace>EndlessMode</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <!-- Try the live BepInEx interop folder first; fall back to our committed backup
-         if the installer wiped it. Rebuilds no longer require relaunching the game. -->
+    <!-- Build against the installed game's current BepInEx interop.
+         The portable build script supplies InteropLive and InteropDir explicitly. -->
     <InteropLive>C:\Steam\steamapps\common\Tape to Tape\BepInEx\interop</InteropLive>
-    <InteropBackup>$(MSBuildThisFileDirectory)..\..\interop_backup</InteropBackup>
     <InteropDir Condition="Exists('$(InteropLive)\Assembly-CSharp.dll')">$(InteropLive)</InteropDir>
-    <InteropDir Condition="'$(InteropDir)' == ''">$(InteropBackup)</InteropDir>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="../CampaignCore/SquadBehaviors.cs" Link="Core/SquadBehaviors.cs" />
+    <Compile Include="../CampaignCore/RewardPoolDefinition.cs" Link="Core/RewardPoolDefinition.cs" />
+    <Compile Include="../CampaignCore/FreeAgentTalentWeights.cs" Link="Core/FreeAgentTalentWeights.cs" />
+    <Compile Include="../CampaignCore/FreeAgentTalentPool.cs" Link="Core/FreeAgentTalentPool.cs" />
+    <EmbeddedResource Include="../../assets/reward-pools/normal_run_pool.tsv" LogicalName="NormalRewardPools.tsv" />
+    <EmbeddedResource Include="Assets/squad-behavior-sites.tsv" LogicalName="SquadBehaviorSites.tsv" />
+    <EmbeddedResource Include="Assets/native-compatibility.json" LogicalName="NativeCompatibility.json" />
+    <Compile Include="../ModCompatibility/Shared/NativeCompatibilityProfile.cs" Link="Core/NativeCompatibilityProfile.cs" />
+    <Compile Include="../CampaignCore/NativeCompatibilityProfile.cs" Link="Core/NativeSymbolNames.cs" />
+    <Compile Include="../CustomHeads/CustomHeadCatalog.cs" Link="Core/CustomHeadCatalog.cs" />
+    <Compile Include="../CampaignCore/LogoFiles.cs" Link="Core/LogoFiles.cs" />
+    <Compile Include="../CampaignCore/HeadAppearance.cs" Link="Core/HeadAppearance.cs" />
+    <Compile Include="../CampaignCore/PlayerBrawlOptions.cs" Link="Core/PlayerBrawlOptions.cs" />
+    <EmbeddedResource Include="../../assets/head-families.tsv" LogicalName="HeadFamilies.tsv" />
+    <EmbeddedResource Include="../../assets/native-appearance-slots.tsv" LogicalName="NativeAppearanceSlots.tsv" />
+    <Compile Include="../CampaignCore/CampaignProgress.cs" Link="Core/CampaignProgress.cs" />
+    <Compile Include="../CampaignCore/CampaignActSequence.cs" Link="Core/CampaignActSequence.cs" />
+    <Compile Include="../CampaignCore/CampaignSelection.cs" Link="Core/CampaignSelection.cs" />
+    <Compile Include="../CampaignCore/UserContentPaths.cs" Link="Core/UserContentPaths.cs" />
+    <Compile Include="../CampaignCore/GoalSoundWave.cs" Link="Core/GoalSoundWave.cs" />
+    <Reference Include="FMODUnity"><HintPath>$(InteropDir)/FMODUnity.dll</HintPath><Private>false</Private></Reference>
+    <None Update="Assets/MapSeams/*.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" TargetPath="MapSeams/%(Filename)%(Extension)" />
+    <!-- Compile the small platform-neutral contract into the plugin so existing
+         one-DLL installs do not acquire an unresolved runtime dependency. -->
+    <Compile Include="../CampaignCore/CampaignDocument.cs" Link="Core/CampaignDocument.cs" />
+    <Compile Include="../CampaignCore/SquadTemplatePolicy.cs" Link="Core/SquadTemplatePolicy.cs" />
+    <Compile Include="../CampaignCore/RewardPoolSelection.cs" Link="Core/RewardPoolSelection.cs" />
+    <Compile Include="../CampaignCore/SelectedPlayerPool.cs" Link="Core/SelectedPlayerPool.cs" />
+    <Compile Include="../CampaignCore/VanillaCopyData.cs" Link="Core/VanillaCopyData.cs" />
+    <Compile Include="../CampaignCore/AssetCatalog.cs" Link="Core/AssetCatalog.cs" />
+    <Compile Include="../CampaignCore/FieldSchema.cs" Link="Core/FieldSchema.cs" />
+    <Compile Include="../CampaignCore/AppearanceContract.cs" Link="Core/AppearanceContract.cs" />
+    <Compile Include="../CampaignCore/AppearanceFields.cs" Link="Core/AppearanceFields.cs" />
+    <Compile Include="../CampaignCore/PlayerColorModel.cs" Link="Core/PlayerColorModel.cs" />
+    <Compile Include="../CampaignCore/MapLayout.cs" Link="Core/MapLayout.cs" />
+    <Compile Include="../CampaignCore/MapSceneryTiling.cs" Link="Core/MapSceneryTiling.cs" />
+    <Compile Include="../CampaignCore/MapVisualFit.cs" Link="Core/MapVisualFit.cs" />
+    <Compile Include="../CampaignCore/MapSpriteGeometry.cs" Link="Core/MapSpriteGeometry.cs" />
+    <Compile Include="../CampaignCore/CustomTeamIdentity.cs" Link="Core/CustomTeamIdentity.cs" />
+    <Compile Include="../CampaignCore/OpponentOptions.cs" Link="Core/OpponentOptions.cs" />
+    <Compile Include="../CampaignCore/RelicOpponentInteractions.cs" Link="Core/RelicOpponentInteractions.cs" />
+    <Compile Include="../CampaignCore/OpponentEffects.cs" Link="Core/OpponentEffects.cs" />
+    <Compile Include="../CampaignCore/RandomNodePool.cs" Link="Core/RandomNodePool.cs" />
     <Reference Include="BepInEx.Core">
-      <HintPath>C:\Steam\steamapps\common\Tape to Tape\BepInEx\core\BepInEx.Core.dll</HintPath>
+      <HintPath>$(MSBuildThisFileDirectory)..\..\installer\bepinex\BepInEx\core\BepInEx.Core.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="BepInEx.Unity.IL2CPP">
-      <HintPath>C:\Steam\steamapps\common\Tape to Tape\BepInEx\core\BepInEx.Unity.IL2CPP.dll</HintPath>
+      <HintPath>$(MSBuildThisFileDirectory)..\..\installer\bepinex\BepInEx\core\BepInEx.Unity.IL2CPP.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="MonoMod.RuntimeDetour">
+      <HintPath>$(MSBuildThisFileDirectory)..\..\installer\bepinex\BepInEx\core\MonoMod.RuntimeDetour.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="0Harmony">
-      <HintPath>C:\Steam\steamapps\common\Tape to Tape\BepInEx\core\0Harmony.dll</HintPath>
+      <HintPath>$(MSBuildThisFileDirectory)..\..\installer\bepinex\BepInEx\core\0Harmony.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Il2CppInterop.Runtime">
-      <HintPath>C:\Steam\steamapps\common\Tape to Tape\BepInEx\core\Il2CppInterop.Runtime.dll</HintPath>
+      <HintPath>$(MSBuildThisFileDirectory)..\..\installer\bepinex\BepInEx\core\Il2CppInterop.Runtime.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Il2Cppmscorlib">
@@ -51,10 +98,34 @@
       <HintPath>$(InteropDir)\UnityEngine.UIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.Physics2DModule">
+      <HintPath>$(InteropDir)\UnityEngine.Physics2DModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(InteropDir)\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.Addressables">
+      <HintPath>$(InteropDir)\Unity.Addressables.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="VAT">
+      <HintPath>$(InteropDir)\VAT.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(InteropDir)\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <!-- MapTemplateData / LayerData / NodeData (DAGG.Generation.Template) — the
          GM squad's map layouts, read to place its free-agent nodes. -->
     <Reference Include="DAGG_assembly">
       <HintPath>$(InteropDir)\DAGG_assembly.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="DOTween">
+      <HintPath>$(InteropDir)\DOTween.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.AnimationModule">
@@ -98,4 +169,11 @@
     </Reference>
   </ItemGroup>
 
+  <Target Name="RequireGameInterop" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="'$(InteropDir)' == ''"
+           Text="No current BepInEx interop at $(InteropLive). Launch your installed game once with BepInEx to generate it, or pass -p:InteropLive=path for your game installation." />
+  </Target>
+
 </Project>
+
+

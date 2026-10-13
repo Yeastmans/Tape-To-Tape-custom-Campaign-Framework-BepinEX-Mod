@@ -1,0 +1,2388 @@
+# Installed bundle SHA256 42d6975b293205bf0b6188c54155400b6de0c60efde12743ba9c5fb68bd8a7e5
+# role	slot	flag	attachment	path	material
+goalie	Arm_left	2	SE_Arm_left	Figure_Skater/SE_Arm_left	painted
+goalie	Arm_left	2	SE_Arm_left	Golfers/SE_Arm_left	painted
+goalie	Arm_left	2	SE_Arm_left	HockeyFC/SE_Arm_left	painted
+goalie	Arm_left	2	SE_Arm_left	Knights/SE_Arm_left	painted
+goalie	Arm_left	2	SE_Arm_left	Mountaineers/SE_Arm_left	painted
+goalie	Arm_left	2	SE_Arm_left	Normal/SE_Arm_left	painted
+goalie	Arm_left	2	SE_Arm_left	Princess/SE_Arm_left	painted
+goalie	Arm_left	2	SE_Arm_left	Prisoners/SE_Arm_left	painted
+goalie	Arm_left	2	SE_Arm_left	Referees/SE_Arm_left	painted
+goalie	Arm_left	2	SE_Arm_left	Tycoons/SE_Arm_left	painted
+goalie	Arm_left	2	SE_Arm_left	Vanilla_Uniform_colors/SE_Arm_left	mask
+goalie	Arm_left	2	SE_Arm_left	Vanilla_Uniform_lso/SE_Arm_left	painted
+goalie	Arm_left	2	SW_Arm_Left	Figure_Skater/SW_Arm_Left	painted
+goalie	Arm_left	2	SW_Arm_Left	Golfers/SW_Arm_Left	painted
+goalie	Arm_left	2	SW_Arm_Left	HockeyFC/SW_Arm_Left	painted
+goalie	Arm_left	2	SW_Arm_Left	Knights/SW_Arm_Left	painted
+goalie	Arm_left	2	SW_Arm_Left	Mountaineers/SW_Arm_Left	painted
+goalie	Arm_left	2	SW_Arm_Left	Normal/SW_Arm_Left	painted
+goalie	Arm_left	2	SW_Arm_Left	Princess/SW_Arm_Left	painted
+goalie	Arm_left	2	SW_Arm_Left	Prisoners/SW_Arm_Left	painted
+goalie	Arm_left	2	SW_Arm_Left	Referees/SW_Arm_Left	painted
+goalie	Arm_left	2	SW_Arm_Left	Tycoons/SW_Arm_Left	painted
+goalie	Arm_left	2	SW_Arm_Left	Vanilla_Uniform_colors/SW_Arm_Left	mask
+goalie	Arm_left	2	SW_Arm_Left	Vanilla_Uniform_lso/SW_Arm_Left	painted
+goalie	Arm_left	2	S_Arm_left	Figure_Skater/S_Arm_left	painted
+goalie	Arm_left	2	S_Arm_left	Golfers/S_Arm_left	painted
+goalie	Arm_left	2	S_Arm_left	HockeyFC/S_Arm_left	painted
+goalie	Arm_left	2	S_Arm_left	Knights/S_Arm_left	painted
+goalie	Arm_left	2	S_Arm_left	Mountaineers/S_Arm_left	painted
+goalie	Arm_left	2	S_Arm_left	Normal/S_Arm_left	painted
+goalie	Arm_left	2	S_Arm_left	Princess/S_Arm_left	painted
+goalie	Arm_left	2	S_Arm_left	Prisoners/S_Arm_left	painted
+goalie	Arm_left	2	S_Arm_left	Referees/S_Arm_left	painted
+goalie	Arm_left	2	S_Arm_left	Tycoons/S_Arm_left	painted
+goalie	Arm_left	2	S_Arm_left	Vanilla_Uniform_colors/S_Arm_left	mask
+goalie	Arm_left	2	S_Arm_left	Vanilla_Uniform_lso/S_Arm_left	painted
+goalie	Arm_right	2	SE_Arm_right	Figure_Skater/SE_Arm_right	painted
+goalie	Arm_right	2	SE_Arm_right	Golfers/SE_Arm_right	painted
+goalie	Arm_right	2	SE_Arm_right	HockeyFC/SE_Arm_right	painted
+goalie	Arm_right	2	SE_Arm_right	Knights/SE_Arm_right	painted
+goalie	Arm_right	2	SE_Arm_right	Mountaineers/SE_Arm_right	painted
+goalie	Arm_right	2	SE_Arm_right	Normal/SE_Arm_right	painted
+goalie	Arm_right	2	SE_Arm_right	Princess/SE_Arm_right	painted
+goalie	Arm_right	2	SE_Arm_right	Prisoners/SE_Arm_right	painted
+goalie	Arm_right	2	SE_Arm_right	Referees/SE_Arm_right	painted
+goalie	Arm_right	2	SE_Arm_right	Tycoons/SE_Arm_right	painted
+goalie	Arm_right	2	SE_Arm_right	Vanilla_Uniform_colors/SE_Arm_right	mask
+goalie	Arm_right	2	SE_Arm_right	Vanilla_Uniform_lso/SE_Arm_right	painted
+goalie	Arm_right	2	SW_Arm_right	Figure_Skater/SW_Arm_right	painted
+goalie	Arm_right	2	SW_Arm_right	Golfers/SW_Arm_right	painted
+goalie	Arm_right	2	SW_Arm_right	HockeyFC/SW_Arm_right	painted
+goalie	Arm_right	2	SW_Arm_right	Knights/SW_Arm_right	painted
+goalie	Arm_right	2	SW_Arm_right	Mountaineers/SW_Arm_right	painted
+goalie	Arm_right	2	SW_Arm_right	Normal/SW_Arm_right	painted
+goalie	Arm_right	2	SW_Arm_right	Princess/SW_Arm_right	painted
+goalie	Arm_right	2	SW_Arm_right	Prisoners/SW_Arm_right	painted
+goalie	Arm_right	2	SW_Arm_right	Referees/SW_Arm_right	painted
+goalie	Arm_right	2	SW_Arm_right	Tycoons/SW_Arm_right	painted
+goalie	Arm_right	2	SW_Arm_right	Vanilla_Uniform_colors/SW_Arm_right	mask
+goalie	Arm_right	2	SW_Arm_right	Vanilla_Uniform_lso/SW_Arm_right	painted
+goalie	Arm_right	2	S_Arm_right	Figure_Skater/S_Arm_right	painted
+goalie	Arm_right	2	S_Arm_right	Golfers/S_Arm_right	painted
+goalie	Arm_right	2	S_Arm_right	HockeyFC/S_Arm_right	painted
+goalie	Arm_right	2	S_Arm_right	Knights/S_Arm_right	painted
+goalie	Arm_right	2	S_Arm_right	Mountaineers/S_Arm_right	painted
+goalie	Arm_right	2	S_Arm_right	Normal/S_Arm_right	painted
+goalie	Arm_right	2	S_Arm_right	Princess/S_Arm_right	painted
+goalie	Arm_right	2	S_Arm_right	Prisoners/S_Arm_right	painted
+goalie	Arm_right	2	S_Arm_right	Referees/S_Arm_right	painted
+goalie	Arm_right	2	S_Arm_right	Tycoons/S_Arm_right	painted
+goalie	Arm_right	2	S_Arm_right	Vanilla_Uniform_colors/S_Arm_right	mask
+goalie	Arm_right	2	S_Arm_right	Vanilla_Uniform_lso/S_Arm_right	painted
+goalie	Bicep_left	2	Bicep_left	Figure_Skaters/Bicep_left	painted
+goalie	Bicep_left	2	Bicep_left	Golfers/Bicep_left	painted
+goalie	Bicep_left	2	Bicep_left	HockeyFC/Bicep_left	painted
+goalie	Bicep_left	2	Bicep_left	Knights/Bicep_left	painted
+goalie	Bicep_left	2	Bicep_left	Mountaineers/Bicep_left	painted
+goalie	Bicep_left	2	Bicep_left	Princess/Bicep_left	painted
+goalie	Bicep_left	2	Bicep_left	Prisoners/Bicep_left	painted
+goalie	Bicep_left	2	Bicep_left	Referees/Bicep_left	painted
+goalie	Bicep_left	2	Bicep_left	Toronto/Bicep_left	painted
+goalie	Bicep_left	2	Bicep_left	Tycoons/Bicep_left	painted
+goalie	Bicep_left	2	Bicep_left	Vanilla_Uniform_colors/Bicep_left	mask
+goalie	Bicep_left	2	Bicep_left	Vanilla_Uniform_lso/Bicep_left	painted
+goalie	Bicep_left	2	Bicep_left_NE	Figure_Skaters/Bicep_left_NE	painted
+goalie	Bicep_left	2	Bicep_left_NE	Golfers/Bicep_left_NE	painted
+goalie	Bicep_left	2	Bicep_left_NE	HockeyFC/Bicep_left_NE	painted
+goalie	Bicep_left	2	Bicep_left_NE	Knights/Bicep_left_NE	painted
+goalie	Bicep_left	2	Bicep_left_NE	Mountaineers/Bicep_left_NE	painted
+goalie	Bicep_left	2	Bicep_left_NE	Princess/Bicep_left_NE	painted
+goalie	Bicep_left	2	Bicep_left_NE	Prisoners/Bicep_left_NE	painted
+goalie	Bicep_left	2	Bicep_left_NE	Referees/Bicep_left_NE	painted
+goalie	Bicep_left	2	Bicep_left_NE	Toronto/Bicep_left_NE	painted
+goalie	Bicep_left	2	Bicep_left_NE	Tycoons/Bicep_left_NE	painted
+goalie	Bicep_left	2	Bicep_left_NE	Vanilla_Uniform_colors/Bicep_left_NE	mask
+goalie	Bicep_left	2	Bicep_left_NE	Vanilla_Uniform_lso/Bicep_left_NE	painted
+goalie	Bicep_left	2	Bicep_left_NW	Figure_Skaters/Bicep_left_NW	painted
+goalie	Bicep_left	2	Bicep_left_NW	Golfers/Bicep_left_NW	painted
+goalie	Bicep_left	2	Bicep_left_NW	HockeyFC/Bicep_left_NW	painted
+goalie	Bicep_left	2	Bicep_left_NW	Knights/Bicep_left_NW	painted
+goalie	Bicep_left	2	Bicep_left_NW	Mountaineers/Bicep_left_NW	painted
+goalie	Bicep_left	2	Bicep_left_NW	Princess/Bicep_left_NW	painted
+goalie	Bicep_left	2	Bicep_left_NW	Prisoners/Bicep_left_NW	painted
+goalie	Bicep_left	2	Bicep_left_NW	Referees/Bicep_left_NW	painted
+goalie	Bicep_left	2	Bicep_left_NW	Toronto/Bicep_left_NW	painted
+goalie	Bicep_left	2	Bicep_left_NW	Tycoons/Bicep_left_NW	painted
+goalie	Bicep_left	2	Bicep_left_NW	Vanilla_Uniform_colors/Bicep_left_NW	mask
+goalie	Bicep_left	2	Bicep_left_NW	Vanilla_Uniform_lso/Bicep_left_NW	painted
+goalie	Bicep_right	2	Bicep_right	Figure_Skaters/Bicep_right	painted
+goalie	Bicep_right	2	Bicep_right	Golfers/Bicep_right	painted
+goalie	Bicep_right	2	Bicep_right	HockeyFC/Bicep_right	painted
+goalie	Bicep_right	2	Bicep_right	Knights/Bicep_right	painted
+goalie	Bicep_right	2	Bicep_right	Mountaineers/Bicep_right	painted
+goalie	Bicep_right	2	Bicep_right	Princess/Bicep_right	painted
+goalie	Bicep_right	2	Bicep_right	Prisoners/Bicep_right	painted
+goalie	Bicep_right	2	Bicep_right	Referees/Bicep_right	painted
+goalie	Bicep_right	2	Bicep_right	Toronto/Bicep_right	painted
+goalie	Bicep_right	2	Bicep_right	Tycoons/Bicep_right	painted
+goalie	Bicep_right	2	Bicep_right	Vanilla_Uniform_colors/Bicep_right	mask
+goalie	Bicep_right	2	Bicep_right	Vanilla_Uniform_lso/Bicep_right	painted
+goalie	Bicep_right	2	Bicep_right_NE	Figure_Skaters/Bicep_right_NE	painted
+goalie	Bicep_right	2	Bicep_right_NE	Golfers/Bicep_right_NE	painted
+goalie	Bicep_right	2	Bicep_right_NE	HockeyFC/Bicep_right_NE	painted
+goalie	Bicep_right	2	Bicep_right_NE	Knights/Bicep_right_NE	painted
+goalie	Bicep_right	2	Bicep_right_NE	Mountaineers/Bicep_right_NE	painted
+goalie	Bicep_right	2	Bicep_right_NE	Princess/Bicep_right_NE	painted
+goalie	Bicep_right	2	Bicep_right_NE	Prisoners/Bicep_right_NE	painted
+goalie	Bicep_right	2	Bicep_right_NE	Referees/Bicep_right_NE	painted
+goalie	Bicep_right	2	Bicep_right_NE	Toronto/Bicep_right_NE	painted
+goalie	Bicep_right	2	Bicep_right_NE	Tycoons/Bicep_right_NE	painted
+goalie	Bicep_right	2	Bicep_right_NE	Vanilla_Uniform_colors/Bicep_right_NE	mask
+goalie	Bicep_right	2	Bicep_right_NE	Vanilla_Uniform_lso/Bicep_right_NE	painted
+goalie	Bicep_right	2	Bicep_right_NW	Figure_Skaters/Bicep_right_NW	painted
+goalie	Bicep_right	2	Bicep_right_NW	Golfers/Bicep_right_NW	painted
+goalie	Bicep_right	2	Bicep_right_NW	HockeyFC/Bicep_right_NW	painted
+goalie	Bicep_right	2	Bicep_right_NW	Knights/Bicep_right_NW	painted
+goalie	Bicep_right	2	Bicep_right_NW	Mountaineers/Bicep_right_NW	painted
+goalie	Bicep_right	2	Bicep_right_NW	Princess/Bicep_right_NW	painted
+goalie	Bicep_right	2	Bicep_right_NW	Prisoners/Bicep_right_NW	painted
+goalie	Bicep_right	2	Bicep_right_NW	Referees/Bicep_right_NW	painted
+goalie	Bicep_right	2	Bicep_right_NW	Toronto/Bicep_right_NW	painted
+goalie	Bicep_right	2	Bicep_right_NW	Tycoons/Bicep_right_NW	painted
+goalie	Bicep_right	2	Bicep_right_NW	Vanilla_Uniform_colors/Bicep_right_NW	mask
+goalie	Bicep_right	2	Bicep_right_NW	Vanilla_Uniform_lso/Bicep_right_NW	painted
+goalie	Blocker	64	Blocker	Figure_Skaters/Blocker	painted
+goalie	Blocker	64	Blocker	Golfers/Blocker	painted
+goalie	Blocker	64	Blocker	HockeyFC/Blocker	painted
+goalie	Blocker	64	Blocker	Knights/Blocker	painted
+goalie	Blocker	64	Blocker	Prisoners/Blocker	painted
+goalie	Blocker	64	Blocker	Toronto/Blocker	painted
+goalie	Blocker	64	Blocker	Tycoons/Blocker	painted
+goalie	Blocker	64	Blocker	Vanilla_Uniform_colors/Blocker	mask
+goalie	Blocker	64	Blocker	Vanilla_Uniform_lso/Blocker	painted
+goalie	Blocker	64	Blocker_Inside	Figure_Skaters/Blocker_Inside	painted
+goalie	Blocker	64	Blocker_Inside	Golfers/Blocker_Inside	painted
+goalie	Blocker	64	Blocker_Inside	HockeyFC/Blocker_Inside	painted
+goalie	Blocker	64	Blocker_Inside	Knights/Blocker_Inside	painted
+goalie	Blocker	64	Blocker_Inside	Prisoners/Blocker_Inside	painted
+goalie	Blocker	64	Blocker_Inside	Toronto/Blocker_Inside	painted
+goalie	Blocker	64	Blocker_Inside	Tycoons/Blocker_Inside	painted
+goalie	Blocker	64	Blocker_Inside	Vanilla_Uniform_colors/Blocker_Inside	mask
+goalie	Blocker	64	Blocker_Inside	Vanilla_Uniform_lso/Blocker_Inside	painted
+goalie	Blocker	64	Blocker_NE	Figure_Skaters/Blocker_NE	painted
+goalie	Blocker	64	Blocker_NE	Golfers/Blocker_NE	painted
+goalie	Blocker	64	Blocker_NE	HockeyFC/Blocker_NE	painted
+goalie	Blocker	64	Blocker_NE	Knights/Blocker_NE	painted
+goalie	Blocker	64	Blocker_NE	Prisoners/Blocker_NE	painted
+goalie	Blocker	64	Blocker_NE	Toronto/Blocker_NE	painted
+goalie	Blocker	64	Blocker_NE	Tycoons/Blocker_NE	painted
+goalie	Blocker	64	Blocker_NE	Vanilla_Uniform_colors/Blocker_NE	mask
+goalie	Blocker	64	Blocker_NE	Vanilla_Uniform_lso/Blocker_NE	painted
+goalie	Blocker	64	Blocker_NW	Figure_Skaters/Blocker_NW	painted
+goalie	Blocker	64	Blocker_NW	Golfers/Blocker_NW	painted
+goalie	Blocker	64	Blocker_NW	HockeyFC/Blocker_NW	painted
+goalie	Blocker	64	Blocker_NW	Knights/Blocker_NW	painted
+goalie	Blocker	64	Blocker_NW	Prisoners/Blocker_NW	painted
+goalie	Blocker	64	Blocker_NW	Toronto/Blocker_NW	painted
+goalie	Blocker	64	Blocker_NW	Tycoons/Blocker_NW	painted
+goalie	Blocker	64	Blocker_NW	Vanilla_Uniform_colors/Blocker_NW	mask
+goalie	Blocker	64	Blocker_NW	Vanilla_Uniform_lso/Blocker_NW	painted
+goalie	Blocker	64	SE_Blocker	Figure_Skater/SE_Blocker	painted
+goalie	Blocker	64	SE_Blocker	Golfers/SE_Blocker	painted
+goalie	Blocker	64	SE_Blocker	Knights/SE_Blocker	painted
+goalie	Blocker	64	SE_Blocker	Normal/SE_Blocker	painted
+goalie	Blocker	64	SE_Blocker	Tycoons/SE_Blocker	painted
+goalie	Blocker	64	SE_Blocker	Vanilla_Uniform_colors/SE_Blocker	mask
+goalie	Blocker	64	SE_Blocker	Vanilla_Uniform_lso/SE_Blocker	painted
+goalie	Blocker	64	SW_Blocker	Figure_Skater/SW_Blocker	painted
+goalie	Blocker	64	SW_Blocker	Golfers/SW_Blocker	painted
+goalie	Blocker	64	SW_Blocker	Knights/SW_Blocker	painted
+goalie	Blocker	64	SW_Blocker	Normal/SW_Blocker	painted
+goalie	Blocker	64	SW_Blocker	Tycoons/SW_Blocker	painted
+goalie	Blocker	64	SW_Blocker	Vanilla_Uniform_colors/SW_Blocker	mask
+goalie	Blocker	64	SW_Blocker	Vanilla_Uniform_lso/SW_Blocker	painted
+goalie	Blocker	64	S_Blocker	Figure_Skater/S_Blocker	painted
+goalie	Blocker	64	S_Blocker	Golfers/S_Blocker	painted
+goalie	Blocker	64	S_Blocker	Knights/S_Blocker	painted
+goalie	Blocker	64	S_Blocker	Normal/S_Blocker	painted
+goalie	Blocker	64	S_Blocker	Tycoons/S_Blocker	painted
+goalie	Blocker	64	S_Blocker	Vanilla_Uniform_colors/S_Blocker	mask
+goalie	Blocker	64	S_Blocker	Vanilla_Uniform_lso/S_Blocker	painted
+goalie	Blocker	64	S_Blocker_Playnow	Figure_Skater/S_Blocker_Playnow	painted
+goalie	Blocker	64	S_Blocker_Playnow	Golfers/S_Blocker_Playnow	painted
+goalie	Blocker	64	S_Blocker_Playnow	Knights/S_Blocker_Playnow	painted
+goalie	Blocker	64	S_Blocker_Playnow	Normal/S_Blocker_Playnow	painted
+goalie	Blocker	64	S_Blocker_Playnow	Tycoons/S_Blocker_Playnow	painted
+goalie	Blocker	64	S_Blocker_Playnow	Vanilla_Uniform_colors/S_Blocker_Playnow	mask
+goalie	Blocker	64	S_Blocker_Playnow	Vanilla_Uniform_lso/S_Blocker_Playnow	painted
+goalie	Blocker	64	S_Blocker_inside	Figure_Skater/S_Blocker_inside	painted
+goalie	Blocker	64	S_Blocker_inside	Golfers/S_Blocker_inside	painted
+goalie	Blocker	64	S_Blocker_inside	Knights/S_Blocker_inside	painted
+goalie	Blocker	64	S_Blocker_inside	Normal/S_Blocker_inside	painted
+goalie	Blocker	64	S_Blocker_inside	Tycoons/S_Blocker_inside	painted
+goalie	Blocker	64	S_Blocker_inside	Vanilla_Uniform_colors/S_Blocker_inside	mask
+goalie	Blocker	64	S_Blocker_inside	Vanilla_Uniform_lso/S_Blocker_inside	painted
+goalie	Body	2	Body	Figure_Skaters/Body	painted
+goalie	Body	2	Body	Golfers/Body	painted
+goalie	Body	2	Body	HockeyFC/Body	painted
+goalie	Body	2	Body	Knights/Body	painted
+goalie	Body	2	Body	Mountaineers/Body	painted
+goalie	Body	2	Body	Princess/Body	painted
+goalie	Body	2	Body	Prisoners/Body	painted
+goalie	Body	2	Body	Referees/Body	painted
+goalie	Body	2	Body	Toronto/Body	painted
+goalie	Body	2	Body	Tycoons/Body	painted
+goalie	Body	2	Body	Vanilla_Uniform_colors/Body	mask
+goalie	Body	2	Body	Vanilla_Uniform_lso/Body	painted
+goalie	Body	2	Body_NE	Figure_Skaters/Body_NE	painted
+goalie	Body	2	Body_NE	Golfers/Body_NE	painted
+goalie	Body	2	Body_NE	HockeyFC/Body_NE	painted
+goalie	Body	2	Body_NE	Knights/Body_NE	painted
+goalie	Body	2	Body_NE	Mountaineers/Body_NE	painted
+goalie	Body	2	Body_NE	Princess/Body_NE	painted
+goalie	Body	2	Body_NE	Prisoners/Body_NE	painted
+goalie	Body	2	Body_NE	Referees/Body_NE	painted
+goalie	Body	2	Body_NE	Toronto/Body_NE	painted
+goalie	Body	2	Body_NE	Tycoons/Body_NE	painted
+goalie	Body	2	Body_NE	Vanilla_Uniform_colors/Body_NE	mask
+goalie	Body	2	Body_NE	Vanilla_Uniform_lso/Body_NE	painted
+goalie	Body	2	Body_NW	Figure_Skaters/Body_NW	painted
+goalie	Body	2	Body_NW	Golfers/Body_NW	painted
+goalie	Body	2	Body_NW	HockeyFC/Body_NW	painted
+goalie	Body	2	Body_NW	Knights/Body_NW	painted
+goalie	Body	2	Body_NW	Mountaineers/Body_NW	painted
+goalie	Body	2	Body_NW	Princess/Body_NW	painted
+goalie	Body	2	Body_NW	Prisoners/Body_NW	painted
+goalie	Body	2	Body_NW	Referees/Body_NW	painted
+goalie	Body	2	Body_NW	Toronto/Body_NW	painted
+goalie	Body	2	Body_NW	Tycoons/Body_NW	painted
+goalie	Body	2	Body_NW	Vanilla_Uniform_colors/Body_NW	mask
+goalie	Body	2	Body_NW	Vanilla_Uniform_lso/Body_NW	painted
+goalie	Body	2	SE_Body	Figure_Skater/SE_Body	painted
+goalie	Body	2	SE_Body	Golfers/SE_Body	painted
+goalie	Body	2	SE_Body	HockeyFC/SE_Body	painted
+goalie	Body	2	SE_Body	Knights/SE_Body	painted
+goalie	Body	2	SE_Body	Mountaineers/SE_Body	painted
+goalie	Body	2	SE_Body	Normal/SE_Body	painted
+goalie	Body	2	SE_Body	Princess/SE_Body	painted
+goalie	Body	2	SE_Body	Prisoners/SE_Body	painted
+goalie	Body	2	SE_Body	Referees/SE_Body	painted
+goalie	Body	2	SE_Body	Tycoons/SE_Body	painted
+goalie	Body	2	SE_Body	Vanilla_Uniform_colors/SE_Body	mask
+goalie	Body	2	SE_Body	Vanilla_Uniform_lso/SE_Body	painted
+goalie	Body	2	SW_Body	Figure_Skater/SW_Body	painted
+goalie	Body	2	SW_Body	Golfers/SW_Body	painted
+goalie	Body	2	SW_Body	HockeyFC/SW_Body	painted
+goalie	Body	2	SW_Body	Knights/SW_Body	painted
+goalie	Body	2	SW_Body	Mountaineers/SW_Body	painted
+goalie	Body	2	SW_Body	Normal/SW_Body	painted
+goalie	Body	2	SW_Body	Princess/SW_Body	painted
+goalie	Body	2	SW_Body	Prisoners/SW_Body	painted
+goalie	Body	2	SW_Body	Referees/SW_Body	painted
+goalie	Body	2	SW_Body	Tycoons/SW_Body	painted
+goalie	Body	2	SW_Body	Vanilla_Uniform_colors/SW_Body	mask
+goalie	Body	2	SW_Body	Vanilla_Uniform_lso/SW_Body	painted
+goalie	Body	2	S_Body	Figure_Skater/S_Body	painted
+goalie	Body	2	S_Body	Golfers/S_Body	painted
+goalie	Body	2	S_Body	HockeyFC/S_Body	painted
+goalie	Body	2	S_Body	Knights/S_Body	painted
+goalie	Body	2	S_Body	Mountaineers/S_Body	painted
+goalie	Body	2	S_Body	Normal/S_Body	painted
+goalie	Body	2	S_Body	Princess/S_Body	painted
+goalie	Body	2	S_Body	Prisoners/S_Body	painted
+goalie	Body	2	S_Body	Referees/S_Body	painted
+goalie	Body	2	S_Body	Tycoons/S_Body	painted
+goalie	Body	2	S_Body	Vanilla_Uniform_colors/S_Body	mask
+goalie	Body	2	S_Body	Vanilla_Uniform_lso/S_Body	painted
+goalie	Forearm_left	2	Forearm_left	Figure_Skaters/Forearm_left	painted
+goalie	Forearm_left	2	Forearm_left	Golfers/Forearm_left	painted
+goalie	Forearm_left	2	Forearm_left	HockeyFC/Forearm_left	painted
+goalie	Forearm_left	2	Forearm_left	Knights/Forearm_left	painted
+goalie	Forearm_left	2	Forearm_left	Mountaineers/Forearm_left	painted
+goalie	Forearm_left	2	Forearm_left	Princess/Forearm_left	painted
+goalie	Forearm_left	2	Forearm_left	Prisoners/Forearm_left	painted
+goalie	Forearm_left	2	Forearm_left	Referees/Forearm_left	painted
+goalie	Forearm_left	2	Forearm_left	Toronto/Forearm_left	painted
+goalie	Forearm_left	2	Forearm_left	Tycoons/Forearm_left	painted
+goalie	Forearm_left	2	Forearm_left	Vanilla_Uniform_colors/Forearm_left	mask
+goalie	Forearm_left	2	Forearm_left	Vanilla_Uniform_lso/Forearm_left	painted
+goalie	Forearm_left	2	Forearm_left_NE	Figure_Skaters/Forearm_left_NE	painted
+goalie	Forearm_left	2	Forearm_left_NE	Golfers/Forearm_left_NE	painted
+goalie	Forearm_left	2	Forearm_left_NE	HockeyFC/Forearm_left_NE	painted
+goalie	Forearm_left	2	Forearm_left_NE	Knights/Forearm_left_NE	painted
+goalie	Forearm_left	2	Forearm_left_NE	Mountaineers/Forearm_left_NE	painted
+goalie	Forearm_left	2	Forearm_left_NE	Princess/Forearm_left_NE	painted
+goalie	Forearm_left	2	Forearm_left_NE	Prisoners/Forearm_left_NE	painted
+goalie	Forearm_left	2	Forearm_left_NE	Referees/Forearm_left_NE	painted
+goalie	Forearm_left	2	Forearm_left_NE	Toronto/Forearm_left_NE	painted
+goalie	Forearm_left	2	Forearm_left_NE	Tycoons/Forearm_left_NE	painted
+goalie	Forearm_left	2	Forearm_left_NE	Vanilla_Uniform_colors/Forearm_left_NE	mask
+goalie	Forearm_left	2	Forearm_left_NE	Vanilla_Uniform_lso/Forearm_left_NE	painted
+goalie	Forearm_left	2	Forearm_left_NW	Figure_Skaters/Forearm_left_NW	painted
+goalie	Forearm_left	2	Forearm_left_NW	Golfers/Forearm_left_NW	painted
+goalie	Forearm_left	2	Forearm_left_NW	HockeyFC/Forearm_left_NW	painted
+goalie	Forearm_left	2	Forearm_left_NW	Knights/Forearm_left_NW	painted
+goalie	Forearm_left	2	Forearm_left_NW	Mountaineers/Forearm_left_NW	painted
+goalie	Forearm_left	2	Forearm_left_NW	Princess/Forearm_left_NW	painted
+goalie	Forearm_left	2	Forearm_left_NW	Prisoners/Forearm_left_NW	painted
+goalie	Forearm_left	2	Forearm_left_NW	Referees/Forearm_left_NW	painted
+goalie	Forearm_left	2	Forearm_left_NW	Toronto/Forearm_left_NW	painted
+goalie	Forearm_left	2	Forearm_left_NW	Tycoons/Forearm_left_NW	painted
+goalie	Forearm_left	2	Forearm_left_NW	Vanilla_Uniform_colors/Forearm_left_NW	mask
+goalie	Forearm_left	2	Forearm_left_NW	Vanilla_Uniform_lso/Forearm_left_NW	painted
+goalie	Forearm_left	2	SE_Forearm_left	Figure_Skater/SE_Forearm_left	painted
+goalie	Forearm_left	2	SE_Forearm_left	Golfers/SE_Forearm_left	painted
+goalie	Forearm_left	2	SE_Forearm_left	HockeyFC/SE_Forearm_left	painted
+goalie	Forearm_left	2	SE_Forearm_left	Knights/SE_Forearm_left	painted
+goalie	Forearm_left	2	SE_Forearm_left	Mountaineers/SE_Forearm_left	painted
+goalie	Forearm_left	2	SE_Forearm_left	Normal/SE_Forearm_left	painted
+goalie	Forearm_left	2	SE_Forearm_left	Princess/SE_Forearm_left	painted
+goalie	Forearm_left	2	SE_Forearm_left	Prisoners/SE_Forearm_left	painted
+goalie	Forearm_left	2	SE_Forearm_left	Referees/SE_Forearm_left	painted
+goalie	Forearm_left	2	SE_Forearm_left	Tycoons/SE_Forearm_left	painted
+goalie	Forearm_left	2	SE_Forearm_left	Vanilla_Uniform_colors/SE_Forearm_left	mask
+goalie	Forearm_left	2	SE_Forearm_left	Vanilla_Uniform_lso/SE_Forearm_left	painted
+goalie	Forearm_left	2	SW_Forearm_left	Figure_Skater/SW_Forearm_left	painted
+goalie	Forearm_left	2	SW_Forearm_left	Golfers/SW_Forearm_left	painted
+goalie	Forearm_left	2	SW_Forearm_left	HockeyFC/SW_Forearm_left	painted
+goalie	Forearm_left	2	SW_Forearm_left	Knights/SW_Forearm_left	painted
+goalie	Forearm_left	2	SW_Forearm_left	Mountaineers/SW_Forearm_left	painted
+goalie	Forearm_left	2	SW_Forearm_left	Normal/SW_Forearm_left	painted
+goalie	Forearm_left	2	SW_Forearm_left	Princess/SW_Forearm_left	painted
+goalie	Forearm_left	2	SW_Forearm_left	Prisoners/SW_Forearm_left	painted
+goalie	Forearm_left	2	SW_Forearm_left	Referees/SW_Forearm_left	painted
+goalie	Forearm_left	2	SW_Forearm_left	Tycoons/SW_Forearm_left	painted
+goalie	Forearm_left	2	SW_Forearm_left	Vanilla_Uniform_colors/SW_Forearm_left	mask
+goalie	Forearm_left	2	SW_Forearm_left	Vanilla_Uniform_lso/SW_Forearm_left	painted
+goalie	Forearm_left	2	S_Forearm_left	Figure_Skater/S_Forearm_left	painted
+goalie	Forearm_left	2	S_Forearm_left	Golfers/S_Forearm_left	painted
+goalie	Forearm_left	2	S_Forearm_left	HockeyFC/S_Forearm_left	painted
+goalie	Forearm_left	2	S_Forearm_left	Knights/S_Forearm_left	painted
+goalie	Forearm_left	2	S_Forearm_left	Mountaineers/S_Forearm_left	painted
+goalie	Forearm_left	2	S_Forearm_left	Normal/S_Forearm_left	painted
+goalie	Forearm_left	2	S_Forearm_left	Princess/S_Forearm_left	painted
+goalie	Forearm_left	2	S_Forearm_left	Prisoners/S_Forearm_left	painted
+goalie	Forearm_left	2	S_Forearm_left	Referees/S_Forearm_left	painted
+goalie	Forearm_left	2	S_Forearm_left	Tycoons/S_Forearm_left	painted
+goalie	Forearm_left	2	S_Forearm_left	Vanilla_Uniform_colors/S_Forearm_left	mask
+goalie	Forearm_left	2	S_Forearm_left	Vanilla_Uniform_lso/S_Forearm_left	painted
+goalie	Glove	16	Glove	Figure_Skaters/Glove	painted
+goalie	Glove	16	Glove	HockeyFC/Glove	painted
+goalie	Glove	16	Glove	Toronto/Glove	painted
+goalie	Glove	16	Glove	Twinfalls/Glove	painted
+goalie	Glove	16	Glove	Tycoons/Glove	painted
+goalie	Glove	16	Glove	Vanilla_Uniform_colors/Glove	mask
+goalie	Glove	16	Glove	Vanilla_Uniform_lso/Glove	painted
+goalie	Glove	16	Glove_NE	Figure_Skaters/Glove_NE	painted
+goalie	Glove	16	Glove_NE	HockeyFC/Glove_NE	painted
+goalie	Glove	16	Glove_NE	Toronto/Glove_NE	painted
+goalie	Glove	16	Glove_NE	Twinfalls/Glove_NE	painted
+goalie	Glove	16	Glove_NE	Tycoons/Glove_NE	painted
+goalie	Glove	16	Glove_NE	Vanilla_Uniform_colors/Glove_NE	mask
+goalie	Glove	16	Glove_NE	Vanilla_Uniform_lso/Glove_NE	painted
+goalie	Glove	16	Glove_NW	Figure_Skaters/Glove_NW	painted
+goalie	Glove	16	Glove_NW	HockeyFC/Glove_NW	painted
+goalie	Glove	16	Glove_NW	Toronto/Glove_NW	painted
+goalie	Glove	16	Glove_NW	Twinfalls/Glove_NW	painted
+goalie	Glove	16	Glove_NW	Tycoons/Glove_NW	painted
+goalie	Glove	16	Glove_NW	Vanilla_Uniform_colors/Glove_NW	mask
+goalie	Glove	16	Glove_NW	Vanilla_Uniform_lso/Glove_NW	painted
+goalie	Glove	16	SE_Glove	Figure_Skater/SE_Glove	painted
+goalie	Glove	16	SE_Glove	Golfers/SE_Glove	painted
+goalie	Glove	16	SE_Glove	HockeyFC/SE_Glove	painted
+goalie	Glove	16	SE_Glove	Normal/SE_Glove	painted
+goalie	Glove	16	SE_Glove	Tycoons/SE_Glove	painted
+goalie	Glove	16	SE_Glove	Vanilla_Uniform_colors/SE_Glove	mask
+goalie	Glove	16	SE_Glove	Vanilla_Uniform_lso/SE_Glove	painted
+goalie	Glove	16	SW_Glove	Figure_Skater/SW_Glove	painted
+goalie	Glove	16	SW_Glove	Golfers/SW_Glove	painted
+goalie	Glove	16	SW_Glove	HockeyFC/SW_Glove	painted
+goalie	Glove	16	SW_Glove	Normal/SW_Glove	painted
+goalie	Glove	16	SW_Glove	Tycoons/SW_Glove	painted
+goalie	Glove	16	SW_Glove	Vanilla_Uniform_colors/SW_Glove	mask
+goalie	Glove	16	SW_Glove	Vanilla_Uniform_lso/SW_Glove	painted
+goalie	Glove	16	SW_Glovedown	Figure_Skater/SW_Glovedown	painted
+goalie	Glove	16	SW_Glovedown	Golfers/SW_Glovedown	painted
+goalie	Glove	16	SW_Glovedown	HockeyFC/SW_Glovedown	painted
+goalie	Glove	16	SW_Glovedown	Normal/SW_Glovedown	painted
+goalie	Glove	16	SW_Glovedown	Tycoons/SW_Glovedown	painted
+goalie	Glove	16	SW_Glovedown	Vanilla_Uniform_colors/SW_Glovedown	mask
+goalie	Glove	16	SW_Glovedown	Vanilla_Uniform_lso/SW_Glovedown	painted
+goalie	Glove	16	S_Glove	Figure_Skater/S_Glove	painted
+goalie	Glove	16	S_Glove	Golfers/S_Glove	painted
+goalie	Glove	16	S_Glove	HockeyFC/S_Glove	painted
+goalie	Glove	16	S_Glove	Normal/S_Glove	painted
+goalie	Glove	16	S_Glove	Tycoons/S_Glove	painted
+goalie	Glove	16	S_Glove	Vanilla_Uniform_colors/S_Glove	mask
+goalie	Glove	16	S_Glove	Vanilla_Uniform_lso/S_Glove	painted
+goalie	Helmet_Custom	1	Helmet	Vanilla_Uniform_colors/Helmet	mask
+goalie	Helmet_Custom	1	Helmet	Vanilla_Uniform_lso/Helmet	painted
+goalie	Helmet_Custom	1	Helmet_NE	Vanilla_Uniform_colors/Helmet_NE	mask
+goalie	Helmet_Custom	1	Helmet_NE	Vanilla_Uniform_lso/Helmet_NE	painted
+goalie	Helmet_Custom	1	Helmet_NW	Vanilla_Uniform_colors/Helmet_NW	mask
+goalie	Helmet_Custom	1	Helmet_NW	Vanilla_Uniform_lso/Helmet_NW	painted
+goalie	Helmet_Custom	1	SE_Helmet	Vanilla_Uniform_colors/SE_Helmet	mask
+goalie	Helmet_Custom	1	SE_Helmet	Vanilla_Uniform_lso/SE_Helmet	painted
+goalie	Helmet_Custom	1	SW_Helmet	Vanilla_Uniform_colors/SW_Helmet	mask
+goalie	Helmet_Custom	1	SW_Helmet	Vanilla_Uniform_lso/SW_Helmet	painted
+goalie	Helmet_Custom	1	S_Helmet	Vanilla_Uniform_colors/S_Helmet	mask
+goalie	Helmet_Custom	1	S_Helmet	Vanilla_Uniform_lso/S_Helmet	painted
+goalie	Pad_left	256	Pad_left	Figure_Skaters/Pad_left	painted
+goalie	Pad_left	256	Pad_left	Golfers/Pad_left	painted
+goalie	Pad_left	256	Pad_left	HockeyFC/Pad_left	painted
+goalie	Pad_left	256	Pad_left	Toronto/Pad_left	painted
+goalie	Pad_left	256	Pad_left	Twinfalls/Pad_left	painted
+goalie	Pad_left	256	Pad_left	Tycoons/Pad_left	painted
+goalie	Pad_left	256	Pad_left	Vanilla_Uniform_colors/Pad_left	mask
+goalie	Pad_left	256	Pad_left	Vanilla_Uniform_lso/Pad_left	painted
+goalie	Pad_left	256	Pad_left_NE	Figure_Skaters/Pad_left_NE	painted
+goalie	Pad_left	256	Pad_left_NE	Golfers/Pad_left_NE	painted
+goalie	Pad_left	256	Pad_left_NE	HockeyFC/Pad_left_NE	painted
+goalie	Pad_left	256	Pad_left_NE	Toronto/Pad_left_NE	painted
+goalie	Pad_left	256	Pad_left_NE	Twinfalls/Pad_left_NE	painted
+goalie	Pad_left	256	Pad_left_NE	Tycoons/Pad_left_NE	painted
+goalie	Pad_left	256	Pad_left_NE	Vanilla_Uniform_colors/Pad_left_NE	mask
+goalie	Pad_left	256	Pad_left_NE	Vanilla_Uniform_lso/Pad_left_NE	painted
+goalie	Pad_left	256	Pad_left_NW	Figure_Skaters/Pad_left_NW	painted
+goalie	Pad_left	256	Pad_left_NW	Golfers/Pad_left_NW	painted
+goalie	Pad_left	256	Pad_left_NW	HockeyFC/Pad_left_NW	painted
+goalie	Pad_left	256	Pad_left_NW	Toronto/Pad_left_NW	painted
+goalie	Pad_left	256	Pad_left_NW	Twinfalls/Pad_left_NW	painted
+goalie	Pad_left	256	Pad_left_NW	Tycoons/Pad_left_NW	painted
+goalie	Pad_left	256	Pad_left_NW	Vanilla_Uniform_colors/Pad_left_NW	mask
+goalie	Pad_left	256	Pad_left_NW	Vanilla_Uniform_lso/Pad_left_NW	painted
+goalie	Pad_left	256	Pad_left_NW_alt	Figure_Skaters/Pad_left_NW_alt	painted
+goalie	Pad_left	256	Pad_left_NW_alt	Golfers/Pad_left_NW_alt	painted
+goalie	Pad_left	256	Pad_left_NW_alt	HockeyFC/Pad_left_NW_alt	painted
+goalie	Pad_left	256	Pad_left_NW_alt	Toronto/Pad_left_NW_alt	painted
+goalie	Pad_left	256	Pad_left_NW_alt	Twinfalls/Pad_left_NW_alt	painted
+goalie	Pad_left	256	Pad_left_NW_alt	Tycoons/Pad_left_NW_alt	painted
+goalie	Pad_left	256	Pad_left_NW_alt	Vanilla_Uniform_colors/Pad_left_NW_alt	mask
+goalie	Pad_left	256	Pad_left_NW_alt	Vanilla_Uniform_lso/Pad_left_NW_alt	painted
+goalie	Pad_left	256	SE_Pad_left	Figure_Skater/SE_Pad_left	painted
+goalie	Pad_left	256	SE_Pad_left	Golfers/SE_Pad_left	painted
+goalie	Pad_left	256	SE_Pad_left	HockeyFC/SE_Pad_left	painted
+goalie	Pad_left	256	SE_Pad_left	Normal/SE_Pad_left	painted
+goalie	Pad_left	256	SE_Pad_left	Tycoons/SE_Pad_left	painted
+goalie	Pad_left	256	SE_Pad_left	Vanilla_Uniform_colors/SE_Pad_left	mask
+goalie	Pad_left	256	SE_Pad_left	Vanilla_Uniform_lso/SE_Pad_left	painted
+goalie	Pad_left	256	SE_Pad_left_alt	Figure_Skater/SE_Pad_left_alt	painted
+goalie	Pad_left	256	SE_Pad_left_alt	Golfers/SE_Pad_left_alt	painted
+goalie	Pad_left	256	SE_Pad_left_alt	HockeyFC/SE_Pad_left_alt	painted
+goalie	Pad_left	256	SE_Pad_left_alt	Normal/SE_Pad_left_alt	painted
+goalie	Pad_left	256	SE_Pad_left_alt	Tycoons/SE_Pad_left_alt	painted
+goalie	Pad_left	256	SE_Pad_left_alt	Vanilla_Uniform_colors/SE_Pad_left_alt	mask
+goalie	Pad_left	256	SE_Pad_left_alt	Vanilla_Uniform_lso/SE_Pad_left_alt	painted
+goalie	Pad_left	256	SW_Pad_left	Figure_Skater/SW_Pad_left	painted
+goalie	Pad_left	256	SW_Pad_left	Golfers/SW_Pad_left	painted
+goalie	Pad_left	256	SW_Pad_left	HockeyFC/SW_Pad_left	painted
+goalie	Pad_left	256	SW_Pad_left	Normal/SW_Pad_left	painted
+goalie	Pad_left	256	SW_Pad_left	Tycoons/SW_Pad_left	painted
+goalie	Pad_left	256	SW_Pad_left	Vanilla_Uniform_colors/SW_Pad_left	mask
+goalie	Pad_left	256	SW_Pad_left	Vanilla_Uniform_lso/SW_Pad_left	painted
+goalie	Pad_left	256	S_Pad_left	Figure_Skater/S_Pad_left	painted
+goalie	Pad_left	256	S_Pad_left	Golfers/S_Pad_left	painted
+goalie	Pad_left	256	S_Pad_left	HockeyFC/S_Pad_left	painted
+goalie	Pad_left	256	S_Pad_left	Normal/S_Pad_left	painted
+goalie	Pad_left	256	S_Pad_left	Tycoons/S_Pad_left	painted
+goalie	Pad_left	256	S_Pad_left	Vanilla_Uniform_colors/S_Pad_left	mask
+goalie	Pad_left	256	S_Pad_left	Vanilla_Uniform_lso/S_Pad_left	painted
+goalie	Pad_right	256	Pad_right	Figure_Skaters/Pad_right	painted
+goalie	Pad_right	256	Pad_right	Golfers/Pad_right	painted
+goalie	Pad_right	256	Pad_right	HockeyFC/Pad_right	painted
+goalie	Pad_right	256	Pad_right	Toronto/Pad_right	painted
+goalie	Pad_right	256	Pad_right	Twinfalls/Pad_right	painted
+goalie	Pad_right	256	Pad_right	Tycoons/Pad_right	painted
+goalie	Pad_right	256	Pad_right	Vanilla_Uniform_colors/Pad_right	mask
+goalie	Pad_right	256	Pad_right	Vanilla_Uniform_lso/Pad_right	painted
+goalie	Pad_right	256	Pad_right_NE	Figure_Skaters/Pad_right_NE	painted
+goalie	Pad_right	256	Pad_right_NE	Golfers/Pad_right_NE	painted
+goalie	Pad_right	256	Pad_right_NE	HockeyFC/Pad_right_NE	painted
+goalie	Pad_right	256	Pad_right_NE	Toronto/Pad_right_NE	painted
+goalie	Pad_right	256	Pad_right_NE	Twinfalls/Pad_right_NE	painted
+goalie	Pad_right	256	Pad_right_NE	Tycoons/Pad_right_NE	painted
+goalie	Pad_right	256	Pad_right_NE	Vanilla_Uniform_colors/Pad_right_NE	mask
+goalie	Pad_right	256	Pad_right_NE	Vanilla_Uniform_lso/Pad_right_NE	painted
+goalie	Pad_right	256	Pad_right_NE_alt	Figure_Skaters/Pad_right_NE_alt	painted
+goalie	Pad_right	256	Pad_right_NE_alt	Golfers/Pad_right_NE_alt	painted
+goalie	Pad_right	256	Pad_right_NE_alt	HockeyFC/Pad_right_NE_alt	painted
+goalie	Pad_right	256	Pad_right_NE_alt	Toronto/Pad_right_NE_alt	painted
+goalie	Pad_right	256	Pad_right_NE_alt	Twinfalls/Pad_right_NE_alt	painted
+goalie	Pad_right	256	Pad_right_NE_alt	Tycoons/Pad_right_NE_alt	painted
+goalie	Pad_right	256	Pad_right_NE_alt	Vanilla_Uniform_colors/Pad_right_NE_alt	mask
+goalie	Pad_right	256	Pad_right_NE_alt	Vanilla_Uniform_lso/Pad_right_NE_alt	painted
+goalie	Pad_right	256	Pad_right_NW	Figure_Skaters/Pad_right_NW	painted
+goalie	Pad_right	256	Pad_right_NW	Golfers/Pad_right_NW	painted
+goalie	Pad_right	256	Pad_right_NW	HockeyFC/Pad_right_NW	painted
+goalie	Pad_right	256	Pad_right_NW	Toronto/Pad_right_NW	painted
+goalie	Pad_right	256	Pad_right_NW	Twinfalls/Pad_right_NW	painted
+goalie	Pad_right	256	Pad_right_NW	Tycoons/Pad_right_NW	painted
+goalie	Pad_right	256	Pad_right_NW	Vanilla_Uniform_colors/Pad_right_NW	mask
+goalie	Pad_right	256	Pad_right_NW	Vanilla_Uniform_lso/Pad_right_NW	painted
+goalie	Pad_right	256	SE_Pad_right	Figure_Skater/SE_Pad_right	painted
+goalie	Pad_right	256	SE_Pad_right	Golfers/SE_Pad_right	painted
+goalie	Pad_right	256	SE_Pad_right	HockeyFC/SE_Pad_right	painted
+goalie	Pad_right	256	SE_Pad_right	Normal/SE_Pad_right	painted
+goalie	Pad_right	256	SE_Pad_right	Tycoons/SE_Pad_right	painted
+goalie	Pad_right	256	SE_Pad_right	Vanilla_Uniform_colors/SE_Pad_right	mask
+goalie	Pad_right	256	SE_Pad_right	Vanilla_Uniform_lso/SE_Pad_right	painted
+goalie	Pad_right	256	SW_Pad_right	Figure_Skater/SW_Pad_right	painted
+goalie	Pad_right	256	SW_Pad_right	Golfers/SW_Pad_right	painted
+goalie	Pad_right	256	SW_Pad_right	HockeyFC/SW_Pad_right	painted
+goalie	Pad_right	256	SW_Pad_right	Normal/SW_Pad_right	painted
+goalie	Pad_right	256	SW_Pad_right	Tycoons/SW_Pad_right	painted
+goalie	Pad_right	256	SW_Pad_right	Vanilla_Uniform_colors/SW_Pad_right	mask
+goalie	Pad_right	256	SW_Pad_right	Vanilla_Uniform_lso/SW_Pad_right	painted
+goalie	Pad_right	256	SW_Pad_right_alt	Figure_Skater/SW_Pad_right_alt	painted
+goalie	Pad_right	256	SW_Pad_right_alt	Golfers/SW_Pad_right_alt	painted
+goalie	Pad_right	256	SW_Pad_right_alt	HockeyFC/SW_Pad_right_alt	painted
+goalie	Pad_right	256	SW_Pad_right_alt	Normal/SW_Pad_right_alt	painted
+goalie	Pad_right	256	SW_Pad_right_alt	Tycoons/SW_Pad_right_alt	painted
+goalie	Pad_right	256	SW_Pad_right_alt	Vanilla_Uniform_colors/SW_Pad_right_alt	mask
+goalie	Pad_right	256	SW_Pad_right_alt	Vanilla_Uniform_lso/SW_Pad_right_alt	painted
+goalie	Pad_right	256	S_Pad_right	Figure_Skater/S_Pad_right	painted
+goalie	Pad_right	256	S_Pad_right	Golfers/S_Pad_right	painted
+goalie	Pad_right	256	S_Pad_right	HockeyFC/S_Pad_right	painted
+goalie	Pad_right	256	S_Pad_right	Normal/S_Pad_right	painted
+goalie	Pad_right	256	S_Pad_right	Tycoons/S_Pad_right	painted
+goalie	Pad_right	256	S_Pad_right	Vanilla_Uniform_colors/S_Pad_right	mask
+goalie	Pad_right	256	S_Pad_right	Vanilla_Uniform_lso/S_Pad_right	painted
+goalie	Pants_left	2	Pants_left	Figure_Skaters/Pants_left	painted
+goalie	Pants_left	2	Pants_left	Golfers/Pants_left	painted
+goalie	Pants_left	2	Pants_left	HockeyFC/Pants_left	painted
+goalie	Pants_left	2	Pants_left	Knights/Pants_left	painted
+goalie	Pants_left	2	Pants_left	Mountaineers/Pants_left	painted
+goalie	Pants_left	2	Pants_left	Princess/Pants_left	painted
+goalie	Pants_left	2	Pants_left	Prisoners/Pants_left	painted
+goalie	Pants_left	2	Pants_left	Referees/Pants_left	painted
+goalie	Pants_left	2	Pants_left	Toronto/Pants_left	painted
+goalie	Pants_left	2	Pants_left	Tycoons/Pants_left	painted
+goalie	Pants_left	2	Pants_left	Vanilla_Uniform_colors/Pants_left	mask
+goalie	Pants_left	2	Pants_left	Vanilla_Uniform_lso/Pants_left	painted
+goalie	Pants_left	2	Pants_left_NE	Figure_Skaters/Pants_left_NE	painted
+goalie	Pants_left	2	Pants_left_NE	Golfers/Pants_left_NE	painted
+goalie	Pants_left	2	Pants_left_NE	HockeyFC/Pants_left_NE	painted
+goalie	Pants_left	2	Pants_left_NE	Knights/Pants_left_NE	painted
+goalie	Pants_left	2	Pants_left_NE	Mountaineers/Pants_left_NE	painted
+goalie	Pants_left	2	Pants_left_NE	Princess/Pants_left_NE	painted
+goalie	Pants_left	2	Pants_left_NE	Prisoners/Pants_left_NE	painted
+goalie	Pants_left	2	Pants_left_NE	Referees/Pants_left_NE	painted
+goalie	Pants_left	2	Pants_left_NE	Toronto/Pants_left_NE	painted
+goalie	Pants_left	2	Pants_left_NE	Tycoons/Pants_left_NE	painted
+goalie	Pants_left	2	Pants_left_NE	Vanilla_Uniform_colors/Pants_left_NE	mask
+goalie	Pants_left	2	Pants_left_NE	Vanilla_Uniform_lso/Pants_left_NE	painted
+goalie	Pants_left	2	Pants_left_NW	Figure_Skaters/Pants_left_NW	painted
+goalie	Pants_left	2	Pants_left_NW	Golfers/Pants_left_NW	painted
+goalie	Pants_left	2	Pants_left_NW	HockeyFC/Pants_left_NW	painted
+goalie	Pants_left	2	Pants_left_NW	Knights/Pants_left_NW	painted
+goalie	Pants_left	2	Pants_left_NW	Mountaineers/Pants_left_NW	painted
+goalie	Pants_left	2	Pants_left_NW	Princess/Pants_left_NW	painted
+goalie	Pants_left	2	Pants_left_NW	Prisoners/Pants_left_NW	painted
+goalie	Pants_left	2	Pants_left_NW	Referees/Pants_left_NW	painted
+goalie	Pants_left	2	Pants_left_NW	Toronto/Pants_left_NW	painted
+goalie	Pants_left	2	Pants_left_NW	Tycoons/Pants_left_NW	painted
+goalie	Pants_left	2	Pants_left_NW	Vanilla_Uniform_colors/Pants_left_NW	mask
+goalie	Pants_left	2	Pants_left_NW	Vanilla_Uniform_lso/Pants_left_NW	painted
+goalie	Pants_left	2	SE_Pants_left	Figure_Skater/SE_Pants_left	painted
+goalie	Pants_left	2	SE_Pants_left	Golfers/SE_Pants_left	painted
+goalie	Pants_left	2	SE_Pants_left	HockeyFC/SE_Pants_left	painted
+goalie	Pants_left	2	SE_Pants_left	Knights/SE_Pants_left	painted
+goalie	Pants_left	2	SE_Pants_left	Mountaineers/SE_Pants_left	painted
+goalie	Pants_left	2	SE_Pants_left	Normal/SE_Pants_left	painted
+goalie	Pants_left	2	SE_Pants_left	Princess/SE_Pants_left	painted
+goalie	Pants_left	2	SE_Pants_left	Prisoners/SE_Pants_left	painted
+goalie	Pants_left	2	SE_Pants_left	Referees/SE_Pants_left	painted
+goalie	Pants_left	2	SE_Pants_left	Tycoons/SE_Pants_left	painted
+goalie	Pants_left	2	SE_Pants_left	Vanilla_Uniform_colors/SE_Pants_left	mask
+goalie	Pants_left	2	SE_Pants_left	Vanilla_Uniform_lso/SE_Pants_left	painted
+goalie	Pants_left	2	SW_Pants_Left	Figure_Skater/SW_Pants_Left	painted
+goalie	Pants_left	2	SW_Pants_Left	Golfers/SW_Pants_Left	painted
+goalie	Pants_left	2	SW_Pants_Left	HockeyFC/SW_Pants_Left	painted
+goalie	Pants_left	2	SW_Pants_Left	Knights/SW_Pants_Left	painted
+goalie	Pants_left	2	SW_Pants_Left	Mountaineers/SW_Pants_Left	painted
+goalie	Pants_left	2	SW_Pants_Left	Normal/SW_Pants_Left	painted
+goalie	Pants_left	2	SW_Pants_Left	Princess/SW_Pants_Left	painted
+goalie	Pants_left	2	SW_Pants_Left	Prisoners/SW_Pants_Left	painted
+goalie	Pants_left	2	SW_Pants_Left	Referees/SW_Pants_Left	painted
+goalie	Pants_left	2	SW_Pants_Left	Tycoons/SW_Pants_Left	painted
+goalie	Pants_left	2	SW_Pants_Left	Vanilla_Uniform_colors/SW_Pants_Left	mask
+goalie	Pants_left	2	SW_Pants_Left	Vanilla_Uniform_lso/SW_Pants_Left	painted
+goalie	Pants_left	2	S_pants_left	Figure_Skater/S_pants_left	painted
+goalie	Pants_left	2	S_pants_left	Golfers/S_pants_left	painted
+goalie	Pants_left	2	S_pants_left	HockeyFC/S_pants_left	painted
+goalie	Pants_left	2	S_pants_left	Knights/S_pants_left	painted
+goalie	Pants_left	2	S_pants_left	Mountaineers/S_pants_left	painted
+goalie	Pants_left	2	S_pants_left	Normal/S_pants_left	painted
+goalie	Pants_left	2	S_pants_left	Princess/S_pants_left	painted
+goalie	Pants_left	2	S_pants_left	Prisoners/S_pants_left	painted
+goalie	Pants_left	2	S_pants_left	Referees/S_pants_left	painted
+goalie	Pants_left	2	S_pants_left	Tycoons/S_pants_left	painted
+goalie	Pants_left	2	S_pants_left	Vanilla_Uniform_colors/S_pants_left	mask
+goalie	Pants_left	2	S_pants_left	Vanilla_Uniform_lso/S_pants_left	painted
+goalie	Pants_right	2	Pants_right	Figure_Skaters/Pants_right	painted
+goalie	Pants_right	2	Pants_right	Golfers/Pants_right	painted
+goalie	Pants_right	2	Pants_right	HockeyFC/Pants_right	painted
+goalie	Pants_right	2	Pants_right	Knights/Pants_right	painted
+goalie	Pants_right	2	Pants_right	Mountaineers/Pants_right	painted
+goalie	Pants_right	2	Pants_right	Princess/Pants_right	painted
+goalie	Pants_right	2	Pants_right	Prisoners/Pants_right	painted
+goalie	Pants_right	2	Pants_right	Referees/Pants_right	painted
+goalie	Pants_right	2	Pants_right	Toronto/Pants_right	painted
+goalie	Pants_right	2	Pants_right	Tycoons/Pants_right	painted
+goalie	Pants_right	2	Pants_right	Vanilla_Uniform_colors/Pants_right	mask
+goalie	Pants_right	2	Pants_right	Vanilla_Uniform_lso/Pants_right	painted
+goalie	Pants_right	2	Pants_right_NE	Figure_Skaters/Pants_right_NE	painted
+goalie	Pants_right	2	Pants_right_NE	Golfers/Pants_right_NE	painted
+goalie	Pants_right	2	Pants_right_NE	HockeyFC/Pants_right_NE	painted
+goalie	Pants_right	2	Pants_right_NE	Knights/Pants_right_NE	painted
+goalie	Pants_right	2	Pants_right_NE	Mountaineers/Pants_right_NE	painted
+goalie	Pants_right	2	Pants_right_NE	Princess/Pants_right_NE	painted
+goalie	Pants_right	2	Pants_right_NE	Prisoners/Pants_right_NE	painted
+goalie	Pants_right	2	Pants_right_NE	Referees/Pants_right_NE	painted
+goalie	Pants_right	2	Pants_right_NE	Toronto/Pants_right_NE	painted
+goalie	Pants_right	2	Pants_right_NE	Tycoons/Pants_right_NE	painted
+goalie	Pants_right	2	Pants_right_NE	Vanilla_Uniform_colors/Pants_right_NE	mask
+goalie	Pants_right	2	Pants_right_NE	Vanilla_Uniform_lso/Pants_right_NE	painted
+goalie	Pants_right	2	Pants_right_NW	Figure_Skaters/Pants_right_NW	painted
+goalie	Pants_right	2	Pants_right_NW	Golfers/Pants_right_NW	painted
+goalie	Pants_right	2	Pants_right_NW	HockeyFC/Pants_right_NW	painted
+goalie	Pants_right	2	Pants_right_NW	Knights/Pants_right_NW	painted
+goalie	Pants_right	2	Pants_right_NW	Mountaineers/Pants_right_NW	painted
+goalie	Pants_right	2	Pants_right_NW	Princess/Pants_right_NW	painted
+goalie	Pants_right	2	Pants_right_NW	Prisoners/Pants_right_NW	painted
+goalie	Pants_right	2	Pants_right_NW	Referees/Pants_right_NW	painted
+goalie	Pants_right	2	Pants_right_NW	Toronto/Pants_right_NW	painted
+goalie	Pants_right	2	Pants_right_NW	Tycoons/Pants_right_NW	painted
+goalie	Pants_right	2	Pants_right_NW	Vanilla_Uniform_colors/Pants_right_NW	mask
+goalie	Pants_right	2	Pants_right_NW	Vanilla_Uniform_lso/Pants_right_NW	painted
+goalie	Pants_right	2	SE_Pants_right	Figure_Skater/SE_Pants_right	painted
+goalie	Pants_right	2	SE_Pants_right	Golfers/SE_Pants_right	painted
+goalie	Pants_right	2	SE_Pants_right	HockeyFC/SE_Pants_right	painted
+goalie	Pants_right	2	SE_Pants_right	Knights/SE_Pants_right	painted
+goalie	Pants_right	2	SE_Pants_right	Mountaineers/SE_Pants_right	painted
+goalie	Pants_right	2	SE_Pants_right	Normal/SE_Pants_right	painted
+goalie	Pants_right	2	SE_Pants_right	Princess/SE_Pants_right	painted
+goalie	Pants_right	2	SE_Pants_right	Prisoners/SE_Pants_right	painted
+goalie	Pants_right	2	SE_Pants_right	Referees/SE_Pants_right	painted
+goalie	Pants_right	2	SE_Pants_right	Tycoons/SE_Pants_right	painted
+goalie	Pants_right	2	SE_Pants_right	Vanilla_Uniform_colors/SE_Pants_right	mask
+goalie	Pants_right	2	SE_Pants_right	Vanilla_Uniform_lso/SE_Pants_right	painted
+goalie	Pants_right	2	SW_Pants_right	Figure_Skater/SW_Pants_right	painted
+goalie	Pants_right	2	SW_Pants_right	Golfers/SW_Pants_right	painted
+goalie	Pants_right	2	SW_Pants_right	HockeyFC/SW_Pants_right	painted
+goalie	Pants_right	2	SW_Pants_right	Knights/SW_Pants_right	painted
+goalie	Pants_right	2	SW_Pants_right	Mountaineers/SW_Pants_right	painted
+goalie	Pants_right	2	SW_Pants_right	Normal/SW_Pants_right	painted
+goalie	Pants_right	2	SW_Pants_right	Princess/SW_Pants_right	painted
+goalie	Pants_right	2	SW_Pants_right	Prisoners/SW_Pants_right	painted
+goalie	Pants_right	2	SW_Pants_right	Referees/SW_Pants_right	painted
+goalie	Pants_right	2	SW_Pants_right	Tycoons/SW_Pants_right	painted
+goalie	Pants_right	2	SW_Pants_right	Vanilla_Uniform_colors/SW_Pants_right	mask
+goalie	Pants_right	2	SW_Pants_right	Vanilla_Uniform_lso/SW_Pants_right	painted
+goalie	Pants_right	2	S_Pants_right	Figure_Skater/S_Pants_right	painted
+goalie	Pants_right	2	S_Pants_right	Golfers/S_Pants_right	painted
+goalie	Pants_right	2	S_Pants_right	HockeyFC/S_Pants_right	painted
+goalie	Pants_right	2	S_Pants_right	Knights/S_Pants_right	painted
+goalie	Pants_right	2	S_Pants_right	Mountaineers/S_Pants_right	painted
+goalie	Pants_right	2	S_Pants_right	Normal/S_Pants_right	painted
+goalie	Pants_right	2	S_Pants_right	Princess/S_Pants_right	painted
+goalie	Pants_right	2	S_Pants_right	Prisoners/S_Pants_right	painted
+goalie	Pants_right	2	S_Pants_right	Referees/S_Pants_right	painted
+goalie	Pants_right	2	S_Pants_right	Tycoons/S_Pants_right	painted
+goalie	Pants_right	2	S_Pants_right	Vanilla_Uniform_colors/S_Pants_right	mask
+goalie	Pants_right	2	S_Pants_right	Vanilla_Uniform_lso/S_Pants_right	painted
+goalie	Stick	128	SE_Stick	Figure_Skater/SE_Stick	painted
+goalie	Stick	128	SE_Stick	Normal/SE_Stick	painted
+goalie	Stick	128	SE_Stick	Tycoons/SE_Stick	painted
+goalie	Stick	128	SE_Stick	Vanilla_Uniform_colors/SE_Stick	mask
+goalie	Stick	128	SE_Stick	Vanilla_Uniform_lso/SE_Stick	painted
+goalie	Stick	128	SW_Stick	Figure_Skater/SW_Stick	painted
+goalie	Stick	128	SW_Stick	Normal/SW_Stick	painted
+goalie	Stick	128	SW_Stick	Tycoons/SW_Stick	painted
+goalie	Stick	128	SW_Stick	Vanilla_Uniform_colors/SW_Stick	mask
+goalie	Stick	128	SW_Stick	Vanilla_Uniform_lso/SW_Stick	painted
+goalie	Stick	128	S_Stick	Figure_Skater/S_Stick	painted
+goalie	Stick	128	S_Stick	Normal/S_Stick	painted
+goalie	Stick	128	S_Stick	Tycoons/S_Stick	painted
+goalie	Stick	128	S_Stick	Vanilla_Uniform_colors/S_Stick	mask
+goalie	Stick	128	S_Stick	Vanilla_Uniform_lso/S_Stick	painted
+goalie	Stick	128	Stick	Figure_Skaters/Stick	painted
+goalie	Stick	128	Stick	Toronto/Stick	painted
+goalie	Stick	128	Stick	Tycoons/Stick	painted
+goalie	Stick	128	Stick	Vanilla_Uniform_colors/Stick	mask
+goalie	Stick	128	Stick	Vanilla_Uniform_lso/Stick	painted
+goalie	Stick	128	Stick_Inside	Figure_Skaters/Stick_Inside	painted
+goalie	Stick	128	Stick_Inside	Toronto/Stick_Inside	painted
+goalie	Stick	128	Stick_Inside	Tycoons/Stick_Inside	painted
+goalie	Stick	128	Stick_Inside	Vanilla_Uniform_colors/Stick_Inside	mask
+goalie	Stick	128	Stick_Inside	Vanilla_Uniform_lso/Stick_Inside	painted
+goalie	Stick	128	Stick_NE	Figure_Skaters/Stick_NE	painted
+goalie	Stick	128	Stick_NE	Toronto/Stick_NE	painted
+goalie	Stick	128	Stick_NE	Tycoons/Stick_NE	painted
+goalie	Stick	128	Stick_NE	Vanilla_Uniform_colors/Stick_NE	mask
+goalie	Stick	128	Stick_NE	Vanilla_Uniform_lso/Stick_NE	painted
+goalie	Stick	128	Stick_NW	Figure_Skaters/Stick_NW	painted
+goalie	Stick	128	Stick_NW	Toronto/Stick_NW	painted
+goalie	Stick	128	Stick_NW	Tycoons/Stick_NW	painted
+goalie	Stick	128	Stick_NW	Vanilla_Uniform_colors/Stick_NW	mask
+goalie	Stick	128	Stick_NW	Vanilla_Uniform_lso/Stick_NW	painted
+skater	Bicep left	4	E-Bicep left	Bicep_Injured/E-Bicep left	painted
+skater	Bicep left	4	E-Bicep left	Chicago_Away/E-Bicep left	painted
+skater	Bicep left	4	E-Bicep left	Customization_Colors/E-Bicep left	mask
+skater	Bicep left	4	E-Bicep left	Customization_Lights/E-Bicep left	painted
+skater	Bicep left	4	E-Bicep left	Figure_Skaters/E-Bicep left	painted
+skater	Bicep left	4	E-Bicep left	Golfers/E-Bicep left	painted
+skater	Bicep left	4	E-Bicep left	Golfers_Mutant/E-Bicep left	painted
+skater	Bicep left	4	E-Bicep left	HockeyFC/E-Bicep left	painted
+skater	Bicep left	4	E-Bicep left	HockeyFC_Away/E-Bicep left	painted
+skater	Bicep left	4	E-Bicep left	Knights/E-Bicep left	painted
+skater	Bicep left	4	E-Bicep left	Knights/Spiked/E-Bicep left	painted
+skater	Bicep left	4	E-Bicep left	Knights_Prince/E-Bicep left	painted
+skater	Bicep left	4	E-Bicep left	Mountaineers/E-Bicep left	painted
+skater	Bicep left	4	E-Bicep left	Mountaineers_Fest/E-Bicep left	painted
+skater	Bicep left	4	E-Bicep left	Princess/E-Bicep left	painted
+skater	Bicep left	4	E-Bicep left	Prisoners/E-Bicep left	painted
+skater	Bicep left	4	E-Bicep left	Referee/E-Bicep left	painted
+skater	Bicep left	4	E-Bicep left	Tycoons/E-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	Bicep_Injured/N-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	Chicago_Away/N-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	Customization_Colors/N-Bicep left	mask
+skater	Bicep left	4	N-Bicep left	Customization_Lights/N-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	Figure_Skaters/N-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	Golfers/N-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	Golfers_Mutant/N-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	HockeyFC/N-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	HockeyFC_Away/N-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	Knights/N-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	Knights/Spiked/N-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	Knights_Prince/N-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	Mountaineers/N-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	Mountaineers_Fest/N-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	Princess/N-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	Prisoners/N-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	Referee/N-Bicep left	painted
+skater	Bicep left	4	N-Bicep left	Tycoons/N-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	Bicep_Injured/NE-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	Chicago_Away/NE-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	Customization_Colors/NE-Bicep left	mask
+skater	Bicep left	4	NE-Bicep left	Customization_Lights/NE-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	Figure_Skaters/NE-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	Golfers/NE-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	Golfers_Mutant/NE-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	HockeyFC/NE-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	HockeyFC_Away/NE-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	Knights/NE-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	Knights/Spiked/NE-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	Knights_Prince/NE-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	Mountaineers/NE-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	Mountaineers_Fest/NE-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	Princess/NE-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	Prisoners/NE-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	Referee/NE-Bicep left	painted
+skater	Bicep left	4	NE-Bicep left	Tycoons/NE-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	Bicep_Injured/NW-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	Chicago_Away/NW-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	Customization_Colors/NW-Bicep left	mask
+skater	Bicep left	4	NW-Bicep left	Customization_Lights/NW-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	Figure_Skaters/NW-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	Golfers/NW-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	Golfers_Mutant/NW-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	HockeyFC/NW-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	HockeyFC_Away/NW-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	Knights/NW-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	Knights/Spiked/NW-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	Knights_Prince/NW-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	Mountaineers/NW-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	Mountaineers_Fest/NW-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	Princess/NW-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	Prisoners/NW-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	Referee/NW-Bicep left	painted
+skater	Bicep left	4	NW-Bicep left	Tycoons/NW-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	Bicep_Injured/S-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	Chicago_Away/S-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	Customization_Colors/S-Bicep left	mask
+skater	Bicep left	4	S-Bicep left	Customization_Lights/S-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	Figure_Skaters/S-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	Golfers/S-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	Golfers_Mutant/S-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	HockeyFC/S-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	HockeyFC_Away/S-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	Knights/S-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	Knights/Spiked/S-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	Knights_Prince/S-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	Mountaineers/S-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	Mountaineers_Fest/S-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	Princess/S-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	Prisoners/S-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	Referee/S-Bicep left	painted
+skater	Bicep left	4	S-Bicep left	Tycoons/S-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	Bicep_Injured/SE-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	Chicago_Away/SE-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	Customization_Colors/SE-Bicep left	mask
+skater	Bicep left	4	SE-Bicep left	Customization_Lights/SE-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	Figure_Skaters/SE-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	Golfers/SE-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	Golfers_Mutant/SE-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	HockeyFC/SE-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	HockeyFC_Away/SE-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	Knights/SE-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	Knights/Spiked/SE-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	Knights_Prince/SE-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	Mountaineers/SE-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	Mountaineers_Fest/SE-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	Princess/SE-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	Prisoners/SE-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	Referee/SE-Bicep left	painted
+skater	Bicep left	4	SE-Bicep left	Tycoons/SE-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	Bicep_Injured/SW-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	Chicago_Away/SW-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	Customization_Colors/SW-Bicep left	mask
+skater	Bicep left	4	SW-Bicep left	Customization_Lights/SW-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	Figure_Skaters/SW-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	Golfers/SW-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	Golfers_Mutant/SW-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	HockeyFC/SW-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	HockeyFC_Away/SW-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	Knights/SW-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	Knights/Spiked/SW-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	Knights_Prince/SW-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	Mountaineers/SW-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	Mountaineers_Fest/SW-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	Princess/SW-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	Prisoners/SW-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	Referee/SW-Bicep left	painted
+skater	Bicep left	4	SW-Bicep left	Tycoons/SW-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	Bicep_Injured/W-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	Chicago_Away/W-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	Customization_Colors/W-Bicep left	mask
+skater	Bicep left	4	W-Bicep left	Customization_Lights/W-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	Figure_Skaters/W-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	Golfers/W-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	Golfers_Mutant/W-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	HockeyFC/W-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	HockeyFC_Away/W-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	Knights/Spiked/W-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	Knights/W-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	Knights_Prince/W-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	Mountaineers/W-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	Mountaineers_Fest/W-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	Princess/W-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	Prisoners/W-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	Referee/W-Bicep left	painted
+skater	Bicep left	4	W-Bicep left	Tycoons/W-Bicep left	painted
+skater	Bicep right	4	E-Bicep right	Bicep_Injured/E-Bicep right	painted
+skater	Bicep right	4	E-Bicep right	Chicago_Away/E-Bicep right	painted
+skater	Bicep right	4	E-Bicep right	Customization_Colors/E-Bicep right	mask
+skater	Bicep right	4	E-Bicep right	Customization_Lights/E-Bicep right	painted
+skater	Bicep right	4	E-Bicep right	Figure_Skaters/E-Bicep right	painted
+skater	Bicep right	4	E-Bicep right	Golfers/E-Bicep right	painted
+skater	Bicep right	4	E-Bicep right	Golfers_Mutant/E-Bicep right	painted
+skater	Bicep right	4	E-Bicep right	HockeyFC/E-Bicep right	painted
+skater	Bicep right	4	E-Bicep right	HockeyFC_Away/E-Bicep right	painted
+skater	Bicep right	4	E-Bicep right	Knights/E-Bicep right	painted
+skater	Bicep right	4	E-Bicep right	Knights/Spiked/E-Bicep right	painted
+skater	Bicep right	4	E-Bicep right	Knights_Prince/E-Bicep right	painted
+skater	Bicep right	4	E-Bicep right	Mountaineers/E-Bicep right	painted
+skater	Bicep right	4	E-Bicep right	Mountaineers_Fest/E-Bicep right	painted
+skater	Bicep right	4	E-Bicep right	Princess/E-Bicep right	painted
+skater	Bicep right	4	E-Bicep right	Prisoners/E-Bicep right	painted
+skater	Bicep right	4	E-Bicep right	Referee/E-Bicep right	painted
+skater	Bicep right	4	E-Bicep right	Tycoons/E-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	Bicep_Injured/N-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	Chicago_Away/N-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	Customization_Colors/N-Bicep right	mask
+skater	Bicep right	4	N-Bicep right	Customization_Lights/N-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	Figure_Skaters/N-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	Golfers/N-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	Golfers_Mutant/N-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	HockeyFC/N-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	HockeyFC_Away/N-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	Knights/N-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	Knights/Spiked/N-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	Knights_Prince/N-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	Mountaineers/N-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	Mountaineers_Fest/N-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	Princess/N-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	Prisoners/N-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	Referee/N-Bicep right	painted
+skater	Bicep right	4	N-Bicep right	Tycoons/N-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	Bicep_Injured/NE-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	Chicago_Away/NE-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	Customization_Colors/NE-Bicep right	mask
+skater	Bicep right	4	NE-Bicep right	Customization_Lights/NE-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	Figure_Skaters/NE-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	Golfers/NE-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	Golfers_Mutant/NE-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	HockeyFC/NE-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	HockeyFC_Away/NE-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	Knights/NE-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	Knights/Spiked/NE-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	Knights_Prince/NE-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	Mountaineers/NE-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	Mountaineers_Fest/NE-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	Princess/NE-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	Prisoners/NE-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	Referee/NE-Bicep right	painted
+skater	Bicep right	4	NE-Bicep right	Tycoons/NE-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	Bicep_Injured/NW-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	Chicago_Away/NW-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	Customization_Colors/NW-Bicep right	mask
+skater	Bicep right	4	NW-Bicep right	Customization_Lights/NW-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	Figure_Skaters/NW-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	Golfers/NW-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	Golfers_Mutant/NW-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	HockeyFC/NW-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	HockeyFC_Away/NW-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	Knights/NW-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	Knights/Spiked/NW-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	Knights_Prince/NW-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	Mountaineers/NW-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	Mountaineers_Fest/NW-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	Princess/NW-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	Prisoners/NW-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	Referee/NW-Bicep right	painted
+skater	Bicep right	4	NW-Bicep right	Tycoons/NW-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	Bicep_Injured/S-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	Chicago_Away/S-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	Customization_Colors/S-Bicep right	mask
+skater	Bicep right	4	S-Bicep right	Customization_Lights/S-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	Figure_Skaters/S-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	Golfers/S-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	Golfers_Mutant/S-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	HockeyFC/S-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	HockeyFC_Away/S-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	Knights/S-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	Knights/Spiked/S-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	Knights_Prince/S-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	Mountaineers/S-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	Mountaineers_Fest/S-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	Princess/S-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	Prisoners/S-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	Referee/S-Bicep right	painted
+skater	Bicep right	4	S-Bicep right	Tycoons/S-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	Bicep_Injured/SE-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	Chicago_Away/SE-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	Customization_Colors/SE-Bicep right	mask
+skater	Bicep right	4	SE-Bicep right	Customization_Lights/SE-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	Figure_Skaters/SE-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	Golfers/SE-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	Golfers_Mutant/SE-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	HockeyFC/SE-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	HockeyFC_Away/SE-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	Knights/SE-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	Knights/Spiked/SE-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	Knights_Prince/SE-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	Mountaineers/SE-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	Mountaineers_Fest/SE-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	Princess/SE-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	Prisoners/SE-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	Referee/SE-Bicep right	painted
+skater	Bicep right	4	SE-Bicep right	Tycoons/SE-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	Bicep_Injured/SW-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	Chicago_Away/SW-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	Customization_Colors/SW-Bicep right	mask
+skater	Bicep right	4	SW-Bicep right	Customization_Lights/SW-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	Figure_Skaters/SW-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	Golfers/SW-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	Golfers_Mutant/SW-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	HockeyFC/SW-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	HockeyFC_Away/SW-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	Knights/SW-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	Knights/Spiked/SW-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	Knights_Prince/SW-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	Mountaineers/SW-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	Mountaineers_Fest/SW-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	Princess/SW-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	Prisoners/SW-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	Referee/SW-Bicep right	painted
+skater	Bicep right	4	SW-Bicep right	Tycoons/SW-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	Bicep_Injured/W-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	Chicago_Away/W-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	Customization_Colors/W-Bicep right	mask
+skater	Bicep right	4	W-Bicep right	Customization_Lights/W-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	Figure_Skaters/W-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	Golfers/W-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	Golfers_Mutant/W-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	HockeyFC/W-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	HockeyFC_Away/W-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	Knights/Spiked/W-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	Knights/W-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	Knights_Prince/W-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	Mountaineers/W-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	Mountaineers_Fest/W-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	Princess/W-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	Prisoners/W-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	Referee/W-Bicep right	painted
+skater	Bicep right	4	W-Bicep right	Tycoons/W-Bicep right	painted
+skater	Body	2	E-Body	Chicago_Away/E-Body	painted
+skater	Body	2	E-Body	Customization_Colors/E-Body	mask
+skater	Body	2	E-Body	Customization_Lights/E-Body	painted
+skater	Body	2	E-Body	Figure_Skaters/E-Body	painted
+skater	Body	2	E-Body	Golfers/E-Body	painted
+skater	Body	2	E-Body	Golfers_Mutant/E-Body	painted
+skater	Body	2	E-Body	HockeyFC/E-Body	painted
+skater	Body	2	E-Body	HockeyFC_Away/E-Body	painted
+skater	Body	2	E-Body	Knights/E-Body	painted
+skater	Body	2	E-Body	Knights/Spiked/E-Body	painted
+skater	Body	2	E-Body	Knights_Galahad/E-Body	painted
+skater	Body	2	E-Body	Knights_Guretski/E-Body	painted
+skater	Body	2	E-Body	Knights_Lancelov/E-Body	painted
+skater	Body	2	E-Body	Knights_Prince/E-Body	painted
+skater	Body	2	E-Body	Mountaineers/E-Body	painted
+skater	Body	2	E-Body	Princess/E-Body	painted
+skater	Body	2	E-Body	Prisoners/E-Body	painted
+skater	Body	2	E-Body	Referee/E-Body	painted
+skater	Body	2	E-Body	Toronto_Home_34/E-Body	painted
+skater	Body	2	E-Body	Tycoons/E-Body	painted
+skater	Body	2	N-Body	Chicago_Away/N-Body	painted
+skater	Body	2	N-Body	Customization_Colors/N-Body	mask
+skater	Body	2	N-Body	Customization_Lights/N-Body	painted
+skater	Body	2	N-Body	Figure_Skaters/N-Body	painted
+skater	Body	2	N-Body	Golfers/N-Body	painted
+skater	Body	2	N-Body	Golfers_Mutant/N-Body	painted
+skater	Body	2	N-Body	HockeyFC/N-Body	painted
+skater	Body	2	N-Body	HockeyFC_Away/N-Body	painted
+skater	Body	2	N-Body	Knights/N-Body	painted
+skater	Body	2	N-Body	Knights_Galahad/N-Body	painted
+skater	Body	2	N-Body	Knights_Guretski/N-Body	painted
+skater	Body	2	N-Body	Knights_Lancelov/N-Body	painted
+skater	Body	2	N-Body	Knights_Prince/N-Body	painted
+skater	Body	2	N-Body	Mountaineers/N-Body	painted
+skater	Body	2	N-Body	Princess/N-Body	painted
+skater	Body	2	N-Body	Prisoners/N-Body	painted
+skater	Body	2	N-Body	Referee/N-Body	painted
+skater	Body	2	N-Body	Toronto_Home_34/N-Body	painted
+skater	Body	2	N-Body	Tycoons/N-Body	painted
+skater	Body	2	NE-Body	Chicago_Away/NE-Body	painted
+skater	Body	2	NE-Body	Customization_Colors/NE-Body	mask
+skater	Body	2	NE-Body	Customization_Lights/NE-Body	painted
+skater	Body	2	NE-Body	Figure_Skaters/NE-Body	painted
+skater	Body	2	NE-Body	Golfers/NE-Body	painted
+skater	Body	2	NE-Body	Golfers_Mutant/NE-Body	painted
+skater	Body	2	NE-Body	HockeyFC/NE-Body	painted
+skater	Body	2	NE-Body	HockeyFC_Away/NE-Body	painted
+skater	Body	2	NE-Body	Knights/NE-Body	painted
+skater	Body	2	NE-Body	Knights_Galahad/NE-Body	painted
+skater	Body	2	NE-Body	Knights_Guretski/NE-Body	painted
+skater	Body	2	NE-Body	Knights_Lancelov/NE-Body	painted
+skater	Body	2	NE-Body	Knights_Prince/NE-Body	painted
+skater	Body	2	NE-Body	Mountaineers/NE-Body	painted
+skater	Body	2	NE-Body	Princess/NE-Body	painted
+skater	Body	2	NE-Body	Prisoners/NE-Body	painted
+skater	Body	2	NE-Body	Referee/NE-Body	painted
+skater	Body	2	NE-Body	Toronto_Home_34/NE-Body	painted
+skater	Body	2	NE-Body	Tycoons/NE-Body	painted
+skater	Body	2	NW-Body	Chicago_Away/NW-Body	painted
+skater	Body	2	NW-Body	Customization_Colors/NW-Body	mask
+skater	Body	2	NW-Body	Customization_Lights/NW-Body	painted
+skater	Body	2	NW-Body	Figure_Skaters/NW-Body	painted
+skater	Body	2	NW-Body	Golfers/NW-Body	painted
+skater	Body	2	NW-Body	Golfers_Mutant/NW-Body	painted
+skater	Body	2	NW-Body	HockeyFC/NW-Body	painted
+skater	Body	2	NW-Body	HockeyFC_Away/NW-Body	painted
+skater	Body	2	NW-Body	Knights/NW-Body	painted
+skater	Body	2	NW-Body	Knights_Galahad/NW-Body	painted
+skater	Body	2	NW-Body	Knights_Guretski/NW-Body	painted
+skater	Body	2	NW-Body	Knights_Lancelov/NW-Body	painted
+skater	Body	2	NW-Body	Knights_Prince/NW-Body	painted
+skater	Body	2	NW-Body	Mountaineers/NW-Body	painted
+skater	Body	2	NW-Body	Princess/NW-Body	painted
+skater	Body	2	NW-Body	Prisoners/NW-Body	painted
+skater	Body	2	NW-Body	Referee/NW-Body	painted
+skater	Body	2	NW-Body	Toronto_Home_34/NW-Body	painted
+skater	Body	2	NW-Body	Tycoons/NW-Body	painted
+skater	Body	2	Playnow	Chicago_Away/Chicago_Playnow	painted
+skater	Body	2	Playnow	Customization_Colors/Playnow	mask
+skater	Body	2	Playnow	Customization_Lights/Playnow	painted
+skater	Body	2	Playnow	Figure_Skaters/Playnow	painted
+skater	Body	2	Playnow	Golfers/Playnow	painted
+skater	Body	2	Playnow	Golfers_Mutant/Playnow	painted
+skater	Body	2	Playnow	HockeyFC/Playnow	painted
+skater	Body	2	Playnow	HockeyFC_Away/Playnow	painted
+skater	Body	2	Playnow	Knights/Playnow	painted
+skater	Body	2	Playnow	Knights/Spiked/Playnow_Spiked	painted
+skater	Body	2	Playnow	Knights_Galahad/Playnow	painted
+skater	Body	2	Playnow	Knights_Guretski/Playnow	painted
+skater	Body	2	Playnow	Knights_Lancelov/Playnow	painted
+skater	Body	2	Playnow	Knights_Prince/Playnow	painted
+skater	Body	2	Playnow	Mountaineers/Playnow	painted
+skater	Body	2	Playnow	Mountaineers_Fest/Playnow	painted
+skater	Body	2	Playnow	Princess/Playnow	painted
+skater	Body	2	Playnow	Prisoners/Playnow	painted
+skater	Body	2	Playnow	Referee/Referee_Playnow	painted
+skater	Body	2	Playnow	Toronto_Home_34/SW-Body	painted
+skater	Body	2	Playnow	Tycoons/Playnow	painted
+skater	Body	2	Rewards	Chicago_Away/Rewards	painted
+skater	Body	2	Rewards	Customization_Colors/Rewards	mask
+skater	Body	2	Rewards	Customization_Lights/Rewards	painted
+skater	Body	2	Rewards	Figure_Skaters/Playnow	painted
+skater	Body	2	Rewards	Golfers/Playnow	painted
+skater	Body	2	Rewards	Golfers_Mutant/Playnow	painted
+skater	Body	2	Rewards	HockeyFC/Playnow	painted
+skater	Body	2	Rewards	HockeyFC_Away/Playnow	painted
+skater	Body	2	Rewards	Knights/Rewards	painted
+skater	Body	2	Rewards	Knights/Rewards_Spiked	painted
+skater	Body	2	Rewards	Knights_Prince/Playnow	painted
+skater	Body	2	Rewards	Mountaineers/Playnow	painted
+skater	Body	2	Rewards	Mountaineers_Fest/Playnow	painted
+skater	Body	2	Rewards	Princess/Playnow	painted
+skater	Body	2	Rewards	Prisoners/Playnow	painted
+skater	Body	2	Rewards	Referee/Referee_Playnow	painted
+skater	Body	2	Rewards	Toronto_Home_34/SW-Body	painted
+skater	Body	2	Rewards	Tycoons/Playnow	painted
+skater	Body	2	S-Body	Chicago_Away/S-Body	painted
+skater	Body	2	S-Body	Customization_Colors/S-Body	mask
+skater	Body	2	S-Body	Customization_Lights/S-Body	painted
+skater	Body	2	S-Body	Figure_Skaters/S-Body	painted
+skater	Body	2	S-Body	Golfers/S-Body	painted
+skater	Body	2	S-Body	Golfers_Mutant/S-Body	painted
+skater	Body	2	S-Body	HockeyFC/S-Body	painted
+skater	Body	2	S-Body	HockeyFC_Away/S-Body	painted
+skater	Body	2	S-Body	Knights/Campaign_Away/S-Body	painted
+skater	Body	2	S-Body	Knights/Campaign_Home/S-Body	painted
+skater	Body	2	S-Body	Knights/S-Body	painted
+skater	Body	2	S-Body	Knights_Galahad/S-Body	painted
+skater	Body	2	S-Body	Knights_Guretski/S-Body	painted
+skater	Body	2	S-Body	Knights_Lancelov/S-Body	painted
+skater	Body	2	S-Body	Knights_Prince/S-Body	painted
+skater	Body	2	S-Body	Mountaineers/S-Body	painted
+skater	Body	2	S-Body	Mountaineers_Fest/S-Body	painted
+skater	Body	2	S-Body	Princess/S-Body	painted
+skater	Body	2	S-Body	Prisoners/S-Body	painted
+skater	Body	2	S-Body	Referee/S-Body	painted
+skater	Body	2	S-Body	Toronto_Home_34/S-Body	painted
+skater	Body	2	S-Body	Tycoons/S-Body	painted
+skater	Body	2	SE-Body	Chicago_Away/SE-Body	painted
+skater	Body	2	SE-Body	Customization_Colors/SE-Body	mask
+skater	Body	2	SE-Body	Customization_Lights/SE-Body	painted
+skater	Body	2	SE-Body	Figure_Skaters/SE-Body	painted
+skater	Body	2	SE-Body	Golfers/SE-Body	painted
+skater	Body	2	SE-Body	Golfers_Mutant/SE-Body	painted
+skater	Body	2	SE-Body	HockeyFC/SE-Body	painted
+skater	Body	2	SE-Body	HockeyFC_Away/SE-Body	painted
+skater	Body	2	SE-Body	Knights/Campaign_Away/SE-Body	painted
+skater	Body	2	SE-Body	Knights/Campaign_Home/SE-Body	painted
+skater	Body	2	SE-Body	Knights/SE-Body	painted
+skater	Body	2	SE-Body	Knights_Galahad/SE-Body	painted
+skater	Body	2	SE-Body	Knights_Guretski/SE-Body	painted
+skater	Body	2	SE-Body	Knights_Lancelov/SE-Body	painted
+skater	Body	2	SE-Body	Knights_Prince/SE-Body	painted
+skater	Body	2	SE-Body	Mountaineers/SE-Body	painted
+skater	Body	2	SE-Body	Mountaineers_Fest/SE-Body	painted
+skater	Body	2	SE-Body	Princess/SE-Body	painted
+skater	Body	2	SE-Body	Prisoners/SE-Body	painted
+skater	Body	2	SE-Body	Referee/SE-Body	painted
+skater	Body	2	SE-Body	Toronto_Home_34/SE-Body	painted
+skater	Body	2	SE-Body	Tycoons/SE-Body	painted
+skater	Body	2	SW-Body	Chicago_Away/SW-Body	painted
+skater	Body	2	SW-Body	Customization_Colors/SW-Body	mask
+skater	Body	2	SW-Body	Customization_Lights/SW-Body	painted
+skater	Body	2	SW-Body	Figure_Skaters/SW-Body	painted
+skater	Body	2	SW-Body	Golfers/SW-Body	painted
+skater	Body	2	SW-Body	Golfers_Mutant/SW-Body	painted
+skater	Body	2	SW-Body	HockeyFC/SW-Body	painted
+skater	Body	2	SW-Body	HockeyFC_Away/SW-Body	painted
+skater	Body	2	SW-Body	Knights/Campaign_Away/SW-Body	painted
+skater	Body	2	SW-Body	Knights/Campaign_Home/SW-Body	painted
+skater	Body	2	SW-Body	Knights/SW-Body	painted
+skater	Body	2	SW-Body	Knights_Galahad/SW-Body	painted
+skater	Body	2	SW-Body	Knights_Guretski/SW-Body	painted
+skater	Body	2	SW-Body	Knights_Lancelov/SW-Body	painted
+skater	Body	2	SW-Body	Knights_Prince/SW-Body	painted
+skater	Body	2	SW-Body	Mountaineers/SW-Body	painted
+skater	Body	2	SW-Body	Mountaineers_Fest/SW-Body	painted
+skater	Body	2	SW-Body	Princess/SW-Body	painted
+skater	Body	2	SW-Body	Prisoners/SW-Body	painted
+skater	Body	2	SW-Body	Referee/SW-Body	painted
+skater	Body	2	SW-Body	Toronto_Home_34/SW-Body	painted
+skater	Body	2	SW-Body	Tycoons/SW-Body	painted
+skater	Body	2	W-Body	Chicago_Away/W-Body	painted
+skater	Body	2	W-Body	Customization_Colors/W-Body	mask
+skater	Body	2	W-Body	Customization_Lights/W-Body	painted
+skater	Body	2	W-Body	Figure_Skaters/W-Body	painted
+skater	Body	2	W-Body	Golfers/W-Body	painted
+skater	Body	2	W-Body	Golfers_Mutant/W-Body	painted
+skater	Body	2	W-Body	HockeyFC/W-Body	painted
+skater	Body	2	W-Body	HockeyFC_Away/W-Body	painted
+skater	Body	2	W-Body	Knights/Campaign_Away/W-Body	painted
+skater	Body	2	W-Body	Knights/Campaign_Home/W-Body	painted
+skater	Body	2	W-Body	Knights/W-Body	painted
+skater	Body	2	W-Body	Knights_Galahad/W-Body	painted
+skater	Body	2	W-Body	Knights_Guretski/W-Body	painted
+skater	Body	2	W-Body	Knights_Lancelov/W-Body	painted
+skater	Body	2	W-Body	Knights_Prince/W-Body	painted
+skater	Body	2	W-Body	Mountaineers/W-Body	painted
+skater	Body	2	W-Body	Mountaineers_Fest/W-Body	painted
+skater	Body	2	W-Body	Princess/W-Body	painted
+skater	Body	2	W-Body	Prisoners/W-Body	painted
+skater	Body	2	W-Body	Referee/W-Body	painted
+skater	Body	2	W-Body	Toronto_Home_34/W-Body	painted
+skater	Body	2	W-Body	Tycoons/W-Body	painted
+skater	Forearm left	2	E-Forearm left	Chicago_Away/E-Forearm left	painted
+skater	Forearm left	2	E-Forearm left	Customization_Colors/E-Forearm left	mask
+skater	Forearm left	2	E-Forearm left	Customization_Lights/E-Forearm left	painted
+skater	Forearm left	2	E-Forearm left	Figure_Skaters/E-Forearm left	painted
+skater	Forearm left	2	E-Forearm left	Golfers/E-Forearm left	painted
+skater	Forearm left	2	E-Forearm left	Golfers_Mutant/E-Forearm left	painted
+skater	Forearm left	2	E-Forearm left	HockeyFC/E-Forearm left	painted
+skater	Forearm left	2	E-Forearm left	Knights/E-Forearm left	painted
+skater	Forearm left	2	E-Forearm left	Knights_Prince/E-Forearm left	painted
+skater	Forearm left	2	E-Forearm left	Mountaineers/E-Forearm left	painted
+skater	Forearm left	2	E-Forearm left	Mountaineers_Fest/E-Forearm left	painted
+skater	Forearm left	2	E-Forearm left	Princess/E-Forearm left	painted
+skater	Forearm left	2	E-Forearm left	Prisoners/E-Forearm left	painted
+skater	Forearm left	2	E-Forearm left	Referee/E-Forearm left	painted
+skater	Forearm left	2	E-Forearm left	Toronto_Home_34/E-Forearm left	painted
+skater	Forearm left	2	E-Forearm left	Tycoons/E-Forearm left	painted
+skater	Forearm left	2	N-Forearm left	Chicago_Away/N-Forearm left	painted
+skater	Forearm left	2	N-Forearm left	Customization_Colors/N-Forearm left	mask
+skater	Forearm left	2	N-Forearm left	Customization_Lights/N-Forearm left	painted
+skater	Forearm left	2	N-Forearm left	Figure_Skaters/N-Forearm left	painted
+skater	Forearm left	2	N-Forearm left	Golfers/N-Forearm left	painted
+skater	Forearm left	2	N-Forearm left	Golfers_Mutant/N-Forearm left	painted
+skater	Forearm left	2	N-Forearm left	HockeyFC/N-Forearm left	painted
+skater	Forearm left	2	N-Forearm left	Knights/N-Forearm left	painted
+skater	Forearm left	2	N-Forearm left	Knights_Prince/N-Forearm left	painted
+skater	Forearm left	2	N-Forearm left	Mountaineers/N-Forearm left	painted
+skater	Forearm left	2	N-Forearm left	Mountaineers_Fest/N-Forearm left	painted
+skater	Forearm left	2	N-Forearm left	Princess/N-Forearm left	painted
+skater	Forearm left	2	N-Forearm left	Prisoners/N-Forearm left	painted
+skater	Forearm left	2	N-Forearm left	Referee/N-Forearm left	painted
+skater	Forearm left	2	N-Forearm left	Toronto_Home_34/N-Forearm left	painted
+skater	Forearm left	2	N-Forearm left	Tycoons/N-Forearm left	painted
+skater	Forearm left	2	NE-Forearm left	Chicago_Away/NE-Forearm left	painted
+skater	Forearm left	2	NE-Forearm left	Customization_Colors/NE-Forearm left	mask
+skater	Forearm left	2	NE-Forearm left	Customization_Lights/NE-Forearm left	painted
+skater	Forearm left	2	NE-Forearm left	Figure_Skaters/NE-Forearm left	painted
+skater	Forearm left	2	NE-Forearm left	Golfers/NE-Forearm left	painted
+skater	Forearm left	2	NE-Forearm left	Golfers_Mutant/NE-Forearm left	painted
+skater	Forearm left	2	NE-Forearm left	HockeyFC/NE-Forearm left	painted
+skater	Forearm left	2	NE-Forearm left	Knights/NE-Forearm left	painted
+skater	Forearm left	2	NE-Forearm left	Knights_Prince/NE-Forearm left	painted
+skater	Forearm left	2	NE-Forearm left	Mountaineers/NE-Forearm left	painted
+skater	Forearm left	2	NE-Forearm left	Mountaineers_Fest/NE-Forearm left	painted
+skater	Forearm left	2	NE-Forearm left	Princess/NE-Forearm left	painted
+skater	Forearm left	2	NE-Forearm left	Prisoners/NE-Forearm left	painted
+skater	Forearm left	2	NE-Forearm left	Referee/NE-Forearm left	painted
+skater	Forearm left	2	NE-Forearm left	Toronto_Home_34/NE-Forearm left	painted
+skater	Forearm left	2	NE-Forearm left	Tycoons/NE-Forearm left	painted
+skater	Forearm left	2	NW-Forearm left	Chicago_Away/NW-Forearm left	painted
+skater	Forearm left	2	NW-Forearm left	Customization_Colors/NW-Forearm left	mask
+skater	Forearm left	2	NW-Forearm left	Customization_Lights/NW-Forearm left	painted
+skater	Forearm left	2	NW-Forearm left	Figure_Skaters/NW-Forearm left	painted
+skater	Forearm left	2	NW-Forearm left	Golfers/NW-Forearm left	painted
+skater	Forearm left	2	NW-Forearm left	Golfers_Mutant/NW-Forearm left	painted
+skater	Forearm left	2	NW-Forearm left	HockeyFC/NW-Forearm left	painted
+skater	Forearm left	2	NW-Forearm left	Knights/NW-Forearm left	painted
+skater	Forearm left	2	NW-Forearm left	Knights_Prince/NW-Forearm left	painted
+skater	Forearm left	2	NW-Forearm left	Mountaineers/NW-Forearm left	painted
+skater	Forearm left	2	NW-Forearm left	Mountaineers_Fest/NW-Forearm left	painted
+skater	Forearm left	2	NW-Forearm left	Princess/NW-Forearm left	painted
+skater	Forearm left	2	NW-Forearm left	Prisoners/NW-Forearm left	painted
+skater	Forearm left	2	NW-Forearm left	Referee/NW-Forearm left	painted
+skater	Forearm left	2	NW-Forearm left	Toronto_Home_34/NW-Forearm left	painted
+skater	Forearm left	2	NW-Forearm left	Tycoons/NW-Forearm left	painted
+skater	Forearm left	2	S-Forearm left	Chicago_Away/S-Forearm left	painted
+skater	Forearm left	2	S-Forearm left	Customization_Colors/S-Forearm left	mask
+skater	Forearm left	2	S-Forearm left	Customization_Lights/S-Forearm left	painted
+skater	Forearm left	2	S-Forearm left	Figure_Skaters/S-Forearm left	painted
+skater	Forearm left	2	S-Forearm left	Golfers/S-Forearm left	painted
+skater	Forearm left	2	S-Forearm left	Golfers_Mutant/S-Forearm left	painted
+skater	Forearm left	2	S-Forearm left	HockeyFC/S-Forearm left	painted
+skater	Forearm left	2	S-Forearm left	Knights/S-Forearm left	painted
+skater	Forearm left	2	S-Forearm left	Knights_Prince/S-Forearm left	painted
+skater	Forearm left	2	S-Forearm left	Mountaineers/S-Forearm left	painted
+skater	Forearm left	2	S-Forearm left	Mountaineers_Fest/S-Forearm left	painted
+skater	Forearm left	2	S-Forearm left	Princess/S-Forearm left	painted
+skater	Forearm left	2	S-Forearm left	Prisoners/S-Forearm left	painted
+skater	Forearm left	2	S-Forearm left	Referee/S-Forearm left	painted
+skater	Forearm left	2	S-Forearm left	Tycoons/S-Forearm left	painted
+skater	Forearm left	2	SE-Forearm left	Chicago_Away/SE-Forearm left	painted
+skater	Forearm left	2	SE-Forearm left	Customization_Colors/SE-Forearm left	mask
+skater	Forearm left	2	SE-Forearm left	Customization_Lights/SE-Forearm left	painted
+skater	Forearm left	2	SE-Forearm left	Figure_Skaters/SE-Forearm left	painted
+skater	Forearm left	2	SE-Forearm left	Golfers/SE-Forearm left	painted
+skater	Forearm left	2	SE-Forearm left	Golfers_Mutant/SE-Forearm left	painted
+skater	Forearm left	2	SE-Forearm left	HockeyFC/SE-Forearm left	painted
+skater	Forearm left	2	SE-Forearm left	Knights/SE-Forearm left	painted
+skater	Forearm left	2	SE-Forearm left	Knights_Prince/SE-Forearm left	painted
+skater	Forearm left	2	SE-Forearm left	Mountaineers/SE-Forearm left	painted
+skater	Forearm left	2	SE-Forearm left	Mountaineers_Fest/SE-Forearm left	painted
+skater	Forearm left	2	SE-Forearm left	Princess/SE-Forearm left	painted
+skater	Forearm left	2	SE-Forearm left	Prisoners/SE-Forearm left	painted
+skater	Forearm left	2	SE-Forearm left	Referee/SE-Forearm left	painted
+skater	Forearm left	2	SE-Forearm left	Toronto_Home_34/SE-Forearm left	painted
+skater	Forearm left	2	SE-Forearm left	Tycoons/SE-Forearm left	painted
+skater	Forearm left	2	SW-Forearm left	Chicago_Away/SW-Forearm left	painted
+skater	Forearm left	2	SW-Forearm left	Customization_Colors/SW-Forearm left	mask
+skater	Forearm left	2	SW-Forearm left	Customization_Lights/SW-Forearm left	painted
+skater	Forearm left	2	SW-Forearm left	Figure_Skaters/SW-Forearm left	painted
+skater	Forearm left	2	SW-Forearm left	Golfers/SW-Forearm left	painted
+skater	Forearm left	2	SW-Forearm left	Golfers_Mutant/SW-Forearm left	painted
+skater	Forearm left	2	SW-Forearm left	HockeyFC/SW-Forearm left	painted
+skater	Forearm left	2	SW-Forearm left	Knights/SW-Forearm left	painted
+skater	Forearm left	2	SW-Forearm left	Knights_Prince/SW-Forearm left	painted
+skater	Forearm left	2	SW-Forearm left	Mountaineers/SW-Forearm left	painted
+skater	Forearm left	2	SW-Forearm left	Mountaineers_Fest/SW-Forearm left	painted
+skater	Forearm left	2	SW-Forearm left	Princess/SW-Forearm left	painted
+skater	Forearm left	2	SW-Forearm left	Prisoners/SW-Forearm left	painted
+skater	Forearm left	2	SW-Forearm left	Referee/SW-Forearm left	painted
+skater	Forearm left	2	SW-Forearm left	Toronto_Home_34/SW-Forearm left	painted
+skater	Forearm left	2	SW-Forearm left	Tycoons/SW-Forearm left	painted
+skater	Forearm left	2	W-Forearm left	Chicago_Away/W-Forearm left	painted
+skater	Forearm left	2	W-Forearm left	Customization_Colors/W-Forearm left	mask
+skater	Forearm left	2	W-Forearm left	Customization_Lights/W-Forearm left	painted
+skater	Forearm left	2	W-Forearm left	Figure_Skaters/W-Forearm left	painted
+skater	Forearm left	2	W-Forearm left	Golfers/W-Forearm left	painted
+skater	Forearm left	2	W-Forearm left	Golfers_Mutant/W-Forearm left	painted
+skater	Forearm left	2	W-Forearm left	HockeyFC/W-Forearm left	painted
+skater	Forearm left	2	W-Forearm left	Knights/W-Forearm left	painted
+skater	Forearm left	2	W-Forearm left	Knights_Prince/W-Forearm left	painted
+skater	Forearm left	2	W-Forearm left	Mountaineers/W-Forearm left	painted
+skater	Forearm left	2	W-Forearm left	Mountaineers_Fest/W-Forearm left	painted
+skater	Forearm left	2	W-Forearm left	Princess/W-Forearm left	painted
+skater	Forearm left	2	W-Forearm left	Prisoners/W-Forearm left	painted
+skater	Forearm left	2	W-Forearm left	Referee/W-Forearm left	painted
+skater	Forearm left	2	W-Forearm left	Toronto_Home_34/W-Forearm left	painted
+skater	Forearm left	2	W-Forearm left	Tycoons/W-Forearm left	painted
+skater	Forearm right	2	E-Forearm right	Chicago_Away/E-Forearm right	painted
+skater	Forearm right	2	E-Forearm right	Customization_Colors/E-Forearm right	mask
+skater	Forearm right	2	E-Forearm right	Customization_Lights/E-Forearm right	painted
+skater	Forearm right	2	E-Forearm right	Figure_Skaters/E-Forearm right	painted
+skater	Forearm right	2	E-Forearm right	Golfers/E-Forearm right	painted
+skater	Forearm right	2	E-Forearm right	Golfers_Mutant/E-Forearm right	painted
+skater	Forearm right	2	E-Forearm right	HockeyFC/E-Forearm right	painted
+skater	Forearm right	2	E-Forearm right	Knights/E-Forearm right	painted
+skater	Forearm right	2	E-Forearm right	Knights_Prince/E-Forearm right	painted
+skater	Forearm right	2	E-Forearm right	Mountaineers/E-Forearm right	painted
+skater	Forearm right	2	E-Forearm right	Mountaineers_Fest/E-Forearm right	painted
+skater	Forearm right	2	E-Forearm right	Princess/E-Forearm right	painted
+skater	Forearm right	2	E-Forearm right	Prisoners/E-Forearm right	painted
+skater	Forearm right	2	E-Forearm right	Referee/E-Forearm right	painted
+skater	Forearm right	2	E-Forearm right	Toronto_Home_34/E-Forearm right	painted
+skater	Forearm right	2	E-Forearm right	Tycoons/E-Forearm right	painted
+skater	Forearm right	2	N-Forearm right	Chicago_Away/N-Forearm right	painted
+skater	Forearm right	2	N-Forearm right	Customization_Colors/N-Forearm right	mask
+skater	Forearm right	2	N-Forearm right	Customization_Lights/N-Forearm right	painted
+skater	Forearm right	2	N-Forearm right	Figure_Skaters/N-Forearm right	painted
+skater	Forearm right	2	N-Forearm right	Golfers/N-Forearm right	painted
+skater	Forearm right	2	N-Forearm right	Golfers_Mutant/N-Forearm right	painted
+skater	Forearm right	2	N-Forearm right	HockeyFC/N-Forearm right	painted
+skater	Forearm right	2	N-Forearm right	Knights/N-Forearm right	painted
+skater	Forearm right	2	N-Forearm right	Knights_Prince/N-Forearm right	painted
+skater	Forearm right	2	N-Forearm right	Mountaineers/N-Forearm right	painted
+skater	Forearm right	2	N-Forearm right	Mountaineers_Fest/N-Forearm right	painted
+skater	Forearm right	2	N-Forearm right	Princess/N-Forearm right	painted
+skater	Forearm right	2	N-Forearm right	Prisoners/N-Forearm right	painted
+skater	Forearm right	2	N-Forearm right	Referee/N-Forearm right	painted
+skater	Forearm right	2	N-Forearm right	Toronto_Home_34/N-Forearm right	painted
+skater	Forearm right	2	N-Forearm right	Tycoons/N-Forearm right	painted
+skater	Forearm right	2	NE-Forearm right	Chicago_Away/NE-Forearm right	painted
+skater	Forearm right	2	NE-Forearm right	Customization_Colors/NE-Forearm right	mask
+skater	Forearm right	2	NE-Forearm right	Customization_Lights/NE-Forearm right	painted
+skater	Forearm right	2	NE-Forearm right	Figure_Skaters/NE-Forearm right	painted
+skater	Forearm right	2	NE-Forearm right	Golfers/NE-Forearm right	painted
+skater	Forearm right	2	NE-Forearm right	Golfers_Mutant/NE-Forearm right	painted
+skater	Forearm right	2	NE-Forearm right	HockeyFC/NE-Forearm right	painted
+skater	Forearm right	2	NE-Forearm right	Knights/NE-Forearm right	painted
+skater	Forearm right	2	NE-Forearm right	Knights_Prince/NE-Forearm right	painted
+skater	Forearm right	2	NE-Forearm right	Mountaineers/NE-Forearm right	painted
+skater	Forearm right	2	NE-Forearm right	Mountaineers_Fest/NE-Forearm right	painted
+skater	Forearm right	2	NE-Forearm right	Princess/NE-Forearm right	painted
+skater	Forearm right	2	NE-Forearm right	Prisoners/NE-Forearm right	painted
+skater	Forearm right	2	NE-Forearm right	Referee/NE-Forearm right	painted
+skater	Forearm right	2	NE-Forearm right	Toronto_Home_34/NE-Forearm right	painted
+skater	Forearm right	2	NE-Forearm right	Tycoons/NE-Forearm right	painted
+skater	Forearm right	2	NW-Forearm right	Chicago_Away/NW-Forearm right	painted
+skater	Forearm right	2	NW-Forearm right	Customization_Colors/NW-Forearm right	mask
+skater	Forearm right	2	NW-Forearm right	Customization_Lights/NW-Forearm right	painted
+skater	Forearm right	2	NW-Forearm right	Figure_Skaters/NW-Forearm right	painted
+skater	Forearm right	2	NW-Forearm right	Golfers/NW-Forearm right	painted
+skater	Forearm right	2	NW-Forearm right	Golfers_Mutant/NW-Forearm right	painted
+skater	Forearm right	2	NW-Forearm right	HockeyFC/NW-Forearm right	painted
+skater	Forearm right	2	NW-Forearm right	Knights/NW-Forearm right	painted
+skater	Forearm right	2	NW-Forearm right	Knights_Prince/NW-Forearm right	painted
+skater	Forearm right	2	NW-Forearm right	Mountaineers/NW-Forearm right	painted
+skater	Forearm right	2	NW-Forearm right	Mountaineers_Fest/NW-Forearm right	painted
+skater	Forearm right	2	NW-Forearm right	Princess/NW-Forearm right	painted
+skater	Forearm right	2	NW-Forearm right	Prisoners/NW-Forearm right	painted
+skater	Forearm right	2	NW-Forearm right	Referee/NW-Forearm right	painted
+skater	Forearm right	2	NW-Forearm right	Toronto_Home_34/NW-Forearm right	painted
+skater	Forearm right	2	NW-Forearm right	Tycoons/NW-Forearm right	painted
+skater	Forearm right	2	S-Forearm right	Chicago_Away/S-Forearm right	painted
+skater	Forearm right	2	S-Forearm right	Customization_Colors/S-Forearm right	mask
+skater	Forearm right	2	S-Forearm right	Customization_Lights/S-Forearm right	painted
+skater	Forearm right	2	S-Forearm right	Figure_Skaters/S-Forearm right	painted
+skater	Forearm right	2	S-Forearm right	Golfers/S-Forearm right	painted
+skater	Forearm right	2	S-Forearm right	Golfers_Mutant/S-Forearm right	painted
+skater	Forearm right	2	S-Forearm right	HockeyFC/S-Forearm right	painted
+skater	Forearm right	2	S-Forearm right	Knights/S-Forearm right	painted
+skater	Forearm right	2	S-Forearm right	Knights_Prince/S-Forearm right	painted
+skater	Forearm right	2	S-Forearm right	Mountaineers/S-Forearm right	painted
+skater	Forearm right	2	S-Forearm right	Mountaineers_Fest/S-Forearm right	painted
+skater	Forearm right	2	S-Forearm right	Princess/S-Forearm right	painted
+skater	Forearm right	2	S-Forearm right	Prisoners/S-Forearm right	painted
+skater	Forearm right	2	S-Forearm right	Referee/S-Forearm right	painted
+skater	Forearm right	2	S-Forearm right	Toronto_Home_34/S-Forearm right	painted
+skater	Forearm right	2	S-Forearm right	Tycoons/S-Forearm right	painted
+skater	Forearm right	2	SE-Forearm right	Chicago_Away/SE-Forearm right	painted
+skater	Forearm right	2	SE-Forearm right	Customization_Colors/SE-Forearm right	mask
+skater	Forearm right	2	SE-Forearm right	Customization_Lights/SE-Forearm right	painted
+skater	Forearm right	2	SE-Forearm right	Figure_Skaters/SE-Forearm right	painted
+skater	Forearm right	2	SE-Forearm right	Golfers/SE-Forearm right	painted
+skater	Forearm right	2	SE-Forearm right	Golfers_Mutant/SE-Forearm right	painted
+skater	Forearm right	2	SE-Forearm right	HockeyFC/SE-Forearm right	painted
+skater	Forearm right	2	SE-Forearm right	Knights/SE-Forearm right	painted
+skater	Forearm right	2	SE-Forearm right	Knights_Prince/SE-Forearm right	painted
+skater	Forearm right	2	SE-Forearm right	Mountaineers/SE-Forearm right	painted
+skater	Forearm right	2	SE-Forearm right	Mountaineers_Fest/SE-Forearm right	painted
+skater	Forearm right	2	SE-Forearm right	Princess/SE-Forearm right	painted
+skater	Forearm right	2	SE-Forearm right	Prisoners/SE-Forearm right	painted
+skater	Forearm right	2	SE-Forearm right	Referee/SE-Forearm right	painted
+skater	Forearm right	2	SE-Forearm right	Toronto_Home_34/SE-Forearm right	painted
+skater	Forearm right	2	SE-Forearm right	Tycoons/SE-Forearm right	painted
+skater	Forearm right	2	SW-Forearm right	Chicago_Away/SW-Forearm right	painted
+skater	Forearm right	2	SW-Forearm right	Customization_Colors/SW-Forearm right	mask
+skater	Forearm right	2	SW-Forearm right	Customization_Lights/SW-Forearm right	painted
+skater	Forearm right	2	SW-Forearm right	Figure_Skaters/SW-Forearm right	painted
+skater	Forearm right	2	SW-Forearm right	Golfers/SW-Forearm right	painted
+skater	Forearm right	2	SW-Forearm right	Golfers_Mutant/SW-Forearm right	painted
+skater	Forearm right	2	SW-Forearm right	HockeyFC/SW-Forearm right	painted
+skater	Forearm right	2	SW-Forearm right	Knights/SW-Forearm right	painted
+skater	Forearm right	2	SW-Forearm right	Knights_Prince/SW-Forearm right	painted
+skater	Forearm right	2	SW-Forearm right	Mountaineers/SW-Forearm right	painted
+skater	Forearm right	2	SW-Forearm right	Mountaineers_Fest/SW-Forearm right	painted
+skater	Forearm right	2	SW-Forearm right	Princess/SW-Forearm right	painted
+skater	Forearm right	2	SW-Forearm right	Prisoners/SW-Forearm right	painted
+skater	Forearm right	2	SW-Forearm right	Referee/SW-Forearm right	painted
+skater	Forearm right	2	SW-Forearm right	Toronto_Home_34/SW-Forearm right	painted
+skater	Forearm right	2	SW-Forearm right	Tycoons/SW-Forearm right	painted
+skater	Forearm right	2	W-Forearm right	Chicago_Away/W-Forearm right	painted
+skater	Forearm right	2	W-Forearm right	Customization_Colors/W-Forearm right	mask
+skater	Forearm right	2	W-Forearm right	Customization_Lights/W-Forearm right	painted
+skater	Forearm right	2	W-Forearm right	Figure_Skaters/W-Forearm right	painted
+skater	Forearm right	2	W-Forearm right	Golfers/W-Forearm right	painted
+skater	Forearm right	2	W-Forearm right	Golfers_Mutant/W-Forearm right	painted
+skater	Forearm right	2	W-Forearm right	HockeyFC/W-Forearm right	painted
+skater	Forearm right	2	W-Forearm right	Knights/W-Forearm right	painted
+skater	Forearm right	2	W-Forearm right	Knights_Prince/W-Forearm right	painted
+skater	Forearm right	2	W-Forearm right	Mountaineers/W-Forearm right	painted
+skater	Forearm right	2	W-Forearm right	Mountaineers_Fest/W-Forearm right	painted
+skater	Forearm right	2	W-Forearm right	Princess/W-Forearm right	painted
+skater	Forearm right	2	W-Forearm right	Prisoners/W-Forearm right	painted
+skater	Forearm right	2	W-Forearm right	Referee/W-Forearm right	painted
+skater	Forearm right	2	W-Forearm right	Toronto_Home_34/W-Forearm right	painted
+skater	Forearm right	2	W-Forearm right	Tycoons/W-Forearm right	painted
+skater	Glove left	16	E-Glove left	Chicago_Away/E-Glove left	painted
+skater	Glove left	16	E-Glove left	Customization_Colors/E-Glove left	mask
+skater	Glove left	16	E-Glove left	Customization_Lights/E-Glove left	painted
+skater	Glove left	16	E-Glove left	Figure_Skaters/E-Glove left	painted
+skater	Glove left	16	E-Glove left	Fist_Black/E-Glove left	painted
+skater	Glove left	16	E-Glove left	Fist_White/E-Glove left	painted
+skater	Glove left	16	E-Glove left	Gloves_Injured/E-Glove left	painted
+skater	Glove left	16	E-Glove left	HockeyFC/E-Glove left	painted
+skater	Glove left	16	E-Glove left	Knights_Prince/E-Glove left	painted
+skater	Glove left	16	E-Glove left	Referee/E-Glove left	painted
+skater	Glove left	16	Fist_Left	Fist_Left	painted
+skater	Glove left	16	Fist_Right	Fist_Right	painted
+skater	Glove left	16	N-Glove left	Chicago_Away/N-Glove left	painted
+skater	Glove left	16	N-Glove left	Customization_Colors/N-Glove left	mask
+skater	Glove left	16	N-Glove left	Customization_Lights/N-Glove left	painted
+skater	Glove left	16	N-Glove left	Figure_Skaters/N-Glove left	painted
+skater	Glove left	16	N-Glove left	Fist_Black/N-Glove left	painted
+skater	Glove left	16	N-Glove left	Fist_White/N-Glove left	painted
+skater	Glove left	16	N-Glove left	Gloves_Injured/N-Glove left	painted
+skater	Glove left	16	N-Glove left	HockeyFC/N-Glove left	painted
+skater	Glove left	16	N-Glove left	Knights_Prince/N-Glove left	painted
+skater	Glove left	16	N-Glove left	Referee/N-Glove left	painted
+skater	Glove left	16	NE_Glove left	Chicago_Away/NE_Glove left	painted
+skater	Glove left	16	NE_Glove left	Customization_Colors/NE_Glove left	mask
+skater	Glove left	16	NE_Glove left	Customization_Lights/NE_Glove left	painted
+skater	Glove left	16	NE_Glove left	Figure_Skaters/NE_Glove left	painted
+skater	Glove left	16	NE_Glove left	Fist_Black/NE_Glove left	painted
+skater	Glove left	16	NE_Glove left	Fist_White/NE_Glove left	painted
+skater	Glove left	16	NE_Glove left	Gloves_Injured/NE_Glove left	painted
+skater	Glove left	16	NE_Glove left	HockeyFC/NE_Glove left	painted
+skater	Glove left	16	NE_Glove left	Knights_Prince/NE_Glove left	painted
+skater	Glove left	16	NE_Glove left	Referee/NE_Glove left	painted
+skater	Glove left	16	NW-Glove left	Chicago_Away/NW-Glove left	painted
+skater	Glove left	16	NW-Glove left	Customization_Colors/NW-Glove left	mask
+skater	Glove left	16	NW-Glove left	Customization_Lights/NW-Glove left	painted
+skater	Glove left	16	NW-Glove left	Figure_Skaters/NW-Glove left	painted
+skater	Glove left	16	NW-Glove left	Fist_Black/NW-Glove left	painted
+skater	Glove left	16	NW-Glove left	Fist_White/NW-Glove left	painted
+skater	Glove left	16	NW-Glove left	Gloves_Injured/NW-Glove left	painted
+skater	Glove left	16	NW-Glove left	HockeyFC/NW-Glove left	painted
+skater	Glove left	16	NW-Glove left	Knights_Prince/NW-Glove left	painted
+skater	Glove left	16	NW-Glove left	Referee/NW-Glove left	painted
+skater	Glove left	16	Referee/open_hand	Referee/open_hand	painted
+skater	Glove left	16	Referee/yellowcard	Referee/yellowcard	painted
+skater	Glove left	16	Referee/yellowcardreverse	Referee/yellowcardreverse	painted
+skater	Glove left	16	S-Glove left	Chicago_Away/S-Glove left	painted
+skater	Glove left	16	S-Glove left	Customization_Colors/S-Glove left	mask
+skater	Glove left	16	S-Glove left	Customization_Lights/S-Glove left	painted
+skater	Glove left	16	S-Glove left	Figure_Skaters/S-Glove left	painted
+skater	Glove left	16	S-Glove left	Fist_Black/S-Glove left	painted
+skater	Glove left	16	S-Glove left	Fist_White/S-Glove left	painted
+skater	Glove left	16	S-Glove left	Gloves_Injured/S-Glove left	painted
+skater	Glove left	16	S-Glove left	HockeyFC/S-Glove left	painted
+skater	Glove left	16	S-Glove left	Knights_Prince/S-Glove left	painted
+skater	Glove left	16	S-Glove left	Referee/S-Glove left	painted
+skater	Glove left	16	SE-Glove left	Chicago_Away/SE-Glove left	painted
+skater	Glove left	16	SE-Glove left	Customization_Colors/SE-Glove left	mask
+skater	Glove left	16	SE-Glove left	Customization_Lights/SE-Glove left	painted
+skater	Glove left	16	SE-Glove left	Figure_Skaters/SE-Glove left	painted
+skater	Glove left	16	SE-Glove left	Fist_Black/SE-Glove left	painted
+skater	Glove left	16	SE-Glove left	Fist_White/SE-Glove left	painted
+skater	Glove left	16	SE-Glove left	Gloves_Injured/SE-Glove left	painted
+skater	Glove left	16	SE-Glove left	HockeyFC/SE-Glove left	painted
+skater	Glove left	16	SE-Glove left	Knights_Prince/SE-Glove left	painted
+skater	Glove left	16	SE-Glove left	Referee/SE-Glove left	painted
+skater	Glove left	16	SE-Glove left_alt	Chicago_Away/SE-Glove left2	painted
+skater	Glove left	16	SE-Glove left_alt	Customization_Colors/SE-Glove left2	mask
+skater	Glove left	16	SE-Glove left_alt	Customization_Lights/SE-Glove left2	painted
+skater	Glove left	16	SE-Glove left_alt	Figure_Skaters/SE-Glove left2	painted
+skater	Glove left	16	SE-Glove left_alt	Fist_Black/SE-Glove left2	painted
+skater	Glove left	16	SE-Glove left_alt	Fist_White/SE-Glove left2	painted
+skater	Glove left	16	SE-Glove left_alt	Gloves_Injured/SE-Glove left2	painted
+skater	Glove left	16	SE-Glove left_alt	HockeyFC/SE-Glove left2	painted
+skater	Glove left	16	SE-Glove left_alt	Knights_Prince/SE-Glove left2	painted
+skater	Glove left	16	SE-Glove left_alt	Referee/SE-Glove left2	painted
+skater	Glove left	16	SW-Glove left	Chicago_Away/SW-Glove left	painted
+skater	Glove left	16	SW-Glove left	Customization_Colors/SW-Glove left	mask
+skater	Glove left	16	SW-Glove left	Customization_Lights/SW-Glove left	painted
+skater	Glove left	16	SW-Glove left	Figure_Skaters/SW-Glove left	painted
+skater	Glove left	16	SW-Glove left	Fist_Black/SW-Glove left	painted
+skater	Glove left	16	SW-Glove left	Fist_White/SW-Glove left	painted
+skater	Glove left	16	SW-Glove left	Gloves_Injured/SW-Glove left	painted
+skater	Glove left	16	SW-Glove left	HockeyFC/SW-Glove left	painted
+skater	Glove left	16	SW-Glove left	Knights_Prince/SW-Glove left	painted
+skater	Glove left	16	SW-Glove left	Referee/SW-Glove left	painted
+skater	Glove left	16	W-Glove left	Chicago_Away/W-Glove left	painted
+skater	Glove left	16	W-Glove left	Customization_Colors/W-Glove left	mask
+skater	Glove left	16	W-Glove left	Customization_Lights/W-Glove left	painted
+skater	Glove left	16	W-Glove left	Figure_Skaters/W-Glove left	painted
+skater	Glove left	16	W-Glove left	Fist_Black/W-Glove left	painted
+skater	Glove left	16	W-Glove left	Fist_White/W-Glove left	painted
+skater	Glove left	16	W-Glove left	Gloves_Injured/W-Glove left	painted
+skater	Glove left	16	W-Glove left	HockeyFC/W-Glove left	painted
+skater	Glove left	16	W-Glove left	Knights_Prince/W-Glove left	painted
+skater	Glove left	16	W-Glove left	Referee/W-Glove left	painted
+skater	Glove right	16	E-Glove right	Chicago_Away/E-Glove right	painted
+skater	Glove right	16	E-Glove right	Customization_Colors/E-Glove right	mask
+skater	Glove right	16	E-Glove right	Customization_Lights/E-Glove right	painted
+skater	Glove right	16	E-Glove right	Figure_Skaters/E-Glove right	painted
+skater	Glove right	16	E-Glove right	Fist_Black/E-Glove right	painted
+skater	Glove right	16	E-Glove right	Fist_White/E-Glove right	painted
+skater	Glove right	16	E-Glove right	Gloves_Injured/E-Glove right	painted
+skater	Glove right	16	E-Glove right	HockeyFC/E-Glove right	painted
+skater	Glove right	16	E-Glove right	Knights_Prince/E-Glove right	painted
+skater	Glove right	16	E-Glove right	Referee/E-Glove right	painted
+skater	Glove right	16	Fist_Left	Fist_Left	painted
+skater	Glove right	16	Fist_Right	Fist_Right	painted
+skater	Glove right	16	N-Glove right	Chicago_Away/N-Glove right	painted
+skater	Glove right	16	N-Glove right	Customization_Colors/N-Glove right	mask
+skater	Glove right	16	N-Glove right	Customization_Lights/N-Glove right	painted
+skater	Glove right	16	N-Glove right	Figure_Skaters/N-Glove right	painted
+skater	Glove right	16	N-Glove right	Fist_Black/N-Glove right	painted
+skater	Glove right	16	N-Glove right	Fist_White/N-Glove right	painted
+skater	Glove right	16	N-Glove right	Gloves_Injured/N-Glove right	painted
+skater	Glove right	16	N-Glove right	HockeyFC/N-Glove right	painted
+skater	Glove right	16	N-Glove right	Knights_Prince/N-Glove right	painted
+skater	Glove right	16	N-Glove right	Referee/N-Glove right	painted
+skater	Glove right	16	NE-Glove right	Chicago_Away/NE-Glove right	painted
+skater	Glove right	16	NE-Glove right	Customization_Colors/NE-Glove right	mask
+skater	Glove right	16	NE-Glove right	Customization_Lights/NE-Glove right	painted
+skater	Glove right	16	NE-Glove right	Figure_Skaters/NE-Glove right	painted
+skater	Glove right	16	NE-Glove right	Fist_Black/NE-Glove right	painted
+skater	Glove right	16	NE-Glove right	Fist_White/NE-Glove right	painted
+skater	Glove right	16	NE-Glove right	Gloves_Injured/NE-Glove right	painted
+skater	Glove right	16	NE-Glove right	HockeyFC/NE-Glove right	painted
+skater	Glove right	16	NE-Glove right	Knights_Prince/NE-Glove right	painted
+skater	Glove right	16	NE-Glove right	Referee/NE-Glove right	painted
+skater	Glove right	16	NW-Glove right	Chicago_Away/NW-Glove right	painted
+skater	Glove right	16	NW-Glove right	Customization_Colors/NW-Glove right	mask
+skater	Glove right	16	NW-Glove right	Customization_Lights/NW-Glove right	painted
+skater	Glove right	16	NW-Glove right	Figure_Skaters/NW-Glove right	painted
+skater	Glove right	16	NW-Glove right	Fist_Black/NW-Glove right	painted
+skater	Glove right	16	NW-Glove right	Fist_White/NW-Glove right	painted
+skater	Glove right	16	NW-Glove right	Gloves_Injured/NW-Glove right	painted
+skater	Glove right	16	NW-Glove right	HockeyFC/NW-Glove right	painted
+skater	Glove right	16	NW-Glove right	Knights_Prince/NW-Glove right	painted
+skater	Glove right	16	NW-Glove right	Referee/NW-Glove right	painted
+skater	Glove right	16	NW-Glove right_alt	Chicago_Away/NW-Glove right2	painted
+skater	Glove right	16	NW-Glove right_alt	Customization_Colors/NW-Glove right2	mask
+skater	Glove right	16	NW-Glove right_alt	Customization_Lights/NW-Glove right2	painted
+skater	Glove right	16	NW-Glove right_alt	Figure_Skaters/NW-Glove right2	painted
+skater	Glove right	16	NW-Glove right_alt	Fist_Black/NW-Glove right2	painted
+skater	Glove right	16	NW-Glove right_alt	Fist_White/NW-Glove right2	painted
+skater	Glove right	16	NW-Glove right_alt	Gloves_Injured/NW-Glove right2	painted
+skater	Glove right	16	NW-Glove right_alt	HockeyFC/NW-Glove right2	painted
+skater	Glove right	16	NW-Glove right_alt	Knights_Prince/NW-Glove right2	painted
+skater	Glove right	16	NW-Glove right_alt	Referee/NW-Glove right2	painted
+skater	Glove right	16	Referee/Sifflet	Referee/Sifflet	painted
+skater	Glove right	16	S-Glove right	Chicago_Away/S-Glove right	painted
+skater	Glove right	16	S-Glove right	Customization_Colors/S-Glove right	mask
+skater	Glove right	16	S-Glove right	Customization_Lights/S-Glove right	painted
+skater	Glove right	16	S-Glove right	Figure_Skaters/S-Glove right	painted
+skater	Glove right	16	S-Glove right	Fist_Black/S-Glove right	painted
+skater	Glove right	16	S-Glove right	Fist_White/S-Glove right	painted
+skater	Glove right	16	S-Glove right	Gloves_Injured/S-Glove right	painted
+skater	Glove right	16	S-Glove right	HockeyFC/S-Glove right	painted
+skater	Glove right	16	S-Glove right	Knights_Prince/S-Glove right	painted
+skater	Glove right	16	S-Glove right	Referee/S-Glove right	painted
+skater	Glove right	16	S-Glove right_alt	Chicago_Away/S-Glove right2	painted
+skater	Glove right	16	S-Glove right_alt	Customization_Colors/S-Glove right2	mask
+skater	Glove right	16	S-Glove right_alt	Customization_Lights/S-Glove right2	painted
+skater	Glove right	16	S-Glove right_alt	Figure_Skaters/S-Glove right2	painted
+skater	Glove right	16	S-Glove right_alt	Fist_Black/S-Glove right2	painted
+skater	Glove right	16	S-Glove right_alt	Fist_White/S-Glove right2	painted
+skater	Glove right	16	S-Glove right_alt	Gloves_Injured/S-Glove right2	painted
+skater	Glove right	16	S-Glove right_alt	HockeyFC/S-Glove right2	painted
+skater	Glove right	16	S-Glove right_alt	Knights_Prince/S-Glove right2	painted
+skater	Glove right	16	S-Glove right_alt	Referee/S-Glove right2	painted
+skater	Glove right	16	SE-Glove right	Chicago_Away/SE-Glove right	painted
+skater	Glove right	16	SE-Glove right	Customization_Colors/SE-Glove right	mask
+skater	Glove right	16	SE-Glove right	Customization_Lights/SE-Glove right	painted
+skater	Glove right	16	SE-Glove right	Figure_Skaters/SE-Glove right	painted
+skater	Glove right	16	SE-Glove right	Fist_Black/SE-Glove right	painted
+skater	Glove right	16	SE-Glove right	Fist_White/SE-Glove right	painted
+skater	Glove right	16	SE-Glove right	Gloves_Injured/SE-Glove right	painted
+skater	Glove right	16	SE-Glove right	HockeyFC/SE-Glove right	painted
+skater	Glove right	16	SE-Glove right	Knights_Prince/SE-Glove right	painted
+skater	Glove right	16	SE-Glove right	Referee/SE-Glove right	painted
+skater	Glove right	16	SW-Glove right	Chicago_Away/SW-Glove right	painted
+skater	Glove right	16	SW-Glove right	Customization_Colors/SW-Glove right	mask
+skater	Glove right	16	SW-Glove right	Customization_Lights/SW-Glove right	painted
+skater	Glove right	16	SW-Glove right	Figure_Skaters/SW-Glove right	painted
+skater	Glove right	16	SW-Glove right	Fist_Black/SW-Glove right	painted
+skater	Glove right	16	SW-Glove right	Fist_White/SW-Glove right	painted
+skater	Glove right	16	SW-Glove right	Gloves_Injured/SW-Glove right	painted
+skater	Glove right	16	SW-Glove right	HockeyFC/SW-Glove right	painted
+skater	Glove right	16	SW-Glove right	Knights_Prince/SW-Glove right	painted
+skater	Glove right	16	SW-Glove right	Referee/SW-Glove right	painted
+skater	Glove right	16	SW-Glove right_alt	Chicago_Away/SW-Glove right2	painted
+skater	Glove right	16	SW-Glove right_alt	Customization_Colors/SW-Glove right2	mask
+skater	Glove right	16	SW-Glove right_alt	Customization_Lights/SW-Glove right2	painted
+skater	Glove right	16	SW-Glove right_alt	Figure_Skaters/SW-Glove right2	painted
+skater	Glove right	16	SW-Glove right_alt	Fist_Black/SW-Glove right2	painted
+skater	Glove right	16	SW-Glove right_alt	Fist_White/SW-Glove right2	painted
+skater	Glove right	16	SW-Glove right_alt	Gloves_Injured/SW-Glove right2	painted
+skater	Glove right	16	SW-Glove right_alt	HockeyFC/SW-Glove right2	painted
+skater	Glove right	16	SW-Glove right_alt	Knights_Prince/SW-Glove right2	painted
+skater	Glove right	16	SW-Glove right_alt	Referee/SW-Glove right2	painted
+skater	Glove right	16	W-Glove right	Chicago_Away/W-Glove right	painted
+skater	Glove right	16	W-Glove right	Customization_Colors/W-Glove right	mask
+skater	Glove right	16	W-Glove right	Customization_Lights/W-Glove right	painted
+skater	Glove right	16	W-Glove right	Figure_Skaters/W-Glove right	painted
+skater	Glove right	16	W-Glove right	Fist_Black/W-Glove right	painted
+skater	Glove right	16	W-Glove right	Fist_White/W-Glove right	painted
+skater	Glove right	16	W-Glove right	Gloves_Injured/W-Glove right	painted
+skater	Glove right	16	W-Glove right	HockeyFC/W-Glove right	painted
+skater	Glove right	16	W-Glove right	Knights_Prince/W-Glove right	painted
+skater	Glove right	16	W-Glove right	Referee/W-Glove right	painted
+skater	Glove right	16	clutching	Sweden_71/clutching	painted
+skater	Glove right	16	clutching	clutching	painted
+skater	Helmet_Custom	1	E-Helmet	Helmet/E-Helmet	painted
+skater	Helmet_Custom	1	E-Helmet	Helmet/E-Helmet_Enrage	painted
+skater	Helmet_Custom	1	E-Helmet	Helmet/E-Helmet_Frog	painted
+skater	Helmet_Custom	1	E-Helmet	Helmet/E-Helmet_Gold	painted
+skater	Helmet_Custom	1	E-Helmet	Helmet_Custom_Colors/E-Helmet	mask
+skater	Helmet_Custom	1	E-Helmet	Helmet_Custom_Iso/E-Helmet	painted
+skater	Helmet_Custom	1	E-Helmet	Helmet_Wing/W-Helmet	painted
+skater	Helmet_Custom	1	N-Helmet	Helmet/N-Helmet	painted
+skater	Helmet_Custom	1	N-Helmet	Helmet/N-Helmet_Enrage	painted
+skater	Helmet_Custom	1	N-Helmet	Helmet/N-Helmet_Frog	painted
+skater	Helmet_Custom	1	N-Helmet	Helmet/N-Helmet_Gold	painted
+skater	Helmet_Custom	1	N-Helmet	Helmet_Custom_Colors/N-Helmet	mask
+skater	Helmet_Custom	1	N-Helmet	Helmet_Custom_Iso/N-Helmet	painted
+skater	Helmet_Custom	1	N-Helmet	Helmet_Wing/N-Helmet	painted
+skater	Helmet_Custom	1	NE-Helmet	Helmet/NE-Helmet	painted
+skater	Helmet_Custom	1	NE-Helmet	Helmet/NW-Helmet_Enrage	painted
+skater	Helmet_Custom	1	NE-Helmet	Helmet/NW-Helmet_Frog	painted
+skater	Helmet_Custom	1	NE-Helmet	Helmet/NW-Helmet_Gold	painted
+skater	Helmet_Custom	1	NE-Helmet	Helmet_Custom_Colors/NE-Helmet	mask
+skater	Helmet_Custom	1	NE-Helmet	Helmet_Custom_Iso/NE-Helmet	painted
+skater	Helmet_Custom	1	NE-Helmet	Helmet_Wing/NW-Helmet	painted
+skater	Helmet_Custom	1	NW-Helmet	Helmet/NW-Helmet	painted
+skater	Helmet_Custom	1	NW-Helmet	Helmet/NW-Helmet_Enrage	painted
+skater	Helmet_Custom	1	NW-Helmet	Helmet/NW-Helmet_Frog	painted
+skater	Helmet_Custom	1	NW-Helmet	Helmet/NW-Helmet_Gold	painted
+skater	Helmet_Custom	1	NW-Helmet	Helmet_Custom_Colors/NW-Helmet	mask
+skater	Helmet_Custom	1	NW-Helmet	Helmet_Custom_Iso/NW-Helmet	painted
+skater	Helmet_Custom	1	NW-Helmet	Helmet_Wing/NW-Helmet	painted
+skater	Helmet_Custom	1	S-Helmet	Helmet/S-Helmet	painted
+skater	Helmet_Custom	1	S-Helmet	Helmet/S-Helmet_Enrage	painted
+skater	Helmet_Custom	1	S-Helmet	Helmet/S-Helmet_Frog	painted
+skater	Helmet_Custom	1	S-Helmet	Helmet/S-Helmet_Gold	painted
+skater	Helmet_Custom	1	S-Helmet	Helmet_Custom_Colors/S-Helmet	mask
+skater	Helmet_Custom	1	S-Helmet	Helmet_Custom_Iso/S-Helmet	painted
+skater	Helmet_Custom	1	S-Helmet	Helmet_Wing/S-Helmet	painted
+skater	Helmet_Custom	1	SE-Helmet	Helmet/SE-Helmet	painted
+skater	Helmet_Custom	1	SE-Helmet	Helmet/SW-Helmet_Enrage	painted
+skater	Helmet_Custom	1	SE-Helmet	Helmet/SW-Helmet_Frog	painted
+skater	Helmet_Custom	1	SE-Helmet	Helmet/SW-Helmet_Gold	painted
+skater	Helmet_Custom	1	SE-Helmet	Helmet_Custom_Colors/SE-Helmet	mask
+skater	Helmet_Custom	1	SE-Helmet	Helmet_Custom_Iso/SE-Helmet	painted
+skater	Helmet_Custom	1	SE-Helmet	Helmet_Wing/SW-Helmet	painted
+skater	Helmet_Custom	1	SW-Helmet	Helmet/SW-Helmet	painted
+skater	Helmet_Custom	1	SW-Helmet	Helmet/SW-Helmet_Enrage	painted
+skater	Helmet_Custom	1	SW-Helmet	Helmet/SW-Helmet_Frog	painted
+skater	Helmet_Custom	1	SW-Helmet	Helmet/SW-Helmet_Gold	painted
+skater	Helmet_Custom	1	SW-Helmet	Helmet_Custom_Colors/SW-Helmet	mask
+skater	Helmet_Custom	1	SW-Helmet	Helmet_Custom_Iso/SW-Helmet	painted
+skater	Helmet_Custom	1	SW-Helmet	Helmet_Wing/SW-Helmet	painted
+skater	Helmet_Custom	1	W-Helmet	Helmet/E-Helmet_Enrage	painted
+skater	Helmet_Custom	1	W-Helmet	Helmet/E-Helmet_Frog	painted
+skater	Helmet_Custom	1	W-Helmet	Helmet/E-Helmet_Gold	painted
+skater	Helmet_Custom	1	W-Helmet	Helmet/W-Helmet	painted
+skater	Helmet_Custom	1	W-Helmet	Helmet_Custom_Colors/W-Helmet	mask
+skater	Helmet_Custom	1	W-Helmet	Helmet_Custom_Iso/W-Helmet	painted
+skater	Helmet_Custom	1	W-Helmet	Helmet_Wing/W-Helmet	painted
+skater	Leg left	2	E-Leg left	Chicago_Away/E-Leg left	painted
+skater	Leg left	2	E-Leg left	Customization_Colors/E-Leg left	mask
+skater	Leg left	2	E-Leg left	Customization_Lights/E-Leg left	painted
+skater	Leg left	2	E-Leg left	Figure_Skaters/E-Leg left	painted
+skater	Leg left	2	E-Leg left	Golfers/E-Leg left	painted
+skater	Leg left	2	E-Leg left	HockeyFC/E-Leg left	painted
+skater	Leg left	2	E-Leg left	HockeyFC_Away/E-Leg left	painted
+skater	Leg left	2	E-Leg left	Knights/E-Leg left	painted
+skater	Leg left	2	E-Leg left	Knights_Prince/E-Leg left	painted
+skater	Leg left	2	E-Leg left	Mountaineers/E-Leg left	painted
+skater	Leg left	2	E-Leg left	Mountaineers_Fest/E-Leg left	painted
+skater	Leg left	2	E-Leg left	Princess/E-Leg left	painted
+skater	Leg left	2	E-Leg left	Prisoners/E-Leg left	painted
+skater	Leg left	2	E-Leg left	Referee/E-Leg left	painted
+skater	Leg left	2	E-Leg left	Toronto_Home_34/E-Leg left	painted
+skater	Leg left	2	E-Leg left	Tycoons/E-Leg left	painted
+skater	Leg left	2	N-Leg left	Chicago_Away/N-Leg left	painted
+skater	Leg left	2	N-Leg left	Customization_Colors/N-Leg left	mask
+skater	Leg left	2	N-Leg left	Customization_Lights/N-Leg left	painted
+skater	Leg left	2	N-Leg left	Figure_Skaters/N-Leg left	painted
+skater	Leg left	2	N-Leg left	Golfers/N-Leg left	painted
+skater	Leg left	2	N-Leg left	HockeyFC/N-Leg left	painted
+skater	Leg left	2	N-Leg left	HockeyFC_Away/N-Leg left	painted
+skater	Leg left	2	N-Leg left	Knights/N-Leg left	painted
+skater	Leg left	2	N-Leg left	Knights_Prince/N-Leg left	painted
+skater	Leg left	2	N-Leg left	Mountaineers/N-Leg left	painted
+skater	Leg left	2	N-Leg left	Mountaineers_Fest/N-Leg left	painted
+skater	Leg left	2	N-Leg left	Princess/N-Leg left	painted
+skater	Leg left	2	N-Leg left	Prisoners/N-Leg left	painted
+skater	Leg left	2	N-Leg left	Referee/N-Leg left	painted
+skater	Leg left	2	N-Leg left	Toronto_Home_34/N-Leg left	painted
+skater	Leg left	2	N-Leg left	Tycoons/N-Leg left	painted
+skater	Leg left	2	NE-Leg left	Chicago_Away/NE-Leg left	painted
+skater	Leg left	2	NE-Leg left	Customization_Colors/NE-Leg left	mask
+skater	Leg left	2	NE-Leg left	Customization_Lights/NE-Leg left	painted
+skater	Leg left	2	NE-Leg left	Figure_Skaters/NE-Leg left	painted
+skater	Leg left	2	NE-Leg left	Golfers/NE-Leg left	painted
+skater	Leg left	2	NE-Leg left	HockeyFC/NE-Leg left	painted
+skater	Leg left	2	NE-Leg left	HockeyFC_Away/NE-Leg left	painted
+skater	Leg left	2	NE-Leg left	Knights/NE-Leg left	painted
+skater	Leg left	2	NE-Leg left	Knights_Prince/NE-Leg left	painted
+skater	Leg left	2	NE-Leg left	Mountaineers/NE-Leg left	painted
+skater	Leg left	2	NE-Leg left	Mountaineers_Fest/NE-Leg left	painted
+skater	Leg left	2	NE-Leg left	Princess/NE-Leg left	painted
+skater	Leg left	2	NE-Leg left	Prisoners/NE-Leg left	painted
+skater	Leg left	2	NE-Leg left	Referee/NE-Leg left	painted
+skater	Leg left	2	NE-Leg left	Toronto_Home_34/NE-Leg left	painted
+skater	Leg left	2	NE-Leg left	Tycoons/NE-Leg left	painted
+skater	Leg left	2	NW-Leg left	Chicago_Away/NW-Leg left	painted
+skater	Leg left	2	NW-Leg left	Customization_Colors/NW-Leg left	mask
+skater	Leg left	2	NW-Leg left	Customization_Lights/NW-Leg left	painted
+skater	Leg left	2	NW-Leg left	Figure_Skaters/NW-Leg left	painted
+skater	Leg left	2	NW-Leg left	Golfers/NW-Leg left	painted
+skater	Leg left	2	NW-Leg left	HockeyFC/NW-Leg left	painted
+skater	Leg left	2	NW-Leg left	HockeyFC_Away/NW-Leg left	painted
+skater	Leg left	2	NW-Leg left	Knights/NW-Leg left	painted
+skater	Leg left	2	NW-Leg left	Knights_Prince/NW-Leg left	painted
+skater	Leg left	2	NW-Leg left	Mountaineers/NW-Leg left	painted
+skater	Leg left	2	NW-Leg left	Mountaineers_Fest/NW-Leg left	painted
+skater	Leg left	2	NW-Leg left	Princess/NW-Leg left	painted
+skater	Leg left	2	NW-Leg left	Prisoners/NW-Leg left	painted
+skater	Leg left	2	NW-Leg left	Referee/NW-Leg left	painted
+skater	Leg left	2	NW-Leg left	Toronto_Home_34/NW-Leg left	painted
+skater	Leg left	2	NW-Leg left	Tycoons/NW-Leg left	painted
+skater	Leg left	2	S-Leg left	Chicago_Away/S-Leg left	painted
+skater	Leg left	2	S-Leg left	Customization_Colors/S-Leg left	mask
+skater	Leg left	2	S-Leg left	Customization_Lights/S-Leg left	painted
+skater	Leg left	2	S-Leg left	Figure_Skaters/S-Leg left	painted
+skater	Leg left	2	S-Leg left	Golfers/S-Leg left	painted
+skater	Leg left	2	S-Leg left	HockeyFC/S-Leg left	painted
+skater	Leg left	2	S-Leg left	HockeyFC_Away/S-Leg left	painted
+skater	Leg left	2	S-Leg left	Knights/S-Leg left	painted
+skater	Leg left	2	S-Leg left	Knights_Prince/S-Leg left	painted
+skater	Leg left	2	S-Leg left	Mountaineers/S-Leg left	painted
+skater	Leg left	2	S-Leg left	Mountaineers_Fest/S-Leg left	painted
+skater	Leg left	2	S-Leg left	Princess/S-Leg left	painted
+skater	Leg left	2	S-Leg left	Prisoners/S-Leg left	painted
+skater	Leg left	2	S-Leg left	Referee/S-Leg left	painted
+skater	Leg left	2	S-Leg left	Toronto_Home_34/S-Leg left	painted
+skater	Leg left	2	S-Leg left	Tycoons/S-Leg left	painted
+skater	Leg left	2	SE-Leg left	Chicago_Away/SE-Leg left	painted
+skater	Leg left	2	SE-Leg left	Customization_Colors/SE-Leg left	mask
+skater	Leg left	2	SE-Leg left	Customization_Lights/SE-Leg left	painted
+skater	Leg left	2	SE-Leg left	Figure_Skaters/SE-Leg left	painted
+skater	Leg left	2	SE-Leg left	Golfers/SE-Leg left	painted
+skater	Leg left	2	SE-Leg left	HockeyFC/SE-Leg left	painted
+skater	Leg left	2	SE-Leg left	HockeyFC_Away/SE-Leg left	painted
+skater	Leg left	2	SE-Leg left	Knights/SE-Leg left	painted
+skater	Leg left	2	SE-Leg left	Knights_Prince/SE-Leg left	painted
+skater	Leg left	2	SE-Leg left	Mountaineers/SE-Leg left	painted
+skater	Leg left	2	SE-Leg left	Mountaineers_Fest/SE-Leg left	painted
+skater	Leg left	2	SE-Leg left	Princess/SE-Leg left	painted
+skater	Leg left	2	SE-Leg left	Prisoners/SE-Leg left	painted
+skater	Leg left	2	SE-Leg left	Referee/SE-Leg left	painted
+skater	Leg left	2	SE-Leg left	Toronto_Home_34/SE-Leg left	painted
+skater	Leg left	2	SE-Leg left	Tycoons/SE-Leg left	painted
+skater	Leg left	2	SW-Leg left	Chicago_Away/SW-Leg left	painted
+skater	Leg left	2	SW-Leg left	Customization_Colors/SW-Leg left	mask
+skater	Leg left	2	SW-Leg left	Customization_Lights/SW-Leg left	painted
+skater	Leg left	2	SW-Leg left	Figure_Skaters/SW-Leg left	painted
+skater	Leg left	2	SW-Leg left	Golfers/SW-Leg left	painted
+skater	Leg left	2	SW-Leg left	HockeyFC/SW-Leg left	painted
+skater	Leg left	2	SW-Leg left	HockeyFC_Away/SW-Leg left	painted
+skater	Leg left	2	SW-Leg left	Knights/SW-Leg left	painted
+skater	Leg left	2	SW-Leg left	Knights_Prince/SW-Leg left	painted
+skater	Leg left	2	SW-Leg left	Mountaineers/SW-Leg left	painted
+skater	Leg left	2	SW-Leg left	Mountaineers_Fest/SW-Leg left	painted
+skater	Leg left	2	SW-Leg left	Princess/SW-Leg left	painted
+skater	Leg left	2	SW-Leg left	Prisoners/SW-Leg left	painted
+skater	Leg left	2	SW-Leg left	Referee/SW-Leg left	painted
+skater	Leg left	2	SW-Leg left	Toronto_Home_34/SW-Leg left	painted
+skater	Leg left	2	SW-Leg left	Tycoons/SW-Leg left	painted
+skater	Leg left	2	W-Leg left	Chicago_Away/W-Leg left	painted
+skater	Leg left	2	W-Leg left	Customization_Colors/W-Leg left	mask
+skater	Leg left	2	W-Leg left	Customization_Lights/W-Leg left	painted
+skater	Leg left	2	W-Leg left	Figure_Skaters/W-Leg left	painted
+skater	Leg left	2	W-Leg left	Golfers/W-Leg left	painted
+skater	Leg left	2	W-Leg left	HockeyFC/W-Leg left	painted
+skater	Leg left	2	W-Leg left	HockeyFC_Away/W-Leg left	painted
+skater	Leg left	2	W-Leg left	Knights/W-Leg left	painted
+skater	Leg left	2	W-Leg left	Knights_Prince/W-Leg left	painted
+skater	Leg left	2	W-Leg left	Mountaineers/W-Leg left	painted
+skater	Leg left	2	W-Leg left	Mountaineers_Fest/W-Leg left	painted
+skater	Leg left	2	W-Leg left	Princess/W-Leg left	painted
+skater	Leg left	2	W-Leg left	Prisoners/W-Leg left	painted
+skater	Leg left	2	W-Leg left	Referee/W-Leg left	painted
+skater	Leg left	2	W-Leg left	Toronto_Home_34/W-Leg left	painted
+skater	Leg left	2	W-Leg left	Tycoons/W-Leg left	painted
+skater	Leg right	2	E-Leg right	Chicago_Away/E-Leg right	painted
+skater	Leg right	2	E-Leg right	Customization_Colors/E-Leg right	mask
+skater	Leg right	2	E-Leg right	Customization_Lights/E-Leg right	painted
+skater	Leg right	2	E-Leg right	Figure_Skaters/E-Leg right	painted
+skater	Leg right	2	E-Leg right	Golfers/E-Leg right	painted
+skater	Leg right	2	E-Leg right	HockeyFC/E-Leg right	painted
+skater	Leg right	2	E-Leg right	HockeyFC_Away/E-Leg right	painted
+skater	Leg right	2	E-Leg right	Knights/E-Leg right	painted
+skater	Leg right	2	E-Leg right	Knights_Prince/E-Leg right	painted
+skater	Leg right	2	E-Leg right	Mountaineers/E-Leg right	painted
+skater	Leg right	2	E-Leg right	Mountaineers_Fest/E-Leg right	painted
+skater	Leg right	2	E-Leg right	Princess/E-Leg right	painted
+skater	Leg right	2	E-Leg right	Prisoners/E-Leg right	painted
+skater	Leg right	2	E-Leg right	Referee/E-Leg right	painted
+skater	Leg right	2	E-Leg right	Toronto_Home_34/E-Leg right	painted
+skater	Leg right	2	E-Leg right	Tycoons/E-Leg right	painted
+skater	Leg right	2	N-Leg right	Chicago_Away/N-Leg right	painted
+skater	Leg right	2	N-Leg right	Customization_Colors/N-Leg right	mask
+skater	Leg right	2	N-Leg right	Customization_Lights/N-Leg right	painted
+skater	Leg right	2	N-Leg right	Figure_Skaters/N-Leg right	painted
+skater	Leg right	2	N-Leg right	Golfers/N-Leg right	painted
+skater	Leg right	2	N-Leg right	HockeyFC/N-Leg right	painted
+skater	Leg right	2	N-Leg right	HockeyFC_Away/N-Leg right	painted
+skater	Leg right	2	N-Leg right	Knights/N-Leg right	painted
+skater	Leg right	2	N-Leg right	Knights_Prince/N-Leg right	painted
+skater	Leg right	2	N-Leg right	Mountaineers/N-Leg right	painted
+skater	Leg right	2	N-Leg right	Mountaineers_Fest/N-Leg right	painted
+skater	Leg right	2	N-Leg right	Princess/N-Leg right	painted
+skater	Leg right	2	N-Leg right	Prisoners/N-Leg right	painted
+skater	Leg right	2	N-Leg right	Referee/N-Leg right	painted
+skater	Leg right	2	N-Leg right	Toronto_Home_34/N-Leg right	painted
+skater	Leg right	2	N-Leg right	Tycoons/N-Leg right	painted
+skater	Leg right	2	NE-Leg right	Chicago_Away/NE-Leg right	painted
+skater	Leg right	2	NE-Leg right	Customization_Colors/NE-Leg right	mask
+skater	Leg right	2	NE-Leg right	Customization_Lights/NE-Leg right	painted
+skater	Leg right	2	NE-Leg right	Figure_Skaters/NE-Leg right	painted
+skater	Leg right	2	NE-Leg right	Golfers/NE-Leg right	painted
+skater	Leg right	2	NE-Leg right	HockeyFC/NE-Leg right	painted
+skater	Leg right	2	NE-Leg right	HockeyFC_Away/NE-Leg right	painted
+skater	Leg right	2	NE-Leg right	Knights/NE-Leg right	painted
+skater	Leg right	2	NE-Leg right	Knights_Prince/NE-Leg right	painted
+skater	Leg right	2	NE-Leg right	Mountaineers/NE-Leg right	painted
+skater	Leg right	2	NE-Leg right	Mountaineers_Fest/NE-Leg right	painted
+skater	Leg right	2	NE-Leg right	Princess/NE-Leg right	painted
+skater	Leg right	2	NE-Leg right	Prisoners/NE-Leg right	painted
+skater	Leg right	2	NE-Leg right	Referee/NE-Leg right	painted
+skater	Leg right	2	NE-Leg right	Toronto_Home_34/NE-Leg right	painted
+skater	Leg right	2	NE-Leg right	Tycoons/NE-Leg right	painted
+skater	Leg right	2	NW-Leg right	Chicago_Away/NW-Leg right	painted
+skater	Leg right	2	NW-Leg right	Customization_Colors/NW-Leg right	mask
+skater	Leg right	2	NW-Leg right	Customization_Lights/NW-Leg right	painted
+skater	Leg right	2	NW-Leg right	Figure_Skaters/NW-Leg right	painted
+skater	Leg right	2	NW-Leg right	Golfers/NW-Leg right	painted
+skater	Leg right	2	NW-Leg right	HockeyFC/NW-Leg right	painted
+skater	Leg right	2	NW-Leg right	HockeyFC_Away/NW-Leg right	painted
+skater	Leg right	2	NW-Leg right	Knights/NW-Leg right	painted
+skater	Leg right	2	NW-Leg right	Knights_Prince/NW-Leg right	painted
+skater	Leg right	2	NW-Leg right	Mountaineers/NW-Leg right	painted
+skater	Leg right	2	NW-Leg right	Mountaineers_Fest/NW-Leg right	painted
+skater	Leg right	2	NW-Leg right	Princess/NW-Leg right	painted
+skater	Leg right	2	NW-Leg right	Prisoners/NW-Leg right	painted
+skater	Leg right	2	NW-Leg right	Referee/NW-Leg right	painted
+skater	Leg right	2	NW-Leg right	Toronto_Home_34/NW-Leg right	painted
+skater	Leg right	2	NW-Leg right	Tycoons/NW-Leg right	painted
+skater	Leg right	2	S-Leg right	Chicago_Away/S-Leg right	painted
+skater	Leg right	2	S-Leg right	Customization_Colors/S-Leg right	mask
+skater	Leg right	2	S-Leg right	Customization_Lights/S-Leg right	painted
+skater	Leg right	2	S-Leg right	Figure_Skaters/S-Leg right	painted
+skater	Leg right	2	S-Leg right	Golfers/S-Leg right	painted
+skater	Leg right	2	S-Leg right	HockeyFC/S-Leg right	painted
+skater	Leg right	2	S-Leg right	HockeyFC_Away/S-Leg right	painted
+skater	Leg right	2	S-Leg right	Knights/S-Leg right	painted
+skater	Leg right	2	S-Leg right	Knights_Prince/S-Leg right	painted
+skater	Leg right	2	S-Leg right	Mountaineers/S-Leg right	painted
+skater	Leg right	2	S-Leg right	Mountaineers_Fest/S-Leg right	painted
+skater	Leg right	2	S-Leg right	Princess/S-Leg right	painted
+skater	Leg right	2	S-Leg right	Prisoners/S-Leg right	painted
+skater	Leg right	2	S-Leg right	Referee/S-Leg right	painted
+skater	Leg right	2	S-Leg right	Toronto_Home_34/S-Leg right	painted
+skater	Leg right	2	S-Leg right	Tycoons/S-Leg right	painted
+skater	Leg right	2	SE-Leg right	Chicago_Away/SE-Leg right	painted
+skater	Leg right	2	SE-Leg right	Customization_Colors/SE-Leg right	mask
+skater	Leg right	2	SE-Leg right	Customization_Lights/SE-Leg right	painted
+skater	Leg right	2	SE-Leg right	Figure_Skaters/SE-Leg right	painted
+skater	Leg right	2	SE-Leg right	Golfers/SE-Leg right	painted
+skater	Leg right	2	SE-Leg right	HockeyFC/SE-Leg right	painted
+skater	Leg right	2	SE-Leg right	HockeyFC_Away/SE-Leg right	painted
+skater	Leg right	2	SE-Leg right	Knights/SE-Leg right	painted
+skater	Leg right	2	SE-Leg right	Knights_Prince/SE-Leg right	painted
+skater	Leg right	2	SE-Leg right	Mountaineers/SE-Leg right	painted
+skater	Leg right	2	SE-Leg right	Mountaineers_Fest/SE-Leg right	painted
+skater	Leg right	2	SE-Leg right	Princess/SE-Leg right	painted
+skater	Leg right	2	SE-Leg right	Prisoners/SE-Leg right	painted
+skater	Leg right	2	SE-Leg right	Referee/SE-Leg right	painted
+skater	Leg right	2	SE-Leg right	Toronto_Home_34/SE-Leg right	painted
+skater	Leg right	2	SE-Leg right	Tycoons/SE-Leg right	painted
+skater	Leg right	2	SW-Leg right	Chicago_Away/SW-Leg right	painted
+skater	Leg right	2	SW-Leg right	Customization_Colors/SW-Leg right	mask
+skater	Leg right	2	SW-Leg right	Customization_Lights/SW-Leg right	painted
+skater	Leg right	2	SW-Leg right	Figure_Skaters/SW-Leg right	painted
+skater	Leg right	2	SW-Leg right	Golfers/SW-Leg right	painted
+skater	Leg right	2	SW-Leg right	HockeyFC/SW-Leg right	painted
+skater	Leg right	2	SW-Leg right	HockeyFC_Away/SW-Leg right	painted
+skater	Leg right	2	SW-Leg right	Knights/SW-Leg right	painted
+skater	Leg right	2	SW-Leg right	Knights_Prince/SW-Leg right	painted
+skater	Leg right	2	SW-Leg right	Mountaineers/SW-Leg right	painted
+skater	Leg right	2	SW-Leg right	Mountaineers_Fest/SW-Leg right	painted
+skater	Leg right	2	SW-Leg right	Princess/SW-Leg right	painted
+skater	Leg right	2	SW-Leg right	Prisoners/SW-Leg right	painted
+skater	Leg right	2	SW-Leg right	Referee/SW-Leg right	painted
+skater	Leg right	2	SW-Leg right	Toronto_Home_34/SW-Leg right	painted
+skater	Leg right	2	SW-Leg right	Tycoons/SW-Leg right	painted
+skater	Leg right	2	W-Leg right	Chicago_Away/W-Leg right	painted
+skater	Leg right	2	W-Leg right	Customization_Colors/W-Leg right	mask
+skater	Leg right	2	W-Leg right	Customization_Lights/W-Leg right	painted
+skater	Leg right	2	W-Leg right	Figure_Skaters/W-Leg right	painted
+skater	Leg right	2	W-Leg right	Golfers/W-Leg right	painted
+skater	Leg right	2	W-Leg right	HockeyFC/W-Leg right	painted
+skater	Leg right	2	W-Leg right	HockeyFC_Away/W-Leg right	painted
+skater	Leg right	2	W-Leg right	Knights/W-Leg right	painted
+skater	Leg right	2	W-Leg right	Knights_Prince/W-Leg right	painted
+skater	Leg right	2	W-Leg right	Mountaineers/W-Leg right	painted
+skater	Leg right	2	W-Leg right	Mountaineers_Fest/W-Leg right	painted
+skater	Leg right	2	W-Leg right	Princess/W-Leg right	painted
+skater	Leg right	2	W-Leg right	Prisoners/W-Leg right	painted
+skater	Leg right	2	W-Leg right	Referee/W-Leg right	painted
+skater	Leg right	2	W-Leg right	Toronto_Home_34/W-Leg right	painted
+skater	Leg right	2	W-Leg right	Tycoons/W-Leg right	painted
+skater	Pants left	8	E-Pants left	Chicago_Away/E-Pants left	painted
+skater	Pants left	8	E-Pants left	Customization_Colors/E-Pants left	mask
+skater	Pants left	8	E-Pants left	Customization_Lights/E-Pants left	painted
+skater	Pants left	8	E-Pants left	Figure_Skaters/E-Pants left	painted
+skater	Pants left	8	E-Pants left	Golfers/E-Pants left	painted
+skater	Pants left	8	E-Pants left	HockeyFC/E-Pants left	painted
+skater	Pants left	8	E-Pants left	Knights_Prince/E-Pants left	painted
+skater	Pants left	8	E-Pants left	Mountaineers/E-Pants left	painted
+skater	Pants left	8	E-Pants left	Prisoners/E-Pants left	painted
+skater	Pants left	8	E-Pants left	Tycoons/E-Pants left	painted
+skater	Pants left	8	N-Pants left	Chicago_Away/N-Pants left	painted
+skater	Pants left	8	N-Pants left	Customization_Colors/N-Pants left	mask
+skater	Pants left	8	N-Pants left	Customization_Lights/N-Pants left	painted
+skater	Pants left	8	N-Pants left	Figure_Skaters/N-Pants left	painted
+skater	Pants left	8	N-Pants left	Golfers/N-Pants left	painted
+skater	Pants left	8	N-Pants left	HockeyFC/N-Pants left	painted
+skater	Pants left	8	N-Pants left	Knights_Prince/N-Pants left	painted
+skater	Pants left	8	N-Pants left	Mountaineers/N-Pants left	painted
+skater	Pants left	8	N-Pants left	Prisoners/N-Pants left	painted
+skater	Pants left	8	N-Pants left	Tycoons/N-Pants left	painted
+skater	Pants left	8	NE-Pants left	Chicago_Away/NE-Pants left	painted
+skater	Pants left	8	NE-Pants left	Customization_Colors/NE-Pants left	mask
+skater	Pants left	8	NE-Pants left	Customization_Lights/NE-Pants left	painted
+skater	Pants left	8	NE-Pants left	Figure_Skaters/NE-Pants left	painted
+skater	Pants left	8	NE-Pants left	Golfers/NE-Pants left	painted
+skater	Pants left	8	NE-Pants left	HockeyFC/NE-Pants left	painted
+skater	Pants left	8	NE-Pants left	Knights_Prince/NE-Pants left	painted
+skater	Pants left	8	NE-Pants left	Mountaineers/NE-Pants left	painted
+skater	Pants left	8	NE-Pants left	Prisoners/NE-Pants left	painted
+skater	Pants left	8	NE-Pants left	Tycoons/NE-Pants left	painted
+skater	Pants left	8	NW-Pants left	Chicago_Away/NW-Pants left	painted
+skater	Pants left	8	NW-Pants left	Customization_Colors/NW-Pants left	mask
+skater	Pants left	8	NW-Pants left	Customization_Lights/NW-Pants left	painted
+skater	Pants left	8	NW-Pants left	Figure_Skaters/NW-Pants left	painted
+skater	Pants left	8	NW-Pants left	Golfers/NW-Pants left	painted
+skater	Pants left	8	NW-Pants left	HockeyFC/NW-Pants left	painted
+skater	Pants left	8	NW-Pants left	Knights_Prince/NW-Pants left	painted
+skater	Pants left	8	NW-Pants left	Mountaineers/NW-Pants left	painted
+skater	Pants left	8	NW-Pants left	Prisoners/NW-Pants left	painted
+skater	Pants left	8	NW-Pants left	Tycoons/NW-Pants left	painted
+skater	Pants left	8	S-Pants left	Chicago_Away/S-Pants left	painted
+skater	Pants left	8	S-Pants left	Customization_Colors/S-Pants left	mask
+skater	Pants left	8	S-Pants left	Customization_Lights/S-Pants left	painted
+skater	Pants left	8	S-Pants left	Figure_Skaters/S-Pants left	painted
+skater	Pants left	8	S-Pants left	Golfers/S-Pants left	painted
+skater	Pants left	8	S-Pants left	HockeyFC/S-Pants left	painted
+skater	Pants left	8	S-Pants left	Knights_Prince/S-Pants left	painted
+skater	Pants left	8	S-Pants left	Mountaineers/S-Pants left	painted
+skater	Pants left	8	S-Pants left	Prisoners/S-Pants left	painted
+skater	Pants left	8	S-Pants left	Tycoons/S-Pants left	painted
+skater	Pants left	8	SE-Pants left	Chicago_Away/SE-Pants left	painted
+skater	Pants left	8	SE-Pants left	Customization_Colors/SE-Pants left	mask
+skater	Pants left	8	SE-Pants left	Customization_Lights/SE-Pants left	painted
+skater	Pants left	8	SE-Pants left	Figure_Skaters/SE-Pants left	painted
+skater	Pants left	8	SE-Pants left	Golfers/SE-Pants left	painted
+skater	Pants left	8	SE-Pants left	HockeyFC/SE-Pants left	painted
+skater	Pants left	8	SE-Pants left	Knights_Prince/SE-Pants left	painted
+skater	Pants left	8	SE-Pants left	Mountaineers/SE-Pants left	painted
+skater	Pants left	8	SE-Pants left	Prisoners/SE-Pants left	painted
+skater	Pants left	8	SE-Pants left	Tycoons/SE-Pants left	painted
+skater	Pants left	8	SW-Pants left	Chicago_Away/SW-Pants left	painted
+skater	Pants left	8	SW-Pants left	Customization_Colors/SW-Pants left	mask
+skater	Pants left	8	SW-Pants left	Customization_Lights/SW-Pants left	painted
+skater	Pants left	8	SW-Pants left	Figure_Skaters/SW-Pants left	painted
+skater	Pants left	8	SW-Pants left	Golfers/SW-Pants left	painted
+skater	Pants left	8	SW-Pants left	HockeyFC/SW-Pants left	painted
+skater	Pants left	8	SW-Pants left	Knights_Prince/SW-Pants left	painted
+skater	Pants left	8	SW-Pants left	Mountaineers/SW-Pants left	painted
+skater	Pants left	8	SW-Pants left	Prisoners/SW-Pants left	painted
+skater	Pants left	8	SW-Pants left	Tycoons/SW-Pants left	painted
+skater	Pants left	8	W-Pants left	Chicago_Away/W-Pants left	painted
+skater	Pants left	8	W-Pants left	Customization_Colors/W-Pants left	mask
+skater	Pants left	8	W-Pants left	Customization_Lights/W-Pants left	painted
+skater	Pants left	8	W-Pants left	Figure_Skaters/W-Pants left	painted
+skater	Pants left	8	W-Pants left	Golfers/W-Pants left	painted
+skater	Pants left	8	W-Pants left	HockeyFC/W-Pants left	painted
+skater	Pants left	8	W-Pants left	Knights_Prince/W-Pants left	painted
+skater	Pants left	8	W-Pants left	Mountaineers/W-Pants left	painted
+skater	Pants left	8	W-Pants left	Prisoners/W-Pants left	painted
+skater	Pants left	8	W-Pants left	Tycoons/W-Pants left	painted
+skater	Pants right	8	E-Pants right	Chicago_Away/E-Pants right	painted
+skater	Pants right	8	E-Pants right	Customization_Colors/E-Pants right	mask
+skater	Pants right	8	E-Pants right	Customization_Lights/E-Pants right	painted
+skater	Pants right	8	E-Pants right	Figure_Skaters/E-Pants right	painted
+skater	Pants right	8	E-Pants right	Golfers/E-Pants right	painted
+skater	Pants right	8	E-Pants right	HockeyFC/E-Pants right	painted
+skater	Pants right	8	E-Pants right	Knights_Prince/E-Pants right	painted
+skater	Pants right	8	E-Pants right	Mountaineers/E-Pants right	painted
+skater	Pants right	8	E-Pants right	Prisoners/E-Pants right	painted
+skater	Pants right	8	E-Pants right	Tycoons/E-Pants right	painted
+skater	Pants right	8	N-Pants right	Chicago_Away/N-Pants right	painted
+skater	Pants right	8	N-Pants right	Customization_Colors/N-Pants right	mask
+skater	Pants right	8	N-Pants right	Customization_Lights/N-Pants right	painted
+skater	Pants right	8	N-Pants right	Figure_Skaters/N-Pants right	painted
+skater	Pants right	8	N-Pants right	Golfers/N-Pants right	painted
+skater	Pants right	8	N-Pants right	HockeyFC/N-Pants right	painted
+skater	Pants right	8	N-Pants right	Knights_Prince/N-Pants right	painted
+skater	Pants right	8	N-Pants right	Mountaineers/N-Pants right	painted
+skater	Pants right	8	N-Pants right	Prisoners/N-Pants right	painted
+skater	Pants right	8	N-Pants right	Tycoons/N-Pants right	painted
+skater	Pants right	8	NE-Pants right	Chicago_Away/NE-Pants right	painted
+skater	Pants right	8	NE-Pants right	Customization_Colors/NE-Pants right	mask
+skater	Pants right	8	NE-Pants right	Customization_Lights/NE-Pants right	painted
+skater	Pants right	8	NE-Pants right	Figure_Skaters/NE-Pants right	painted
+skater	Pants right	8	NE-Pants right	Golfers/NE-Pants right	painted
+skater	Pants right	8	NE-Pants right	HockeyFC/NE-Pants right	painted
+skater	Pants right	8	NE-Pants right	Knights_Prince/NE-Pants right	painted
+skater	Pants right	8	NE-Pants right	Mountaineers/NE-Pants right	painted
+skater	Pants right	8	NE-Pants right	Prisoners/NE-Pants right	painted
+skater	Pants right	8	NE-Pants right	Tycoons/NE-Pants right	painted
+skater	Pants right	8	NW-Pants right	Chicago_Away/NW-Pants right	painted
+skater	Pants right	8	NW-Pants right	Customization_Colors/NW-Pants right	mask
+skater	Pants right	8	NW-Pants right	Customization_Lights/NW-Pants right	painted
+skater	Pants right	8	NW-Pants right	Figure_Skaters/NW-Pants right	painted
+skater	Pants right	8	NW-Pants right	Golfers/NW-Pants right	painted
+skater	Pants right	8	NW-Pants right	HockeyFC/NW-Pants right	painted
+skater	Pants right	8	NW-Pants right	Knights_Prince/NW-Pants right	painted
+skater	Pants right	8	NW-Pants right	Mountaineers/NW-Pants right	painted
+skater	Pants right	8	NW-Pants right	Prisoners/NW-Pants right	painted
+skater	Pants right	8	NW-Pants right	Tycoons/NW-Pants right	painted
+skater	Pants right	8	S-Pants right	Chicago_Away/S-Pants right	painted
+skater	Pants right	8	S-Pants right	Customization_Colors/S-Pants right	mask
+skater	Pants right	8	S-Pants right	Customization_Lights/S-Pants right	painted
+skater	Pants right	8	S-Pants right	Figure_Skaters/S-Pants right	painted
+skater	Pants right	8	S-Pants right	Golfers/S-Pants right	painted
+skater	Pants right	8	S-Pants right	HockeyFC/S-Pants right	painted
+skater	Pants right	8	S-Pants right	Knights_Prince/S-Pants right	painted
+skater	Pants right	8	S-Pants right	Mountaineers/S-Pants right	painted
+skater	Pants right	8	S-Pants right	Prisoners/S-Pants right	painted
+skater	Pants right	8	S-Pants right	Tycoons/S-Pants right	painted
+skater	Pants right	8	SE-Pants right	Chicago_Away/SE-Pants right	painted
+skater	Pants right	8	SE-Pants right	Customization_Colors/SE-Pants right	mask
+skater	Pants right	8	SE-Pants right	Customization_Lights/SE-Pants right	painted
+skater	Pants right	8	SE-Pants right	Figure_Skaters/SE-Pants right	painted
+skater	Pants right	8	SE-Pants right	Golfers/SE-Pants right	painted
+skater	Pants right	8	SE-Pants right	HockeyFC/SE-Pants right	painted
+skater	Pants right	8	SE-Pants right	Knights_Prince/SE-Pants right	painted
+skater	Pants right	8	SE-Pants right	Mountaineers/SE-Pants right	painted
+skater	Pants right	8	SE-Pants right	Prisoners/SE-Pants right	painted
+skater	Pants right	8	SE-Pants right	Tycoons/SE-Pants right	painted
+skater	Pants right	8	SW-Pants right	Chicago_Away/SW-Pants right	painted
+skater	Pants right	8	SW-Pants right	Customization_Colors/SW-Pants right	mask
+skater	Pants right	8	SW-Pants right	Customization_Lights/SW-Pants right	painted
+skater	Pants right	8	SW-Pants right	Figure_Skaters/SW-Pants right	painted
+skater	Pants right	8	SW-Pants right	Golfers/SW-Pants right	painted
+skater	Pants right	8	SW-Pants right	HockeyFC/SW-Pants right	painted
+skater	Pants right	8	SW-Pants right	Knights_Prince/SW-Pants right	painted
+skater	Pants right	8	SW-Pants right	Mountaineers/SW-Pants right	painted
+skater	Pants right	8	SW-Pants right	Prisoners/SW-Pants right	painted
+skater	Pants right	8	SW-Pants right	Tycoons/SW-Pants right	painted
+skater	Pants right	8	W-Pants right	Chicago_Away/W-Pants right	painted
+skater	Pants right	8	W-Pants right	Customization_Colors/W-Pants right	mask
+skater	Pants right	8	W-Pants right	Customization_Lights/W-Pants right	painted
+skater	Pants right	8	W-Pants right	Figure_Skaters/W-Pants right	painted
+skater	Pants right	8	W-Pants right	Golfers/W-Pants right	painted
+skater	Pants right	8	W-Pants right	HockeyFC/W-Pants right	painted
+skater	Pants right	8	W-Pants right	Knights_Prince/W-Pants right	painted
+skater	Pants right	8	W-Pants right	Mountaineers/W-Pants right	painted
+skater	Pants right	8	W-Pants right	Prisoners/W-Pants right	painted
+skater	Pants right	8	W-Pants right	Tycoons/W-Pants right	painted
+skater	Skate left	32	E-Skate left	Skates_Complete/E-Skate right	painted
+skater	Skate left	32	E-Skate left	Skates_Complete/Skates_Color/E-Skate left	painted
+skater	Skate left	32	E-Skate left	Skates_Complete/Skates_ISO/E-Skate left	painted
+skater	Skate left	32	E-Skate left	Skates_Injury/E-Skate right	painted
+skater	Skate left	32	E-Skate left	Skates_Wingeds/E-Skate right	painted
+skater	Skate left	32	N-Skate left	Skates_Complete/N-Skate left	painted
+skater	Skate left	32	N-Skate left	Skates_Complete/Skates_Color/N-Skate left	painted
+skater	Skate left	32	N-Skate left	Skates_Complete/Skates_ISO/N-Skate left	painted
+skater	Skate left	32	N-Skate left	Skates_Injury/N-Skate left	painted
+skater	Skate left	32	N-Skate left	Skates_Wingeds/N-Skate left	painted
+skater	Skate left	32	N-Skate left_alt	Skates_Complete/N-Skate left	painted
+skater	Skate left	32	N-Skate left_alt	Skates_Complete/Skates_Color/N-Skate right	painted
+skater	Skate left	32	N-Skate left_alt	Skates_Complete/Skates_ISO/N-Skate right	painted
+skater	Skate left	32	N-Skate left_alt	Skates_Injury/N-Skate left	painted
+skater	Skate left	32	N-Skate left_alt	Skates_Wingeds/N-Skate left	painted
+skater	Skate left	32	N-Skate left_alt2	Skates_Complete/N-Skate left	painted
+skater	Skate left	32	N-Skate left_alt2	Skates_Complete/Skates_Color/N-Skate right	painted
+skater	Skate left	32	N-Skate left_alt2	Skates_Complete/Skates_ISO/N-Skate right	painted
+skater	Skate left	32	N-Skate left_alt2	Skates_Injury/N-Skate left	painted
+skater	Skate left	32	N-Skate left_alt2	Skates_Wingeds/N-Skate left	painted
+skater	Skate left	32	N-Skate_under2	Skates_Wingeds/N-Skate_under	painted
+skater	Skate left	32	NE-Skate left	Skates_Complete/NE-Skate left	painted
+skater	Skate left	32	NE-Skate left	Skates_Complete/Skates_Color/NE-Skate left	painted
+skater	Skate left	32	NE-Skate left	Skates_Complete/Skates_ISO/NE-Skate left	painted
+skater	Skate left	32	NE-Skate left	Skates_Injury/NE-Skate left	painted
+skater	Skate left	32	NE-Skate left	Skates_Wingeds/NE-Skate left	painted
+skater	Skate left	32	NW-Skate left	Skates_Complete/NW-Skate right	painted
+skater	Skate left	32	NW-Skate left	Skates_Complete/Skates_Color/NW-Skate left	painted
+skater	Skate left	32	NW-Skate left	Skates_Complete/Skates_ISO/NW-Skate left	painted
+skater	Skate left	32	NW-Skate left	Skates_Injury/NW-Skate right	painted
+skater	Skate left	32	NW-Skate left	Skates_Wingeds/NW-Skate right	painted
+skater	Skate left	32	N_Skate_under	Skates_Complete/N-Skate_under	painted
+skater	Skate left	32	N_Skate_under	Skates_Complete/Skates_Color/N-Skate_under	painted
+skater	Skate left	32	N_Skate_under	Skates_Complete/Skates_ISO/N-Skate_under	painted
+skater	Skate left	32	N_Skate_under	Skates_Injury/N-Skate_under	painted
+skater	Skate left	32	N_Skate_under	Skates_Wingeds/N-Skate_under	painted
+skater	Skate left	32	S-Skate left	Skates_Complete/S-Skate left	painted
+skater	Skate left	32	S-Skate left	Skates_Complete/Skates_Color/S-Skate left	painted
+skater	Skate left	32	S-Skate left	Skates_Complete/Skates_ISO/S-Skate left	painted
+skater	Skate left	32	S-Skate left	Skates_Injury/S-Skate left	painted
+skater	Skate left	32	S-Skate left	Skates_Wingeds/S-Skate left	painted
+skater	Skate left	32	S-Skate left_alt	Skates_Complete/S-Skate left	painted
+skater	Skate left	32	S-Skate left_alt	Skates_Complete/Skates_Color/S-Skate right	painted
+skater	Skate left	32	S-Skate left_alt	Skates_Complete/Skates_ISO/S-Skate right	painted
+skater	Skate left	32	S-Skate left_alt	Skates_Injury/S-Skate left	painted
+skater	Skate left	32	S-Skate left_alt	Skates_Wingeds/S-Skate left	painted
+skater	Skate left	32	SE-Skate left	Skates_Complete/SW-Skate left	painted
+skater	Skate left	32	SE-Skate left	Skates_Complete/Skates_Color/SE-Skate left	painted
+skater	Skate left	32	SE-Skate left	Skates_Complete/Skates_ISO/SE-Skate left	painted
+skater	Skate left	32	SE-Skate left	Skates_Injury/SW-Skate left	painted
+skater	Skate left	32	SE-Skate left	Skates_Wingeds/SW-Skate left	painted
+skater	Skate left	32	SW-Skate left	Skates_Complete/SW-Skate left	painted
+skater	Skate left	32	SW-Skate left	Skates_Complete/Skates_Color/SW-Skate left	painted
+skater	Skate left	32	SW-Skate left	Skates_Complete/Skates_ISO/SW-Skate left	painted
+skater	Skate left	32	SW-Skate left	Skates_Injury/SW-Skate left	painted
+skater	Skate left	32	SW-Skate left	Skates_Wingeds/SW-Skate left	painted
+skater	Skate left	32	W-Skate left	Skates_Complete/E-Skate right	painted
+skater	Skate left	32	W-Skate left	Skates_Complete/Skates_Color/W-Skate left	painted
+skater	Skate left	32	W-Skate left	Skates_Complete/Skates_ISO/W-Skate left	painted
+skater	Skate left	32	W-Skate left	Skates_Injury/E-Skate right	painted
+skater	Skate left	32	W-Skate left	Skates_Wingeds/E-Skate right	painted
+skater	Skate right	32	E-Skate right	Skates_Complete/E-Skate right	painted
+skater	Skate right	32	E-Skate right	Skates_Complete/Skates_Color/E-Skate right	painted
+skater	Skate right	32	E-Skate right	Skates_Complete/Skates_ISO/E-Skate right	painted
+skater	Skate right	32	E-Skate right	Skates_Injury/E-Skate right	painted
+skater	Skate right	32	E-Skate right	Skates_Wingeds/E-Skate right	painted
+skater	Skate right	32	HockeyFC/N-Skate_under	HockeyFC/N-Skate_under	painted
+skater	Skate right	32	HockeyFC/N-Skate_under	Skates_Complete/Skates_Color/N-Skate_under	painted
+skater	Skate right	32	HockeyFC/N-Skate_under	Skates_Complete/Skates_ISO/N-Skate_under	painted
+skater	Skate right	32	N-Skate right	Skates_Complete/N-Skate left	painted
+skater	Skate right	32	N-Skate right	Skates_Complete/Skates_Color/N-Skate right	painted
+skater	Skate right	32	N-Skate right	Skates_Complete/Skates_ISO/N-Skate right	painted
+skater	Skate right	32	N-Skate right	Skates_Injury/N-Skate left	painted
+skater	Skate right	32	N-Skate right	Skates_Wingeds/N-Skate left	painted
+skater	Skate right	32	N-Skate right2	Skates_Complete/N-Skate left	painted
+skater	Skate right	32	N-Skate right2	Skates_Complete/Skates_Color/N-Skate right	painted
+skater	Skate right	32	N-Skate right2	Skates_Complete/Skates_ISO/N-Skate right	painted
+skater	Skate right	32	N-Skate right2	Skates_Injury/N-Skate left	painted
+skater	Skate right	32	N-Skate right2	Skates_Wingeds/N-Skate left	painted
+skater	Skate right	32	N-Skate right_alt	Skates_Complete/N-Skate left	painted
+skater	Skate right	32	N-Skate right_alt	Skates_Complete/Skates_Color/N-Skate left	painted
+skater	Skate right	32	N-Skate right_alt	Skates_Complete/Skates_ISO/N-Skate left	painted
+skater	Skate right	32	N-Skate right_alt	Skates_Injury/N-Skate left	painted
+skater	Skate right	32	N-Skate right_alt	Skates_Wingeds/N-Skate left	painted
+skater	Skate right	32	N-Skate_under	Skates_Complete/N-Skate_under	painted
+skater	Skate right	32	N-Skate_under	Skates_Complete/Skates_Color/N-Skate_under	painted
+skater	Skate right	32	N-Skate_under	Skates_Complete/Skates_ISO/N-Skate_under	painted
+skater	Skate right	32	N-Skate_under	Skates_Injury/N-Skate_under	painted
+skater	Skate right	32	N-Skate_under	Skates_Wingeds/N-Skate_under	painted
+skater	Skate right	32	NE-Skate right	Skates_Complete/NE-Skate left	painted
+skater	Skate right	32	NE-Skate right	Skates_Complete/Skates_Color/NE-Skate right	painted
+skater	Skate right	32	NE-Skate right	Skates_Complete/Skates_ISO/NE-Skate right	painted
+skater	Skate right	32	NE-Skate right	Skates_Injury/NE-Skate left	painted
+skater	Skate right	32	NE-Skate right	Skates_Wingeds/NE-Skate left	painted
+skater	Skate right	32	NW-Skate right	Skates_Complete/NW-Skate right	painted
+skater	Skate right	32	NW-Skate right	Skates_Complete/Skates_Color/NW-Skate right	painted
+skater	Skate right	32	NW-Skate right	Skates_Complete/Skates_ISO/NW-Skate right	painted
+skater	Skate right	32	NW-Skate right	Skates_Injury/NW-Skate right	painted
+skater	Skate right	32	NW-Skate right	Skates_Wingeds/NW-Skate right	painted
+skater	Skate right	32	S-Skate right	Skates_Complete/S-Skate left	painted
+skater	Skate right	32	S-Skate right	Skates_Complete/Skates_Color/S-Skate right	painted
+skater	Skate right	32	S-Skate right	Skates_Complete/Skates_ISO/S-Skate right	painted
+skater	Skate right	32	S-Skate right	Skates_Injury/S-Skate left	painted
+skater	Skate right	32	S-Skate right	Skates_Wingeds/S-Skate left	painted
+skater	Skate right	32	S-Skate right_alt	Skates_Complete/SW-Skate left	painted
+skater	Skate right	32	S-Skate right_alt	Skates_Complete/Skates_Color/SW-Skate right	painted
+skater	Skate right	32	S-Skate right_alt	Skates_Complete/Skates_ISO/SW-Skate right	painted
+skater	Skate right	32	S-Skate right_alt	Skates_Injury/SW-Skate left	painted
+skater	Skate right	32	S-Skate right_alt	Skates_Wingeds/SW-Skate left	painted
+skater	Skate right	32	SE_Skate right	Skates_Complete/SW-Skate left	painted
+skater	Skate right	32	SE_Skate right	Skates_Complete/Skates_Color/SE-Skate right	painted
+skater	Skate right	32	SE_Skate right	Skates_Complete/Skates_ISO/SE-Skate right	painted
+skater	Skate right	32	SE_Skate right	Skates_Injury/SW-Skate left	painted
+skater	Skate right	32	SE_Skate right	Skates_Wingeds/SW-Skate left	painted
+skater	Skate right	32	SW-Skate right	Skates_Complete/SW-Skate left	painted
+skater	Skate right	32	SW-Skate right	Skates_Complete/Skates_Color/SW-Skate right	painted
+skater	Skate right	32	SW-Skate right	Skates_Complete/Skates_ISO/SW-Skate right	painted
+skater	Skate right	32	SW-Skate right	Skates_Injury/SW-Skate left	painted
+skater	Skate right	32	SW-Skate right	Skates_Wingeds/SW-Skate left	painted
+skater	Skate right	32	W-Skate right	Skates_Complete/E-Skate right	painted
+skater	Skate right	32	W-Skate right	Skates_Complete/Skates_Color/W-Skate right	painted
+skater	Skate right	32	W-Skate right	Skates_Complete/Skates_ISO/W-Skate right	painted
+skater	Skate right	32	W-Skate right	Skates_Injury/E-Skate right	painted
+skater	Skate right	32	W-Skate right	Skates_Wingeds/E-Skate right	painted
+skater	Stick	128	E-Stick	Golf_Iron/E-Stick	painted
+skater	Stick	128	E-Stick	Stick_Black/E-Stick	painted
+skater	Stick	128	E-Stick	Stick_Bluegreen/E-Stick	painted
+skater	Stick	128	E-Stick	Stick_Curve/E-Stick	painted
+skater	Stick	128	E-Stick	Stick_Gold/E-Stick	painted
+skater	Stick	128	E-Stick	Stick_Magnet/E-Stick	painted
+skater	Stick	128	E-Stick	Stick_Magnet/E-Stick_Blue	painted
+skater	Stick	128	E-Stick	Stick_Purple/E-Stick	painted
+skater	Stick	128	E-Stick	Stick_Red/E-Stick	painted
+skater	Stick	128	E-Stick	Stick_Redgold/E-Stick	painted
+skater	Stick	128	E-Stick	Stick_Sword/E-Stick	painted
+skater	Stick	128	E-Stick	Stick_Tong/E-Stick	painted
+skater	Stick	128	E-Stick	Sticks_Custom_Colors/E-Stick	painted
+skater	Stick	128	E-Stick	Sticks_Custom_Iso/E-Stick	painted
+skater	Stick	128	N-Stick	Golf_Iron/N-Stick	painted
+skater	Stick	128	N-Stick	Stick_Black/N-Stick	painted
+skater	Stick	128	N-Stick	Stick_Bluegreen/N-Stick	painted
+skater	Stick	128	N-Stick	Stick_Curve/N-Stick	painted
+skater	Stick	128	N-Stick	Stick_Gold/N-Stick	painted
+skater	Stick	128	N-Stick	Stick_Magnet/N-Stick	painted
+skater	Stick	128	N-Stick	Stick_Magnet/N-Stick_Blue	painted
+skater	Stick	128	N-Stick	Stick_Purple/N-Stick	painted
+skater	Stick	128	N-Stick	Stick_Red/N-Stick	painted
+skater	Stick	128	N-Stick	Stick_Redgold/N-Stick	painted
+skater	Stick	128	N-Stick	Stick_Sword/N-Stick	painted
+skater	Stick	128	N-Stick	Stick_Tong/N-Stick	painted
+skater	Stick	128	N-Stick	Sticks_Custom_Colors/N-Stick	painted
+skater	Stick	128	N-Stick	Sticks_Custom_Iso/N-Stick	painted
+skater	Stick	128	NE-Stick	Golf_Iron/NE-Stick	painted
+skater	Stick	128	NE-Stick	Stick_Black/NE-Stick	painted
+skater	Stick	128	NE-Stick	Stick_Bluegreen/NE-Stick	painted
+skater	Stick	128	NE-Stick	Stick_Curve/NE-Stick	painted
+skater	Stick	128	NE-Stick	Stick_Gold/NE-Stick	painted
+skater	Stick	128	NE-Stick	Stick_Magnet/NE-Stick	painted
+skater	Stick	128	NE-Stick	Stick_Magnet/NE-Stick_Blue	painted
+skater	Stick	128	NE-Stick	Stick_Purple/NE-Stick	painted
+skater	Stick	128	NE-Stick	Stick_Red/NE-Stick	painted
+skater	Stick	128	NE-Stick	Stick_Redgold/NE-Stick	painted
+skater	Stick	128	NE-Stick	Stick_Sword/NE-Stick2	painted
+skater	Stick	128	NE-Stick	Stick_Tong/NE-Stick	painted
+skater	Stick	128	NE-Stick	Sticks_Custom_Colors/N-Stick	painted
+skater	Stick	128	NE-Stick	Sticks_Custom_Iso/N-Stick	painted
+skater	Stick	128	NW-Stick	Golf_Iron/NW-Stick	painted
+skater	Stick	128	NW-Stick	Stick_Black/NW-Stick	painted
+skater	Stick	128	NW-Stick	Stick_Bluegreen/NW-Stick	painted
+skater	Stick	128	NW-Stick	Stick_Curve/NW-Stick	painted
+skater	Stick	128	NW-Stick	Stick_Gold/NW-Stick	painted
+skater	Stick	128	NW-Stick	Stick_Magnet/NW-Stick	painted
+skater	Stick	128	NW-Stick	Stick_Magnet/NW-Stick_Blue	painted
+skater	Stick	128	NW-Stick	Stick_Purple/NW-Stick	painted
+skater	Stick	128	NW-Stick	Stick_Red/NW-Stick	painted
+skater	Stick	128	NW-Stick	Stick_Redgold/NW-Stick	painted
+skater	Stick	128	NW-Stick	Stick_Sword/NW-Stick	painted
+skater	Stick	128	NW-Stick	Stick_Tong/NW-Stick	painted
+skater	Stick	128	NW-Stick	Sticks_Custom_Colors/NW-Stick	painted
+skater	Stick	128	NW-Stick	Sticks_Custom_Iso/NW-Stick	painted
+skater	Stick	128	S-Stick	Golf_Iron/S-Stick	painted
+skater	Stick	128	S-Stick	Stick_Black/S-Stick	painted
+skater	Stick	128	S-Stick	Stick_Bluegreen/S-Stick	painted
+skater	Stick	128	S-Stick	Stick_Curve/S-Stick	painted
+skater	Stick	128	S-Stick	Stick_Gold/S-Stick	painted
+skater	Stick	128	S-Stick	Stick_Magnet/S-Stick	painted
+skater	Stick	128	S-Stick	Stick_Magnet/S-Stick_blue	painted
+skater	Stick	128	S-Stick	Stick_Purple/S-Stick	painted
+skater	Stick	128	S-Stick	Stick_Red/S-Stick	painted
+skater	Stick	128	S-Stick	Stick_Redgold/S-Stick	painted
+skater	Stick	128	S-Stick	Stick_Sword/S-Stick	painted
+skater	Stick	128	S-Stick	Stick_Tong/S-Stick	painted
+skater	Stick	128	S-Stick	Sticks_Custom_Colors/S-Stick	painted
+skater	Stick	128	S-Stick	Sticks_Custom_Iso/S-Stick	painted
+skater	Stick	128	SE-Stick	Golf_Iron/SE-Stick	painted
+skater	Stick	128	SE-Stick	Stick_Black/SE-Stick	painted
+skater	Stick	128	SE-Stick	Stick_Bluegreen/SE-Stick	painted
+skater	Stick	128	SE-Stick	Stick_Curve/SE-Stick	painted
+skater	Stick	128	SE-Stick	Stick_Gold/SE-Stick	painted
+skater	Stick	128	SE-Stick	Stick_Magnet/SE-Stick	painted
+skater	Stick	128	SE-Stick	Stick_Magnet/SE-Stick_blue	painted
+skater	Stick	128	SE-Stick	Stick_Purple/SE-Stick	painted
+skater	Stick	128	SE-Stick	Stick_Red/SE-Stick	painted
+skater	Stick	128	SE-Stick	Stick_Redgold/SE-Stick	painted
+skater	Stick	128	SE-Stick	Stick_Sword/SE-Stick	painted
+skater	Stick	128	SE-Stick	Stick_Tong/SE-Stick	painted
+skater	Stick	128	SE-Stick	Sticks_Custom_Colors/SE-Stick	painted
+skater	Stick	128	SE-Stick	Sticks_Custom_Iso/SE-Stick	painted
+skater	Stick	128	SW-Stick	Golf_Iron/SW-Stick	painted
+skater	Stick	128	SW-Stick	Stick_Black/SW-Stick	painted
+skater	Stick	128	SW-Stick	Stick_Bluegreen/SW-Stick	painted
+skater	Stick	128	SW-Stick	Stick_Curve/SW-Stick	painted
+skater	Stick	128	SW-Stick	Stick_Gold/SW-Stick	painted
+skater	Stick	128	SW-Stick	Stick_Hotdog/W-Stick2	painted
+skater	Stick	128	SW-Stick	Stick_Magnet/SW-Stick	painted
+skater	Stick	128	SW-Stick	Stick_Magnet/SW-Stick_Blue	painted
+skater	Stick	128	SW-Stick	Stick_Purple/SW-Stick	painted
+skater	Stick	128	SW-Stick	Stick_Red/SW-Stick	painted
+skater	Stick	128	SW-Stick	Stick_Redgold/SW-Stick	painted
+skater	Stick	128	SW-Stick	Stick_Sword/SW-Stick	painted
+skater	Stick	128	SW-Stick	Stick_Tong/SW-Stick	painted
+skater	Stick	128	SW-Stick	Sticks_Custom_Colors/SW-Stick	painted
+skater	Stick	128	SW-Stick	Sticks_Custom_Iso/SW-Stick	painted
+skater	Stick	128	W-Stick	Golf_Iron/W-Stick	painted
+skater	Stick	128	W-Stick	Stick_Black/W-Stick	painted
+skater	Stick	128	W-Stick	Stick_Bluegreen/W-Stick	painted
+skater	Stick	128	W-Stick	Stick_Curve/W-Stick	painted
+skater	Stick	128	W-Stick	Stick_Gold/W-Stick	painted
+skater	Stick	128	W-Stick	Stick_Hotdog/W-Stick	painted
+skater	Stick	128	W-Stick	Stick_Magnet/W-Stick	painted
+skater	Stick	128	W-Stick	Stick_Magnet/W-Stick_Blue	painted
+skater	Stick	128	W-Stick	Stick_Purple/W-Stick	painted
+skater	Stick	128	W-Stick	Stick_Red/W-Stick	painted
+skater	Stick	128	W-Stick	Stick_Redgold/W-Stick	painted
+skater	Stick	128	W-Stick	Stick_Sword/W-Stick	painted
+skater	Stick	128	W-Stick	Stick_Tong/W-Stick	painted
+skater	Stick	128	W-Stick	Sticks_Custom_Colors/W-Stick	painted
+skater	Stick	128	W-Stick	Sticks_Custom_Iso/W-Stick	painted

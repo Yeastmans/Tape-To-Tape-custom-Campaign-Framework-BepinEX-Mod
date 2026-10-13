@@ -1,4 +1,6 @@
+using System.Linq;
 using System;
+using CampaignCore;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -23,57 +25,46 @@ using Rogue.BenchSnapshots;
 
 namespace EndlessMode;
 
-[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", "2.1.35")]
+[BepInPlugin("com.mods.customcampaign", "Custom Campaign Framework", PluginVersion)]
 public class Plugin : BasePlugin
 {
+    // Numeric loader version; public Studio release is Beta 1.0.
+    internal const string PluginVersion = "1.0.0";
+    internal const string ReleaseLabel = "Beta 1.0";
     internal static new ManualLogSource Log;
 
-    internal const int ScalingPerAct = 8;
-    internal const int BossScalingPerAct = 10;
-    internal static bool DebugSkipEnabled = false;
-
     internal static bool BossJustBeaten = false;
-    // Set when CampaignState.LoadRunData fires (Continue Run path). Used to
-    // suppress the PatchNewRunStart save wipe when the game's StartMenu.StartNewRun
-    // coroutine fires during the Continue flow (not just New Run).
-    internal static float LastLoadRunDataTime = -9999f;
-    internal static int DebugRealAct = -1;
-    internal static bool DebugActForced = false;
     internal static bool TeamsLogged = false;
     internal static bool ReposLogged = false;
     internal static bool SeparateFilesWritten = false;
 
     // ===== CONFIG =====
-    // New layout (v2.1+):
-    //   BepInEx/plugins/CustomCampaignFramework.dll   ← this DLL, sibling to the content folder
-    //   BepInEx/plugins/Custom Campaigns Mod/         ← everything else (GUI + data)
-    //       active.txt, defaults.txt, library/, campaigns/<CampaignName>/...
-    //
-    // Legacy layout (v1.x–v2.0) used BepInEx/plugins/Campaigns/<CampaignName>/ at root
-    // with active.txt/defaults.txt at the same level. We fall back to that if the new
-    // folder doesn't exist, so existing installs keep working until they migrate.
-    private static string PickModContentRoot()
+    // Windows: Campaign Studio and the game share the current user's AppData content.
+    // Linux/Steam Deck: the game runs under Proton, where this process sees Win32NT,
+    // but the shipped editor is the Python creator writing beside the plugin. Wine is
+    // detected explicitly so both sides keep using plugins/Custom Campaigns Mod.
+    internal static readonly bool UsesLegacyLayout =
+        Environment.OSVersion.Platform != PlatformID.Win32NT || RunningUnderWine();
+    internal static readonly string ModContentRoot = UsesLegacyLayout
+        ? Path.Combine(BepInEx.Paths.PluginPath, "Custom Campaigns Mod")
+        : CampaignCore.UserContentPaths.EnsureRoot();
+    internal static string DumpRoot => UsesLegacyLayout
+        ? Path.Combine(BepInEx.Paths.PluginPath, "T2T_Dumps") : Path.Combine(ModContentRoot, "T2T_Dumps");
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, ExactSpelling = true)]
+    private static extern IntPtr GetModuleHandleW(string moduleName);
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Ansi, ExactSpelling = true, BestFitMapping = false)]
+    private static extern IntPtr GetProcAddress(IntPtr module, string procName);
+    private static bool RunningUnderWine()
     {
-        string pluginsDir = BepInEx.Paths.PluginPath;
-        string newRoot = Path.Combine(pluginsDir, "Custom Campaigns Mod");
-        if (Directory.Exists(newRoot)) return newRoot;
-        string legacyRoot = Path.Combine(pluginsDir, "Campaigns");
-        if (Directory.Exists(legacyRoot)) return legacyRoot;
-        // Neither exists — default to new layout (will be created on first save)
-        return newRoot;
+        try
+        {
+            IntPtr ntdll = GetModuleHandleW("ntdll.dll");
+            return ntdll != IntPtr.Zero && GetProcAddress(ntdll, "wine_get_version") != IntPtr.Zero;
+        }
+        catch { return false; }
     }
-    internal static readonly string ModContentRoot = PickModContentRoot();
-    // In the new layout, campaigns live in a 'campaigns/' subfolder. In the legacy
-    // layout, campaign folders were at ModContentRoot directly — try the new
-    // subfolder first, fall back to ModContentRoot.
-    private static string PickCampaignsRoot()
-    {
-        string sub = Path.Combine(ModContentRoot, "campaigns");
-        if (Directory.Exists(sub)) return sub;
-        return ModContentRoot; // legacy: campaigns at root level
-    }
-    private static readonly string CampaignsRoot = PickCampaignsRoot();
-    private static readonly string ActivePath = Path.Combine(ModContentRoot, "active.txt");
+    private static readonly string CampaignsRoot = Path.Combine(ModContentRoot, "campaigns");
     private static readonly string DefaultsPath = Path.Combine(ModContentRoot, "defaults.txt");
 
     // Default fallback values (loaded from defaults.txt)
@@ -81,13 +72,13 @@ public class Plugin : BasePlugin
     internal static PlayerConfig DefaultSkater = new PlayerConfig();
     internal static PlayerConfig DefaultGoalie = new PlayerConfig();
 
-    private static string ModFolder;
+    internal static string ModFolder;
     private static string ConfigPath;
     private static string SavePath;
     private static string PlayerTeamsPath;
-    internal static string ActiveCampaign = "NHL Season";
+    internal static string ActiveCampaign = CampaignSelection.BaseGame;
 
-    internal static bool IsDefaultMode = false; // true = no mod behavior, base game only
+    internal static bool IsDefaultMode = true; // campaign gameplay requires a valid selection
 
     // Player team editor — configs keyed by lowercase prefix ("basic", "defense", "speed", "trio")
     internal static Dictionary<string, TeamConfig> PlayerTeamConfigs = new Dictionary<string, TeamConfig>(StringComparer.OrdinalIgnoreCase);
@@ -153,6 +144,7 @@ public class Plugin : BasePlugin
     // but NEWLY-loaded free agents get picked up on subsequent Team.Initialize
     // calls (they load lazily when the draft UI opens).
     internal static HashSet<IntPtr> AppliedDraftPtrs = new HashSet<IntPtr>();
+    internal static bool PlayerTeamsEnabled = true;
     internal static bool UsePlayerTeams = false; // toggle from campaign settings
     // Squad that custom squads are cloned from. Empty = Basic Squad, which is
     // what every campaign did before this setting existed.
@@ -160,82 +152,50 @@ public class Plugin : BasePlugin
     internal static bool _pendingAutoDump = false;
     internal static List<string> ConfigTeamDirs = new List<string>(); // parallel to ConfigTeams — folder path per team
 
-    // Runtime-grown set of face skin names registered as helmetless. Keeps
-    // duplicate work out of the HeadsWithoutHelmets array replacement path.
-    internal static HashSet<string> HelmetlessFaces = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-    /// Extend the game's ForwardDataExtensions.HeadsWithoutHelmets array to
-    /// include `faceSkin`, so the renderer skips the helmet for any forward
-    /// that uses that face. Reflection-only (no Harmony patch) — safe against
-    /// uninitialized IL2CPP owners, which crashed the previous approach.
-    internal static void RegisterFaceAsHelmetless(string faceSkin)
-    {
-        if (string.IsNullOrEmpty(faceSkin)) return;
-        if (HelmetlessFaces.Contains(faceSkin)) return;
-        try
-        {
-            var t = typeof(Tape2Tape.Customization.UI.ForwardDataExtensions);
-            var prop = t.GetProperty("HeadsWithoutHelmets", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-            if (prop == null)
-            {
-                Log.LogWarning($"[NoHelmet] HeadsWithoutHelmets property not found — '{faceSkin}' not registered");
-                return;
-            }
-            var current = prop.GetValue(null) as Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStringArray;
-            int oldLen = current?.Length ?? 0;
-            var replacement = new Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStringArray(oldLen + 1);
-            for (int i = 0; i < oldLen; i++) replacement[i] = current[i];
-            replacement[oldLen] = faceSkin;
-            prop.SetValue(null, replacement);
-            HelmetlessFaces.Add(faceSkin);
-            Log.LogInfo($"[NoHelmet] Registered '{faceSkin}' as helmetless (HeadsWithoutHelmets: {oldLen} -> {oldLen + 1})");
-        }
-        catch (Exception ex) { Log.LogWarning($"[NoHelmet] RegisterFaceAsHelmetless('{faceSkin}'): {ex.Message}"); }
-    }
-
     internal static void ResolveCampaignPaths()
     {
-        // Read active campaign name
-        if (File.Exists(ActivePath))
+        Log.LogInfo($"[Config] Content folder: {ModContentRoot}{(UsesLegacyLayout ? " (legacy creator layout)" : "")}");
+        ActiveCampaign = CampaignSelection.Resolve(ModContentRoot, out string warning);
+        if (!string.IsNullOrEmpty(warning)) Log.LogWarning($"[Campaign] {warning}");
+        if (ActiveCampaign == CampaignSelection.BaseGame)
         {
-            foreach (var line in File.ReadAllLines(ActivePath))
-            {
-                string trimmed = line.Trim();
-                if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#")) continue;
-                int eq = trimmed.IndexOf('=');
-                if (eq >= 0)
-                    ActiveCampaign = trimmed.Substring(eq + 1).Trim();
-                else
-                    ActiveCampaign = trimmed;
-                break;
-            }
-        }
-
-        // "default" or "none" = disable all mod behavior, play base game
-        string lower = ActiveCampaign.Trim().ToLower();
-        if (lower == "default" || lower == "none" || lower == "off" || lower == "base game")
-        {
-            IsDefaultMode = true;
-            Log.LogInfo($"[Campaign] DEFAULT MODE — all mod behavior disabled, playing base game");
-            ModFolder = Path.Combine(CampaignsRoot, "default");
-            ConfigPath = "";
-            SavePath = "";
+            UseBaseGame();
             return;
         }
 
+        IsDefaultMode = false;
         ModFolder = Path.Combine(CampaignsRoot, ActiveCampaign);
         ConfigPath = Path.Combine(ModFolder, "campaign.txt");
         SavePath = Path.Combine(ModFolder, "save.txt");
         PlayerTeamsPath = Path.Combine(ModFolder, "player_teams.txt");
-
-        if (!Directory.Exists(ModFolder))
-            Directory.CreateDirectory(ModFolder);
-
         Log.LogInfo($"[Campaign] Active campaign: '{ActiveCampaign}' ({ModFolder})");
+    }
+
+    private static void UseBaseGame()
+    {
+        ActiveCampaign = CampaignSelection.BaseGame;
+        IsDefaultMode = true;
+        ModFolder = Path.Combine(CampaignsRoot, "default");
+        ConfigPath = "";
+        SavePath = "";
+        PlayerTeamsPath = "";
+        ConfigTeams.Clear();
+        ConfigTeamDirs.Clear();
+        VanillaCampaignRuntime.Reset();
+        Log.LogInfo("[Campaign] DEFAULT MODE — no custom campaign selected; playing base game");
     }
 
     internal static void LoadDefaults()
     {
+        // defaults.txt belongs to the legacy creator layout. Campaign Studio shows
+        // unset fields as unset and has no editor for this file, so honouring it
+        // would make the game invent a logo and colours the editor never showed.
+        if (!UsesLegacyLayout)
+        {
+            if (File.Exists(DefaultsPath))
+                Log.LogInfo("[Config] Ignoring defaults.txt; Campaign Studio content uses its own defaults.");
+            return;
+        }
         if (!File.Exists(DefaultsPath)) return;
         try
         {
@@ -334,14 +294,12 @@ public class Plugin : BasePlugin
     }
 
     // Campaign settings
-    internal static int[] ActSequence = new[] { 1, 1, 2, 2, 1, 2, 2, 2, 3 };
+    internal static int[] ActSequence = new[] { 1, 2, 3 };
     internal static int TotalMaps => ActSequence.Length;
-    internal static bool ReplaceChallenges = true;
+    internal static bool ReplaceChallenges = false;
     internal static List<int> ReplaceChallengesActs = null; // null = all acts, list = only these acts
     internal static HashSet<int> ReplaceChallengesMaps = null; // null = use acts logic; set = 0-indexed map positions
     internal static bool DumpData = true; // generates reference dump files
-    internal static bool ReplaceSoccerBall = true;
-    internal static bool ReplaceGolfBall = true;
     internal static bool UseGauntletMap = false;
     // "Maps = <squad>" in campaign.txt — play every run on this base squad's
     // map layout (Basic, Defence, Speedy, Gauntlet, Solo, ...). Empty = each
@@ -350,9 +308,9 @@ public class Plugin : BasePlugin
     internal static string MapSourceSquad = "";
 
     // "Offside = yes" in campaign.txt — enforce the offside rule in every match
-    // of the run. This is the run-wide equivalent of giving one skater the
-    // Linesman talent, and it uses the same engine mechanism: OffsideController's
-    // static force-source list.
+    // of the run. OffsideMatch activates the native scene controller and supplies
+    // temporary setting reads. A force source is unsuitable because native
+    // force sources also require the Knockout penalty.
     //
     // Deliberately NOT GameplaySettings.Offside. That setter writes the value and
     // then calls GameplaySettings.SaveSettings() (confirmed by disassembling
@@ -362,13 +320,14 @@ public class Plugin : BasePlugin
     // "Offside Penalty = Whistle | Lose Puck | Knockout". Empty means "leave the
     // player's own Advanced Settings choice alone" — that path touches nothing
     // persistent. Setting it DOES persist (same SaveSettings call), so
-    // OffsideMatch saves the previous value and puts it back when the run ends.
+    // OffsideMatch overrides native reads only during a match; saved settings stay intact.
     internal static string OffsidePenaltyName = "";
 
     // Reward-pool filters (populated from campaigns/<name>/reward_pools.txt).
     // IDs held here are filtered OUT of the game's random-reward picks at
     // runtime via Harmony postfixes on RelicRepository / TalentRepository.
     internal static HashSet<string> ExcludedRewardRelicIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    internal static HashSet<string> ExcludedRewardAbilityIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     internal static HashSet<string> ExcludedRewardTalentIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     // Shared RNG for random() values — seeded once per config load
@@ -466,32 +425,35 @@ public class Plugin : BasePlugin
 
     internal static void LoadConfig()
     {
+        PlayerTeamsEnabled = true;
+        UsePlayerTeams = false;
+        ActSequence = new[] { 1, 2, 3 };
+        ReplaceChallenges = false;
+        ReplaceChallengesActs = null;
+        ReplaceChallengesMaps = null;
+        ConfigTeams.Clear();
+        ConfigTeamDirs.Clear();
+        VanillaCampaignRuntime.Reset();
+        ExcludedRewardRelicIds.Clear();
+        ExcludedRewardTalentIds.Clear();
+        ExcludedRewardAbilityIds.Clear();
         if (IsDefaultMode) return;
         try
         {
-            if (!Directory.Exists(ModFolder))
-                Directory.CreateDirectory(ModFolder);
-
             // Multi-folder format only. Campaign settings live in campaign.txt,
             // teams live in the teams/ subfolder.
             UseGauntletMap = false; // reset before parsing — absence of key means off
             MapSourceSquad = "";    // reset — absence of key means each squad keeps its own maps
             if (File.Exists(ConfigPath))
             {
+                // The final authored map may use any native act. Read the same
+                // strict sequence as Studio before enabling any campaign data;
+                // invalid/empty values must not silently invent a third map.
+                ActSequence = CampaignActSequence.Read(new CampaignDocument(File.ReadAllText(ConfigPath)));
+                Log.LogInfo($"[Config] Act Sequence: [{string.Join(", ", ActSequence)}] ({TotalMaps} maps)");
                 ParseKvFile(ConfigPath, (key, val) =>
                 {
-                    if (key == "act sequence")
-                    {
-                        var seq = new List<int>();
-                        foreach (var p in val.Split(','))
-                            if (int.TryParse(p.Trim(), out int v)) seq.Add(v);
-                        if (seq.Count > 0 && seq[seq.Count - 1] == 3)
-                        {
-                            ActSequence = seq.ToArray();
-                            Log.LogInfo($"[Config] Act Sequence: [{string.Join(", ", ActSequence)}] ({TotalMaps} maps)");
-                        }
-                    }
-                    else if (key == "replace challenges")
+                    if (key == "replace challenges")
                     {
                         string lv = val.ToLower().Trim();
                         if (lv == "yes" || lv == "true")
@@ -523,9 +485,7 @@ public class Plugin : BasePlugin
                                 if (int.TryParse(p.Trim(), out int a)) ReplaceChallengesActs.Add(a);
                         }
                     }
-                    else if (key == "replace soccer ball") ReplaceSoccerBall = val.ToLower() == "yes" || val.ToLower() == "true";
-                    else if (key == "replace golf ball") ReplaceGolfBall = val.ToLower() == "yes" || val.ToLower() == "true";
-                    else if (key == "use player teams" || key == "custom player teams") UsePlayerTeams = val.ToLower() == "yes" || val.ToLower() == "true";
+                    else if (key == "use player teams" || key == "custom player teams") PlayerTeamsEnabled = UsePlayerTeams = val.ToLower() == "yes" || val.ToLower() == "true";
                     else if (key == "gauntlet map") UseGauntletMap = val.ToLower() == "yes" || val.ToLower() == "true";
                     // Map selector: play every run on the map layout of a chosen
                     // base squad (Basic / Defence / Speedy / Gauntlet / ...).
@@ -563,7 +523,9 @@ public class Plugin : BasePlugin
             }
             else
             {
-                Log.LogInfo("[Config] No campaign.txt found — using defaults");
+                Log.LogWarning("[Config] Selected campaign.txt is missing — using base game.");
+                UseBaseGame();
+                return;
             }
 
             // Reward-pool filters — campaigns/<name>/reward_pools.txt.
@@ -571,6 +533,7 @@ public class Plugin : BasePlugin
             // matching the ids in _reward_relics.txt). Same for talents.
             ExcludedRewardRelicIds.Clear();
             ExcludedRewardTalentIds.Clear();
+            ExcludedRewardAbilityIds.Clear();
             try
             {
                 string rewardPoolsPath = Path.Combine(ModFolder, "reward_pools.txt");
@@ -586,7 +549,7 @@ public class Plugin : BasePlugin
                                 if (id.Length > 0) ExcludedRewardRelicIds.Add(id);
                             }
                         }
-                        else if (key == "excluded talents" || key == "excluded talent")
+                        else if (key == "excluded talents" || key == "excluded talent" || key == "excluded goalie talents")
                         {
                             foreach (var p in val.Split(','))
                             {
@@ -594,6 +557,9 @@ public class Plugin : BasePlugin
                                 if (id.Length > 0) ExcludedRewardTalentIds.Add(id);
                             }
                         }
+                        else if (key == "excluded abilities" || key == "excluded goalie abilities")
+                            foreach (string part in val.Split(','))
+                                if (part.Trim().Length > 0) ExcludedRewardAbilityIds.Add(part.Trim());
                     });
                     Log.LogInfo($"[Config] reward_pools.txt loaded — {ExcludedRewardRelicIds.Count} relics excluded, {ExcludedRewardTalentIds.Count} talents excluded");
                 }
@@ -604,7 +570,8 @@ public class Plugin : BasePlugin
         }
         catch (Exception ex)
         {
-            Log.LogError($"[Config] Failed to load config: {ex.Message}\n{ex.StackTrace}");
+            Log.LogError($"[Config] Failed to load config — using base game: {ex.Message}\n{ex.StackTrace}");
+            UseBaseGame();
         }
     }
 
@@ -618,14 +585,44 @@ public class Plugin : BasePlugin
     internal static void ApplyTeamField(TeamConfig team, string key, string val)
     {
         if (team == null) return;
+        team.Fields.Set(key, val);
+        string colorKey = AppearanceFields.ColorKey(key);
+        if (colorKey.Length > 0)
+        {
+            var rgb = ParseRandomColor(val);
+            if (rgb != null) { val = string.Join(",", rgb); team.Colors.Set(colorKey, val); }
+        }
         if (key == "team name") team.Name = val;
         else if (key == "city") team.City = val;
         else if (key == "logo from") team.LogoFrom = val;
         else if (key == "import team") team.ImportTeam = val;
         else if (key == "abbreviation") team.Abbreviation = val;
         else if (key == "description") team.Description = val;
+        else if (key == "goal sound") team.GoalSound = val;
+        else if (key == "goal sound data") team.GoalSoundData = val;
+        else if (key == "goal sound volume") team.GoalSoundVolume = val;
+        else if (key == "opponent preset") team.OpponentPreset = val;
+        else if (key == "opponent effects") team.OpponentEffects = val;
+        else if (key == "referee hands interaction") team.RefereeHandsInteraction = val;
+        else if (key == "opponent two lines") team.OpponentTwoLines = val;
+        else if (key == "opponent offense") team.OpponentOffense = val;
+        else if (key == "opponent defense") team.OpponentDefense = val;
+        else if (key == "match puck") team.MatchPuck = val;
+        else if (key == "match surface") team.MatchSurface = val;
+        else if (key == "golf fairway") team.GolfFairway = val;
+        else if (key == "tycoons sponsors") team.TycoonsSponsors = val;
+        else if (key == "canada curses") team.CanadaCurses = val;
         else if (key == "squad head") team.SquadHead = val;
+        else if (key == "zamboni head") team.ZamboniHead = val;
+        else if (key == "mascot") team.Mascot = val;
+        else if (key == "squad template" || key == "template squad") team.SquadTemplate = val;
+        else if (key.StartsWith("squad behavior ", StringComparison.OrdinalIgnoreCase)) team.SquadBehaviors[key] = val;
+        else if (key == "starting relics mode") team.CustomStartingRelics = val.Equals("Custom", StringComparison.OrdinalIgnoreCase);
+        else if (key == "starting bench positions") team.StartingBenchPositions = val;
+        else if (key == "no effects bench") team.NoEffectsBench = val.Equals("yes", StringComparison.OrdinalIgnoreCase);
+        else if (key == "no effects superstars") team.NoEffectsSuperstars = val.Equals("yes", StringComparison.OrdinalIgnoreCase);
         else if (key == "stat scale") team.StatScale = ParseRandomFloat(val);
+        else if (key == "number style") team.Uniform.NumberFormat = FieldSchema.NumberStyleIndex(val);
         // Home Colors
         else if (key == "jersey primary") team.JerseyPrimary = ParseRandomColor(val);
         else if (key == "jersey secondary") team.JerseySecondary = ParseRandomColor(val);
@@ -724,9 +721,18 @@ public class Plugin : BasePlugin
     internal static void ApplyPlayerField(PlayerConfig p, string key, string val)
     {
         if (p == null) return;
+        p.Fields.Set(key, val);
+        string colorKey = AppearanceFields.ColorKey(key);
+        if (colorKey.Length > 0)
+        {
+            var rgb = ParseRandomColor(val);
+            if (rgb != null) p.Colors.Set(colorKey, string.Join(",", rgb));
+            return;
+        }
         if (key == "name") p.Name = val;
         else if (key == "import player") p.ImportPlayer = val;
         else if (key == "number") p.Number = ParseRandomInt(val);
+        else if (key == "number style") p.NumberFormat = FieldSchema.PlayerNumberStyleIndex(val);
         else if (key == "face") p.Face = val;
         else if (key == "left handed")
         {
@@ -756,9 +762,8 @@ public class Plugin : BasePlugin
         else if (key == "ability") p.Ability = val;
         else if (key == "talents" || key == "goalie talents")
         {
-            p.Talents = new List<string>();
             foreach (var t in val.Split(','))
-            { string tr = t.Trim(); if (tr.Length > 0) p.Talents.Add(tr); }
+            { string tr = t.Trim(); if (tr.Length > 0 && !p.Talents.Contains(tr)) p.Talents.Add(tr); }
         }
         else if (key == "random talents") p.RandomTalentCount = ParseRandomInt(val);
         else if (key == "random pool")
@@ -787,7 +792,8 @@ public class Plugin : BasePlugin
         else if (key == "depth") p.Depth = ParseRandomInt(val);
         else if (key == "pass read") p.PassRead = ParseRandomFloat(val);
         // Appearance
-        else if (key == "size offset") p.SizeOffset = ParseRandomFloat(val);
+        // Blank (the Studio's "Normal") means the game's own 1.0, as when the key is absent.
+        else if (key == "size offset") p.SizeOffset = val.Trim().Length == 0 ? 1f : ParseRandomFloat(val);
         else if (key == "glasses") p.Glasses = val;
         // Per-player uniform overrides
         else if (key == "stick") p.StickOverride = ResolveSkin(val, "stick");
@@ -803,50 +809,6 @@ public class Plugin : BasePlugin
         else if (key == "pants away") p.PantsAwayOverride = ResolveSkin(val, "pants");
         else if (key == "skates") p.SkatesOverride = ResolveSkin(val, "skates");
         else if (key == "skates away") p.SkatesAwayOverride = ResolveSkin(val, "skates");
-        // Per-player color overrides
-        else if (key == "jersey color") p.JerseyColor = ParseRandomColor(val);
-        else if (key == "jersey secondary color") p.JerseySecondaryColor = ParseRandomColor(val);
-        else if (key == "jersey accent color") p.JerseyAccentColor = ParseRandomColor(val);
-        else if (key == "gloves color") p.GlovesColor = ParseRandomColor(val);
-        else if (key == "gloves secondary color" || key == "gloves color 2") p.GlovesSecondaryColor = ParseRandomColor(val);
-        else if (key == "gloves tertiary color" || key == "gloves color 3") p.GlovesTertiaryColor = ParseRandomColor(val);
-        else if (key == "helmet color") p.HelmetColor = ParseRandomColor(val);
-        else if (key == "helmet secondary color" || key == "helmet color 2") p.HelmetSecondaryColor = ParseRandomColor(val);
-        else if (key == "helmet tertiary color" || key == "helmet color 3") p.HelmetTertiaryColor = ParseRandomColor(val);
-        else if (key == "pants color") p.PantsColor = ParseRandomColor(val);
-        else if (key == "pants secondary color" || key == "pants color 2") p.PantsSecondaryColor = ParseRandomColor(val);
-        else if (key == "pants tertiary color" || key == "pants color 3") p.PantsTertiaryColor = ParseRandomColor(val);
-        else if (key == "skates color") p.SkatesColor = ParseRandomColor(val);
-        else if (key == "blade color") p.BladeColor = ParseRandomColor(val);
-        else if (key == "laces color") p.LacesColor = ParseRandomColor(val);
-        else if (key == "bicep color") p.BicepColor = ParseRandomColor(val);
-        else if (key == "number color") p.NumberColor = ParseRandomColor(val);
-        else if (key == "number secondary color" || key == "number color 2") p.NumberSecondaryColor = ParseRandomColor(val);
-        else if (key == "socks color") p.SocksColor = ParseRandomColor(val);
-        else if (key == "socks secondary color" || key == "socks color 2") p.SocksSecondaryColor = ParseRandomColor(val);
-        else if (key == "socks tertiary color" || key == "socks color 3") p.SocksTertiaryColor = ParseRandomColor(val);
-        // Per-player AWAY color overrides (same naming convention as team-level)
-        else if (key == "jersey away color") p.JerseyColorAway = ParseRandomColor(val);
-        else if (key == "jersey away secondary color") p.JerseySecondaryColorAway = ParseRandomColor(val);
-        else if (key == "jersey away accent color") p.JerseyAccentColorAway = ParseRandomColor(val);
-        else if (key == "gloves away color") p.GlovesColorAway = ParseRandomColor(val);
-        else if (key == "gloves away secondary color") p.GlovesSecondaryColorAway = ParseRandomColor(val);
-        else if (key == "gloves away tertiary color") p.GlovesTertiaryColorAway = ParseRandomColor(val);
-        else if (key == "helmet away color") p.HelmetColorAway = ParseRandomColor(val);
-        else if (key == "helmet away secondary color") p.HelmetSecondaryColorAway = ParseRandomColor(val);
-        else if (key == "helmet away tertiary color") p.HelmetTertiaryColorAway = ParseRandomColor(val);
-        else if (key == "pants away color") p.PantsColorAway = ParseRandomColor(val);
-        else if (key == "pants away secondary color") p.PantsSecondaryColorAway = ParseRandomColor(val);
-        else if (key == "pants away tertiary color") p.PantsTertiaryColorAway = ParseRandomColor(val);
-        else if (key == "skates away color") p.SkatesColorAway = ParseRandomColor(val);
-        else if (key == "blade away color") p.BladeColorAway = ParseRandomColor(val);
-        else if (key == "laces away color") p.LacesColorAway = ParseRandomColor(val);
-        else if (key == "bicep away color") p.BicepColorAway = ParseRandomColor(val);
-        else if (key == "number away color") p.NumberColorAway = ParseRandomColor(val);
-        else if (key == "number away secondary color") p.NumberSecondaryColorAway = ParseRandomColor(val);
-        else if (key == "socks away color") p.SocksColorAway = ParseRandomColor(val);
-        else if (key == "socks away secondary color") p.SocksSecondaryColorAway = ParseRandomColor(val);
-        else if (key == "socks away tertiary color") p.SocksTertiaryColorAway = ParseRandomColor(val);
         // Goalie-specific skins
         else if (key == "skin") p.GoalieSkin = val;
         else if (key == "skin away") p.GoalieSkinAway = val;
@@ -859,7 +821,8 @@ public class Plugin : BasePlugin
         else if (key == "stick skin") p.GoalieStickSkin = val;
         else if (key == "stick away") p.GoalieStickAway = val;
         else if (key == "helmet skin") p.GoalieHelmetSkin = val;
-        else if (key == "logo skin") p.GoalieLogoSkin = val;
+        else if (key == "logo skin") p.LogoSkin = val;
+        else if (key == "number skin") p.NumberSkin = val;
     }
 
     // Parses a file as key=value pairs, applying each pair via the provided callback
@@ -868,19 +831,14 @@ public class Plugin : BasePlugin
         if (!File.Exists(path)) return;
         foreach (var raw in File.ReadAllLines(path))
         {
-            string line = raw.Replace("\t", " ").Trim();
-            if (string.IsNullOrEmpty(line) || line.StartsWith("#") || line.StartsWith("====")) continue;
-            int eqIdx = line.IndexOf('=');
-            if (eqIdx < 0) continue;
-            string key = line.Substring(0, eqIdx).Trim().ToLower();
-            string val = line.Substring(eqIdx + 1).Trim();
-            if (string.IsNullOrEmpty(val)) continue;
-            apply(key, val);
+            if (CampaignCore.CampaignDocument.TryReadField(raw, out var key, out var val) && val.Length > 0)
+                apply(key.ToLowerInvariant(), val);
         }
     }
 
     private static void LoadTeamFile(string path, TeamConfig team)
     {
+        team.IdentityKey = Path.GetRelativePath(ModFolder, Path.GetDirectoryName(path));
         ParseKvFile(path, (k, v) => ApplyTeamField(team, k, v));
     }
 
@@ -937,11 +895,30 @@ public class Plugin : BasePlugin
             if (slot != null)
             {
                 LoadPlayerFile(file, slot);
-                Log.LogDebug($"[Campaign] Loaded '{Path.GetFileName(file)}' -> position '{position}', slot Name='{slot.Name}'");
             }
             else
                 Log.LogWarning($"[Campaign] Could not determine position for player file: {Path.GetFileName(file)}");
         }
+    }
+
+    // Goalie styles the Studio keeps per team (Team look's goalie pickers).
+    private static readonly string[] TeamGoalieGearKeys = { "skin", "skin away", "goalie pants skin", "goalie pants away", "helmet skin",
+        "glove skin", "glove away", "blocker skin", "blocker away", "pads skin", "pads away", "stick skin", "stick away" };
+
+    // A team-look goalie wears the team's goalie gear, the way team-look skaters wear
+    // team.txt's styles. An own-look goalie (Override Team Settings = yes) keeps its file's gear.
+    private static void LoadTeamGoalieGear(string teamDir, TeamConfig team)
+    {
+        var goalie = team.Goalie;
+        string path = Path.Combine(teamDir, "goalie-equipment.cfg");
+        if (goalie == null || AppearanceFields.OverridesTeam(goalie.Fields) || !File.Exists(path)
+            || (string.IsNullOrEmpty(goalie.Name) && string.IsNullOrEmpty(goalie.ImportPlayer))) return;
+        ParseKvFile(path, (k, v) =>
+        {
+            if (Array.IndexOf(TeamGoalieGearKeys, k) < 0) return;
+            ApplyPlayerField(goalie, k, v);
+            goalie.TeamGoalieGear = true;
+        });
     }
 
     internal static void LoadCampaignFolders()
@@ -949,7 +926,7 @@ public class Plugin : BasePlugin
         string teamsDir = Path.Combine(ModFolder, "teams");
         if (!Directory.Exists(teamsDir))
         {
-            Log.LogInfo("[Campaign] No teams/ folder — using single-file campaign.txt");
+            Log.LogInfo("[Campaign] No authored opponents — keeping base-game teams.");
             return;
         }
         Log.LogInfo("[Campaign] Loading multi-folder format from teams/");
@@ -965,8 +942,12 @@ public class Plugin : BasePlugin
             var tc = new TeamConfig();
             LoadTeamFile(Path.Combine(teamDir, "team.txt"), tc);
             LoadPlayersFolder(Path.Combine(teamDir, "players"), tc);
-            ConfigTeams.Add(tc);
-            ConfigTeamDirs.Add(teamDir);
+            LoadTeamGoalieGear(teamDir, tc);
+            if (!VanillaCampaignRuntime.AddOpponent(tc))
+            {
+                ConfigTeams.Add(tc);
+                ConfigTeamDirs.Add(teamDir);
+            }
             string name = !string.IsNullOrEmpty(tc.ImportTeam) ? $"IMPORT '{tc.ImportTeam}'" : $"'{tc.Name}'";
             Log.LogInfo($"  Loaded team: {Path.GetFileName(teamDir)} → {name}");
         }
@@ -1061,7 +1042,7 @@ public class Plugin : BasePlugin
         catch (Exception ex) { Log.LogWarning($"[Soccer] node_soccer.txt: {ex.Message}"); }
     }
 
-    internal static void LoadNodeAssignments()
+    internal static void LoadNodeAssignments(bool includeLayouts = true)
     {
         NodeAssignments.Clear();
         try
@@ -1098,6 +1079,7 @@ public class Plugin : BasePlugin
                 + (bad > 0 ? $", {bad} unreadable line(s) ignored" : ""));
         }
         catch (Exception ex) { Log.LogWarning($"[Assign] assignments.txt: {ex.Message}"); }
+        finally { if (includeLayouts) CustomMapLayout.LoadAssignments(); }
     }
 
     /// <summary>Resolve an assignment's team key to a loaded TeamConfig. Matches a
@@ -1109,6 +1091,7 @@ public class Plugin : BasePlugin
     {
         if (string.IsNullOrEmpty(key) || ConfigTeams == null) return null;
         string want = key.Trim();
+        var copied=VanillaCampaignRuntime.FindByKey(want);if(copied!=null)return copied;
 
         if (ConfigTeamDirs != null)
             for (int i = 0; i < ConfigTeamDirs.Count && i < ConfigTeams.Count; i++)
@@ -1130,6 +1113,29 @@ public class Plugin : BasePlugin
 
     internal static void LoadPlayerTeamsFolders(bool loadTeams, bool loadDraft)
     {
+        if (!PlayerTeamsEnabled)
+        {
+            PlayerTeamConfigs.Clear();
+            DraftPoolConfigs.Clear();
+            SuperstarPoolList.Clear();
+        }
+        if (loadDraft)
+        {
+            DraftPoolConfigs.Clear();
+            SuperstarPoolList.Clear();
+            FreeAgentPoolList.Clear();
+            foreach (var folder in new[] { Path.Combine(ModFolder, "free_agents"), Path.Combine(ModFolder, "player_teams", "free_agents"), Path.Combine(ModFolder, "player_teams", "free agents") })
+            {
+                if (!Directory.Exists(folder)) continue;
+                if(VanillaCopyData.PoolInherited(folder))continue;
+                foreach (var file in (SelectedPlayerPool.Read(folder)??Directory.GetFiles(folder, "*.txt")).OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
+                {
+                    var config = new PlayerConfig(); LoadPlayerFile(file, config); FreeAgentPoolList.Add(config);
+                }
+            }
+            Log.LogInfo($"[PlayerTeam] Loaded {FreeAgentPoolList.Count} free agents from campaign pool files");
+            CustomFreeAgentTemplates.Invalidate();
+        }
         string rootDir = Path.Combine(ModFolder, "player_teams");
         if (!Directory.Exists(rootDir)) return;
         Log.LogInfo($"[PlayerTeam] Loading from player_teams/ (teams={loadTeams}, draft={loadDraft})");
@@ -1141,8 +1147,9 @@ public class Plugin : BasePlugin
 
             if (lower == "draft_pool" || lower == "draft pool")
             {
-                if (!loadDraft) continue;
-                foreach (var file in Directory.GetFiles(subDir, "*.txt"))
+                if (!loadDraft || !PlayerTeamsEnabled) continue;
+                if(VanillaCopyData.PoolInherited(subDir))continue;
+                foreach (var file in CampaignCore.SelectedPlayerPool.Read(subDir, VanillaCopyData.IsPool(subDir)?int.MaxValue:9) ?? Directory.GetFiles(subDir, "*.txt"))
                 {
                     string playerName = Path.GetFileNameWithoutExtension(file);
                     var pc = new PlayerConfig();
@@ -1153,34 +1160,25 @@ public class Plugin : BasePlugin
                 continue;
             }
 
-            if (lower == "free_agents" || lower == "free agents")
-            {
-                if (!loadDraft) continue;
-                FreeAgentPoolList.Clear();
-                var faFiles = Directory.GetFiles(subDir, "*.txt");
-                Array.Sort(faFiles);
-                foreach (var file in faFiles)
-                {
-                    string playerName = Path.GetFileNameWithoutExtension(file);
-                    var pc = new PlayerConfig();
-                    LoadPlayerFile(file, pc);
-                    FreeAgentPoolList.Add(pc);
-                    Log.LogInfo($"  Free agent pool: '{playerName}' loaded");
-                }
-                continue;
-            }
+            if (lower == "free_agents" || lower == "free agents") continue; // Loaded once from both supported locations above.
 
             if (lower == "superstars" || lower == "superstar")
             {
-                if (!loadDraft) continue;
+                if (!loadDraft || !PlayerTeamsEnabled) continue;
                 SuperstarPoolList.Clear();
-                var ssFiles = Directory.GetFiles(subDir, "*.txt");
-                Array.Sort(ssFiles);
+                if(VanillaCopyData.PoolInherited(subDir))continue;
+                var ssFiles = CampaignCore.SelectedPlayerPool.Read(subDir)
+                    ?? Directory.GetFiles(subDir, "*.txt").OrderBy(path => path, StringComparer.OrdinalIgnoreCase).ToArray();
                 foreach (var file in ssFiles)
                 {
                     string playerName = Path.GetFileNameWithoutExtension(file);
                     var pc = new PlayerConfig();
                     LoadPlayerFile(file, pc);
+                    // A missing choice inherits the selected team. An explicit
+                    // custom choice remains available for this superstar.
+                    if (pc.Fields.Get("Override Team Settings").Length == 0)
+                        pc.Fields.Set("Override Team Settings", "no");
+                    pc.Fields.Set("Export Version", "");
                     SuperstarPoolList.Add(pc);
                     Log.LogInfo($"  Superstar pool: '{playerName}' loaded");
                 }
@@ -1195,16 +1193,15 @@ public class Plugin : BasePlugin
             else if (lower.StartsWith("trio")) { teamKey = "trio"; isPreset = true; }
             else teamKey = lower;
 
-            // Preset squads (Basic/Defense/Speedy/Trios) only load when the
-            // user opted in with Use Player Teams = yes — they OVERRIDE the
-            // vanilla starting lineup. Custom squads (non-preset) always load:
-            // they're ADDITIVE new entries in the squad-select menu that the
-            // user picks at campaign start, so they never need the toggle.
-            if (isPreset && !loadTeams) continue;
+            // Explicit off disables all player teams; legacy campaigns without the key
+            // retain additive squads without enabling preset overrides.
+
+            if (!PlayerTeamsEnabled || (isPreset && !loadTeams)) continue;
 
             var tc = new TeamConfig();
             LoadTeamFile(Path.Combine(subDir, "team.txt"), tc);
             LoadPlayersFolder(Path.Combine(subDir, "players"), tc);
+            LoadTeamGoalieGear(subDir, tc);
             PlayerTeamConfigs[teamKey] = tc;
             Log.LogInfo($"  Player team: '{teamKey}' loaded from {folderName}{(isPreset ? "" : " (custom squad)")}");
         }
@@ -1218,27 +1215,15 @@ public class Plugin : BasePlugin
     // `Use Player Teams = yes` because it overwrites the whole lineup.
     internal static void LoadPlayerTeams()
     {
+        FreeAgentPoolList.Clear();
+        FreeAgentSignedConfigs.Clear();
+        AppliedFreeAgentPtrs.Clear();
         if (IsDefaultMode) return;
-        if (!Directory.Exists(Path.Combine(ModFolder, "player_teams")))
-        {
-            Log.LogInfo("[PlayerTeam] No player_teams/ folder — nothing to load");
-            return;
-        }
         if (!UsePlayerTeams)
-            Log.LogInfo("[PlayerTeam] Use Player Teams = no — loading draft pool + custom squads only");
+            Log.LogInfo("[PlayerTeam] Player teams disabled or legacy preset overrides not enabled");
         LoadPlayerTeamsFolders(loadTeams: UsePlayerTeams, loadDraft: true);
     }
 
-
-    private static void ValidatePlayerConfig(int gameNum, string pos, PlayerConfig pc)
-    {
-        if (pc == null) return;
-        if (string.IsNullOrEmpty(pc.Name) && string.IsNullOrEmpty(pc.ImportPlayer))
-            Log.LogWarning($"  [WARN] Game {gameNum} {pos}: No name set");
-        if (pc.Speed == 0 && pc.ShotPower == 0 && pc.Accuracy == 0 && pc.Checking == 0
-            && string.IsNullOrEmpty(pc.ImportPlayer) && pos != "G")
-            Log.LogWarning($"  [WARN] Game {gameNum} {pos}: All stats are 0 — intentional?");
-    }
 
     /// <summary>Is the run the player is on using the General Manager squad?
     /// Read from RunData.squadId, which is the squad actually picked.</summary>
@@ -1252,7 +1237,7 @@ public class Plugin : BasePlugin
             var runManager = UnityEngine.Object.FindObjectOfType<RunManager>();
             string squadId = runManager?.CampaignState?.runData?.squadId;
             if (string.IsNullOrEmpty(squadId)) return;
-            GmSquadActive = string.Equals(squadId, GmSquadId, StringComparison.OrdinalIgnoreCase);
+            GmSquadActive = SquadBehaviorRuntime.Enabled(squadId, "gm_map", string.Equals(squadId, GmSquadId, StringComparison.OrdinalIgnoreCase));
             if (GmSquadActive != was)
                 Log.LogInfo($"[GmSquad] Run squad is '{squadId}' — GM node placement {(GmSquadActive ? "ON" : "off")}");
         }
@@ -1348,25 +1333,19 @@ public class Plugin : BasePlugin
 
     internal static void LogNextGame()
     {
+        if (IsDefaultMode) return;
         int next = GamesPlayed;
-        int total = ConfigTeams.Count > 0 ? ConfigTeams.Count : 33;
-        float pct = total > 0 ? (next * 100f / total) : 0;
-
-        Log.LogInfo($"[Season] === Progress: {next}/{total} games ({pct:F0}%) | Map {ActsCompleted + 1}/{TotalMaps} ===");
-
-        if (next < ConfigTeams.Count && ConfigTeams[next] != null)
+        int total = ConfigTeams.Count;
+        Log.LogInfo($"[Campaign] Progress: {next} games played | {total} authored opponents | Map {ActsCompleted + 1}/{TotalMaps}");
+        if (next >= 0 && next < total && ConfigTeams[next] != null)
         {
             var t = ConfigTeams[next];
             string name = t.IsImport ? $"IMPORT '{t.ImportTeam}'" : $"'{t.Name}'";
-            Log.LogInfo($"[Season] Next up: Game {next + 1} — {name}");
-        }
-        else if (next < 33)
-        {
-            Log.LogInfo($"[Season] Next up: Game {next + 1} (hardcoded fallback)");
+            Log.LogInfo($"[Campaign] Next up: Game {next + 1} — {name}");
         }
         else
         {
-            Log.LogInfo($"[Season] All games complete!");
+            Log.LogInfo($"[Campaign] Game {next + 1}: no authored opponent — keeping the base-game team.");
         }
     }
 
@@ -1696,101 +1675,50 @@ public class Plugin : BasePlugin
     // silently re-anchor every node to 0.
     internal static int MapStartGamesPlayed = 0;
 
-    // Diagnostic only: which kind of match node the player last interacted with,
-    // so the [RewardPool] lines can be read per node type. The user believes the
-    // reward pool differs by node, and GetRandomRelics IS category-scoped, so the
-    // "61 relics" figure recorded in SESSION_HANDOFF.md is probably per-call.
-    // Nothing branches on this — it is a log label.
-    internal static string LastMatchNodeKind = "?";
+    private static bool ProgressWritable = true;
 
     internal static void SaveProgress()
     {
+        if (IsDefaultMode || !ProgressWritable || string.IsNullOrEmpty(SavePath)) return;
         try
         {
-            if (!Directory.Exists(ModFolder))
-                Directory.CreateDirectory(ModFolder);
-            File.WriteAllText(SavePath, $"{ActsCompleted},{GamesPlayed},{MapStartGamesPlayed}");
+            new CampaignCore.CampaignProgress(ActsCompleted, GamesPlayed, MapStartGamesPlayed).Save(SavePath);
         }
-        catch { }
+        catch (Exception ex) { Log.LogError($"[Campaign] Could not save progress to '{SavePath}': {ex.Message}"); }
     }
 
     internal static void LoadProgress()
     {
+        if (IsDefaultMode || string.IsNullOrEmpty(SavePath)) return;
         try
         {
-            if (File.Exists(SavePath))
-            {
-                string text = File.ReadAllText(SavePath).Trim();
-                var parts = text.Split(',');
-                if (parts.Length >= 1 && int.TryParse(parts[0], out int ac))
-                    ActsCompleted = ac;
-                if (parts.Length >= 2 && int.TryParse(parts[1], out int gp))
-                    GamesPlayed = gp;
-                // 3rd field is newer than the 2.1.31 release. Saves written by
-                // older builds have only two — fall back to GamesPlayed, which is
-                // right for the common "quit on the map right after a match" case.
-                if (parts.Length >= 3 && int.TryParse(parts[2], out int ms))
-                    MapStartGamesPlayed = ms;
-                else
-                    MapStartGamesPlayed = GamesPlayed;
-                if (MapStartGamesPlayed > GamesPlayed || MapStartGamesPlayed < 0)
-                    MapStartGamesPlayed = GamesPlayed;
-                Log.LogInfo($"[Campaign] Loaded progress: ActsCompleted={ActsCompleted}, GamesPlayed={GamesPlayed}, MapStartGamesPlayed={MapStartGamesPlayed}");
-
-                // Auto-reset: if ANY campaign config file has been modified
-                // since save.txt was last written, treat this as a "fresh run"
-                // so the user's edits actually take effect. This is the only
-                // reliable way to detect "user changed things — please re-apply"
-                // without a dedicated UI button.
-                if (GamesPlayed > 0 && ShouldAutoResetForEdits())
-                {
-                    Log.LogInfo($"[Campaign] Config files newer than save — resetting progress so edits apply");
-                    ActsCompleted = 0;
-                    GamesPlayed = 0;
-                    MapStartGamesPlayed = 0;
-                    DraftPoolApplied = false;
-        AppliedDraftPtrs.Clear();
-        AppliedFreeAgentPtrs.Clear();
-        FreeAgentSignedConfigs.Clear();
-                    SaveProgress();
-                }
-            }
+            var progress = CampaignCore.CampaignProgress.Load(SavePath, out bool recovered);
+            ActsCompleted = progress.ActsCompleted;
+            GamesPlayed = progress.GamesPlayed;
+            MapStartGamesPlayed = progress.MapStartGamesPlayed;
+            ProgressWritable = true;
+            if (recovered) Log.LogWarning("[Campaign] Damaged or missing progress save; recovered previous counters from save.txt.bak.");
+            Log.LogInfo($"[Campaign] Loaded progress: ActsCompleted={ActsCompleted}, GamesPlayed={GamesPlayed}, MapStartGamesPlayed={MapStartGamesPlayed}");
+            // Config edits and generated runtime files must never erase a saved run.
+            // Explicit New Run and native run completion own progress resets.
         }
-        catch { }
+        catch (Exception ex)
+        {
+            ProgressWritable = false;
+            Log.LogError($"[Campaign] Could not load progress from '{SavePath}': {ex.Message}. Existing files are preserved; restore a backup or start a New Run.");
+        }
     }
 
-    /// <summary>Return true if any campaign config file (campaign.txt,
-    /// team.txt's, player files, player_teams/**, defaults.txt) has a newer
-    /// mtime than save.txt. Used to force a fresh-run reset when the user
-    /// has edited config between sessions.</summary>
-    private static bool ShouldAutoResetForEdits()
+    internal static void ResetProgressForNewRun()
     {
-        try
-        {
-            if (!File.Exists(SavePath)) return false;
-            var saveTime = File.GetLastWriteTimeUtc(SavePath);
-            var roots = new List<string> { ModFolder };
-            if (!string.IsNullOrEmpty(DefaultsPath) && File.Exists(DefaultsPath)
-                && File.GetLastWriteTimeUtc(DefaultsPath) > saveTime)
-                return true;
-            foreach (var root in roots)
-            {
-                if (!Directory.Exists(root)) continue;
-                foreach (var f in Directory.EnumerateFiles(root, "*.txt", SearchOption.AllDirectories))
-                {
-                    // Skip save.txt itself
-                    if (string.Equals(Path.GetFullPath(f), Path.GetFullPath(SavePath), StringComparison.OrdinalIgnoreCase))
-                        continue;
-                    if (File.GetLastWriteTimeUtc(f) > saveTime) return true;
-                }
-            }
-        }
-        catch { }
-        return false;
+        ActsCompleted = 0;
+        GamesPlayed = 0;
+        MapStartGamesPlayed = 0;
+        ProgressWritable = true;
     }
 
     // ===== MAP PROPERTIES (config-driven) =====
-    internal static bool IsRemixed => true;
+    internal static bool IsRemixed => !IsDefaultMode;
 
     // Which game act for the current map (reads from actSequence)
     internal static int ActForMap
@@ -1803,30 +1731,8 @@ public class Plugin : BasePlugin
         }
     }
 
-    // Which remix round = how many times this act has appeared before this point
-    internal static int RemixRound
-    {
-        get
-        {
-            int currentAct = ActForMap;
-            int round = 0;
-            for (int i = 0; i < ActsCompleted && i < ActSequence.Length; i++)
-            {
-                if (ActSequence[i] == currentAct)
-                    round++;
-            }
-            return round;
-        }
-    }
-
     // Is this the final map?
     internal static bool IsFinalMap => ActsCompleted >= ActSequence.Length - 1;
-
-    // Stat boost per map — disabled, we manually scale team stats now
-    internal static int CurrentRemixBoost
-    {
-        get { return 0; }
-    }
 
     public override void Load()
     {
@@ -1837,12 +1743,17 @@ public class Plugin : BasePlugin
         LoadConfig();
         LoadPlayerTeams();
         LoadProgress();
-        // Install before the DEFAULT MODE return: preview export is read-only.
-        PreviewAssets.Install();
+        // Keep match-rule polling available independently of editor artwork.
+        MatchRuleRunner.Install();
         // Also before it: a player exported to Play Now belongs to Play Now, not
         // to a campaign, so their uniform must not blink out when the active
         // campaign is "default".
         PlayNowOverrides.Install(new Harmony("com.mods.customcampaign.playnow"));
+        LivePlayerPreview.Install();
+        HeadAppearanceRuntime.Install(new Harmony("com.mods.customcampaign.headappearance"));
+        AppearanceMaterialRuntime.Install(new Harmony("com.mods.customcampaign.appearancematerials"));
+        AppearanceDecalRuntime.Install(new Harmony("com.mods.customcampaign.appearancedecals"));
+        CustomHeadRuntime.Install(new Harmony("com.mods.customcampaign.customheads"));
         if (GamesPlayed > 0)
             LogNextGame();
 
@@ -1878,6 +1789,8 @@ public class Plugin : BasePlugin
 
         var harmony = new Harmony("com.mods.customcampaign");
         harmony.PatchAll();
+        OpponentEffectScope.Install(harmony);
+        InitialMatchSurface.Install();
 
         // Manual patches for UI classes
         try
@@ -2005,45 +1918,19 @@ public class Plugin : BasePlugin
             }
             catch (Exception ex) { Log.LogError($"Failed PlayExplosionAnim patch: {ex}"); }
 
-            // Late node probe — runs once the map is live, unlike the map-generation
-            // pass which sees a half-built node.
+            // Refresh campaign logos once the native map node UI is ready.
             try
             {
                 var refreshStates = AccessTools.Method(typeof(STS.Map.MapObject), "RefreshNodeStates");
                 if (refreshStates != null)
                 {
                     harmony.Patch(refreshStates,
-                        postfix: new HarmonyMethod(typeof(PatchLateNodeProbe), nameof(PatchLateNodeProbe.Postfix)));
-                    Log.LogInfo("Patched MapObject.RefreshNodeStates — late node-art probe");
+                        postfix: new HarmonyMethod(typeof(PatchLateNodeArt), nameof(PatchLateNodeArt.Postfix)));
+                    Log.LogInfo("Patched MapObject.RefreshNodeStates — campaign node-art refresh");
                 }
                 else Log.LogWarning("Could not find MapObject.RefreshNodeStates");
             }
-            catch (Exception ex) { Log.LogError($"Failed late node probe patch: {ex}"); }
-
-            // Swap the per-team stadium animation for a neutral one, so the vanilla
-            // mascot never appears next to the custom team's logo. Must be a prefix
-            // on SetElite/SetBoss — the animation name is an argument to them.
-            try
-            {
-                var setElite = AccessTools.Method(typeof(EliteMapNode), nameof(EliteMapNode.SetElite));
-                if (setElite != null)
-                {
-                    harmony.Patch(setElite,
-                        prefix: new HarmonyMethod(typeof(PatchNodeStadiumAnimation), nameof(PatchNodeStadiumAnimation.ElitePrefix)));
-                    Log.LogInfo("Patched EliteMapNode.SetElite — neutral node stadium (no vanilla mascot)");
-                }
-                else Log.LogWarning("Could not find EliteMapNode.SetElite — elite nodes will keep the vanilla mascot");
-
-                var setBoss = AccessTools.Method(typeof(BossMapNode), nameof(BossMapNode.SetBoss));
-                if (setBoss != null)
-                {
-                    harmony.Patch(setBoss,
-                        prefix: new HarmonyMethod(typeof(PatchNodeStadiumAnimation), nameof(PatchNodeStadiumAnimation.BossPrefix)));
-                    Log.LogInfo("Patched BossMapNode.SetBoss — neutral node stadium (no vanilla mascot)");
-                }
-                else Log.LogWarning("Could not find BossMapNode.SetBoss — boss nodes will keep the vanilla mascot");
-            }
-            catch (Exception ex) { Log.LogError($"Failed node stadium animation patch: {ex}"); }
+            catch (Exception ex) { Log.LogError($"Failed node-art refresh patch: {ex}"); }
 
             // Primary hook for assigning campaign teams to map nodes. SetOpponents
             // is where the game fills MatchMapNode.opponent for every elite and
@@ -2061,6 +1948,21 @@ public class Plugin : BasePlugin
             {
                 Log.LogWarning("Could not find MapObject.SetOpponents — falling back to the InitializeMap hook for map teams");
             }
+
+            // Studio's per-node stadium choice (see NodeStadiums).
+            try
+            {
+                var setElite = AccessTools.Method(typeof(EliteMapNode), nameof(EliteMapNode.SetElite));
+                if (setElite != null)
+                    harmony.Patch(setElite, prefix: new HarmonyMethod(typeof(NodeStadiums), nameof(NodeStadiums.ElitePrefix)));
+                var setBoss = AccessTools.Method(typeof(STS.Map.MapObject), "SetBoss",
+                    new[] { typeof(Il2CppSystem.Collections.Generic.List<ActBoss>), typeof(BossMapNode) });
+                if (setBoss != null)
+                    harmony.Patch(setBoss, prefix: new HarmonyMethod(typeof(NodeStadiums), nameof(NodeStadiums.BossPrefix)),
+                        finalizer: new HarmonyMethod(typeof(NodeStadiums), nameof(NodeStadiums.BossFinalizer)));
+                Log.LogInfo($"Patched map node stadiums — elite {(setElite != null ? "ok" : "MISSING")}, boss {(setBoss != null ? "ok" : "MISSING")}");
+            }
+            catch (Exception ex) { Log.LogError($"Failed map node stadium patches: {ex}"); }
         }
         catch (Exception ex) { Log.LogError($"Failed MapObject FA patches: {ex}"); }
 
@@ -2121,19 +2023,17 @@ public class Plugin : BasePlugin
             if (instStartTeam != null)
             {
                 harmony.Patch(instStartTeam,
-                    postfix: new HarmonyMethod(typeof(PatchInstantiateStartingTeam), nameof(PatchInstantiateStartingTeam.Postfix)));
-                Log.LogInfo("Patched CampaignState.InstantiateStartingTeam — reconcile drafts + append superstar at run start");
+                    prefix: new HarmonyMethod(typeof(PatchInstantiateStartingTeam), nameof(PatchInstantiateStartingTeam.Prefix)), postfix: new HarmonyMethod(typeof(PatchInstantiateStartingTeam), nameof(PatchInstantiateStartingTeam.Postfix)), finalizer: new HarmonyMethod(typeof(PatchInstantiateStartingTeam), nameof(PatchInstantiateStartingTeam.Finalizer)));
+                Log.LogInfo("Patched CampaignState.InstantiateStartingTeam — guard custom roster during run setup");
             }
             else
-                Log.LogWarning("[InstStartTeam] CampaignState.InstantiateStartingTeam NOT FOUND — drafts/superstar will NOT be reconciled at run start");
+                Log.LogWarning("[InstStartTeam] CampaignState.InstantiateStartingTeam NOT FOUND — custom starting roster guard is unavailable");
 
             // NOTE: We do NOT patch TeamData.IsCreationLineUpPositionLocked.
             // That accessor is on an extremely hot native path (called for every
             // UI refresh / skater card); reading __instance.teamName inside the
             // postfix caused a fatal AccessViolationException on superstar pick.
-            // The line-position locks are instead cleared by writing the private
-            // bool fields directly on the run TeamData (UnlockAllLinePositions),
-            // which doesn't touch the accessor at runtime.
+            // Use the native creation locks; never hook this shared accessor.
         }
         catch (Exception ex) { Log.LogError($"Failed minimum-hook patches: {ex}"); }
 
@@ -2184,45 +2084,8 @@ public class Plugin : BasePlugin
         // so excluded ids (from reward_pools.txt) never show up as random
         // rewards. Postfixes on the random-selector methods mutate the
         // returned list before callers read it.
-        try
-        {
-            var relicRepoType = typeof(RelicRepository);
-            var miList = AccessTools.Method(relicRepoType, "GetRandomRelics");
-            var miOne  = AccessTools.Method(relicRepoType, "GetRandomRelic");
-            if (miList != null)
-            {
-                harmony.Patch(miList,
-                    prefix:  new HarmonyMethod(typeof(PatchFilterRelicRewards), nameof(PatchFilterRelicRewards.Prefix)),
-                    postfix: new HarmonyMethod(typeof(PatchFilterRelicRewards), nameof(PatchFilterRelicRewards.Postfix)));
-                Log.LogInfo("Patched RelicRepository.GetRandomRelics — reward-pool pre+post filter active");
-            }
-            if (miOne != null)
-            {
-                harmony.Patch(miOne,
-                    postfix: new HarmonyMethod(typeof(PatchFilterSingleRelicReward), nameof(PatchFilterSingleRelicReward.Postfix)));
-            }
-
-            var talentRepoType = AccessTools.TypeByName("TalentRepository");
-            if (talentRepoType != null)
-            {
-                var mTList = AccessTools.Method(talentRepoType, "GetRandomTalents");
-                var mTOne  = AccessTools.Method(talentRepoType, "GetRandomTalent");
-                if (mTList != null)
-                {
-                    harmony.Patch(mTList,
-                        prefix:    new HarmonyMethod(typeof(PatchFilterTalentRewards), nameof(PatchFilterTalentRewards.Prefix)),
-                        postfix:   new HarmonyMethod(typeof(PatchFilterTalentRewards), nameof(PatchFilterTalentRewards.Postfix)),
-                        finalizer: new HarmonyMethod(typeof(PatchFilterTalentRewards), nameof(PatchFilterTalentRewards.Finalizer)));
-                    Log.LogInfo("Patched TalentRepository.GetRandomTalents — reward-pool pre+post filter active");
-                }
-                if (mTOne != null)
-                {
-                    harmony.Patch(mTOne,
-                        postfix: new HarmonyMethod(typeof(PatchFilterSingleTalentReward), nameof(PatchFilterSingleTalentReward.Postfix)));
-                }
-            }
-        }
-        catch (Exception ex) { Log.LogError($"Failed reward-pool patches: {ex}"); }
+        // CustomRewardPools now supplies complete allow-lists. Retired exclusion
+        // filters restored unchecked rewards when a pool was too small.
 
         // Inject user-defined custom squads into the campaign squad-select
         // menu. Any `player_teams/<FolderName>/` whose folder isn't one of
@@ -2251,6 +2114,7 @@ public class Plugin : BasePlugin
                 Log.LogWarning("[CustomSquad] ProfileData.GetSquadTeamData not found");
 
             var setupMetas = AccessTools.Method(typeof(Tape2Tape.Hockey.UI.ChooseMetaMenu), "SetupMetas");
+            CustomSquadMenu.Install(harmony);
             if (setupMetas != null)
             {
                 harmony.Patch(setupMetas,
@@ -2261,28 +2125,6 @@ public class Plugin : BasePlugin
             else
             {
                 Log.LogWarning("Could not find ChooseMetaMenu.SetupMetas");
-            }
-
-            // Jul-2026 update: SetupMetas only builds a tile when
-            // SquadIds.IsAvailableSquad(id) passes (hardcoded whitelist).
-            // Whitelist Custom_* ids or appended squads never render.
-            var isAvail = AccessTools.Method(typeof(State.SquadIds), "IsAvailableSquad", new Type[] { typeof(string) });
-            if (isAvail != null)
-            {
-                harmony.Patch(isAvail,
-                    postfix: new HarmonyMethod(typeof(PatchSquadIds), nameof(PatchSquadIds.Postfix)));
-                Log.LogInfo("Patched SquadIds.IsAvailableSquad — Custom_* squads pass the availability whitelist");
-            }
-            else
-                Log.LogWarning("[CustomSquad] SquadIds.IsAvailableSquad not found — custom squad tiles will not appear");
-
-            // Keep the legacy ChooseMetaUI patch too (no-op if not used).
-            var setupButtons = AccessTools.Method(typeof(Rogue.ChooseMetaUI), "SetupMetaTeamButtons");
-            if (setupButtons != null)
-            {
-                harmony.Patch(setupButtons,
-                    prefix: new HarmonyMethod(typeof(PatchChooseMetaUI), nameof(PatchChooseMetaUI.Prefix)));
-                Log.LogInfo("Patched ChooseMetaUI.SetupMetaTeamButtons (legacy path)");
             }
 
             // Redirect LocalizedSquadName/LocalizedSquadDesc for Custom_* ids
@@ -2300,15 +2142,6 @@ public class Plugin : BasePlugin
             if (unlockGetter != null)
                 harmony.Patch(unlockGetter,
                     postfix: new HarmonyMethod(typeof(PatchSquadLocalization), nameof(PatchSquadLocalization.UnlockPostfix)));
-            // Patch get_IsUnlocked so Custom_* squads always read as unlocked
-            // regardless of ProfileData.unlockedSquads state at patch time.
-            var isUnlockedGetter = AccessTools.Method(typeof(RunSquadScriptableObject), "get_IsUnlocked");
-            if (isUnlockedGetter != null)
-                harmony.Patch(isUnlockedGetter,
-                    postfix: new HarmonyMethod(typeof(PatchSquadLocalization), nameof(PatchSquadLocalization.IsUnlockedPostfix)));
-            else
-                Log.LogWarning("[CustomSquad] get_IsUnlocked not found — patching MetaTeamItem.Refresh instead");
-
             // MetaTeamItem.Refresh(RunSquadScriptableObject squad, SquadTeamData savedData)
             // After Refresh runs it sets MetaTeamItem.IsUnlocked based on unlockCondition.IsMet().
             // Our cloned squads have no valid unlock condition so IsUnlocked ends up false → greyed tile.
@@ -2372,33 +2205,6 @@ public class Plugin : BasePlugin
             }
             catch (Exception ivex) { Log.LogError($"Failed IsValidMetaSelection patch: {ivex}"); }
 
-            // Diagnostic: trace OnMetaClicked and ConfirmSelections to see what fires on click.
-            try
-            {
-                var onMetaClicked = AccessTools.Method(typeof(Tape2Tape.Hockey.UI.ChooseMetaMenu), "OnMetaClicked");
-                if (onMetaClicked != null)
-                {
-                    harmony.Patch(onMetaClicked,
-                        prefix: new HarmonyMethod(typeof(PatchChooseMetaDiag), nameof(PatchChooseMetaDiag.OnMetaClickedPrefix)));
-                    Log.LogInfo("Patched ChooseMetaMenu.OnMetaClicked (diagnostic)");
-                }
-                var confirmSel = AccessTools.Method(typeof(Tape2Tape.Hockey.UI.ChooseMetaMenu), "ConfirmSelections");
-                if (confirmSel != null)
-                {
-                    harmony.Patch(confirmSel,
-                        prefix: new HarmonyMethod(typeof(PatchChooseMetaDiag), nameof(PatchChooseMetaDiag.ConfirmPrefix)));
-                    Log.LogInfo("Patched ChooseMetaMenu.ConfirmSelections (diagnostic)");
-                }
-                var canGoNext = AccessTools.Method(typeof(Tape2Tape.Hockey.UI.ChooseMetaMenu), "CanGoToNextState");
-                if (canGoNext != null)
-                {
-                    harmony.Patch(canGoNext,
-                        postfix: new HarmonyMethod(typeof(PatchChooseMetaDiag), nameof(PatchChooseMetaDiag.CanGoNextPostfix)));
-                    Log.LogInfo("Patched ChooseMetaMenu.CanGoToNextState (diagnostic)");
-                }
-            }
-            catch (Exception diagex) { Log.LogError($"Failed diagnostic patches: {diagex}"); }
-
         }
         catch (Exception ex) { Log.LogError($"Failed squad-menu patches: {ex}"); }
 
@@ -2431,58 +2237,21 @@ public class Plugin : BasePlugin
         }
         catch (Exception ex) { Log.LogError($"Failed MatchPreviewMenu.ShowMenu: {ex}"); }
 
-        // Suppress GoalDenier (Bad Luck) completely
-        try
-        {
-            var goalDenierAdd = AccessTools.Method(typeof(Rogue.Relics.Controllers.GoalDenierController), "AddEffect");
-            if (goalDenierAdd != null)
-            {
-                harmony.Patch(goalDenierAdd,
-                    prefix: new HarmonyMethod(typeof(PatchGoalDenier), nameof(PatchGoalDenier.Skip)));
-                Log.LogInfo("Patched GoalDenierController.AddEffect — suppressed!");
-            }
-        }
-        catch (Exception ex) { Log.LogError($"Failed GoalDenier patch: {ex}"); }
-
-        try
-        {
-            var goalDenierInit = AccessTools.Method(typeof(Rogue.Relics.Components.GoalDenierComponent), "Initialize");
-            if (goalDenierInit != null)
-            {
-                harmony.Patch(goalDenierInit,
-                    prefix: new HarmonyMethod(typeof(PatchGoalDenier), nameof(PatchGoalDenier.Skip)));
-                Log.LogInfo("Patched GoalDenierComponent.Initialize — suppressed!");
-            }
-        }
-        catch (Exception ex) { Log.LogError($"Failed GoalDenierComponent patch: {ex}"); }
-
-        // Replace golf ball and soccer ball with regular puck
+        // Apply the current match puck selected by opponent settings.
         try
         {
             var initPuck = AccessTools.Method(typeof(PuckManager), "InitializePuck");
             if (initPuck != null)
             {
                 harmony.Patch(initPuck,
-                    prefix: new HarmonyMethod(typeof(PatchPuckManager), nameof(PatchPuckManager.Prefix)));
-                Log.LogInfo("Patched PuckManager.InitializePuck — golf/soccer balls replaced with puck!");
+                    prefix: new HarmonyMethod(typeof(PatchPuckManager), nameof(PatchPuckManager.Prefix)),
+                    finalizer: new HarmonyMethod(typeof(PatchPuckManager), nameof(PatchPuckManager.Finalizer)));
+                Log.LogInfo("Patched PuckManager.InitializePuck — applies editor Match Puck settings");
             }
         }
         catch (Exception ex) { Log.LogError($"Failed PuckManager patch: {ex}"); }
 
-        // Replace challenge nodes with elite nodes
-        try
-        {
-            var createMapNode = AccessTools.Method(typeof(MapObject), "CreateMapNode");
-            if (createMapNode != null)
-            {
-                harmony.Patch(createMapNode,
-                    prefix: new HarmonyMethod(typeof(PatchCreateMapNode), nameof(PatchCreateMapNode.Prefix)));
-                Log.LogInfo("Patched MapObject.CreateMapNode — challenge nodes become elite nodes!");
-            }
-        }
-        catch (Exception ex) { Log.LogError($"Failed CreateMapNode patch: {ex}"); }
-
-        Log.LogInfo("All patches applied.");
+        Log.LogInfo("Patch registration finished (see warnings/errors above for failures).");
 
         // Auto-dump: hook into SetCurrentAct (fires on main menu load) to run on main thread.
         _pendingAutoDump = true;
@@ -2492,18 +2261,6 @@ public class Plugin : BasePlugin
     {
         // Use ActForMap to determine the correct game act based on progression
         return ActForMap;
-    }
-}
-
-// ============================================================
-// Suppress GoalDenier (Bad Luck) — skip AddEffect and Initialize
-// ============================================================
-public static class PatchGoalDenier
-{
-    public static bool Skip()
-    {
-        Plugin.Log.LogInfo("[GoalDenier] BLOCKED — Bad Luck suppressed");
-        return false; // skip original method
     }
 }
 
@@ -2530,7 +2287,6 @@ public static class PatchMatchGameEnd
         try { sysTypeName = __instance?.GetType()?.FullName ?? ""; } catch {}
         try { il2TypeName = __instance?.GetIl2CppType()?.FullName ?? ""; } catch {}
         Plugin.Log.LogInfo($"[Campaign] MatchMapNode.OnGameEnd(win=true) on type sys='{sysTypeName}' il2='{il2TypeName}'");
-        Plugin.LastMatchNodeKind = !string.IsNullOrEmpty(il2TypeName) ? il2TypeName : sysTypeName;
 
         // Robust non-regular-match detection. In IL2CPP the `is` operator can be
         // unreliable across proxy boundaries — also check the Il2Cpp type name
@@ -2612,7 +2368,7 @@ public static class PatchBossOnGameEnd
         {
             Plugin.ActsCompleted++;
             // Final boss — let the real victory screen show, don't redirect
-            if (Plugin.ActsCompleted >= Plugin.TotalMaps)
+            if (CustomMatchCompletion.Active ? CustomMatchCompletion.FinalBoss : Plugin.ActsCompleted >= Plugin.TotalMaps)
             {
                 Plugin.BossJustBeaten = false;
                 Plugin.GamesPlayed = 0;
@@ -2665,100 +2421,18 @@ public static class PatchShowEndRunSequence
 }
 
 // ============================================================
-// Replace golf ball and soccer ball with regular puck
-// ============================================================
-public static class PatchPuckManager
-{
-    public static void Prefix(PuckManager __instance)
-    {
-        try
-        {
-            if (__instance.regularPuck == null) return;
-
-            // A node marked for soccer forces the ball for THIS match. The
-            // swap is the same trick as the replacements below, run the other
-            // way round: InitializePuckVisuals picks by team, so pointing
-            // regularPuck at the soccer ball makes every team use it. It has to
-            // win over "replace soccer ball", which is a campaign-wide default
-            // the node is deliberately overriding.
-            if (Plugin.SoccerThisMatch && __instance.soccerBall != null)
-            {
-                __instance.regularPuck = __instance.soccerBall;
-                if (Plugin.ReplaceGolfBall) __instance.golfBall = __instance.soccerBall;
-                return;
-            }
-
-            if (Plugin.ReplaceSoccerBall)
-                __instance.soccerBall = __instance.regularPuck;
-            if (Plugin.ReplaceGolfBall)
-                __instance.golfBall = __instance.regularPuck;
-        }
-        catch {}
-    }
-}
-
-// ============================================================
 // Soccer nodes — the ball and the field, per match
 // ============================================================
 //
-// The ball is handled in PatchPuckManager above. The field is a separate
-// switch: IceSetup owns the rink surface and exposes SwitchToSoccerIce() as a
-// UniTask. It is called once the match scene has an IceSetup in it, which is
-// why this polls rather than hooking a single point — IceSetup.Initialize runs
-// during scene load and switching from inside it fights the setup that is
-// already in flight.
+// The ball is handled in PatchPuckManager.cs. InitialMatchSurface supplies the
+// field choice to the native loader before it starts its first surface load.
 public static class SoccerMatch
 {
-    private static bool _fieldApplied;
-    private static float _nextTry;
-
     /// <summary>Called when a map node launches. Decides the match, not the campaign.</summary>
     internal static void BeginMatch(bool soccer, string why)
     {
         Plugin.SoccerThisMatch = soccer;
-        _fieldApplied = false;
-        _nextTry = 0f;
         if (soccer) Plugin.Log.LogInfo($"[Soccer] {why}: this match uses the soccer ball and field");
-    }
-
-    /// <summary>Drive from the mod's existing per-frame tick.</summary>
-    internal static void Tick()
-    {
-        if (!Plugin.SoccerThisMatch || _fieldApplied) return;
-        if (UnityEngine.Time.unscaledTime < _nextTry) return;
-        _nextTry = UnityEngine.Time.unscaledTime + 0.5f;
-        try
-        {
-            var setups = UnityEngine.Resources.FindObjectsOfTypeAll<Arena.IceSetup>();
-            if (setups == null || setups.Length == 0) return;
-            for (int i = 0; i < setups.Length; i++)
-            {
-                var setup = setups[i];
-                if (setup == null) continue;
-                // Reflection, not a direct call: SwitchToSoccerIce returns a
-                // UniTask, and referencing that assembly just to discard the
-                // handle would add a version-matched dependency for nothing.
-                var method = setup.GetType().GetMethod("SwitchToSoccerIce",
-                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                if (method == null)
-                {
-                    _fieldApplied = true;
-                    Plugin.Log.LogWarning("[Soccer] IceSetup.SwitchToSoccerIce not found — rink left as it is");
-                    return;
-                }
-                method.Invoke(setup, null);
-                _fieldApplied = true;
-                Plugin.Log.LogInfo("[Soccer] Rink switched to the soccer field");
-                return;
-            }
-        }
-        catch (Exception ex)
-        {
-            // One failure is enough — retrying every half second for a whole
-            // match would fill the log with the same line.
-            _fieldApplied = true;
-            Plugin.Log.LogWarning($"[Soccer] Could not switch the rink to the soccer field: {ex.Message}");
-        }
     }
 
     /// <summary>The node's coordinates, or false when it is not a marked node.</summary>
@@ -2851,7 +2525,9 @@ public static class PlayNowOverrides
             //
             // Home kit: a Play Now custom player has no away side of their own,
             // the team they are dropped into supplies that.
+            __result.colorSchemes = TeamColorsData.CopyFrom(__result.colorSchemes ?? TeamColorsData.Default);
             PatchBossLaunchMatch.ApplyPlayerLookOnly(__result, pc, useAway: false);
+            PlayNowTranslation.Player(__result, model.id);
 
             Plugin.Log.LogInfo($"[PlayNow] Uniform overrides applied to '{__result.firstName} {__result.lastName}' ({model.id})");
         }
@@ -2867,7 +2543,9 @@ public static class PlayNowOverrides
         {
             var pc = Find(model.id);
             if (pc == null) return;
+            __result.colorSchemes = TeamColorsData.CopyFrom(__result.colorSchemes ?? TeamColorsData.Default);
             PatchBossLaunchMatch.ApplyGoalieColorOverrides(__result, pc);
+            PlayNowTranslation.Player(__result, model.id);
             Plugin.Log.LogInfo($"[PlayNow] Colour overrides applied to goalie '{__result.firstName} {__result.lastName}' ({model.id})");
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[PlayNow] Goalie '{model.id}': {ex.Message}"); }
@@ -2879,6 +2557,7 @@ public static class PlayNowOverrides
     internal static void Install(Harmony h)
     {
         Reload();
+        PlayNowTranslation.Install(h);
         try
         {
             var conv = AccessTools.Method(typeof(Tape2Tape.Customization.ForwardDataAdapter), "ConvertToForwardData");
@@ -2905,159 +2584,6 @@ public static class PlayNowOverrides
 }
 
 // ============================================================
-// Offside — "Offside = yes" in campaign.txt
-// ============================================================
-//
-// The engine already knows how to enforce offside; the only question is how to
-// switch it on for a run without vandalising the player's own settings.
-//
-// OffsideController keeps a STATIC HashSet of "force sources". Anything in that
-// set forces the rule on regardless of the Advanced Settings toggle, and it is
-// exactly what the Linesman talent uses (LinesmanController.AddEffect adds the
-// skater, RemoveEffect takes it out again). We add one token for the whole
-// match and take it out when the match ends. Nothing is written to disk.
-//
-// The alternative — GameplaySettings.Offside = true — was rejected: its setter
-// calls SaveSettings(), so it would rewrite GameplaySettings.es3 and leave
-// offside on in Play Now and every other campaign afterwards.
-//
-// Like SoccerMatch this polls, because OffsideController does not exist until
-// the match scene is loaded. Adding the token is safe before then (the set is
-// static), but Refresh() only has an effect once the controller is alive.
-public static class OffsideMatch
-{
-    // One cached token, reused for both add and remove, so the HashSet's
-    // reference equality matches even though we never see its hash contract.
-    private static Il2CppSystem.Object _token;
-    private static bool _added;
-    private static bool _refreshed;
-    private static float _nextTry;
-    // Set when we override the penalty so the run can put the player's own
-    // choice back — that setter persists, ours must not outlive the run.
-    private static int _savedPenalty = -1;
-
-    private static Il2CppSystem.Object Token
-    {
-        get
-        {
-            if (_token == null) _token = new Il2CppSystem.Object();
-            return _token;
-        }
-    }
-
-    /// <summary>Called when a map node launches, before the match scene loads.</summary>
-    internal static void BeginMatch(string why)
-    {
-        _refreshed = false;
-        _nextTry = 0f;
-        if (!Plugin.OffsideEnabled) { End(); return; }
-        if (_added) return;
-        try
-        {
-            OffsideController.AddForceSource(Token);
-            _added = true;
-            Plugin.Log.LogInfo($"[Offside] {why}: offside is enforced for this match");
-        }
-        catch (Exception ex)
-        {
-            Plugin.Log.LogWarning($"[Offside] Could not enable offside: {ex.Message}");
-        }
-        ApplyPenalty();
-    }
-
-    /// <summary>Drive from the mod's existing per-frame tick. Costs one bool
-    /// test per frame when the campaign doesn't ask for offside.</summary>
-    internal static void Tick()
-    {
-        if (!_added || _refreshed) return;
-        if (UnityEngine.Time.unscaledTime < _nextTry) return;
-        _nextTry = UnityEngine.Time.unscaledTime + 0.5f;
-        try
-        {
-            var controllers = UnityEngine.Resources.FindObjectsOfTypeAll<OffsideController>();
-            if (controllers == null || controllers.Length == 0) return;
-            OffsideController.Refresh();
-            _refreshed = true;
-            Plugin.Log.LogInfo($"[Offside] Rule armed for this match (active={OffsideController.IsActive})");
-        }
-        catch (Exception ex)
-        {
-            // One failure is enough — retrying twice a second for a whole match
-            // would fill the log with the same line.
-            _refreshed = true;
-            Plugin.Log.LogWarning($"[Offside] Could not arm the offside rule: {ex.Message}");
-        }
-    }
-
-    /// <summary>Drop the force source. Called when a match ends and when a run
-    /// finishes, so offside never leaks into Play Now or the next campaign.</summary>
-    internal static void End()
-    {
-        if (_added)
-        {
-            try { OffsideController.RemoveForceSource(Token); } catch {}
-            try { OffsideController.Refresh(); } catch {}
-            _added = false;
-            Plugin.Log.LogInfo("[Offside] Force source removed");
-        }
-        _refreshed = false;
-        RestorePenalty();
-    }
-
-    /// <summary>"Offside Penalty = Whistle|Lose Puck|Knockout". Only touched when
-    /// the campaign names one — otherwise the player's own choice stands.</summary>
-    private static void ApplyPenalty()
-    {
-        if (string.IsNullOrEmpty(Plugin.OffsidePenaltyName)) return;
-        int want = ParsePenalty(Plugin.OffsidePenaltyName);
-        if (want < 0)
-        {
-            Plugin.Log.LogWarning($"[Offside] Penalty '{Plugin.OffsidePenaltyName}' is not one of "
-                + "Whistle / Lose Puck / Knockout — the game's own setting is left alone");
-            return;
-        }
-        try
-        {
-            var gs = Settings.GameplaySettings.Instance;
-            if (gs == null) return;
-            int current = (int)gs.OffsidePenalty;
-            if (current == want) return;
-            if (_savedPenalty < 0) _savedPenalty = current;
-            gs.OffsidePenalty = (Settings.OffsidePenalty)want;
-            Plugin.Log.LogInfo($"[Offside] Penalty set to {(Settings.OffsidePenalty)want} (was {(Settings.OffsidePenalty)current})");
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[Offside] Penalty: {ex.Message}"); }
-    }
-
-    private static void RestorePenalty()
-    {
-        if (_savedPenalty < 0) return;
-        try
-        {
-            var gs = Settings.GameplaySettings.Instance;
-            if (gs != null)
-            {
-                gs.OffsidePenalty = (Settings.OffsidePenalty)_savedPenalty;
-                Plugin.Log.LogInfo($"[Offside] Penalty restored to the player's own setting ({(Settings.OffsidePenalty)_savedPenalty})");
-            }
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[Offside] Penalty restore: {ex.Message}"); }
-        _savedPenalty = -1;
-    }
-
-    private static int ParsePenalty(string s)
-    {
-        switch ((s ?? "").Trim().ToLowerInvariant().Replace("-", " ").Replace("_", " "))
-        {
-            case "whistle": case "0": return 0;
-            case "lose puck": case "losepuck": case "loose puck": case "1": return 1;
-            case "knockout": case "knock out": case "ko": case "2": return 2;
-            default: return -1;
-        }
-    }
-}
-
-// ============================================================
 // Inject user-defined custom squads into CampaignState.squads before the
 // campaign squad-select menu builds its buttons. Each non-preset folder in
 // player_teams/ becomes a new squad, cloned from the first existing squad
@@ -3065,21 +2591,6 @@ public static class OffsideMatch
 // cloned and renamed so PatchPlayerTeamInit's config-matching finds the
 // right PlayerTeamConfig entry when the player selects it.
 // ============================================================
-// Jul-2026 update (found by disassembling SetupMetas): every squad tile is
-// now gated behind SquadIds.IsAvailableSquad(id) — a hardcoded whitelist
-// (ONLY_ALLOW_AVAILABLE_SQUADS = true game-side). Custom_* ids can never be
-// on it, so appended squads silently stopped getting tiles (the game also
-// hides its own not-yet-released 'allangus' squad this way). Flip the check
-// for our ids only.
-public static class PatchSquadIds
-{
-    public static void Postfix(string id, ref bool __result)
-    {
-        if (!__result && id != null && id.StartsWith("Custom_"))
-            __result = true;
-    }
-}
-
 public static class PatchChooseMetaUI
 {
     // The Choose Your Squad tile head is RunSquadScriptableObject.m_SmallTeamIcon
@@ -3090,14 +2601,17 @@ public static class PatchChooseMetaUI
     // matches, so the caller can keep the template's icon.
     internal static UnityEngine.Sprite ResolveTileIcon(string value, string squadKey)
     {
+        // Explicit folder choices must not collide with a face or native sprite name.
+        if ((value ?? "").StartsWith("CustomLogos/", StringComparison.OrdinalIgnoreCase))
+            return PatchBossLaunchMatch.LoadCustomLogoSprite(Path.GetFileNameWithoutExtension(value));
         string leaf = (value ?? "").Trim();
         int slash = leaf.LastIndexOf('/');
         if (slash >= 0) leaf = leaf.Substring(slash + 1);
         if (leaf.Length == 0) return null;
 
-        // 1) A face — the normal case. Faces live in the Spine atlas, so this
-        //    has to go through FaceToSprite; they are NOT Unity Sprites.
-        var face = FaceToSprite(leaf);
+        // 1) Keep the full skin ID. The native portrait catalog maps that ID to
+        //    a UI sprite; a skin's leaf is generally not its atlas-region name.
+        var face = FaceToSprite((value ?? "").Trim());
         if (face != null)
         {
             Plugin.Log.LogInfo($"[CustomSquad] Tile icon for '{squadKey}': face '{leaf}'");
@@ -3127,49 +2641,48 @@ public static class PatchChooseMetaUI
         return null;
     }
 
-    // A face is a Spine ATLAS REGION, not a Unity Sprite. That is why the 2.1.31
-    // heuristic — scanning Resources for a Sprite named after the face — could
-    // never match, no matter which face was chosen. Cut the region out of its
-    // atlas page texture into a real Sprite the tile's UI Image can draw.
+    // The native customization catalog owns face-to-portrait associations.
+    // Keep successful sprites only: the first squad clone may precede UI assets
+    // loading, and an early miss must not permanently poison later attempts.
     private static readonly Dictionary<string, UnityEngine.Sprite> _faceIconCache =
         new Dictionary<string, UnityEngine.Sprite>(StringComparer.OrdinalIgnoreCase);
 
-    // One-shot: what the loaded atlases actually contain. FindRegion() is an
-    // exact-name match, so a miss can mean either "wrong name form" or "the
-    // atlas holding faces isn't loaded on this screen" — these two lists tell
-    // them apart instead of guessing again.
-    private static bool _atlasDumped;
-    private static void DumpAtlasRegions(
-        Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppArrayBase<Spine.Unity.AtlasAssetBase> assets,
-        string wanted)
+    private static UnityEngine.Sprite PortraitToSprite(string head, out string where)
     {
-        if (_atlasDumped || assets == null) return;
-        _atlasDumped = true;
-        try
-        {
-            foreach (var a in assets)
-            {
-                if (a == null) continue;
-                Spine.Atlas atlas = null;
-                try { atlas = a.GetAtlas(false); } catch { }
-                if (atlas == null) { Plugin.Log.LogInfo($"[AtlasDump] '{a.name}': no atlas"); continue; }
+        where = "";
+        var catalogs = UnityEngine.Resources.FindObjectsOfTypeAll<Tape2Tape.Customization.UI.SkaterUIHeadData>();
+        // This is a resource-backed native catalog, not a scene-only component.
+        // A typed resource load also works during the early title-screen clone.
+        if (catalogs == null || catalogs.Length == 0)
+            catalogs = UnityEngine.Resources.LoadAll<Tape2Tape.Customization.UI.SkaterUIHeadData>("");
+        if (catalogs == null) return null;
 
-                var regions = atlas.Regions;
-                int n = regions != null ? regions.Count : 0;
-                var sample = new System.Text.StringBuilder();
-                var hits = new System.Text.StringBuilder();
-                for (int i = 0; i < n; i++)
-                {
-                    string rn = regions[i]?.name ?? "";
-                    if (i < 10) sample.Append('\'').Append(rn).Append("' ");
-                    if (rn.IndexOf(wanted, StringComparison.OrdinalIgnoreCase) >= 0)
-                        hits.Append('\'').Append(rn).Append("' ");
-                }
-                Plugin.Log.LogInfo($"[AtlasDump] '{a.name}': {n} region(s) | first: {sample}"
-                    + (hits.Length > 0 ? $"| MATCHING '{wanted}': {hits}" : $"| no region contains '{wanted}'"));
+        string requested = HeadAppearance.Base(head);
+        bool qualified = requested.IndexOf('/') >= 0;
+        string matched = null;
+        Tape2Tape.Customization.UI.SkaterUIHeadData owner = null;
+        foreach (var catalog in catalogs)
+        {
+            if (catalog == null) continue;
+            var choices = new Il2CppSystem.Collections.Generic.List<string>();
+            catalog.GetAllHeads(choices, false);
+            foreach (string candidate in choices)
+            {
+                if (string.IsNullOrEmpty(candidate)) continue;
+                bool same = candidate.Equals(requested, StringComparison.OrdinalIgnoreCase);
+                if (!same && !qualified)
+                    same = candidate.Substring(candidate.LastIndexOf('/') + 1).Equals(requested, StringComparison.OrdinalIgnoreCase);
+                if (!same) continue;
+                // Preserve legacy short names only when their catalog identity
+                // is unambiguous. Never let GetHead return its unrelated default.
+                if (matched != null && !matched.Equals(candidate, StringComparison.OrdinalIgnoreCase)) return null;
+                matched = candidate; owner = catalog;
             }
         }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[AtlasDump] {ex.Message}"); }
+        if (owner == null) return null;
+        var sprite = owner.GetHead(matched);
+        if (sprite != null) where = $"native portrait '{matched}' from '{owner.name}'";
+        return sprite;
     }
 
     // Cut a named ATLAS REGION out of its page texture into a Sprite.
@@ -3215,34 +2728,34 @@ public static class PatchChooseMetaUI
         return null;
     }
 
-    internal static UnityEngine.Sprite FaceToSprite(string faceLeaf)
+    internal static UnityEngine.Sprite FaceToSprite(string face)
     {
-        if (string.IsNullOrEmpty(faceLeaf)) return null;
-        if (_faceIconCache.TryGetValue(faceLeaf, out var cached)) return cached;
+        if (string.IsNullOrWhiteSpace(face)) return null;
+        face = face.Trim();
+        if (_faceIconCache.TryGetValue(face, out var cached) && cached != null) return cached;
 
         UnityEngine.Sprite made = null;
         try
         {
-            // A face in the GUI ('Mathieu') is a Spine SKIN name; the atlas holds
-            // the raw art under other names. Walking skin -> attachment to learn
-            // the real region name is the obvious next step, and it is
-            // DELIBERATELY NOT DONE HERE: Skin.Attachments is an Il2Cpp
-            // ICollection of non-blittable SkinEntry structs, and reading the
-            // boxed entries by IL2CPP reflection crashed the game outright —
-            // 0xC0000005 access violation at squad-clone time, killing the whole
-            // process. A direct region lookup is safe (it simply misses), so that
-            // is all we do. Anything revisiting this must find a route that never
-            // dereferences boxed Spine structs from managed code.
-            string where;
-            made = RegionToSprite(faceLeaf, out where);
+            // Both calls use native reference/string APIs. Never walk boxed
+            // Spine SkinEntry structs: the former reflection path caused an
+            // uncatchable 0xC0000005 access violation during squad cloning.
+            string where = "";
+            try { made = PortraitToSprite(face, out where); }
+            catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] Portrait '{face}': {ex.Message}"); }
+            if (made == null)
+            {
+                string leaf = face.Substring(face.LastIndexOf('/') + 1);
+                made = RegionToSprite(leaf, out where); // retain raw-region compatibility
+            }
             if (made != null)
-                Plugin.Log.LogInfo($"[CustomSquad] Face '{faceLeaf}' resolved from {where}");
+                Plugin.Log.LogInfo($"[CustomSquad] Face '{face}' resolved from {where}");
             else
-                Plugin.Log.LogInfo($"[CustomSquad] Face '{faceLeaf}' has no atlas region of that name — tile keeps its icon");
+                Plugin.Log.LogInfo($"[CustomSquad] Face '{face}' has no available portrait or matching atlas region");
         }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] FaceToSprite '{faceLeaf}': {ex.Message}"); }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] FaceToSprite '{face}': {ex.Message}"); }
 
-        _faceIconCache[faceLeaf] = made;   // cache misses too
+        if (made != null) _faceIconCache[face] = made;
         return made;
     }
 
@@ -3256,7 +2769,7 @@ public static class PatchChooseMetaUI
         try
         {
             Plugin.PlayerTeamConfigs.Clear();
-            Plugin.LoadPlayerTeamsFolders(loadTeams: Plugin.UsePlayerTeams, loadDraft: false);
+            Plugin.LoadPlayerTeamsFolders(loadTeams: Plugin.UsePlayerTeams, loadDraft: true);
         }
         catch (Exception reloadEx) { Plugin.Log.LogWarning($"[CustomSquad] reload: {reloadEx.Message}"); }
 
@@ -3269,28 +2782,10 @@ public static class PatchChooseMetaUI
                 return;
             }
 
-            // Read the injected CampaignState via reflection — the IL2CPP
-            // field is `m_CampaignState` here (not `_campaignState` like on
-            // the legacy ChooseMetaUI).
-            State.CampaignState cs = null;
-            try
-            {
-                var t = __instance.GetIl2CppType();
-                var f = t.GetField("m_CampaignState") ?? t.GetField("_campaignState") ?? t.GetField("campaignState");
-                if (f != null)
-                {
-                    var v = f.GetValue(__instance);
-                    if (v != null) cs = v.TryCast<State.CampaignState>();
-                }
-            }
-            catch { }
-            if (cs == null)
-            {
-                var all = UnityEngine.Resources.FindObjectsOfTypeAll<State.CampaignState>();
-                if (all != null && all.Length > 0) cs = all[0];
-            }
+            var cs = __instance.m_CampaignState;
             if (cs == null) { Plugin.Log.LogWarning("[CustomSquad] CampaignState not found"); return; }
 
+            CustomMapLayout.CaptureSources();
             InjectCustomSquads(cs);
 
             // Gauntlet map: inject ALL game squads so the player isn't locked to
@@ -3361,6 +2856,9 @@ public static class PatchChooseMetaUI
                         {
                             var sq = cs.squads[gi];
                             if (sq == null || sq == srcSquad) continue;
+                            if ((sq.id ?? "").StartsWith("Custom_")
+                                && Plugin.PlayerTeamConfigs.TryGetValue(sq.id.Substring(7), out var ownConfig)
+                                && !string.IsNullOrWhiteSpace(ownConfig.SquadTemplate)) continue;
                             try { sq.maps = srcSquad.maps; overrode++; } catch { }
                         }
                         Plugin.Log.LogInfo($"[MapSource] Overrode .maps on {overrode} squad(s) → all picks use '{srcSquad.squadName}' maps ({srcSquad.maps.Count} map(s))");
@@ -3420,69 +2918,11 @@ public static class PatchChooseMetaUI
         }
         return null;
     }
-
-    // TEMP DIAGNOSTIC (remove once append is confirmed working). Runs after
-    // SetupMetas has built the tile grid. The dump gives signatures only, not
-    // SetupMetas's body — this is how we settle whether plain append produces a
-    // fully-wired tile for our Custom_* squad: per tile we log its squad id,
-    // unlock state, and navigation reachability (a tile with no neighbors / not
-    // navigable can't be reached by input → its OnClick never fires).
-    public static void PostfixMenu(Tape2Tape.Hockey.UI.ChooseMetaMenu __instance)
+    // Build the custom squad tabs after the native menu has created its entries.
+public static void PostfixMenu(Tape2Tape.Hockey.UI.ChooseMetaMenu __instance)
     {
-        try
-        {
-            var t = __instance.GetIl2CppType();
-            var bf = Il2CppSystem.Reflection.BindingFlags.NonPublic | Il2CppSystem.Reflection.BindingFlags.Instance | Il2CppSystem.Reflection.BindingFlags.Public;
-            var miField = t.GetField("m_MetaItems", bf);
-            if (miField == null) { Plugin.Log.LogWarning("[SquadDiag] m_MetaItems field not found"); return; }
-            var miVal = miField.GetValue(__instance);
-            var list = miVal?.TryCast<Il2CppSystem.Collections.Generic.List<Tape2Tape.Hockey.UI.MetaTeamItem>>();
-            if (list == null) { Plugin.Log.LogWarning("[SquadDiag] m_MetaItems is null"); return; }
-            Plugin.Log.LogInfo($"[SquadDiag] SetupMetas built {list.Count} tile(s):");
-            for (int i = 0; i < list.Count; i++)
-            {
-                var mti = list[i];
-                if (mti == null) { Plugin.Log.LogInfo($"[SquadDiag]   [{i}] <null MetaTeamItem>"); continue; }
-                var squad = mti.CurrentSquad;
-                string id = squad?.id ?? "null";
-                var nav = mti.Navigable;
-                bool navNull = nav == null;
-                bool isNav = !navNull && nav.IsNavigable;
-                bool canClick = !navNull && nav.CanBeClicked;
-                int neigh = -1;
-                try { if (!navNull) { var nbrs = nav.Neighbors; if (nbrs != null) neigh = nbrs.Length; } } catch { }
-                Plugin.Log.LogInfo($"[SquadDiag]   [{i}] id='{id}' unlocked={mti.IsUnlocked} nav={(navNull ? "NULL" : "ok")} isNavigable={isNav} canBeClicked={canClick} neighbors={neigh}");
-            }
-
-            // Jul-2026 update: tiles no longer 1:1 with cs.squads. Dump both
-            // candidate sources so we can diff which list SetupMetas filters
-            // by (compare against the tile ids above).
-            try
-            {
-                var csField = t.GetField("m_CampaignState", bf);
-                var cs = csField?.GetValue(__instance)?.TryCast<State.CampaignState>();
-                if (cs?.squads != null)
-                {
-                    var sb = new System.Text.StringBuilder($"[SquadDiag] cs.squads ({cs.squads.Count}): ");
-                    for (int i = 0; i < cs.squads.Count; i++)
-                        sb.Append('\'').Append(cs.squads[i]?.id ?? "null").Append("' ");
-                    Plugin.Log.LogInfo(sb.ToString());
-                }
-                else Plugin.Log.LogInfo("[SquadDiag] m_CampaignState/.squads not readable via reflection");
-
-                var prof = ProfileData.Instance;
-                var ul = prof?.unlockedSquads;
-                if (ul != null)
-                {
-                    var sb2 = new System.Text.StringBuilder($"[SquadDiag] unlockedSquads ({ul.Count}): ");
-                    for (int i = 0; i < ul.Count; i++)
-                        sb2.Append('\'').Append(ul[i]).Append("' ");
-                    Plugin.Log.LogInfo(sb2.ToString());
-                }
-            }
-            catch (Exception dx) { Plugin.Log.LogWarning($"[SquadDiag] source diff: {dx.Message}"); }
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[SquadDiag] PostfixMenu: {ex.Message}"); }
+        try { CustomSquadMenu.Build(__instance); }
+        catch (Exception ex) { Plugin.Log.LogError($"[CustomSquadMenu] Could not build menu: {ex}"); }
     }
 
     internal static void InjectCustomSquads(State.CampaignState cs)
@@ -3533,78 +2973,40 @@ public static class PatchChooseMetaUI
 
         Plugin.Log.LogInfo($"[CustomSquad] squads={squads.Count}, customKeys={customKeys.Count} — appending as NEW entries");
 
-        // Prefer a template with a FULLY populated starting roster (all 5
-        // forward positions non-null). Some squad SOs only fill a couple of
-        // forwards — their nulls would prevent our per-slot apply from
-        // writing the user's configured players.
-        // Pick a 1-line template (exactly 5 forward slots, non-TwoLines).
-        // The "Lines Meta"/TwoLines squad has 10 slots (Line 1 at 0-4 +
-        // Line 2 at 5-9) and its layout collides with our single-line
-        // model. Prefer by name first, then by slot count.
-        RunSquadScriptableObject template = null;
-        int templateIndex = -1;
-
-        // "Squad Template" in campaign.txt picks which squad is cloned. Default
-        // is still Basic Squad, so a campaign that does not set it behaves
-        // exactly as before. A campaign built around the General Manager map
-        // wants the GM squad's own starting state instead.
-        string wanted = string.IsNullOrWhiteSpace(Plugin.SquadTemplate)
-            ? "Basic Squad" : Plugin.SquadTemplate.Trim();
-
-        for (int pass = 0; pass < 2 && template == null; pass++)
+        string legacyTemplate;
+        try
         {
-            // Pass 0 looks for what was asked for; pass 1 falls back to Basic so
-            // a typo or a squad this install does not have cannot leave the
-            // campaign with no custom squads at all.
-            string want = pass == 0 ? wanted : "Basic Squad";
-            if (pass == 1 && want.Equals(wanted, StringComparison.OrdinalIgnoreCase)) break;
-
-            for (int i = 0; i < squads.Count; i++)
-            {
-                var sq = squads[i];
-                if (sq == null || sq.squadName == null) continue;
-                // Tolerate "General Manager" for "General Manager Squad": the
-                // Creator lists the names the game dumps, which do not all carry
-                // the "Squad" suffix.
-                bool hit = sq.squadName.Equals(want, StringComparison.OrdinalIgnoreCase)
-                        || sq.squadName.Equals(want + " Squad", StringComparison.OrdinalIgnoreCase)
-                        || want.Equals(sq.squadName + " Squad", StringComparison.OrdinalIgnoreCase);
-                if (!hit) continue;
-
-                // The 5-slot rule is not negotiable — "Lines Meta"/TwoLines has
-                // ten forward slots (line 1 at 0-4, line 2 at 5-9) and its layout
-                // collides with the single-line model everything else assumes.
-                int slots = 0;
-                try { slots = sq.startingTeam?.forwards?.Count ?? 0; } catch { }
-                if (slots > 5)
-                {
-                    Plugin.Log.LogWarning(
-                        $"[CustomSquad] Squad Template '{sq.squadName}' has {slots} forward slots (two lines); " +
-                        "it cannot be used as a template. Falling back to Basic Squad.");
-                    continue;
-                }
-
-                template = sq;
-                templateIndex = i;
-                if (pass == 1)
-                    Plugin.Log.LogWarning($"[CustomSquad] Squad Template '{wanted}' not found — using Basic Squad");
-                else
-                    Plugin.Log.LogInfo($"[CustomSquad] Squad Template '{sq.squadName}' found at index {i}");
-                break;
-            }
+            var campaignFile = Path.Combine(Plugin.ModFolder, "campaign.txt");
+            var campaign = new CampaignCore.CampaignDocument(File.Exists(campaignFile) ? File.ReadAllText(campaignFile) : "");
+            legacyTemplate = campaign.Get("Squad Template", "Basic Squad");
         }
-
-        if (template == null)
-        {
-            Plugin.Log.LogWarning($"[CustomSquad] No usable squad template (wanted '{wanted}')");
-            return;
-        }
-        Plugin.Log.LogInfo($"[CustomSquad] Chose template '{template.squadName}' at index {templateIndex}");
+        catch (Exception ex) { Plugin.Log.LogError("[CustomSquad] " + ex.Message); return; }
 
         for (int i = 0; i < customKeys.Count; i++)
         {
             string key = customKeys[i];
             var cfg = Plugin.PlayerTeamConfigs[key];
+            string wanted = string.IsNullOrWhiteSpace(cfg.SquadTemplate) ? legacyTemplate : cfg.SquadTemplate;
+            cfg.SquadTemplate = wanted;
+            RunSquadScriptableObject template = null;
+            for (int t = 0; t < squads.Count; t++)
+            {
+                var candidate = squads[t];
+                if (candidate == null || (candidate.id ?? "").StartsWith("Custom_")) continue;
+                if (CampaignCore.SquadTemplatePolicy.Identity(candidate.id) == CampaignCore.SquadTemplatePolicy.RuntimeIdentity(wanted)
+                    || CampaignCore.SquadTemplatePolicy.Identity(candidate.squadName) == CampaignCore.SquadTemplatePolicy.RuntimeIdentity(wanted)) { template = candidate; break; }
+            }
+            if (template == null) { Plugin.Log.LogError($"[CustomSquad] {key}: template '{wanted}' is unavailable"); continue; }
+            bool freeBuild = CampaignCore.SquadTemplatePolicy.Identity(wanted) == "noeffects";
+            if (freeBuild && !SquadStartingScreens.Enabled(cfg, "superstar_screen") &&
+                !(SlotIsConfigured(cfg.LW) && SlotIsConfigured(cfg.RW) && SlotIsConfigured(cfg.C)
+                  && SlotIsConfigured(cfg.LD) && SlotIsConfigured(cfg.RD)))
+            {
+                Plugin.Log.LogWarning($"[CustomSquad] No Effects team '{key}' needs five authored skaters when starting superstars are off");
+                continue;
+            }
+            // Each team's preset supplies its own assets and behavior defaults.
+            var teamTemplate = template;
             string displayName = !string.IsNullOrEmpty(cfg?.Name)
                 ? cfg.Name
                 : char.ToUpper(key[0]) + key.Substring(1);
@@ -3618,7 +3020,16 @@ public static class PatchChooseMetaUI
             for (int j = 0; j < squads.Count; j++)
             {
                 var sq = squads[j];
-                if (sq != null && (sq.id == customId || sq.name == customUnityName)) { alreadyPresent = true; break; }
+                if (sq != null && (sq.id == customId || sq.name == customUnityName))
+                {
+                    if (CampaignSquadSetup.Matches(sq, teamTemplate))
+                    {
+                        CampaignSquadSetup.ApplyBench(sq);
+                        alreadyPresent = true;
+                    }
+                    else squads.RemoveAt(j); // Rebuild new-run choices after a campaign-wide template change.
+                    break;
+                }
             }
             if (alreadyPresent)
             {
@@ -3628,25 +3039,19 @@ public static class PatchChooseMetaUI
 
             try
             {
-                var clone = UnityEngine.Object.Instantiate(template);
+                SquadBehaviorRuntime.Validate(cfg);
+                var clone = UnityEngine.Object.Instantiate(teamTemplate);
+                bool keepNativeSquad=VanillaCampaignRuntime.InheritedSquad(cfg);
+                if(!keepNativeSquad)SquadPresetData.Apply(clone, cfg);
+                int requiredBench = SquadBehaviors.Enabled(cfg.SquadTemplate, "trio_draft", k => cfg.SquadBehaviors.TryGetValue(k, out var v) ? v : "") ? 3
+                    : SquadBehaviors.Enabled(cfg.SquadTemplate, "gauntlet_draft", k => cfg.SquadBehaviors.TryGetValue(k, out var v) ? v : "") ? 2 : 0;
+                if(!keepNativeSquad)clone.m_MaxBenchwarmersOnBench = Math.Max(clone.m_MaxBenchwarmersOnBench, requiredBench);
+                if (freeBuild && !SquadStartingScreens.Enabled(cfg, "bench_screen")) clone.m_MaxBenchwarmersOnBench = 0;
+                else if (!keepNativeSquad && SquadStartingScreens.Enabled(cfg, "bench_screen") && clone.m_MaxBenchwarmersOnBench == 0) clone.m_MaxBenchwarmersOnBench = 3;
                 clone.name = customUnityName;
                 try { clone.squadName = displayName; } catch {}
                 try { clone.id = customId; } catch {}
                 Plugin.Log.LogInfo($"[CustomSquad] clone.id after set = '{clone.id}' (wanted '{customId}'), clone.name='{clone.name}', template.id='{template.id}'");
-                // Log template unlock fields (first squad only) so we know what makes Basic selectable
-                if (i == 0)
-                {
-                    try
-                    {
-                        var soType = template.GetIl2CppType();
-                        var allFields = soType.GetFields();
-                        var sb2 = new System.Text.StringBuilder("[CustomSquad] Template fields: ");
-                        foreach (var tf2 in allFields)
-                            sb2.Append(tf2.Name).Append('=').Append(tf2.GetValue(template)).Append(", ");
-                        Plugin.Log.LogInfo(sb2.ToString());
-                    }
-                    catch (Exception dumpEx) { Plugin.Log.LogWarning($"[CustomSquad] field dump: {dumpEx.Message}"); }
-                }
                 // If the IL2CPP id setter failed, try reflection
                 if (clone.id != customId)
                 {
@@ -3661,25 +3066,18 @@ public static class PatchChooseMetaUI
                     catch (Exception ridEx) { Plugin.Log.LogWarning($"[CustomSquad] reflection id set: {ridEx.Message}"); }
                 }
 
-                var origTeam = template.startingTeam;
+                var origTeam = teamTemplate.startingTeam;
                 if (origTeam != null)
                 {
-                    DumpTeamStructure(origTeam, "BASIC-RAW");
                     var teamClone = UnityEngine.Object.Instantiate(origTeam);
-                    teamClone.teamName = key + " " + displayName;
+                    if (freeBuild && !SquadStartingScreens.Enabled(cfg, "bench_screen")) teamClone.benchSize = 0;
+                    else if (!keepNativeSquad && SquadStartingScreens.Enabled(cfg, "bench_screen") && teamClone.benchSize == 0) teamClone.benchSize = 3;
+                    if (freeBuild) teamClone.relics = new Il2CppSystem.Collections.Generic.List<Rogue.Relic>();
+                    teamClone.teamName = keepNativeSquad ? origTeam.teamName : key + " " + displayName;
 
                     Plugin.Log.LogInfo($"[CustomSquad] Cloned team '{origTeam.teamName}' -> '{teamClone.teamName}' fwds={teamClone.forwards?.Count ?? -1} goalie={(teamClone.goalie != null ? teamClone.goalie.firstName : "null")}");
 
-                    // Basic Squad ships with LW/RW/RD line positions
-                    // "creation-locked" (the vanilla draft-your-team-over-the-run
-                    // gimmick). Our clone inherits those locks, so on the Edit
-                    // Lineup screen those slots show "LOCKED" and the player's
-                    // drafted skaters have nowhere to go → they get dropped and
-                    // only the unlocked slot + goalie survive. Unlock all five
-                    // positions so the full custom roster can be placed. NOT a
-                    // reshuffle: this only removes artificial slot locks.
-                    try { UnlockAllLinePositions(teamClone); }
-                    catch (Exception ulEx) { Plugin.Log.LogWarning($"[CustomSquad] UnlockAllLinePositions: {ulEx.Message}"); }
+                    // Preserve roster locks from the selected template (for example Trio).
 
                     // Deep-clone every ForwardData in the roster up front.
                     // Instantiate on TeamData only shallow-clones reference
@@ -3689,15 +3087,16 @@ public static class PatchChooseMetaUI
                     // real LW, RW, etc.) — which corrupts the Basic tile and
                     // eventually wipes all squad rendering once the UI tries
                     // to reuse the stale SOs. Pre-cloning isolates our edits.
-                    try { DeepCloneForwards(teamClone); }
+                    try { if(keepNativeSquad)VanillaCampaignRuntime.CloneNativePlayers(teamClone);else DeepCloneForwards(teamClone); }
                     catch (Exception cEx) { Plugin.Log.LogWarning($"[CustomSquad] DeepCloneForwards: {cEx.Message}"); }
+                    if(!keepNativeSquad) {CampaignSquadSetup.OrderAuthoredLines(teamClone);SquadBehaviorRoster.Prepare(teamClone, cfg);}
 
                     // For any user-configured slot whose template forward is
                     // null (e.g. Basic Squad ships with LW/RW/C empty), fill
                     // the slot with a fresh clone of the first non-null
                     // forward in the list — gives ApplyPlayerTeamConfig a
                     // real ForwardData to overwrite with the user's player.
-                    try { FillNullConfiguredSlots(teamClone, cfg); }
+                    try { if(!keepNativeSquad)FillNullConfiguredSlots(teamClone, cfg); }
                     catch (Exception fEx) { Plugin.Log.LogWarning($"[CustomSquad] FillNullConfiguredSlots: {fEx.Message}"); }
 
                     // Apply the user's team config NOW so the menu preview
@@ -3706,6 +3105,7 @@ public static class PatchChooseMetaUI
                     // wipes stale talents/relics from the cloned objects.
                     try { PatchPlayerTeamInit.ApplyPlayerTeamConfig(teamClone, cfg, null, firstApply: true); }
                     catch (Exception apEx) { Plugin.Log.LogWarning($"[CustomSquad] ApplyPlayerTeamConfig failed for '{key}': {apEx.Message}"); }
+                    if(!keepNativeSquad) {SquadBehaviorRoster.UpdateLines(teamClone, cfg);SquadBehaviorRoster.BenchChosenStarters(teamClone, cfg);}
 
                     // Bug fix: NEVER let Basic's Angus McShaggy survive into a
                     // custom squad. Basic's startingTeam keeps exactly ONE forward
@@ -3719,35 +3119,14 @@ public static class PatchChooseMetaUI
                     // repoint the squad's angusPlayer so no angus-based mechanic
                     // (Mark Bench's quest) re-introduces McShaggy.
                     bool starterAtAngus = false;
-                    try { starterAtAngus = SeatUserStarterAtAngusSlot(teamClone, clone, cfg); }
+                    try { if (!keepNativeSquad && (teamClone.lines == null || teamClone.lines.Count < 2)) starterAtAngus = SeatUserStarterAtAngusSlot(teamClone, clone, cfg); }
                     catch (Exception anEx) { Plugin.Log.LogWarning($"[CustomSquad] Angus keep-slot: {anEx.Message}"); }
-
-                    // Don't blank unconfigured slots — let the template's nulls
-                    // (or game-supplied benchwarmers) stand so the run-start
-                    // draft/superstar flow lands picks naturally without any
-                    // reshuffling. User explicitly asked for no interference.
-                    // (BlankUnconfiguredSlots intentionally NOT called.)
-
-                    // ── DO NOT inject lines[0] — MIRROR Basic Squad exactly. ──
-                    // PROVEN by the v2.1.26 diagnostic: Basic Squad's startingTeam
-                    // ships with lines.Count == 0 (NO line array) and all locks
-                    // false; the game builds the active line itself from the
-                    // forwards + the superstar (AddForwardToActiveLine) + drafted
-                    // skaters (AddForward) at run time. Our old EnsureLines +
-                    // SyncLinesToForwards CREATED a lines[0] Basic never has; the
-                    // native draft then desynced from it (lines[0] ended up
-                    // pointing at drafted-skater ids whose ForwardData weren't in
-                    // team.forwards, while the picked superstar sat in forwards
-                    // but was absent from lines[0]) → "superstar not on team /
-                    // only certain positions remain". A vanilla Basic run with a
-                    // CUSTOM-style roster works fine BECAUSE it has no injected
-                    // lines[0]. So we leave teamClone.lines exactly as cloned from
-                    // Basic (empty) and let the native flow own the lineup.
-                    // (EnsureLines + SyncLinesToForwards intentionally NOT called.)
-
-                    DumpTeamStructure(teamClone, "CLONE-FINAL");
+                    if(!keepNativeSquad)CustomStartingRoster.LockAuthoredSkaters(teamClone, cfg);
 
                     clone.startingTeam = teamClone;
+                    if(keepNativeSquad && teamTemplate.angusPlayer!=null)
+                        foreach(var nativePlayer in teamClone.forwards)
+                            if(nativePlayer!=null && nativePlayer.id==teamTemplate.angusPlayer.id){clone.angusPlayer=nativePlayer;break;}
 
                     // Point m_KeyPlayer at a position the user actually
                     // defined. The menu renders the squad-tile head icon by
@@ -3768,14 +3147,16 @@ public static class PatchChooseMetaUI
                         // After SeatUserStarterAtAngusSlot the user's starter
                         // always sits in the Angus keep-slot (LD); point the tile
                         // head there so it never resolves to a now-empty donor slot.
-                        if (starterAtAngus) picked = Tape2Tape.Customization.UI.ESkaterPosition.LD;
-                        else if (SlotIsConfigured(cfg.C)) picked = Tape2Tape.Customization.UI.ESkaterPosition.C;
-                        else if (SlotIsConfigured(cfg.LW)) picked = Tape2Tape.Customization.UI.ESkaterPosition.LW;
-                        else if (SlotIsConfigured(cfg.RW)) picked = Tape2Tape.Customization.UI.ESkaterPosition.RW;
-                        else if (SlotIsConfigured(cfg.LD)) picked = Tape2Tape.Customization.UI.ESkaterPosition.LD;
-                        else if (SlotIsConfigured(cfg.RD)) picked = Tape2Tape.Customization.UI.ESkaterPosition.RD;
-                        else if (SlotIsConfigured(cfg.Goalie)) picked = Tape2Tape.Customization.UI.ESkaterPosition.Goalie;
-                        if (picked.HasValue)
+                        var positions = new[] { Tape2Tape.Customization.UI.ESkaterPosition.LW, Tape2Tape.Customization.UI.ESkaterPosition.RW,
+                            Tape2Tape.Customization.UI.ESkaterPosition.C, Tape2Tape.Customization.UI.ESkaterPosition.LD, Tape2Tape.Customization.UI.ESkaterPosition.RD };
+                        if (starterAtAngus && clone.angusPlayer != null)
+                            for (int p = 0; p < Math.Min(5, teamClone.forwards.Count); p++)
+                                if (teamClone.forwards[p]?.Pointer == clone.angusPlayer.Pointer) { picked = positions[p]; break; }
+                        if (!picked.HasValue)
+                            foreach (int p in new[] { 2, 0, 1, 3, 4 })
+                                if (p < teamClone.forwards.Count && teamClone.forwards[p] != null) { picked = positions[p]; break; }
+                        if (!picked.HasValue && teamClone.goalie != null) picked = Tape2Tape.Customization.UI.ESkaterPosition.Goalie;
+                        if (picked.HasValue && !keepNativeSquad)
                         {
                             clone.m_KeyPlayer = picked.Value;
                             Plugin.Log.LogInfo($"[CustomSquad] KeyPlayer for '{key}' set to {picked.Value}");
@@ -3799,10 +3180,28 @@ public static class PatchChooseMetaUI
                                 if (icon != null)
                                 {
                                     clone.m_SmallTeamIcon = icon;
-                                    clone.m_ZamboniSkaterHead = icon;
+                                    if (string.IsNullOrWhiteSpace(cfg.ZamboniHead)) clone.m_ZamboniSkaterHead = icon;
                                 }
                             }
                             catch (Exception spEx) { Plugin.Log.LogWarning($"[CustomSquad] Tile icon: {spEx.Message}"); }
+                        }
+                        if (!string.IsNullOrWhiteSpace(cfg?.ZamboniHead)
+                            && !cfg.ZamboniHead.Equals("none", StringComparison.OrdinalIgnoreCase))
+                        {
+                            try
+                            {
+                                var icon = ResolveTileIcon(cfg.ZamboniHead, key);
+                                if (icon != null) clone.m_ZamboniSkaterHead = icon;
+                            }
+                            catch (Exception spEx) { Plugin.Log.LogWarning($"[CustomSquad] Zamboni head: {spEx.Message}"); }
+                        }
+                        if (!string.IsNullOrWhiteSpace(cfg?.Mascot))
+                        {
+                            var source = UnityEngine.Resources.FindObjectsOfTypeAll<RunSquadScriptableObject>()
+                                .FirstOrDefault(s => s != null && !s.id.StartsWith("Custom_")
+                                    && s.id.Equals(cfg.Mascot, StringComparison.OrdinalIgnoreCase));
+                            if (source?.m_Plushie != null) clone.m_Plushie = source.m_Plushie;
+                            else Plugin.Log.LogWarning($"[CustomSquad] Mascot '{cfg.Mascot}' unavailable; keeping template mascot.");
                         }
                     }
                     catch (Exception kpEx) { Plugin.Log.LogWarning($"[CustomSquad] KeyPlayer: {kpEx.Message}"); }
@@ -3821,20 +3220,32 @@ public static class PatchChooseMetaUI
                 // prepend Bench Bonus here unless the user already listed
                 // it (or opted out via "No Bench Bonus = yes"). Keeps custom
                 // squads consistent with how player-chosen squads feel.
+                if(!VanillaCampaignRuntime.PreserveStartingRelics(cfg))
                 {
                     try
                     {
                         var relicsToApply = new List<string>();
-                        bool optOut = cfg != null && cfg.NoBenchBonus;
+                        if (!freeBuild && !cfg.CustomStartingRelics && teamTemplate.m_RelicsData != null)
+                            foreach (var rule in teamTemplate.m_RelicsData)
+                                if (rule.Relic != null && !(cfg.NoBenchBonus && rule.Relic.TryCast<Rogue.BenchBonus>() != null)
+                                    && !relicsToApply.Contains(rule.Relic.name)) relicsToApply.Add(rule.Relic.name);
+                        if (!freeBuild && !cfg.CustomStartingRelics && teamTemplate.startingTeam?.relics != null)
+                            foreach (var relic in teamTemplate.startingTeam.relics)
+                                if (relic != null && !(cfg.NoBenchBonus && relic.TryCast<Rogue.BenchBonus>() != null) && !relicsToApply.Contains(relic.name)) relicsToApply.Add(relic.name);
+                        bool optOut = freeBuild || cfg.CustomStartingRelics || (cfg != null && cfg.NoBenchBonus);
+                        bool templateBenchBonus = false;
+                        if (teamTemplate.startingTeam?.relics != null)
+                            foreach (var relic in teamTemplate.startingTeam.relics)
+                                if (relic != null && relic.name.Equals("Bench Bonus", StringComparison.OrdinalIgnoreCase)) templateBenchBonus = true;
                         bool hasBenchBonus = false;
                         if (cfg?.Relics != null)
                             for (int r = 0; r < cfg.Relics.Count; r++)
                             {
                                 var rn = cfg.Relics[r] ?? "";
                                 if (rn.Trim().ToLowerInvariant() == "bench bonus") hasBenchBonus = true;
-                                relicsToApply.Add(rn);
+                                if (!relicsToApply.Contains(rn)) relicsToApply.Add(rn);
                             }
-                        if (!optOut && !hasBenchBonus) relicsToApply.Insert(0, "Bench Bonus");
+                        if (templateBenchBonus && !optOut && !hasBenchBonus && !relicsToApply.Contains("Bench Bonus")) relicsToApply.Insert(0, "Bench Bonus");
 
                         if (relicsToApply.Count > 0)
                         {
@@ -3866,6 +3277,11 @@ public static class PatchChooseMetaUI
                             clone.m_RelicsData = arr;
                             Plugin.Log.LogInfo($"[CustomSquad] Set {writeIdx} starting relics on '{key}'{(hasBenchBonus || optOut ? "" : " (auto-added Bench Bonus)")}");
                         }
+                        else if (freeBuild || cfg.CustomStartingRelics)
+                            clone.m_RelicsData = new Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<State.SquadRelicData>(0);
+                        // Grant through the native squad-starting-relic path once.
+                        // The live match refresh must never rebuild this list.
+                        clone.startingTeam.relics = new Il2CppSystem.Collections.Generic.List<Rogue.Relic>();
                     }
                     catch (Exception rEx) { Plugin.Log.LogWarning($"[CustomSquad] Relic assign failed for '{key}': {rEx.Message}"); }
                 }
@@ -3875,7 +3291,7 @@ public static class PatchChooseMetaUI
                 // picking the custom squad actually loads the gauntlet map. The
                 // game keys map selection off each squad's own .maps list — our
                 // clone of Basic otherwise inherits Basic's standard maps.
-                string cloneMapSource = EffectiveMapSource();
+                string cloneMapSource = string.IsNullOrWhiteSpace(cfg.SquadTemplate) ? EffectiveMapSource() : "";
                 if (!string.IsNullOrEmpty(cloneMapSource))
                 {
                     try
@@ -3898,6 +3314,8 @@ public static class PatchChooseMetaUI
                 // prefab → Refresh → register navigable). With the unlock
                 // postfixes forcing Custom_* Unlocked=true during SetupMetas,
                 // the appended tile is built unlocked & selectable, not "???".
+                CampaignSquadSetup.ApplyBench(clone);
+                CampaignSquadSetup.Remember(clone, teamTemplate);
                 squads.Add(clone);
 
                 // Register the display strings so the Localized name/desc
@@ -4031,6 +3449,20 @@ public static class PatchChooseMetaUI
     {
         var fwds = team?.forwards;
         if (fwds == null || fwds.Count == 0) return false;
+        // Explicitly benched starters stay on the bench, even if one originally
+        // occupied the preset's Angus slot. Select a lead from the active five
+        // positions without copying over or moving any authored player.
+        if (!string.IsNullOrWhiteSpace(cfg.StartingBenchPositions))
+        {
+            foreach (int position in new[] { 2, 0, 1, 3, 4 })
+                if (position < fwds.Count && fwds[position] != null)
+                { clone.angusPlayer = fwds[position]; return true; }
+            clone.angusPlayer = null;
+            return false;
+        }
+        // An unedited native preset retains its native lead player and powers.
+        if (SquadTemplatePolicy.Identity(cfg.SquadTemplate) != "noeffects"
+            && !new[] { cfg.LW, cfg.RW, cfg.C, cfg.LD, cfg.RD }.Any(SlotIsConfigured)) return false;
 
         // FIND the keep-slot, do not assume it. This was hardcoded to 3 —
         // Basic Squad's Angus sits at index 3 — and that assumption is exactly
@@ -4115,93 +3547,6 @@ public static class PatchChooseMetaUI
         return seated;
     }
 
-    // Clear the five per-position "line-up creation locked" flags on a TeamData.
-    // Basic Squad sets some of these true so the player has to draft into the
-    // locked slots during the run; our clone inherits them, so the Edit Lineup
-    // screen shows LW/RW/RD as "LOCKED" and drafted skaters can't be placed.
-    //
-    // Il2CppInterop exposes these as PROPERTIES on the TeamData wrapper (not
-    // fields — confirmed by inspecting MainScriptsAssembly.dll: GetField found
-    // nothing, which is why earlier attempts logged 0/5). Assign them directly.
-    internal static void UnlockAllLinePositions(TeamData team)
-    {
-        if (team == null) return;
-        int cleared = 0;
-        try { team.leftWingerLineUpCreationLocked = false; cleared++; } catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] LW lock: {ex.Message}"); }
-        try { team.rightWingerLineUpCreationLocked = false; cleared++; } catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] RW lock: {ex.Message}"); }
-        try { team.centerLineUpCreationLocked = false; cleared++; } catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] C lock: {ex.Message}"); }
-        try { team.leftDefensemenLineUpCreationLocked = false; cleared++; } catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] LD lock: {ex.Message}"); }
-        try { team.rightDefensemenLineUpCreationLocked = false; cleared++; } catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] RD lock: {ex.Message}"); }
-        Plugin.Log.LogInfo($"[CustomSquad] Unlocked {cleared}/5 line positions on '{team.teamName}'");
-    }
-
-    // ── DIAGNOSTIC ──────────────────────────────────────────────────────────
-    // Dump the full shape of a TeamData (forwards array, lines[0] ids resolved
-    // to names, the five lock flags, goalie) under a label. Read-only. Used to
-    // capture the EXACT structure of vanilla Basic Squad vs our custom clone vs
-    // the run team at each stage, so we can mirror base-game behavior precisely
-    // instead of guessing. Strip these calls once the flow is confirmed.
-    internal static void DumpTeamStructure(TeamData team, string label)
-    {
-        try
-        {
-            if (team == null) { Plugin.Log.LogInfo($"[DUMP/{label}] team=null"); return; }
-            string Short(string id) => string.IsNullOrEmpty(id) ? "''" : (id.Length > 8 ? id.Substring(0, 8) : id);
-
-            var fwds = team.forwards;
-            int fc = -1; try { fc = fwds?.Count ?? -1; } catch { }
-            Plugin.Log.LogInfo($"[DUMP/{label}] team='{team.teamName}' forwards.Count={fc}");
-
-            // Build id→name map so line ids are readable.
-            var idToName = new System.Collections.Generic.Dictionary<string, string>();
-            if (fwds != null)
-            {
-                for (int i = 0; i < fc; i++)
-                {
-                    Data.ForwardData f = null; try { f = fwds[i]; } catch { }
-                    if (f == null) { Plugin.Log.LogInfo($"[DUMP/{label}]   fwd[{i}] = null"); continue; }
-                    string fn = "", ln = "", id = "", cat = "";
-                    try { fn = f.firstName ?? ""; } catch { }
-                    try { ln = f.lastName ?? ""; } catch { }
-                    try { id = f.id ?? ""; } catch { }
-                    try { cat = f.skaterCategory.ToString(); } catch { }
-                    int tal = -1; try { tal = f.powerups != null ? f.powerups.Count : 0; } catch { }
-                    string ab = ""; try { ab = f.ability != null ? (f.ability.name ?? "") : "—"; } catch { }
-                    if (!string.IsNullOrEmpty(id) && !idToName.ContainsKey(id)) idToName[id] = (fn + " " + ln).Trim();
-                    Plugin.Log.LogInfo($"[DUMP/{label}]   fwd[{i}] = '{fn} {ln}' id={Short(id)} cat={cat} talents={tal} ability={ab}");
-                }
-            }
-
-            var lns = team.lines;
-            int lc = -1; try { lc = lns?.Count ?? -1; } catch { }
-            if (lns != null && lc > 0 && lns[0] != null)
-            {
-                var l0 = lns[0];
-                string lw = "", rw = "", c = "", ld = "", rd = "";
-                try { lw = l0.leftWinger ?? ""; } catch { }
-                try { rw = l0.rightWinger ?? ""; } catch { }
-                try { c = l0.center ?? ""; } catch { }
-                try { ld = l0.leftDefensemen ?? ""; } catch { }
-                try { rd = l0.rightDefensemen ?? ""; } catch { }
-                string Nm(string id) => string.IsNullOrEmpty(id) ? "—" : (idToName.TryGetValue(id, out var n) ? n : "?" + Short(id));
-                Plugin.Log.LogInfo($"[DUMP/{label}]   lines={lc} lines[0]: LW={Nm(lw)} RW={Nm(rw)} C={Nm(c)} LD={Nm(ld)} RD={Nm(rd)}");
-            }
-            else Plugin.Log.LogInfo($"[DUMP/{label}]   lines={lc} (no lines[0])");
-
-            bool lkLW = false, lkRW = false, lkC = false, lkLD = false, lkRD = false;
-            try { lkLW = team.leftWingerLineUpCreationLocked; } catch { }
-            try { lkRW = team.rightWingerLineUpCreationLocked; } catch { }
-            try { lkC = team.centerLineUpCreationLocked; } catch { }
-            try { lkLD = team.leftDefensemenLineUpCreationLocked; } catch { }
-            try { lkRD = team.rightDefensemenLineUpCreationLocked; } catch { }
-            Plugin.Log.LogInfo($"[DUMP/{label}]   LOCKS: LW={lkLW} RW={lkRW} C={lkC} LD={lkLD} RD={lkRD}");
-
-            string gn = "null"; try { gn = team.goalie != null ? (team.goalie.firstName + " " + team.goalie.lastName) : "null"; } catch { }
-            Plugin.Log.LogInfo($"[DUMP/{label}]   goalie={gn}");
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[DUMP/{label}] {ex.Message}"); }
-    }
-
     // Detach team.forwards from whatever it was sharing (Instantiate on
     // TeamData SHALLOW-copies list fields — the clone and the template point
     // at the same underlying List<ForwardData>), then Instantiate every
@@ -4213,6 +3558,10 @@ public static class PatchChooseMetaUI
     internal static void DeepCloneForwards(TeamData team)
     {
         if (team == null) return;
+        // Clone and remap every line along with the players. Keeping the donor's
+        // line IDs after assigning new player IDs leaves saved lineups dangling.
+        team.lines = team.CloneLines();
+        var remap = new Dictionary<string, string>();
         var origFwds = team.forwards;
         if (origFwds != null)
         {
@@ -4225,6 +3574,7 @@ public static class PatchChooseMetaUI
                 {
                     var c = UnityEngine.Object.Instantiate(f);
                     try { c.id = Guid.NewGuid().ToString(); } catch { }
+                    if (!string.IsNullOrEmpty(f.id)) remap[f.id] = c.id;
                     newList.Add(c);
                 }
                 catch { newList.Add(f); }
@@ -4241,43 +3591,17 @@ public static class PatchChooseMetaUI
             }
             catch { }
         }
-    }
-
-    // Rewrite team.lines[0] so configured positions point at our actual
-    // ForwardData's id and unconfigured positions stay empty strings so
-    // the pregame draft UI marks them as empty/draftable slots. If we
-    // wrote the blank-placeholder's id into lines[0], the draft UI treats
-    // the slot as filled-with-a-0-stats-player and won't let the user pick
-    // an FA for it. The drafted FA reconcile in PatchPlayerTeamInit.Postfix
-    // handles getting the FA into the right slot at match-init time.
-    internal static void SyncLinesToForwards(TeamData team, TeamConfig cfg)
-    {
-        if (team == null) return;
-        var fwds = team.forwards;
-        if (fwds == null) return;
-        var lines = team.lines;
-        if (lines == null || lines.Count == 0) return;
-        var line0 = lines[0];
-        if (line0 == null) return;
-
-        PlayerConfig[] slotCfgs = { cfg?.LW, cfg?.RW, cfg?.C, cfg?.LD, cfg?.RD };
-
-        string IdForConfiguredSlot(int idx)
-        {
-            if (idx >= fwds.Count) return "";
-            if (idx >= slotCfgs.Length) return "";
-            if (!SlotIsConfigured(slotCfgs[idx])) return ""; // draftable
-            var f = fwds[idx];
-            if (f == null) return "";
-            try { return f.id ?? ""; } catch { return ""; }
-        }
-
-        try { line0.leftWinger = IdForConfiguredSlot(0); } catch { }
-        try { line0.rightWinger = IdForConfiguredSlot(1); } catch { }
-        try { line0.center = IdForConfiguredSlot(2); } catch { }
-        try { line0.leftDefensemen = IdForConfiguredSlot(3); } catch { }
-        try { line0.rightDefensemen = IdForConfiguredSlot(4); } catch { }
-        Plugin.Log.LogInfo($"[CustomSquad] Synced lines[0]: LW='{line0.leftWinger}' RW='{line0.rightWinger}' C='{line0.center}' LD='{line0.leftDefensemen}' RD='{line0.rightDefensemen}'");
+        if (team.lines != null)
+            foreach (var line in team.lines)
+            {
+                if (line == null) continue;
+                string Map(string value) => value != null && remap.TryGetValue(value, out var id) ? id : value;
+                line.leftWinger = Map(line.leftWinger);
+                line.rightWinger = Map(line.rightWinger);
+                line.center = Map(line.center);
+                line.leftDefensemen = Map(line.leftDefensemen);
+                line.rightDefensemen = Map(line.rightDefensemen);
+            }
     }
 
     // For each user-configured LW/RW/C/LD/RD slot whose template forward is
@@ -4301,7 +3625,7 @@ public static class PatchChooseMetaUI
         }
         if (donor == null) return;
 
-        PlayerConfig[] slotCfgs = { cfg.LW, cfg.RW, cfg.C, cfg.LD, cfg.RD };
+        PlayerConfig[] slotCfgs = { cfg.LW, cfg.RW, cfg.C, cfg.LD, cfg.RD, cfg.L2_LW, cfg.L2_RW, cfg.L2_C, cfg.L2_LD, cfg.L2_RD };
         for (int i = 0; i < Math.Min(fwds.Count, slotCfgs.Length); i++)
         {
             if (fwds[i] != null) continue;
@@ -4317,246 +3641,9 @@ public static class PatchChooseMetaUI
         }
     }
 
-    // Guarantee team.lines has a Lineup at index 0. Basic's cloned TeamData
-    // has come back with lines=null in testing — without a Lineup instance,
-    // SyncLinesToForwards has nothing to write to and the game can't figure
-    // out who starts at each position. We create one via reflection/new and
-    // populate only lines[0]; the game only needs index 0 for the default
-    // active line.
-    internal static void EnsureLines(TeamData team)
-    {
-        if (team == null) return;
-        try
-        {
-            var lines = team.lines;
-            if (lines == null)
-            {
-                lines = new Il2CppSystem.Collections.Generic.List<Data.Lineup>();
-                team.lines = lines;
-            }
-            if (lines.Count == 0)
-            {
-                var lu = new Data.Lineup(team);
-                lines.Add(lu);
-                Plugin.Log.LogInfo("[CustomSquad] Created lines[0] (team.lines was empty)");
-            }
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] EnsureLines: {ex.Message}"); }
-    }
-
-    // For each unconfigured LW/RW/C/LD/RD slot, replace whatever is in that
-    // index with a BLANK PLACEHOLDER clone (unique id, empty identity,
-    // zero stats). SyncLinesToForwards will leave lines[0].<position>
-    // empty for these slots so the pregame draft UI still treats them as
-    // draftable — but the game needs a non-null ForwardData object sitting
-    // in the fwds slot so drafted free agents can overwrite it. Null slots
-    // cause drafted FAs to silently drop (their id goes into lines[0] but
-    // no ForwardData ever lands in forwards).
-    internal static void BlankUnconfiguredSlots(TeamData team, TeamConfig cfg)
-    {
-        if (team == null || cfg == null) return;
-        PlayerConfig[] slotCfgs = { cfg.LW, cfg.RW, cfg.C, cfg.LD, cfg.RD };
-        string[] slotNames = { "LW", "RW", "C", "LD", "RD" };
-        var fwds = team.forwards;
-        if (fwds == null) return;
-
-        Data.ForwardData donor = null;
-        for (int i = 0; i < fwds.Count; i++)
-            if (fwds[i] != null) { donor = fwds[i]; break; }
-        if (donor == null) return;
-
-        for (int i = 0; i < Math.Min(fwds.Count, slotCfgs.Length); i++)
-        {
-            bool configured = SlotIsConfigured(slotCfgs[i]);
-            string pcName = slotCfgs[i]?.Name ?? "<null>";
-            Plugin.Log.LogDebug($"[CustomSquad] Slot {slotNames[i]}: cfg.Name='{pcName}' configured={configured} fwd={(fwds[i] != null ? fwds[i].firstName : "null")}");
-            if (configured) continue;
-            try
-            {
-                var blank = UnityEngine.Object.Instantiate(donor);
-                try { blank.id = Guid.NewGuid().ToString(); } catch { }
-                try { blank.firstName = ""; } catch { }
-                try { blank.lastName = ""; } catch { }
-                try { blank.speed = 0; } catch { }
-                try { blank.shotPower = 0; } catch { }
-                try { blank.shotAccuracy = 0; } catch { }
-                try { blank.checking = 0; } catch { }
-                try { blank.ability = null; } catch { }
-                try { blank.powerups = new Il2CppSystem.Collections.Generic.List<Rogue.Talent>(); } catch { }
-                fwds[i] = blank;
-            }
-            catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] Placeholder slot {i}: {ex.Message}"); }
-        }
-        // Goalie: blank identity rather than null. Previous tests showed that
-        // assigning null to team.goalie while the squad was being rendered
-        // broke the menu — some renderer does an unchecked deref even though
-        // the forwards list tolerates nulls just fine.
-        if (team.goalie != null && !SlotIsConfigured(cfg.Goalie))
-        {
-            try { team.goalie.firstName = ""; } catch { }
-            try { team.goalie.lastName = ""; } catch { }
-        }
-    }
-
-    public static void Prefix(Rogue.ChooseMetaUI __instance)
-    {
-        // Unconditional entry log so we can confirm the hook is firing.
-        Plugin.Log.LogInfo($"[CustomSquad] Prefix called (configs={Plugin.PlayerTeamConfigs?.Count ?? -1})");
-        try
-        {
-            if (Plugin.PlayerTeamConfigs == null || Plugin.PlayerTeamConfigs.Count == 0)
-            {
-                Plugin.Log.LogInfo("[CustomSquad] No PlayerTeamConfigs loaded — nothing to inject");
-                return;
-            }
-
-            // Find CampaignState via the _campaignState field on ChooseMetaUI
-            var t = __instance.GetIl2CppType();
-            var csField = t.GetField("_campaignState") ?? t.GetField("m_CampaignState") ?? t.GetField("campaignState");
-            State.CampaignState cs = null;
-            if (csField != null)
-            {
-                var v = csField.GetValue(__instance);
-                if (v != null) cs = v.TryCast<State.CampaignState>();
-            }
-            if (cs == null)
-            {
-                var all = UnityEngine.Resources.FindObjectsOfTypeAll<State.CampaignState>();
-                if (all != null && all.Length > 0) cs = all[0];
-            }
-            if (cs == null)
-            {
-                Plugin.Log.LogWarning("[CustomSquad] CampaignState not found — cannot inject");
-                return;
-            }
-
-            var squads = cs.squads;
-            if (squads == null || squads.Count == 0)
-            {
-                Plugin.Log.LogWarning("[CustomSquad] cs.squads is null/empty — cannot inject");
-                return;
-            }
-
-            // ProfileData.unlockedSquads is the source of truth for whether a
-            // button is clickable or shows as "???". To make custom squads
-            // selectable we must (1) put them in cs.squads and (2) add their
-            // id to unlockedSquads.
-            ProfileData profile = ProfileData.Instance;
-            var unlocked = profile?.unlockedSquads;
-
-            // Build ordered list of keys we want to inject. The squad grid in
-            // the UI has a fixed slot count; adding past it means our squads
-            // don't render. So we REPLACE the locked slots instead of adding.
-            var customKeys = new List<string>();
-            foreach (var kvp in Plugin.PlayerTeamConfigs)
-            {
-                if (PatchPlayerTeamInit.IsPresetKey(kvp.Key)) continue;
-                customKeys.Add(kvp.Key);
-            }
-            if (customKeys.Count == 0)
-            {
-                Plugin.Log.LogInfo("[CustomSquad] No custom (non-preset) keys in config");
-                return;
-            }
-
-            // Find locked slots = indices whose squad.id isn't in unlocked.
-            var lockedIndices = new List<int>();
-            for (int i = 0; i < squads.Count; i++)
-            {
-                var sq = squads[i];
-                if (sq == null) continue;
-                bool isUnlocked = unlocked != null
-                    && !string.IsNullOrEmpty(sq.id)
-                    && unlocked.Contains(sq.id);
-                if (!isUnlocked) lockedIndices.Add(i);
-            }
-            Plugin.Log.LogInfo($"[CustomSquad] squads={squads.Count}, locked slots={lockedIndices.Count}, custom keys={customKeys.Count}");
-
-            // Template to clone — first squad in the list; its internal refs
-            // (relics, icons, etc.) are all valid so the cloned entry won't
-            // crash when the UI/game reads them.
-            var template = squads[0];
-            if (template == null)
-            {
-                Plugin.Log.LogWarning("[CustomSquad] squads[0] is null — cannot clone");
-                return;
-            }
-
-            int injected = 0;
-            int lockedCursor = 0;
-            for (int i = 0; i < customKeys.Count; i++)
-            {
-                string key = customKeys[i];
-                var cfg = Plugin.PlayerTeamConfigs[key];
-                string displayName = !string.IsNullOrEmpty(cfg?.Name)
-                    ? cfg.Name
-                    : char.ToUpper(key[0]) + key.Substring(1);
-                string customId = "Custom_" + key;
-
-                // Idempotent re-entry: if this custom squad is already sitting
-                // in cs.squads from a previous Prefix call, skip it.
-                string customUnityName = "CustomSquad_" + key;
-                bool alreadyPresent = false;
-                for (int j = 0; j < squads.Count; j++)
-                {
-                    var sq = squads[j];
-                    if (sq != null && (sq.id == customId || sq.name == customUnityName)) { alreadyPresent = true; break; }
-                }
-                if (alreadyPresent)
-                {
-                    try { profile?.UnlockSquad(customId); } catch { }
-                    continue;
-                }
-
-                try
-                {
-                    var clone = UnityEngine.Object.Instantiate(template);
-                    clone.name = customUnityName;
-                    try { clone.squadName = displayName; } catch {}
-                    try { clone.id = customId; } catch {}
-
-                    var origTeam = template.startingTeam;
-                    if (origTeam != null)
-                    {
-                        var teamClone = UnityEngine.Object.Instantiate(origTeam);
-                        // Team name must START WITH the config key so the
-                        // PatchPlayerTeamInit prefix-match can find it.
-                        teamClone.teamName = key + " " + displayName;
-                        clone.startingTeam = teamClone;
-                    }
-
-                    // Slot in: REPLACE a locked slot if one is available, else
-                    // append. Replacement keeps the UI grid bounded so custom
-                    // squads always render.
-                    if (lockedCursor < lockedIndices.Count)
-                    {
-                        int idx = lockedIndices[lockedCursor++];
-                        squads[idx] = clone;
-                        Plugin.Log.LogInfo($"[CustomSquad] Replaced locked slot {idx} with '{key}' ('{displayName}')");
-                    }
-                    else
-                    {
-                        squads.Add(clone);
-                        Plugin.Log.LogInfo($"[CustomSquad] Appended '{key}' ('{displayName}') at {squads.Count - 1}");
-                    }
-
-                    try { profile?.UnlockSquad(customId); } catch { }
-
-                    injected++;
-                }
-                catch (Exception ex) { Plugin.Log.LogError($"[CustomSquad] Failed to inject '{key}': {ex}"); }
-            }
-            Plugin.Log.LogInfo($"[CustomSquad] Done — injected {injected} custom squads");
-        }
-        catch (Exception ex) { Plugin.Log.LogError($"[CustomSquad] SetupMetaTeamButtons prefix: {ex}"); }
-    }
 }
 
-// ============================================================
-// Redirect RunSquadScriptableObject.LocalizedSquadName / Desc / UnlockCondition
-// for Custom_<key> ids so the menu shows our display name + description
-// instead of "???" (localization misses fall back to the key literal).
-// ============================================================
+// Custom squad labels use the current native localization entry points.
 public static class PatchSquadLocalization
 {
     public static void NamePostfix(RunSquadScriptableObject __instance, ref string __result)
@@ -4604,28 +3691,11 @@ public static class PatchSquadLocalization
                 Plugin.Log.LogInfo($"[CustomSquad] UnlockPostfix: blanking unlock condition for '{id}' (was '{__result}')");
                 __result = "";
             }
-            else if (id.StartsWith("Basic", StringComparison.OrdinalIgnoreCase) && __result != "")
-            {
-                // Diagnostic: log what Basic squad returns so we know what our clone inherits
-                Plugin.Log.LogInfo($"[CustomSquad] UnlockPostfix: id='{id}' result='{__result}'");
-            }
         }
         catch { }
     }
 
-    // Force IsUnlocked = true for any squad we injected so the tile is
-    // clickable even if ProfileData.unlockedSquads wasn't populated yet.
-    public static void IsUnlockedPostfix(RunSquadScriptableObject __instance, ref bool __result)
-    {
-        try
-        {
-            if (__instance == null || __result) return;
-            string id = __instance.id;
-            if (!string.IsNullOrEmpty(id) && id.StartsWith("Custom_", StringComparison.Ordinal))
-                __result = true;
-        }
-        catch { }
-    }
+
 }
 
 // ============================================================
@@ -4643,16 +3713,6 @@ public static class PatchMetaTeamItemRefresh
             var nav = item.Navigable;
             var tog = item.Toggle;
             var tnav = tog != null ? tog.Navigable : null;
-
-            // BEFORE state — reveals the REAL click gate. The locked-sound /
-            // blacked-out tile means the click is rejected before OnMetaClicked.
-            // SetCanToggle only sets the Toggle's CanToggle backing field; the
-            // actual click gate is AbstractNavigable.CanBeClicked, which nothing
-            // we did previously touched.
-            Plugin.Log.LogInfo($"[CustomSquad] {tag} BEFORE: IsUnlocked={item.IsUnlocked}"
-                + $" | nav={(nav == null ? "NULL" : $"isNav={nav.IsNavigable},canClick={nav.CanBeClicked}")}"
-                + $" | tog={(tog == null ? "NULL" : $"canToggle={tog.CanToggle}")}"
-                + $" | togNav={(tnav == null ? "NULL" : $"isNav={tnav.IsNavigable},canClick={tnav.CanBeClicked}")}");
 
             item.IsUnlocked = true;
             if (nav != null) { try { nav.IsNavigable = true; nav.CanBeClicked = true; } catch { } }
@@ -4680,10 +3740,6 @@ public static class PatchMetaTeamItemRefresh
                 else Plugin.Log.LogInfo($"[CustomSquad] {tag}: m_Anim null — skipped visual unlock");
             }
             catch (Exception aex) { Plugin.Log.LogWarning($"[CustomSquad] {tag} animator: {aex.Message}"); }
-
-            Plugin.Log.LogInfo($"[CustomSquad] {tag} AFTER: nav.canClick={(nav == null ? "-" : nav.CanBeClicked.ToString())}"
-                + $" tog.canToggle={(tog == null ? "-" : tog.CanToggle.ToString())}"
-                + $" togNav.canClick={(tnav == null ? "-" : tnav.CanBeClicked.ToString())}");
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] {tag} ForceUnlock: {ex.Message}"); }
     }
@@ -4699,41 +3755,6 @@ public static class PatchMetaTeamItemRefresh
         return int.MinValue;
     }
 
-    // One-shot per squad. The tile's head icon is MetaTeamItem.m_KeyPlayerHead
-    // (a UI Image); the 2.1.31 "Squad Head" heuristic searched every loaded
-    // Sprite for the configured FACE name and never matched, because face skins
-    // and these UI head sprites are different naming spaces. Log what vanilla
-    // squads actually carry so the real source field — and the real sprite
-    // names a Squad Head value could legally take — stop being guesswork.
-    private static readonly HashSet<string> _probedTiles = new HashSet<string>(StringComparer.Ordinal);
-    private static void ProbeTileIcon(Tape2Tape.Hockey.UI.MetaTeamItem item, RunSquadScriptableObject squad, string id)
-    {
-        try
-        {
-            string key = string.IsNullOrEmpty(id) ? (squad.name ?? "?") : id;
-            if (!_probedTiles.Add(key)) return;
-
-            string head = "null";
-            try
-            {
-                var it = item.GetIl2CppType();
-                var bf = Il2CppSystem.Reflection.BindingFlags.NonPublic | Il2CppSystem.Reflection.BindingFlags.Instance;
-                var imgObj = it.GetField("m_KeyPlayerHead", bf)?.GetValue(item);
-                var img = imgObj?.TryCast<UnityEngine.UI.Image>();
-                if (img == null) head = "(field missing)";
-                else if (img.sprite == null) head = "(image, no sprite)";
-                else head = img.sprite.name;
-            }
-            catch (Exception ex) { head = "err:" + ex.Message; }
-
-            string small = "null", zam = "null";
-            try { if (squad.SmallTeamIcon != null) small = squad.SmallTeamIcon.name; } catch { }
-            try { if (squad.ZamboniSkaterHead != null) zam = squad.ZamboniSkaterHead.name; } catch { }
-            Plugin.Log.LogInfo($"[TileIcon] '{key}' m_KeyPlayerHead='{head}' SmallTeamIcon='{small}' ZamboniSkaterHead='{zam}'");
-        }
-        catch { }
-    }
-
     // Fires immediately after Refresh — Toggle may not be wired yet.
     public static void Postfix(Tape2Tape.Hockey.UI.MetaTeamItem __instance, RunSquadScriptableObject __0)
     {
@@ -4742,7 +3763,6 @@ public static class PatchMetaTeamItemRefresh
             if (__0 == null || __instance == null) return;
             string id = __0.id;
             string uname = __0.name;
-            ProbeTileIcon(__instance, __0, id);   // vanilla squads too — that's the reference data
             bool isCustom = (!string.IsNullOrEmpty(id) && id.StartsWith("Custom_", StringComparison.Ordinal))
                          || (!string.IsNullOrEmpty(uname) && uname.StartsWith("CustomSquad_", StringComparison.Ordinal));
             if (!isCustom) return;
@@ -4783,6 +3803,8 @@ public static class PatchUnlockSystem
     {
         try
         {
+            // Campaign free agents (CustomFreeAgentTemplates) carry their own ids.
+            if (!__result && !string.IsNullOrEmpty(id) && id.StartsWith(CustomFreeAgentTemplates.IdPrefix, StringComparison.Ordinal)) { __result = true; return; }
             if (!__result && !string.IsNullOrEmpty(id) && id.StartsWith("Custom_", StringComparison.Ordinal))
             {
                 Plugin.Log.LogInfo($"[CustomSquad] UnlockSystem.IsUnlocked: forcing true for '{id}'");
@@ -4844,44 +3866,6 @@ public static class PatchGetSquadTeamData
 }
 
 // ============================================================
-// Diagnostic: trace the click flow in ChooseMetaMenu to find where
-// custom squads are getting blocked.
-// ============================================================
-public static class PatchChooseMetaDiag
-{
-    public static void OnMetaClickedPrefix(Tape2Tape.Hockey.UI.ChooseMetaMenu __instance)
-    {
-        try
-        {
-            var cur = __instance?.CurrentMeta;
-            var squad = cur?.CurrentSquad;
-            Plugin.Log.LogInfo($"[CustomSquad] OnMetaClicked: squad='{squad?.id ?? "null"}' IsUnlocked={cur?.IsUnlocked}");
-        }
-        catch { }
-    }
-
-    public static void ConfirmPrefix(Tape2Tape.Hockey.UI.ChooseMetaMenu __instance)
-    {
-        try
-        {
-            var squad = __instance?.CurrentRunSquad;
-            Plugin.Log.LogInfo($"[CustomSquad] ConfirmSelections: squad='{squad?.id ?? "null"}'");
-        }
-        catch { }
-    }
-
-    public static void CanGoNextPostfix(Tape2Tape.Hockey.UI.ChooseMetaMenu __instance, ref bool __result)
-    {
-        try
-        {
-            var squad = __instance?.CurrentRunSquad;
-            Plugin.Log.LogInfo($"[CustomSquad] CanGoToNextState: squad='{squad?.id ?? "null"}' result={__result}");
-        }
-        catch { }
-    }
-}
-
-// ============================================================
 // Reset campaign progress when player starts a NEW run from menu.
 // Run-end reset (PatchOnRunFinished) only fires on loss/final victory;
 // this catches abandonment cases where save.txt still has stale values.
@@ -4892,16 +3876,9 @@ public static class PatchNewRunStart
     {
         try
         {
-            // Guard: if a Continue Run just loaded (within 15s), this call is
-            // part of the Continue flow, not a fresh NewRun — do NOT wipe save.
-            float dt = UnityEngine.Time.realtimeSinceStartup - Plugin.LastLoadRunDataTime;
-            if (Plugin.LastLoadRunDataTime > 0f && dt < 15f)
-            {
-                Plugin.Log.LogInfo($"[Campaign] NewRun prefix skipped — Continue Run active ({dt:F1}s since LoadRunData)");
-                return;
-            }
-            Plugin.ActsCompleted = 0;
-            Plugin.GamesPlayed = 0;
+            // This hook is TitleScreen.NewRun only; Continue never resets counters.
+            Plugin.ResetProgressForNewRun();
+            CustomMapLayout.ResetForNewRun();
             Plugin.DraftPoolApplied = false;
             Plugin.AppliedDraftPtrs.Clear();
             Plugin.AppliedFreeAgentPtrs.Clear();
@@ -4930,10 +3907,6 @@ public static class PatchLoadRunData
     {
         try
         {
-            // Stamp Continue Run timing so PatchNewRunStart can avoid wiping
-            // save.txt when StartMenu.StartNewRun (which fires on BOTH Continue
-            // and New Run flows) triggers our reset code by mistake.
-            Plugin.LastLoadRunDataTime = UnityEngine.Time.realtimeSinceStartup;
             if (injected) return; // only once per game launch
             if (__instance == null) return;
             if (Plugin.PlayerTeamConfigs == null || Plugin.PlayerTeamConfigs.Count == 0) return;
@@ -4944,22 +3917,9 @@ public static class PatchLoadRunData
         catch (Exception ex) { Plugin.Log.LogWarning($"[Campaign] LoadRunData prefix: {ex.Message}"); }
     }
 
-    // Reset the "already injected" latch so the next squads-reload cycle
-    // (e.g. when the user re-opens the title screen without restarting)
-    // can re-run.
-    internal static void ResetLatch() { injected = false; }
+
 }
 
-// ============================================================
-// Register custom squads BEFORE TitleScreen validates the save. The
-// earlier PatchLoadRunData fires only when the user clicks "Continue
-// Run" — but the Continue Run button is gated by RefreshCampaignData's
-// save-validity check, which runs at title-screen load. If our custom
-// squads aren't in cs.squads at that moment, the saved squad id can't
-// be resolved and the Continue button never appears. Hooking
-// TitleScreen.RefreshCampaignData as a prefix ensures squads are
-// registered before the check runs.
-// ============================================================
 public static class PatchTitleScreenRefresh
 {
     public static void Prefix()
@@ -5001,6 +3961,7 @@ public static class PatchMapBlueprint
     // a belt-and-suspenders — the one that fires first handles the swap.
     public static void Prefix(ref STS.Map.NodeType type)
     {
+        if (CustomMapLayout.Active) return;
         try
         {
             if (type != STS.Map.NodeType.GeneralManager) return;
@@ -5022,15 +3983,13 @@ public static class PatchMapBlueprint
 }
 
 // ============================================================
-// Second line of defense for FA node cap. Separate class so it doesn't
-// collide with PatchCreateMapNode (which handles Challenge→Elite swaps).
-// Both prefixes run on CreateMapNode; order is not important since they
-// operate on different nodeType values.
+// Second line of defense for the free-agent node cap during node creation.
 // ============================================================
 public static class PatchCreateMapNodeFACap
 {
     public static void Prefix(STS.Map.Node node)
     {
+        if (CustomMapLayout.Active) return;
         try
         {
             if (node?.layerNodeType == null) return;
@@ -5103,6 +4062,7 @@ public static class PatchInitializeMapPost
 {
     public static void Postfix(STS.Map.MapObject __instance)
     {
+        if (CustomMapLayout.Active) return;
         try
         {
             if (__instance == null) return;
@@ -5145,11 +4105,8 @@ public static class PatchInitializeMapPost
 // front (PatchMapOpponents below) and the launch path only fills in what map
 // generation didn't manage to do.
 //
-// The apply itself is idempotent for the manual-config path — ApplyTeamFromConfig
-// wipes powerups / ability / relics before writing — and CurrentRemixBoost is 0,
-// so the one additive step (BoostTeam) is a no-op today. The bookkeeping below is
-// still worth having: it keeps the log honest about who configured what, and it
-// stops a re-entered map from redoing every node on every InitializeMap.
+// Apply only authored configs and remember successful applications so a
+// re-entered map does not reconfigure every node on each InitializeMap.
 // ============================================================
 public static class CampaignOpponents
 {
@@ -5176,6 +4133,9 @@ public static class CampaignOpponents
             Plugin.Log.LogInfo($"[MapTeams] Forgetting {_configured.Count} configured + {_assigned.Count} assigned opponent(s) — {why}");
         _configured.Clear();
         _assigned.Clear();
+        VanillaCampaignRuntime.ForgetInstances();
+        CustomTeamRules.ClearDescriptions();
+        OpponentMatch.Clear();
     }
 
     /// <summary>Node key that claimed this TeamData via assignments.txt, or null.</summary>
@@ -5204,11 +4164,8 @@ public static class CampaignOpponents
             PatchBossLaunchMatch.EnsureRepos();
             PatchBossLaunchMatch.ResetClearedPlayers();
 
-            // Deliberately NO BoostTeam here. It is additive, and a node assignment
-            // can legitimately be re-applied (two map hooks, plus the preview pass),
-            // which would compound the boost. CurrentRemixBoost is 0 today so the
-            // sequential path gets away with it; this path shouldn't rely on that.
-            PatchBossLaunchMatch.ApplyTeamFromConfig(team, cfg);
+            if(VanillaCampaignRuntime.IsCopiedOpponent(cfg)&&VanillaCampaignRuntime.TeamInherited(cfg))OpponentMatch.Apply(team,cfg);
+            else PatchBossLaunchMatch.ApplyTeamFromConfig(team, cfg);
             _assigned[id] = nodeKey;
             _configured.Remove(id);   // a node assignment supersedes any game-index claim
             return true;
@@ -5226,6 +4183,18 @@ public static class CampaignOpponents
         if (team == null) return false;
         try { id = team.GetInstanceID(); return true; }
         catch { return false; }
+    }
+
+    /// <summary>The campaign config this TeamData was configured from (node
+    /// assignment or game index), or null for a native team.</summary>
+    internal static TeamConfig ConfigFor(TeamData team)
+    {
+        if (!TryGetId(team, out int id)) return null;
+        if (_assigned.TryGetValue(id, out string nodeKey))
+            return Plugin.NodeAssignments.TryGetValue(nodeKey, out string teamKey) ? Plugin.FindConfigTeamByKey(teamKey) : null;
+        if(VanillaCampaignRuntime.ConfigFor(team) is {} native)return native;
+        return _configured.TryGetValue(id, out int game) && game >= 0 && game < Plugin.ConfigTeams.Count
+            ? Plugin.ConfigTeams[game] : null;
     }
 
     /// <summary>Game index this TeamData was last configured for, or -1.</summary>
@@ -5260,7 +4229,10 @@ public static class CampaignOpponents
                 return false;
             }
 
-            PatchBossLaunchMatch.RemixTeamForGame(team, Plugin.CurrentRemixBoost, gameIndex);
+            if(VanillaCampaignRuntime.ConfigFor(team)!=null)return false;
+
+            if (!PatchBossLaunchMatch.RemixTeamForGame(team, gameIndex))
+                return false;
             _configured[id] = gameIndex;
             return true;
         }
@@ -5304,84 +4276,6 @@ public static class PatchMapOpponents
         return names.Contains("challenge") || names.Contains("spartan") || names.Contains("gauntlet");
     }
 
-    // ---- node-visual probe -------------------------------------------------
-    // The map node still shows the VANILLA team ("Tycoons", "Team Canada") even
-    // though opponent is now our config team: EliteMapNode.SetElite(TeamData,
-    // string eliteSkin) takes its art from ActElite.stadiumAnimation, a Spine
-    // animation baked per vanilla elite, which has nothing to do with TeamData.
-    // A Spine skin cannot be built from a PNG (session 12) so the fix has to be a
-    // sprite renderer — this dumps the node hierarchy once per session so we can
-    // see which renderer to target instead of guessing. Read-only: names and
-    // sprite names, no Spine internals (walking Skin.Attachments hard-crashed the
-    // game — see PatchChooseMetaUI.FaceToSprite).
-    private static bool _probedNodeVisuals;
-
-    private static string PathOf(Transform t, Transform root)
-    {
-        var parts = new List<string>();
-        int guard = 0;
-        while (t != null && t != root && guard++ < 12)
-        {
-            parts.Insert(0, t.name);
-            t = t.parent;
-        }
-        return parts.Count > 0 ? string.Join("/", parts.ToArray()) : ".";
-    }
-
-    private static void ProbeNodeVisuals(STS.Map.MatchMapNode node, string vanillaName)
-    {
-        try
-        {
-            var go = node.gameObject;
-            if (go == null) return;
-            var root = go.transform;
-            Plugin.Log.LogInfo($"[NodeArt] --- node '{go.name}' (vanilla team '{vanillaName}') ---");
-
-            try
-            {
-                var srs = go.GetComponentsInChildren<SpriteRenderer>(true);
-                if (srs != null)
-                    foreach (var sr in srs)
-                    {
-                        if (sr == null) continue;
-                        string sprite = "null";
-                        try { sprite = sr.sprite != null ? sr.sprite.name : "null"; } catch { }
-                        Plugin.Log.LogInfo($"[NodeArt]   SpriteRenderer '{PathOf(sr.transform, root)}'"
-                            + $" sprite='{sprite}' enabled={sr.enabled} order={sr.sortingOrder}");
-                    }
-            }
-            catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt]   SpriteRenderer sweep: {ex.Message}"); }
-
-            try
-            {
-                var skel = node.skeletonSprite;
-                if (skel != null)
-                    Plugin.Log.LogInfo($"[NodeArt]   SkeletonAnimation on '{PathOf(skel.transform, root)}' name='{skel.name}'");
-                else
-                    Plugin.Log.LogInfo("[NodeArt]   SkeletonAnimation: none");
-            }
-            catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt]   skeletonSprite: {ex.Message}"); }
-
-            // m_Icon is a private SerializeField, but it's a reference type — the
-            // same kind of read PatchMapNodeTooltip already does for m_TooltipDesc.
-            try
-            {
-                var f = node.GetIl2CppType().GetField("m_Icon");
-                var icon = f != null ? f.GetValue(node) : null;
-                if (icon != null)
-                {
-                    var sr = icon.TryCast<SpriteRenderer>();
-                    string sprite = "unreadable";
-                    try { sprite = sr != null && sr.sprite != null ? sr.sprite.name : "null"; } catch { }
-                    Plugin.Log.LogInfo($"[NodeArt]   m_Icon sprite='{sprite}'");
-                }
-                else Plugin.Log.LogInfo("[NodeArt]   m_Icon: null");
-            }
-            catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt]   m_Icon: {ex.Message}"); }
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt] probe: {ex.Message}"); }
-    }
-
     // ---- node logo ---------------------------------------------------------
     // Swap the node's vanilla team mascot (the maple leaf on a pole for Team
     // Canada, etc.) for the campaign team's logo.
@@ -5423,61 +4317,12 @@ public static class PatchMapOpponents
     // the campaign team's logo. One sprite assignment, the game's own object, in the
     // game's own position and size.
     //
-    // Set overrideSprite as well as sprite: the squad tile in session 12 needed
-    // exactly that, its `.sprite` staying at a placeholder while overrideSprite is
-    // what actually draws.
-    private const string RewardIconName = "rewardicon";
-    private static bool _loggedNodeImages;
-
+    // Build 25595829: SetElite/SetBoss now Clear() that UI (icon object deactivated),
+    // so a sprite written into the Image stays invisible. NodeLogo.Show drives the
+    // UI's own SetRewardIconRaw instead.
     internal static bool ReplaceRewardIcon(STS.Map.MatchMapNode node, TeamData team)
     {
-        try
-        {
-            if (node == null || team == null) return false;
-            UnityEngine.Sprite sprite = null;
-            try { sprite = team.logo; } catch { }
-            if (sprite == null) return false;
-
-            var go = node.gameObject;
-            if (go == null) return false;
-
-            var images = go.GetComponentsInChildren<UnityEngine.UI.Image>(true);
-            if (images == null) return false;
-
-            // One-off inventory, so a rename or a second candidate is obvious from
-            // the log rather than needing another probe build.
-            if (!_loggedNodeImages)
-            {
-                _loggedNodeImages = true;
-                var sb = new StringBuilder();
-                foreach (var im in images)
-                {
-                    if (im == null) continue;
-                    string sp = "null";
-                    try { sp = im.sprite != null ? im.sprite.name : "null"; } catch { }
-                    sb.Append($"\n[NodeArt]   Image '{im.name}' sprite='{sp}' enabled={im.enabled}");
-                }
-                Plugin.Log.LogInfo($"[NodeArt] uGUI Images on '{go.name}':{sb}");
-            }
-
-            bool replaced = false;
-            foreach (var im in images)
-            {
-                if (im == null) continue;
-                string n = im.name ?? "";
-                if (n.IndexOf(RewardIconName, StringComparison.OrdinalIgnoreCase) < 0) continue;
-                try
-                {
-                    im.sprite = sprite;
-                    im.overrideSprite = sprite;
-                    im.enabled = true;
-                    replaced = true;
-                    Plugin.Log.LogInfo($"[NodeArt] '{team.teamName}': set Image '{n}' to logo '{sprite.name}'.");
-                }
-                catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt] setting '{n}': {ex.Message}"); }
-            }
-            return replaced;
-        }
+        try { return NodeLogo.Show(node, team); }
         catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt] ReplaceRewardIcon: {ex.Message}"); return false; }
     }
 
@@ -5519,6 +4364,7 @@ public static class PatchMapOpponents
         try
         {
             if (node == null || team == null) return;
+            PatchMapNodeTooltip.Postfix(node);
 
             // Preferred route: the node's own 'rewardIcon_image'. If it's already
             // present at map-generation time we're done — no overlay needed at all.
@@ -5688,6 +4534,7 @@ public static class PatchMapOpponents
                 STS.Map.MatchMapNode match = null;
                 try { match = mn.TryCast<STS.Map.MatchMapNode>(); } catch { }
                 if (match == null) continue;
+                VanillaCampaignRuntime.Apply(match);
                 if (IsChallengeNode(match)) { challengesSkipped++; continue; }
 
                 int layer;
@@ -5762,19 +4609,33 @@ public static class PatchMapOpponents
                                 }
                                 else
                                 {
+                                    // Each authored branch owns its opponent. Native
+                                    // nodes can share a repository TeamData asset.
+                                    // Reuse the assigned clone on the second map hook.
+                                    if (CampaignOpponents.AssignedKey(opp) != nkey)
+                                    {
+                                        var isolated = VanillaCampaignRuntime.IsCopiedOpponent(acfg)
+                                            ? VanillaCampaignRuntime.CloneAssigned(acfg) : UnityEngine.Object.Instantiate(opp);
+                                        if(!VanillaCampaignRuntime.IsCopiedOpponent(acfg))PatchChooseMetaUI.DeepCloneForwards(isolated);
+                                        node.opponent = isolated;
+                                        opp = isolated;
+                                    }
                                     if (CampaignOpponents.EnsureAssigned(opp, acfg, nkey, $"map gen {nkey}"))
                                     {
                                         applied++;
                                         summary.Append($" L{layer}.N{nodeIdx}=>'{opp.teamName}'");
-                                        ApplyNodeLogo(node, opp);
                                     }
                                     else alreadyDone++;
+                                    ApplyNodeLogo(node, opp);
                                     continue;   // assigned nodes never fall through
                                 }
                             }
                         }
                     }
 
+                    if(VanillaCampaignRuntime.ConfigFor(opp)!=null)continue;
+                    if (gameIndex >= 0 && gameIndex < Plugin.ConfigTeams.Count)
+                        opp = CustomTeamRules.OwnOpponent(node);
                     int id;
                     try { id = opp.GetInstanceID(); } catch { continue; }
                     if (claimedBy.TryGetValue(id, out int ownerLayer) && ownerLayer != layer)
@@ -5787,16 +4648,9 @@ public static class PatchMapOpponents
                     }
                     claimedBy[id] = layer;
 
-                    // Capture the vanilla name BEFORE the config overwrites it —
-                    // it's how the node-art probe recognises team-specific art.
-                    string vanillaName = null;
-                    try { vanillaName = opp.teamName; } catch { }
-
                     // Check before calling so a second pass over the same map (we
                     // hook both SetOpponents and InitializeMap) stays quiet.
-                    if (CampaignOpponents.AppliedGameIndex(opp) == gameIndex) { alreadyDone++; continue; }
-
-                    if (!_probedNodeVisuals) ProbeNodeVisuals(node, vanillaName);
+                    if (CampaignOpponents.AppliedGameIndex(opp) == gameIndex) { alreadyDone++; ApplyNodeLogo(node, opp); continue; }
 
                     if (CampaignOpponents.Ensure(opp, gameIndex, $"map gen (layer {layer})")) applied++;
                     summary.Append($" L{layer}=>G{gameIndex + 1}('{opp.teamName}')");
@@ -5806,10 +4660,6 @@ public static class PatchMapOpponents
                     ApplyNodeLogo(node, opp);
                 }
             }
-
-            // One map's worth of node-art detail is enough to work from; don't
-            // spam it on every map for the rest of the session.
-            if (applied > 0) _probedNodeVisuals = true;
 
             // A pass that changed nothing is the normal second hook firing; only
             // the first pass over a map should report applications.
@@ -5844,22 +4694,6 @@ public static class PatchFilterRelicRewards
         try { return list != null ? list.Count : 0; } catch { return 0; }
     }
 
-    // Per-category sizes, so a [RewardPool] line shows how big the pool for the
-    // category being asked for actually is (vs the ~325 entries the editor lists).
-    private static string DescribeCategories(RelicRepository repo)
-    {
-        try
-        {
-            return $"off={CountRelics(repo.offensiveRelics)} def={CountRelics(repo.defensiveRelics)}"
-                 + $" util={CountRelics(repo.utilityRelics)} spd={CountRelics(repo.speedRelics)}"
-                 + $" chk={CountRelics(repo.checkingRelics)} pwr={CountRelics(repo.powerRelics)}"
-                 + $" acc={CountRelics(repo.accuracyRelics)} chaos={CountRelics(repo.chaosRelics)}"
-                 + $" boss={CountRelics(repo.bossRelics)} goalie={CountRelics(repo.goalieRelics)}"
-                 + $" coach={CountRelics(repo.coachRelics)}";
-        }
-        catch { return "unreadable"; }
-    }
-
     // Ids the prefilter actually managed to exclude on the most recent call.
     // The postfix must strip ONLY these — using the full exclusion list there
     // re-applies the ones the budget deliberately skipped and guts the result
@@ -5881,15 +4715,6 @@ public static class PatchFilterRelicRewards
     {
         try
         {
-            // Diagnostic, runs even with no exclusions configured: GetRandomRelics
-            // is category-scoped, so the pool the game actually draws from is not
-            // the flat catalogue the reward-pool editor lists. Log what each call
-            // asks for, per node type, before deciding anything about that editor.
-            if (__instance != null)
-                Plugin.Log.LogInfo($"[RewardPool] GetRandomRelics: category={relicCategory}"
-                    + $" want={numberOfRelics} matchAny={matchAnyCategory} mustBeInPool={mustBeInPool}"
-                    + $" alreadyExcluded={(excludedRelics != null ? excludedRelics.Count : -1)}"
-                    + $" node='{Plugin.LastMatchNodeKind}' | repo totals: {DescribeCategories(__instance)}");
 
             if (Plugin.ExcludedRewardRelicIds.Count == 0) return;
             if (__instance == null || excludedRelics == null) return;
@@ -5963,17 +4788,6 @@ public static class PatchFilterRelicRewards
     {
         try
         {
-            // Diagnostic companion to the prefix line — what the category-scoped
-            // call actually yielded.
-            try
-            {
-                var names = new StringBuilder();
-                if (__result != null)
-                    for (int i = 0; i < __result.Count && i < 12; i++)
-                        names.Append(i == 0 ? "" : ", ").Append(__result[i]?.id ?? "null");
-                Plugin.Log.LogInfo($"[RewardPool] GetRandomRelics returned {(__result != null ? __result.Count : -1)}: {names}");
-            }
-            catch { }
 
             if (__result == null || __result.Count == 0) return;
             if (AppliedExclusions.Count == 0) return;
@@ -6024,6 +4838,7 @@ public static class PatchFilterTalentRewards
     {
         try
         {
+            if (FreeAgentTalentWeightRuntime.InRecruitmentScope) return;
             if (Plugin.ExcludedRewardTalentIds.Count == 0) return;
             if (__instance == null || excludedTalents == null) return;
 
@@ -6048,11 +4863,11 @@ public static class PatchFilterTalentRewards
                 if (added >= budget) { skipped++; continue; }
                 try
                 {
-                    var t = __instance.GetTalent(id, false);
+                    var t = PatchBossLaunchMatch.FindTalent(id);
                     if (t == null) continue;
                     bool present = false;
                     for (int j = 0; j < excludedTalents.Count; j++)
-                        if (excludedTalents[j] != null && excludedTalents[j].name == id) { present = true; break; }
+                        if (excludedTalents[j] != null && excludedTalents[j].id == t.id) { present = true; break; }
                     if (!present) { excludedTalents.Add(t); added++; }
                 }
                 catch { }
@@ -6079,6 +4894,7 @@ public static class PatchFilterTalentRewards
     {
         try
         {
+            if (FreeAgentTalentWeightRuntime.InRecruitmentScope) return;
             if (__result == null || __result.Count == 0) return;
             if (Plugin.ExcludedRewardTalentIds.Count == 0) return;
             int before = __result.Count;
@@ -6086,7 +4902,7 @@ public static class PatchFilterTalentRewards
             {
                 var t = __result[i];
                 if (t == null) continue;
-                if (Plugin.ExcludedRewardTalentIds.Contains(t.name ?? ""))
+                if ((Plugin.ExcludedRewardTalentIds.Contains(t.name ?? "") || Plugin.ExcludedRewardTalentIds.Contains(t.id ?? "")))
                     __result.RemoveAt(i);
             }
             if (__result.Count != before)
@@ -6102,9 +4918,10 @@ public static class PatchFilterSingleTalentReward
     {
         try
         {
+            if (FreeAgentTalentWeightRuntime.InRecruitmentScope) return;
             if (__result == null) return;
             if (Plugin.ExcludedRewardTalentIds.Count == 0) return;
-            if (Plugin.ExcludedRewardTalentIds.Contains(__result.name ?? ""))
+            if ((Plugin.ExcludedRewardTalentIds.Contains(__result.name ?? "") || Plugin.ExcludedRewardTalentIds.Contains(__result.id ?? "")))
             {
                 Plugin.Log.LogInfo($"[RewardPool] Excluded talent '{__result.name}' was picked — returning null");
                 __result = null;
@@ -6166,26 +4983,93 @@ public static class PatchPreGenerateFreeAgents
 // ============================================================
 public static class PatchSuperstarPool
 {
-    public static void Postfix(Il2CppSystem.Collections.Generic.List<Data.ForwardData> __result)
+    private static RunSquadScriptableObject SelectedSquad(Tape2Tape.Hockey.UI.OldSquadMenu menu)
+    {
+        // Prefer the menu's own campaign state; global resources can include
+        // stale states left loaded during a screen transition.
+        try
+        {
+            var field = AccessTools.Field(typeof(Tape2Tape.Hockey.UI.OldSquadMenu), "m_CampaignState")
+                ?? AccessTools.Field(typeof(Tape2Tape.Hockey.UI.OldSquadMenu), "_campaignState");
+            var state = field?.GetValue(menu) as State.CampaignState;
+            var selected = state?.GetCurrentSquad();
+            if (selected != null) return selected;
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[Superstar] Menu squad lookup: {ex.Message}"); }
+        var states = UnityEngine.Resources.FindObjectsOfTypeAll<State.CampaignState>();
+        foreach (var state in states)
+        {
+            try
+            {
+                var squad = state?.GetCurrentSquad();
+                if (squad != null) return squad;
+            }
+            catch { }
+        }
+        return null;
+    }
+
+    private static TeamConfig SelectedTeamConfig(RunSquadScriptableObject squad)
+    {
+        if (squad == null) return null;
+        string id = squad.id ?? "";
+        if (id.StartsWith("Custom_", StringComparison.OrdinalIgnoreCase)
+            && Plugin.PlayerTeamConfigs.TryGetValue(id.Substring(7), out var custom)) return custom;
+        string name = squad.startingTeam?.teamName ?? "";
+        foreach (var pair in Plugin.PlayerTeamConfigs)
+            if (id.Equals(pair.Key, StringComparison.OrdinalIgnoreCase)
+                || name.StartsWith(pair.Key, StringComparison.OrdinalIgnoreCase)) return pair.Value;
+        return null;
+    }
+
+    public static void Postfix(Tape2Tape.Hockey.UI.OldSquadMenu __instance, Il2CppSystem.Collections.Generic.List<Data.ForwardData> __result)
     {
         try
         {
-            if (Plugin.SuperstarPoolList == null || Plugin.SuperstarPoolList.Count == 0) return;
+            if (!Plugin.PlayerTeamsEnabled) return;
             if (__result == null || __result.Count == 0)
             {
                 Plugin.Log.LogInfo("[Superstar] GenerateSuperStarSkaters returned no templates — nothing to replace");
                 return;
             }
-            int N = Plugin.SuperstarPoolList.Count;
+            var squad = SelectedSquad(__instance);
+            var team = squad?.startingTeam;
+            var teamConfig = SelectedTeamConfig(squad);
+            if(VanillaCampaignRuntime.InheritedSquad(teamConfig) && VanillaCampaignRuntime.InheritedPool("superstars"))return;
+            int N = Plugin.SuperstarPoolList?.Count ?? 0;
+            if (N == 0 && team == null && teamConfig == null) return;
+            Plugin.Log.LogInfo($"[Superstar] Using selected player team's look: '{team?.teamName ?? squad?.squadName ?? "unknown"}'");
+            // Sample the full authored pool; fixed i % N made every candidate
+            // after the native screen's slot count impossible to choose.
+            var candidates = Enumerable.Range(0, N).ToArray();
+            for (int k = N - 1; k > 0; k--)
+            {
+                int pick = UnityEngine.Random.Range(0, k + 1);
+                int swap = candidates[k]; candidates[k] = candidates[pick]; candidates[pick] = swap;
+            }
             for (int i = 0; i < __result.Count; i++)
             {
                 var template = __result[i];
                 if (template == null) continue;
-                var cfg = Plugin.SuperstarPoolList[i % N];
-                var clone = UnityEngine.Object.Instantiate(template);
-                PatchPlayerTeamInit.ApplyConfigToForward(clone, cfg, applyName: true);
+                PlayerConfig cfg = N>0 ? Plugin.SuperstarPoolList[candidates[i % N]] : null;
+                var clone = VanillaCampaignRuntime.CloneCandidate(cfg) ?? UnityEngine.Object.Instantiate(template);
+                if (teamConfig != null)
+                {
+                    PatchPlayerTeamInit.ApplyUniformToForward(clone, teamConfig.Uniform);
+                    PatchBossLaunchMatch.ApplyTeamEquipmentColors(clone, teamConfig, team);
+                }
+                else if (team?.homeColors != null)
+                    clone.colorSchemes = CampaignAppearanceRuntime.Unset(); // team kit, either side
+                if (N > 0)
+                {
+                    if(cfg.Fields.Get(VanillaCopyData.PlayerId).Length>0)CampaignSquadSetup.ApplyFreshPlayerConfig(clone,cfg);
+                    else PatchPlayerTeamInit.ApplyConfigToForward(clone, cfg, applyName: true);
+                }
                 __result[i] = clone;
-                Plugin.Log.LogInfo($"[Superstar] Slot {i} → '{cfg.Name}' (cycled {i % N + 1}/{N})");
+                if (cfg != null)
+                {
+                    Plugin.Log.LogInfo($"[Superstar] Slot {i} → '{cfg.Name}' (cycled {i % N + 1}/{N})");
+                }
             }
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[Superstar] postfix: {ex.Message}"); }
@@ -6199,7 +5083,7 @@ public static class PatchSuperstarPool
 // ============================================================
 public static class PatchOldSquadMenuSuperstar
 {
-    internal static Data.ForwardData PickedSuperstar;
+
 
     public static void OnClickSuperStarPostfix(Tape2Tape.Hockey.UI.OldSquadMenu __instance, BishopGames.UI.AbstractNavigable __0)
     {
@@ -6232,7 +5116,7 @@ public static class PatchOldSquadMenuSuperstar
                 ?.TryCast<Il2CppSystem.Collections.Generic.List<Data.ForwardData>>();
             if (ssList == null || idx >= ssList.Count) return;
 
-            PickedSuperstar = ssList[idx];
+            var PickedSuperstar = ssList[idx];
             Plugin.Log.LogInfo($"[Superstar] Captured pick idx={idx} → '{PickedSuperstar?.firstName} {PickedSuperstar?.lastName}'");
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[Superstar] OnClickSuperStarPostfix: {ex.Message}"); }
@@ -6240,14 +5124,12 @@ public static class PatchOldSquadMenuSuperstar
 }
 
 // ============================================================
-// Run-start hook for custom squads: reconcile drafted picks (their IDs are in
-// lines[0] but ForwardData isn't in fwds) and append the captured superstar.
-// No bump/move/reshuffle — reconcile fills the line slot; superstar appends to
-// the end (bench). The base game's flow + these two helpers = picks visible
-// on the run team. For vanilla squads this is a no-op (early return on id).
+// Protect authored slots only during native starting-team construction.
 // ============================================================
 public static class PatchInstantiateStartingTeam
 {
+    public static void Prefix(RunSquadScriptableObject __0, out TeamConfig __state) => __state = CustomStartingRoster.Begin(__0);
+    public static void Finalizer(TeamConfig __state) => CustomStartingRoster.End(__state);
     public static void Postfix(Data.TeamData __result, RunSquadScriptableObject __0)
     {
         try
@@ -6257,108 +5139,11 @@ public static class PatchInstantiateStartingTeam
             try { squadId = __0?.id ?? ""; } catch { }
             bool isCustom = squadId.StartsWith("Custom_", StringComparison.Ordinal);
 
-            // DIAGNOSTIC: capture vanilla squads too (especially Basic Squad) so
-            // we have a base-game baseline for how InstantiateStartingTeam shapes
-            // the run team before the player picks a superstar / drafts.
-            if (!isCustom)
-            {
-                string vnm = ""; try { vnm = __result.teamName ?? ""; } catch { }
-                string vsq = ""; try { vsq = __0?.squadName ?? ""; } catch { }
-                if (vsq.IndexOf("Basic", StringComparison.OrdinalIgnoreCase) >= 0
-                    || vnm.IndexOf("Basic", StringComparison.OrdinalIgnoreCase) >= 0)
-                    PatchChooseMetaUI.DumpTeamStructure(__result, "VANILLA-Basic@InstStart");
-                return;
-            }
+            if (!isCustom) return;
 
             Plugin.Log.LogInfo($"[InstStartTeam] postfix: team='{__result.teamName}' squadId='{squadId}' fwds.Count={__result.forwards?.Count ?? -1}");
-
-            // ── RUNTIME INTERFERENCE DISABLED (diagnostic pass) ──────────────
-            // We confirmed the game's NATIVE flow already adds the picked
-            // superstar to the run team on its own (it placed the superstar at
-            // forwards[0] last run with none of our hooks doing it). Our old
-            // steps here — unlock all positions, reconcile drafted FAs, force the
-            // superstar to center, and rewrite lines[0] positionally — fought
-            // that native flow and produced a garbage line. Disable them all so
-            // this run shows what the game does unaided; the DUMP lines below
-            // capture the result. (Old code retained under `if (false)` so the
-            // exact previous behavior is one edit away if the dumps say we need
-            // some of it back.)
-            PatchChooseMetaUI.DumpTeamStructure(__result, "InstStart");
-
-            // 2) Place the picked superstar at CENTER (slot 2) — the same way
-            //    goalie is set to the goalie slot and the configured D is set
-            //    to LD. If something else is already at C (a drafted pick),
-            //    bump it to the bench so the superstar gets the C spot. Also
-            //    update lines[0].center so the line renders the superstar at C.
-            var ss = PatchOldSquadMenuSuperstar.PickedSuperstar;
-            if (false && ss != null && __result.forwards != null)   // DISABLED — native flow handles superstar
-            {
-                const int CENTER = 2;
-                try
-                {
-                    // Ensure slot 2 exists.
-                    while (__result.forwards.Count <= CENTER) __result.forwards.Add(null);
-
-                    // Already at C? Skip.
-                    var atC = __result.forwards[CENTER];
-                    bool alreadyAtC = atC != null
-                        && (atC.Pointer == ss.Pointer
-                            || (!string.IsNullOrEmpty(atC.id) && !string.IsNullOrEmpty(ss.id) && atC.id == ss.id));
-                    if (alreadyAtC)
-                    {
-                        Plugin.Log.LogInfo($"[InstStartTeam] Superstar '{ss.firstName} {ss.lastName}' already at Center — no change");
-                    }
-                    else
-                    {
-                        if (atC != null)
-                        {
-                            try { __result.forwards.Add(atC); } catch { }
-                            Plugin.Log.LogInfo($"[InstStartTeam] Bumped '{atC.firstName} {atC.lastName}' from Center → fwds[{__result.forwards.Count - 1}] (bench) to make room for superstar");
-                        }
-                        __result.forwards[CENTER] = ss;
-
-                        // Update lines[0].center so the line slot resolves to the
-                        // superstar's id instead of whatever draft pick was there.
-                        try
-                        {
-                            var lns = __result.lines;
-                            if (lns != null && lns.Count > 0 && lns[0] != null)
-                                lns[0].center = ss.id ?? "";
-                        }
-                        catch { }
-
-                        Plugin.Log.LogInfo($"[InstStartTeam] Placed superstar '{ss.firstName} {ss.lastName}' at Center (slot {CENTER})");
-                    }
-                }
-                catch (Exception ex) { Plugin.Log.LogWarning($"[InstStartTeam] superstar place: {ex.Message}"); }
-            }
-
-            // 3) Force lines[0] to reference the forwards actually sitting in
-            //    the starting-five slots (fwds[0..4]). The cloned Basic template
-            //    leaves lines[0] pointing at Basic's defunct forward ids — those
-            //    ghost ids don't resolve to any ForwardData on this team, so the
-            //    game's on-ice line builder finds nothing and the picked
-            //    superstar + drafted/configured players never take the ice. This
-            //    is NOT a reshuffle: each forward stays in the exact slot it's
-            //    already in; we only rewrite the line's id pointers to match.
-            try
-            {
-                var fwds = __result.forwards;
-                var lns = __result.lines;
-                if (false && fwds != null && lns != null && lns.Count > 0 && lns[0] != null)   // DISABLED — positional line sync clobbered native draft
-                {
-                    var l0 = lns[0];
-                    string IdAt(int i) => (i < fwds.Count && fwds[i] != null) ? (fwds[i].id ?? "") : null;
-                    string lw = IdAt(0), rw = IdAt(1), c = IdAt(2), ld = IdAt(3), rd = IdAt(4);
-                    if (lw != null) l0.leftWinger = lw;
-                    if (rw != null) l0.rightWinger = rw;
-                    if (c  != null) l0.center = c;
-                    if (ld != null) l0.leftDefensemen = ld;
-                    if (rd != null) l0.rightDefensemen = rd;
-                    Plugin.Log.LogInfo($"[InstStartTeam] Synced lines[0] to roster: LW='{l0.leftWinger}' RW='{l0.rightWinger}' C='{l0.center}' LD='{l0.leftDefensemen}' RD='{l0.rightDefensemen}'");
-                }
-            }
-            catch (Exception ex) { Plugin.Log.LogWarning($"[InstStartTeam] line sync: {ex.Message}"); }
+            if (Plugin.PlayerTeamConfigs.TryGetValue(squadId.Substring(7), out var config) && !VanillaCampaignRuntime.InheritedSquad(config))
+                CampaignAppearanceRuntime.RestoreAuthoredEquipment(__result, config);
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[InstStartTeam] {ex.Message}"); }
     }
@@ -6384,20 +5169,16 @@ public static class PatchMapNodeTooltip
             string teamName = opp.teamName;
             if (string.IsNullOrEmpty(teamName)) return;
 
-            // Append "vs <Team>" to the tooltip description via reflection —
-            // the tooltip text field name varies (m_TooltipDesc / tooltipDesc).
-            var t = __instance.GetIl2CppType();
-            var field = t.GetField("m_TooltipDesc") ?? t.GetField("tooltipDesc") ?? t.GetField("m_TooltipDescription");
-            if (field == null) return;
-            var tmp = field.GetValue(__instance);
+            // Use the generated interop accessor; private inherited fields are
+            // not found by GetField on an EliteMapNode's runtime type.
+            var tmp = __instance.m_TooltipDesc;
             if (tmp == null) return;
-            var tmpType = tmp.GetIl2CppType();
-            var textProp = tmpType.GetProperty("text");
-            if (textProp == null) return;
-            var cur = textProp.GetValue(tmp)?.ToString() ?? "";
+            var cur = tmp.text ?? "";
             string suffix = $"\nvs {teamName}";
-            if (!cur.Contains(suffix.Trim()))
-                textProp.SetValue(tmp, (Il2CppSystem.Object)(cur + suffix));
+            string description = CustomTeamRules.Description(opp);
+            if (!string.IsNullOrWhiteSpace(description)) suffix += "\n" + description;
+            if (CustomTeamRules.IsCustom(opp)) tmp.text = suffix.TrimStart();
+            else if (!cur.Contains(suffix.Trim())) tmp.text = cur + suffix;
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[Campaign] MapNodeTooltip: {ex.Message}"); }
     }
@@ -6429,6 +5210,7 @@ public static class PatchMatchPreviewMenu
         try
         {
             if (__instance == null || Plugin.IsDefaultMode) return;
+            MatchPeriods.Preview(__instance);
             int next = Plugin.GamesPlayed;
             if (next < 0) return;
 
@@ -6449,7 +5231,7 @@ public static class PatchMatchPreviewMenu
             //    fall back to the config when the node isn't readable.
             string shownName = opp?.teamName;
             string logoFrom = null;
-            if (next < Plugin.ConfigTeams.Count)
+            if (opp == null && next < Plugin.ConfigTeams.Count)
             {
                 var cfg = Plugin.ConfigTeams[next];
                 if (cfg != null)
@@ -6466,14 +5248,18 @@ public static class PatchMatchPreviewMenu
             if (__instance.teamName != null)
                 __instance.teamName.text = shownName;
 
-            if (!string.IsNullOrEmpty(logoFrom))
+            var sprite = opp != null ? opp.logo : !string.IsNullOrEmpty(logoFrom)
+                ? PatchBossLaunchMatch.LoadCustomLogoSprite(logoFrom) : null;
+            if (sprite != null)
             {
-                var sprite = PatchBossLaunchMatch.LoadCustomLogoSprite(logoFrom);
-                if (sprite != null)
-                {
-                    if (__instance.logo != null) __instance.logo.sprite = sprite;
-                    if (__instance.logoDropShadow != null) __instance.logoDropShadow.sprite = sprite;
-                }
+                if (__instance.logo != null) { __instance.logo.sprite = sprite; __instance.logo.overrideSprite = sprite; }
+                if (__instance.logoDropShadow != null) { __instance.logoDropShadow.sprite = sprite; __instance.logoDropShadow.overrideSprite = sprite; }
+            }
+            if (CustomTeamRules.IsCustom(opp))
+            {
+                string description = CustomTeamRules.Description(opp);
+                if (__instance.m_DescriptionText != null) __instance.m_DescriptionText.text = description;
+                if (__instance.m_DescriptionContainer != null) __instance.m_DescriptionContainer.SetActive(!string.IsNullOrWhiteSpace(description));
             }
             Plugin.Log.LogInfo($"[Preview] Match preview -> '{shownName}' (game {next + 1}, logo '{logoFrom}')");
         }
@@ -6531,14 +5317,7 @@ public static class PatchEndRunStatsToggle
 
         try
         {
-            // Log all scenes for debugging
             int sceneCount = SceneManager.sceneCountInBuildSettings;
-            Plugin.Log.LogInfo($"[Campaign] Total scenes in build: {sceneCount}");
-            for (int i = 0; i < sceneCount; i++)
-            {
-                string path = SceneUtility.GetScenePathByBuildIndex(i);
-                Plugin.Log.LogInfo($"  Scene [{i}]: {path}");
-            }
 
             // Try loading each scene name that might be the world map
             var lsm = __instance._endRunPanel?._loadingScreenManager;
@@ -6597,35 +5376,11 @@ public static class PatchEndRunStatsToggle
 [HarmonyPatch(typeof(MapManager), nameof(MapManager.GenerateNewMap))]
 public static class PatchGenerateNewMap
 {
-    [HarmonyPostfix]
-    public static void Postfix(MapManager __instance)
-    {
-        // After map is generated, if we forced a higher act, update CurrentAct
-        if (Plugin.DebugRealAct > 0 && Plugin.DebugSkipEnabled)
-        {
-            // Find CampaignState via the map's act or RunManager
-            try
-            {
-                var runManager = UnityEngine.Object.FindObjectOfType<RunManager>();
-                if (runManager?.CampaignState?.runData != null)
-                {
-                    runManager.CampaignState.runData._currentAct = Plugin.DebugRealAct;
-                    Plugin.Log.LogInfo($"[DEBUG] Set _currentAct to {Plugin.DebugRealAct} after map gen");
-                }
-            }
-            catch (Exception ex) { Plugin.Log.LogError($"[DEBUG] postfix error: {ex}"); }
-        }
-    }
 
     [HarmonyPrefix]
     public static void Prefix(ref int act)
     {
-        // Debug: start on act 2 map so we only need to beat one boss to test loop
-        if (Plugin.DebugSkipEnabled && act < 2)
-        {
-            Plugin.Log.LogInfo($"[DEBUG] GenerateNewMap: skipping act {act} -> 2");
-            act = 2;
-        }
+        CustomMapLayout.ClearApplied();
 
         int wrapped = Plugin.WrapAct(act);
         if (act != wrapped)
@@ -6718,21 +5473,7 @@ public static class PatchGetActBosses
             Plugin.Log.LogInfo($"[Campaign] GetActBosses: wrapped {original} -> {act}");
     }
 
-    private static void LogTeamRoster(TeamData team, string type)
-    {
-        if (team == null) return;
-        var forwards = team.forwards;
-        if (forwards != null)
-            for (int i = 0; i < forwards.Count; i++)
-            {
-                var f = forwards[i];
-                if (f == null) continue;
-                Plugin.Log.LogInfo($"  [{type}] Forward: '{f.firstName} {f.lastName}' SP={f.shotPower} SPD={f.speed} CHK={f.checking} ACC={f.shotAccuracy} Ability={f.ability?.name}");
-            }
-        var g = team.goalie;
-        if (g != null)
-            Plugin.Log.LogInfo($"  [{type}] Goalie: '{g.firstName} {g.lastName}' skill={g.skill} catch={g.catchingSkill} glove={g.gloveSkill} blocker={g.blockerSkill} fiveHole={g.fiveHoleSkill} standSpd={g.standingSpeed} buttSpd={g.butterflySpeed} ctrl={g.controlSkill} recov={g.recoverySkill} pass={g.passPower} shot={g.shotPower} poke={g.pokecheckSkill} depth={g.depth} passRead={g.passReadSkill}");
-    }
+
 }
 
 [HarmonyPatch(typeof(CampaignOpponentsConfig), nameof(CampaignOpponentsConfig.GetActElites))]
@@ -6749,72 +5490,7 @@ public static class PatchGetActElites
 }
 
 // ============================================================
-// Replace challenge nodes with elite nodes during map creation
-// (manually patched in Plugin.Load because CreateMapNode is private)
-// ============================================================
-public static class PatchCreateMapNode
-{
-    public static void Prefix(STS.Map.Node node)
-    {
-        if (!Plugin.ReplaceChallenges) return;
-        if (node?.layerNodeType == null) return;
-        if (node.layerNodeType.nodeType == NodeType.Challenge)
-        {
-            // Per-map override (new format: maps:1,3,5)
-            if (Plugin.ReplaceChallengesMaps != null)
-            {
-                if (!Plugin.ReplaceChallengesMaps.Contains(Plugin.ActsCompleted))
-                {
-                    Plugin.Log.LogInfo($"[MapGen] Challenge node kept (map {Plugin.ActsCompleted} not in per-map replace list)");
-                    return;
-                }
-            }
-            // Legacy per-act filtering
-            else if (Plugin.ReplaceChallengesActs != null)
-            {
-                int currentAct = Plugin.ActForMap;
-                bool actMatch = false;
-                foreach (int a in Plugin.ReplaceChallengesActs)
-                    if (a == currentAct) { actMatch = true; break; }
-                if (!actMatch)
-                {
-                    Plugin.Log.LogInfo($"[MapGen] Challenge node at layer {node.LayerIndex} kept (act {currentAct} not in replace list)");
-                    return;
-                }
-            }
-            Plugin.Log.LogInfo($"[MapGen] Converting Challenge node at layer {node.LayerIndex} to Elite node");
-            node.layerNodeType.nodeType = NodeType.Elite;
-        }
-    }
-}
-
-// ============================================================
-// Scale opponents
-// ============================================================
-[HarmonyPatch(typeof(ChallengeMapNode), nameof(ChallengeMapNode.GetOpponentStrength))]
-public static class PatchGetOpponentStrength
-{
-    [HarmonyPostfix]
-    public static void Postfix(ref int __result, int act, int floor)
-    {
-        if (act > 3)
-            __result += (act - 3) * Plugin.ScalingPerAct;
-    }
-}
-
-[HarmonyPatch(typeof(ChallengeMapNode), nameof(ChallengeMapNode.InitializeOpponentStats))]
-public static class PatchInitializeOpponentStats
-{
-    [HarmonyPrefix]
-    public static void Prefix(ref int act, int floor, ForwardData forwardData)
-    {
-        if (act > 3)
-            Plugin.Log.LogInfo($"[Campaign] InitializeOpponentStats: act={act}, floor={floor}");
-    }
-}
-
-// ============================================================
-// Remix and scale boss/elite teams
+// Apply authored boss/elite teams
 // ============================================================
 [HarmonyPatch(typeof(BossMapNode), nameof(BossMapNode.LaunchMatch))]
 public static class PatchBossLaunchMatch
@@ -6832,6 +5508,8 @@ public static class PatchBossLaunchMatch
 
             if (Plugin.IsRemixed)
             {
+                if (!Plugin.IsDefaultMode && Plugin.GamesPlayed < Plugin.ConfigTeams.Count)
+                    opponent = CustomTeamRules.OwnOpponent(__instance);
                 // Normally a no-op: PatchMapOpponents already configured this node
                 // at map generation. It still matters when the map-gen pass
                 // couldn't run (loaded map, node regenerated by a chaos effect) or
@@ -6840,30 +5518,10 @@ public static class PatchBossLaunchMatch
                 if (CampaignOpponents.Ensure(opponent, Plugin.GamesPlayed, "BossMapNode.LaunchMatch"))
                     Plugin.Log.LogInfo($"[Remix] Boss '{opponent.teamName}' configured at launch (game {Plugin.GamesPlayed + 1})");
             }
+            CustomMatchCompletion.Begin(__instance, true);
+            OpponentMatch.Begin(__instance);
         }
         catch (Exception ex) { Plugin.Log.LogError($"[Remix] BossLaunch: {ex}"); }
-    }
-
-    internal static void BoostTeam(TeamData team, int boost)
-    {
-        var forwards = team.forwards;
-        if (forwards != null)
-            for (int i = 0; i < forwards.Count; i++)
-            {
-                var f = forwards[i];
-                if (f == null) continue;
-                f.shotPower += boost; f.speed += boost;
-                f.checking += boost; f.shotAccuracy += boost;
-            }
-        var g = team.goalie;
-        if (g != null)
-        {
-            g.skill += boost; g.catchingSkill += boost; g.gloveSkill += boost;
-            g.blockerSkill += boost; g.fiveHoleSkill += boost; g.standingSpeed += boost;
-            g.butterflySpeed += boost; g.controlSkill += boost; g.recoverySkill += boost;
-            g.pokecheckSkill += boost; g.depth += boost; g.passPower += boost;
-            g.shotPower += boost;
-        }
     }
 
     // Cache repositories
@@ -6935,11 +5593,16 @@ public static class PatchBossLaunchMatch
 
     private static Rogue.Talent FindTalentOnce(string name)
     {
-        if (CachedTalentRepo?.talents == null) return null;
+        if (Guid.TryParse(name, out _))
+            return UnityEngine.Resources.FindObjectsOfTypeAll<Rogue.Talent>()
+                .FirstOrDefault(t => t != null && string.Equals(t.id, name, StringComparison.OrdinalIgnoreCase) && !t.name.EndsWith("(Clone)"));
+        if (CachedTalentRepo?.talents == null) EnsureRepos();
         // Check aliases first
         if (TalentAliases.TryGetValue(name, out string aliased))
             name = aliased;
 
+        if (CachedTalentRepo?.talents != null)
+        {
         // 1) Strict match on internal asset name ("Always Catch Pucks")
         for (int i = 0; i < CachedTalentRepo.talents.Count; i++)
             if (CachedTalentRepo.talents[i]?.name == name)
@@ -6971,6 +5634,8 @@ public static class PatchBossLaunchMatch
                 }
             }
             catch {}
+        }
+
         }
 
         // 4) Last resort: EVERY Talent asset in memory, not just the repo's
@@ -7059,7 +5724,7 @@ public static class PatchBossLaunchMatch
             return level;
         }
         string t = name.Trim();
-        if (t.EndsWith("LVL2", StringComparison.OrdinalIgnoreCase)
+        if (t.EndsWith("+", StringComparison.Ordinal) || t.EndsWith("LVL2", StringComparison.OrdinalIgnoreCase)
             || t.EndsWith("(Level 2)", StringComparison.OrdinalIgnoreCase)
             || t.EndsWith("Lv2", StringComparison.OrdinalIgnoreCase)
             || t.EndsWith("Level 2", StringComparison.OrdinalIgnoreCase))
@@ -7088,6 +5753,27 @@ public static class PatchBossLaunchMatch
         if (AllRelicCache == null)
             AllRelicCache = UnityEngine.Resources.FindObjectsOfTypeAll<Rogue.Relic>();
         if (AllRelicCache == null) return null;
+
+        // An exact ID already identifies its level; never force upgraded IDs to level one.
+        if (Guid.TryParse(nameContains, out _))
+            return AllRelicCache.FirstOrDefault(r => r != null && string.Equals(r.id, nameContains, StringComparison.OrdinalIgnoreCase) && !r.name.EndsWith("(Clone)"));
+
+        // Some starting relic assets share an ID (Bum/standard Bench Bonus).
+        // Exact asset tokens from Studio must win over shared localized names.
+        var exactAsset = AllRelicCache.FirstOrDefault(r => r != null && r.level == level && string.Equals(r.name, nameContains, StringComparison.OrdinalIgnoreCase));
+        if (exactAsset != null) return exactAsset;
+
+        string BaseName(string value) => Regex.Replace(value ?? "", @"\s*(?:LVL2|\(Level 2\)|Lv2|Level 2|\+)\s*$", "", RegexOptions.IgnoreCase).Trim();
+        foreach (var relic in AllRelicCache)
+        {
+            if (relic == null || relic.level != level) continue;
+            try
+            {
+                if (string.Equals(relic.localizedRelicName, nameContains, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(BaseName(relic.localizedRelicName), BaseName(nameContains), StringComparison.OrdinalIgnoreCase)) return relic;
+            }
+            catch { }
+        }
 
         // 1) Try localized display name ("Steel Mitts", "Bench Bonus")
         foreach (var r in AllRelicCache)
@@ -7146,25 +5832,10 @@ public static class PatchBossLaunchMatch
         return null;
     }
 
-    internal static void GiveTalentToAll(TeamData team, string talentName)
-    {
-        var talent = FindTalent(talentName);
-        if (talent == null) { Plugin.Log.LogWarning($"[Remix] Talent '{talentName}' not found"); return; }
-        var forwards = team.forwards;
-        if (forwards == null) return;
-        for (int i = 0; i < forwards.Count; i++)
-        {
-            var f = forwards[i];
-            if (f == null) continue;
-            if (f.powerups == null)
-                f.powerups = new Il2CppSystem.Collections.Generic.List<Rogue.Talent>();
-            f.powerups.Add(talent);
-        }
-        Plugin.Log.LogInfo($"[Remix] Gave all forwards '{talentName}'");
-    }
 
     internal static void GiveRelic(TeamData team, string relicName)
     {
+        string requested = relicName;
         int level = LevelFromRelicName(relicName, out relicName);
         var relic = FindRelic(relicName, level);
         if (relic == null) { Plugin.Log.LogWarning($"[Remix] Relic '{relicName}' level={level} not found"); return; }
@@ -7172,6 +5843,14 @@ public static class PatchBossLaunchMatch
             team.relics = new Il2CppSystem.Collections.Generic.List<Rogue.Relic>();
         team.relics.Add(relic);
         Plugin.Log.LogInfo($"[Remix] Gave relic '{relicName}'");
+    }
+
+    internal static void SetJerseyColors(TeamColorsData colors, Color primary, Color secondary, Color tertiary)
+    {
+        if (colors == null) return;
+        colors.jerseyScheme.primaryColor = primary;
+        colors.jerseyScheme.secondaryColor = secondary;
+        colors.jerseyScheme.tertiaryColor = tertiary;
     }
 
     internal static void SetColors(TeamColorsData colors, Color primary, Color secondary, Color tertiary)
@@ -7195,162 +5874,26 @@ public static class PatchBossLaunchMatch
     // work already done at map generation isn't repeated at launch. Map generation
     // configures nodes ahead of the player, which is why the game index is a
     // parameter instead of being read from the live Plugin.GamesPlayed.
-    internal static void RemixTeamForGame(TeamData team, int boost, int gameNum)
+    internal static bool RemixTeamForGame(TeamData team, int gameNum)
     {
-        if (Plugin.IsDefaultMode) return; // Default mode = no team modifications
-        EnsureRepos();
-        ResetClearedPlayers();
-        if (boost > 0) BoostTeam(team, boost);
+        // An absent opponent is a native match, never an implicit example team.
+        if (team == null || Plugin.IsDefaultMode || gameNum < 0 ||
+            gameNum >= Plugin.ConfigTeams.Count || Plugin.ConfigTeams[gameNum] == null)
+            return false;
 
-        string origName = team.teamName ?? "";
-
-        Plugin.Log.LogInfo($"[Remix] Game #{gameNum + 1} (base team '{origName}')");
-
-        bool configApplied = false;
-        if (gameNum < Plugin.ConfigTeams.Count && Plugin.ConfigTeams[gameNum] != null)
+        try
         {
-            try
-            {
-                ApplyTeamFromConfig(team, Plugin.ConfigTeams[gameNum]);
-                configApplied = true;
-            }
-            catch (Exception ex)
-            {
-                Plugin.Log.LogError($"[Config] Failed to apply team {gameNum + 1}: {ex.Message}");
-                Plugin.Log.LogWarning("[Config] Falling back to hardcoded team");
-            }
+            EnsureRepos();
+            ResetClearedPlayers();
+            Plugin.Log.LogInfo($"[Campaign] Applying authored opponent for game #{gameNum + 1} (base team '{team.teamName}')");
+            ApplyTeamFromConfig(team, Plugin.ConfigTeams[gameNum]);
+            return true;
         }
-        if (!configApplied)
+        catch (Exception ex)
         {
-            // Hardcoded fallback (original 32 NHL teams)
-            switch (gameNum)
-            {
-                case 0:  RemixGreasyLettuce(team, 0); break;
-                case 1:  RemixTeamCanada(team, 0); break;
-                case 2:  RemixCrusaders(team, 0); break;
-                case 3:  RemixPrisoners(team, 1); break;
-                case 4:  RemixShootingStars(team, 0); break;
-                case 5:  RemixGreasyLettuce(team, 2); break;
-                case 6:  RemixTopCheese(team, 0); break;
-                case 7:  RemixCalaveras(team, 2); break;
-                case 8:  RemixMeatballs(team, 0); break;
-                case 9:  RemixTopCheese(team, 1); break;
-                case 10: RemixMountaineers(team, 1); break;
-                case 11: RemixPrisoners(team, 2); break;
-                case 12: RemixPrincess(team, 0); break;
-                case 13: RemixShootingStars(team, 1); break;
-                case 14: RemixHockeyFC(team, 1); break;
-                case 15: RemixGreasyLettuce(team, 1); break;
-                case 16: RemixOfficials(team, 0); break;
-                case 17: RemixTopCheese(team, 2); break;
-                case 18: RemixMeatballs(team, 2); break;
-                case 19: RemixCalaveras(team, 0); break;
-                case 20: RemixTycoons(team, 0); break;
-                case 21: RemixHockeyFC(team, 0); break;
-                case 22: RemixCalaveras(team, 1); break;
-                case 23: RemixCrusaders(team, 1); break;
-                case 24: RemixMeatballs(team, 1); break;
-                case 25: RemixMountaineers(team, 0); break;
-                case 26: RemixOfficials(team, 1); break;
-                case 27: RemixOfficials(team, 2); break;
-                case 28: RemixPrisoners(team, 0); break;
-                case 29: RemixCupCultists(team, 0); break;
-                case 30: RemixCupCultists(team, 1); break;
-                case 31: RemixGolfers(team, 0); break;
-                case 32: RemixGolfers(team, 0); break;
-                default: RemixGeneric(team); break;
-            }
+            Plugin.Log.LogError($"[Config] Failed to apply team {gameNum + 1}: {ex.Message}. No substitute team will be applied.");
+            return false;
         }
-
-        // If this team landed on the Tycoons slot (10 forwards, 2 lines), set up line 2
-        if (origName.Contains("Tycoon") && team.forwards != null && team.forwards.Count >= 10)
-        {
-            Plugin.Log.LogInfo($"[Remix] Tycoons slot detected — setting up line 2 for game #{gameNum + 1}");
-            var fl = team.forwards;
-
-            // Copy jerseys/skins from line 1 to line 2
-            for (int li2 = 5; li2 < fl.Count && li2 <= 9; li2++)
-            {
-                if (fl[li2] == null || fl[li2 - 5] == null) continue;
-                var src = fl[li2 - 5];
-                fl[li2].headSkin = src.headSkin;
-                fl[li2].numberSkin = src.numberSkin;
-                fl[li2].logoSkin = src.logoSkin;
-                fl[li2].helmetSkin = src.helmetSkin;
-                fl[li2].helmetAwaySkin = src.helmetAwaySkin;
-                fl[li2].stickSkin = src.stickSkin;
-                fl[li2].bodySkin = src.bodySkin;
-                fl[li2].bicepSkin = src.bicepSkin;
-                fl[li2].gloveSkin = src.gloveSkin;
-                fl[li2].skateSkin = src.skateSkin;
-                fl[li2].pantsSkin = src.pantsSkin;
-                fl[li2].bodyAwaySkin = src.bodyAwaySkin;
-                fl[li2].colorSchemes = src.colorSchemes;
-            }
-
-            // Line 2 rosters for Act 3 teams
-            if (gameNum == 30) // Carolina Hurricanes
-            {
-                if (fl.Count > 5 && fl[5] != null) { fl[5].firstName = "Jack"; fl[5].lastName = "Roslovic"; fl[5].speed = 130; fl[5].shotPower = 126; fl[5].shotAccuracy = 128; fl[5].checking = 110; fl[5].skaterSize = Data.SkaterSize.Medium; GiveTalentToPlayer(fl[5], "Cherry Picker"); GiveTalentToPlayer(fl[5], "Speed Transfer"); }
-                if (fl.Count > 6 && fl[6] != null) { fl[6].firstName = "Jordan"; fl[6].lastName = "Martinook"; fl[6].speed = 126; fl[6].shotPower = 118; fl[6].shotAccuracy = 116; fl[6].checking = 124; fl[6].skaterSize = Data.SkaterSize.Big; GiveTalentToPlayer(fl[6], "Enraged"); GiveTalentToPlayer(fl[6], "Porcelain Hammer"); }
-                if (fl.Count > 7 && fl[7] != null) { fl[7].firstName = "Jesperi"; fl[7].lastName = "Kotkaniemi"; fl[7].speed = 124; fl[7].shotPower = 122; fl[7].shotAccuracy = 120; fl[7].checking = 116; fl[7].skaterSize = Data.SkaterSize.Big; GiveTalentToPlayer(fl[7], "Flawless Feeder"); GiveTalentToPlayer(fl[7], "Power Transfer"); }
-                if (fl.Count > 8 && fl[8] != null) { fl[8].firstName = "Sean"; fl[8].lastName = "Walker"; fl[8].speed = 128; fl[8].shotPower = 118; fl[8].shotAccuracy = 120; fl[8].checking = 118; fl[8].skaterSize = Data.SkaterSize.Medium; GiveTalentToPlayer(fl[8], "Blue Line Boost"); GiveTalentToPlayer(fl[8], "Board Bumper"); }
-                if (fl.Count > 9 && fl[9] != null) { fl[9].firstName = "Shayne"; fl[9].lastName = "Gostisbehere"; fl[9].speed = 122; fl[9].shotPower = 126; fl[9].shotAccuracy = 124; fl[9].checking = 108; fl[9].skaterSize = Data.SkaterSize.Medium; GiveTalentToPlayer(fl[9], "Point Sniper"); GiveTalentToPlayer(fl[9], "Slapshot Slowmo"); }
-                Plugin.Log.LogInfo("[Remix] Carolina Hurricanes line 2 applied");
-            }
-            else if (gameNum == 31) // Colorado Avalanche
-            {
-                if (fl.Count > 5 && fl[5] != null) { fl[5].firstName = "Artturi"; fl[5].lastName = "Lehkonen"; fl[5].speed = 200; fl[5].shotPower = 196; fl[5].shotAccuracy = 198; fl[5].checking = 190; fl[5].skaterSize = Data.SkaterSize.Medium; GiveTalentToPlayer(fl[5], "Cherry Picker"); GiveTalentToPlayer(fl[5], "Puck Rocket"); }
-                if (fl.Count > 6 && fl[6] != null) { fl[6].firstName = "Valeri"; fl[6].lastName = "Nichushkin"; fl[6].speed = 196; fl[6].shotPower = 206; fl[6].shotAccuracy = 200; fl[6].checking = 210; fl[6].skaterSize = Data.SkaterSize.ExtraBig; GiveTalentToPlayer(fl[6], "Enraged"); GiveTalentToPlayer(fl[6], "Onepunch"); }
-                if (fl.Count > 7 && fl[7] != null) { fl[7].firstName = "Casey"; fl[7].lastName = "Mittelstadt"; fl[7].speed = 198; fl[7].shotPower = 200; fl[7].shotAccuracy = 202; fl[7].checking = 194; fl[7].skaterSize = Data.SkaterSize.Medium; GiveTalentToPlayer(fl[7], "Flawless Feeder (Level 2)"); GiveTalentToPlayer(fl[7], "Power Transfer"); }
-                if (fl.Count > 8 && fl[8] != null) { fl[8].firstName = "Samuel"; fl[8].lastName = "Girard"; fl[8].speed = 206; fl[8].shotPower = 192; fl[8].shotAccuracy = 196; fl[8].checking = 186; fl[8].skaterSize = Data.SkaterSize.Small; GiveTalentToPlayer(fl[8], "Blue Line Boost"); GiveTalentToPlayer(fl[8], "Sonic Interception"); }
-                if (fl.Count > 9 && fl[9] != null) { fl[9].firstName = "Josh"; fl[9].lastName = "Manson"; fl[9].speed = 192; fl[9].shotPower = 198; fl[9].shotAccuracy = 194; fl[9].checking = 208; fl[9].skaterSize = Data.SkaterSize.ExtraBig; GiveTalentToPlayer(fl[9], "Point Sniper"); GiveTalentToPlayer(fl[9], "Spiked Armor"); }
-                Plugin.Log.LogInfo("[Remix] Colorado Avalanche line 2 applied");
-            }
-            else
-            {
-                // Fallback: generic line 2 — copy line 1 stats at 90%
-                for (int li2 = 5; li2 < fl.Count && li2 <= 9; li2++)
-                {
-                    if (fl[li2] == null || fl[li2 - 5] == null) continue;
-                    var src2 = fl[li2 - 5];
-                    fl[li2].firstName = src2.firstName; fl[li2].lastName = src2.lastName + " Jr";
-                    fl[li2].speed = (int)(src2.speed * 0.9f);
-                    fl[li2].shotPower = (int)(src2.shotPower * 0.9f);
-                    fl[li2].shotAccuracy = (int)(src2.shotAccuracy * 0.9f);
-                    fl[li2].checking = (int)(src2.checking * 0.9f);
-                    fl[li2].skaterSize = src2.skaterSize;
-                }
-                Plugin.Log.LogInfo("[Remix] Generic line 2 applied (90% of line 1)");
-            }
-
-            // Update Lineup entries
-            if (team.lines != null)
-            {
-                for (int li = 0; li < team.lines.Count; li++)
-                {
-                    var lineup = team.lines[li];
-                    if (lineup == null) continue;
-                    int offset = li * 5;
-                    if (fl.Count > offset + 0 && fl[offset + 0] != null) lineup.leftWinger = fl[offset + 0].id;
-                    if (fl.Count > offset + 1 && fl[offset + 1] != null) lineup.rightWinger = fl[offset + 1].id;
-                    if (fl.Count > offset + 2 && fl[offset + 2] != null) lineup.center = fl[offset + 2].id;
-                    if (fl.Count > offset + 3 && fl[offset + 3] != null) lineup.leftDefensemen = fl[offset + 3].id;
-                    if (fl.Count > offset + 4 && fl[offset + 4] != null) lineup.rightDefensemen = fl[offset + 4].id;
-                    Plugin.Log.LogInfo($"  [Lineup] Line {li+1}: LW={lineup.leftWinger} RW={lineup.rightWinger} C={lineup.center} LD={lineup.leftDefensemen} RD={lineup.rightDefensemen}");
-                }
-            }
-        }
-
-        // Log the remixed roster
-        var forwards = team.forwards;
-        if (forwards != null)
-            for (int i = 0; i < forwards.Count; i++)
-            {
-                var f = forwards[i];
-                if (f == null) continue;
-                Plugin.Log.LogInfo($"  [Remix] '{f.firstName} {f.lastName}' SP={f.shotPower} SPD={f.speed} CHK={f.checking} ACC={f.shotAccuracy}");
-            }
     }
 
     // Custom logo PNGs the user drops into <persistentDataPath>/CustomLogos/.
@@ -7371,50 +5914,6 @@ public static class PatchBossLaunchMatch
 
     private static string NormLogo(string s) =>
         (s ?? "").Replace(" ", "").Replace("_", "").Replace(".png", "").ToLowerInvariant();
-
-    // One-time dump of what the game's logo repository actually holds.
-    // GetLogo() silently falls back to its defaultLogo for ids it doesn't know
-    // (that's the 'Teams_TapetoTape' we kept seeing), so a miss on its own says
-    // nothing about WHY. This lists every sprite in _allLogos — baked
-    // logoSprites plus the custom PNGs the game loads from CustomLogos/ — with
-    // the exact name form, which is the key GetLogo matches on.
-    private static bool _logoRepoDumped;
-    internal static void DumpLogoRepository(Tape2Tape.Customization.TeamAssetsRepositoryScriptableObject repo)
-    {
-        if (repo == null || _logoRepoDumped) return;
-        _logoRepoDumped = true;
-        try
-        {
-            var all = repo.GetAllLogos();
-            Plugin.Log.LogInfo($"[LogoDump] GetAllLogos() -> {(all != null ? all.Length : -1)} sprite(s)");
-            if (all != null)
-                for (int i = 0; i < all.Length; i++)
-                {
-                    string nm = "null"; int w = 0, h = 0;
-                    try
-                    {
-                        var sp = all[i];
-                        if (sp != null)
-                        {
-                            nm = sp.name;
-                            var t = sp.texture;
-                            if (t != null) { w = t.width; h = t.height; }
-                        }
-                    }
-                    catch { }
-                    Plugin.Log.LogInfo($"[LogoDump]   [{i}] '{nm}' {w}x{h}");
-                }
-            // What the game SHOULD have picked up, for comparison against the above.
-            try
-            {
-                string dir = Path.Combine(UnityEngine.Application.persistentDataPath, "CustomLogos");
-                if (Directory.Exists(dir))
-                    Plugin.Log.LogInfo($"[LogoDump] CustomLogos/ on disk: {Directory.GetFiles(dir, "*.png").Length} png");
-            }
-            catch { }
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[LogoDump] failed: {ex.Message}"); }
-    }
 
     // The game's own loader registers everything in CustomLogos/ under
     // "custom_<file name>.png" — 'custom_Canucks (25-26).png', not
@@ -7460,7 +5959,6 @@ public static class PatchBossLaunchMatch
                 // Nothing matched under any spelling — dump what the repository
                 // actually holds so the mismatch is diagnosable from the log.
                 Plugin.Log.LogWarning($"[CustomLogo] No repository logo for '{logoId}' (tried bare + custom_ form)");
-                DumpLogoRepository(repo);
             }
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[CustomLogo] GetNativeLogo '{logoId}': {ex.Message}"); }
@@ -7474,7 +5972,9 @@ public static class PatchBossLaunchMatch
         if (_customLogoCache.TryGetValue(key, out var cached)) return cached;
 
         // 1) Prefer the game's OWN recognized logo (so jerseys map it too).
-        var native = GetNativeLogo(key);
+        string selectedFile = CampaignCore.LogoFiles.Resolve(Plugin.ModContentRoot,
+            Path.Combine(UnityEngine.Application.persistentDataPath, "CustomLogos"), key);
+        var native = selectedFile == null && !Path.IsPathRooted(key) ? GetNativeLogo(key) : null;
         if (native != null) { _customLogoCache[key] = native; return native; }
 
         UnityEngine.Sprite sprite = null;
@@ -7482,7 +5982,7 @@ public static class PatchBossLaunchMatch
         {
             string dir = Path.Combine(UnityEngine.Application.persistentDataPath, "CustomLogos");
             string fileName = key.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? key : key + ".png";
-            string path = Path.Combine(dir, fileName);
+            string path = selectedFile ?? Path.Combine(dir, fileName);
             if (!File.Exists(path))
             {
                 // Try the sanitized form the dumper writes (invalid chars -> '_').
@@ -7515,18 +6015,11 @@ public static class PatchBossLaunchMatch
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[CustomLogo] '{name}': {ex.Message}"); }
 
-        _customLogoCache[key] = sprite;   // cache misses too (null) to avoid re-tries
+        if (sprite != null) _customLogoCache[key] = sprite;
         return sprite;
     }
 
-    // Make a team's jerseys show a CUSTOM logo the way the in-game team editor
-    // does: point every skater's logoSkin at the game's custom-logo Spine slot
-    // (Team_Logo/Custom_R for righties, _L for lefties). The game's skin/Spine
-    // pipeline (ApplySkin/SetLogo + SetLogoSkinUVsForCustomLogo) then UV-maps
-    // the team's custom logo texture (team.alternateBigLogo) onto that slot.
-    // Without flipping logoSkin to the custom slot the crest keeps its default
-    // (team-specific) slot and ignores the custom texture — which is why setting
-    // team.logo/alternateBigLogo alone left jerseys unchanged.
+    // Team identity stays on TeamData; only compatible player jerseys receive it.
     internal static void ApplyCustomLogoSkinToSkaters(TeamData team)
     {
         if (team == null) return;
@@ -7538,11 +6031,11 @@ public static class PatchBossLaunchMatch
                 for (int i = 0; i < fwds.Count; i++)
                 {
                     var f = fwds[i];
-                    if (f == null) continue;
+                    if (f == null || AppearanceDecalRuntime.ClearIncompatibleLogo(f)) continue;
                     bool lefty = false; try { lefty = f.isLefty; } catch { }
                     try { f.logoSkin = lefty ? "Team_Logo/Custom_L" : "Team_Logo/Custom_R"; n++; } catch { }
                 }
-            if (team.goalie != null)
+            if (team.goalie != null && !AppearanceDecalRuntime.ClearIncompatibleLogo(team.goalie))
                 try { team.goalie.logoSkin = "Team_Logo/Custom_R"; n++; } catch { }
             Plugin.Log.LogInfo($"[CustomLogo] Set custom logoSkin on {n} skater(s) of '{team.teamName}'");
         }
@@ -7566,143 +6059,15 @@ public static class PatchBossLaunchMatch
         return null;
     }
 
-    // Helper: Full NHL team swap — logo, colors, players from in-game team, then rename
-    // Public wrapper for access from other patch classes
-    internal static void SwapToNHLTeamPublic(TeamData team, string nhlTeamName, string displayName, string city,
-        string[] playerNames, string goalieName, string[] talents, string[] relics)
-    {
-        SwapToNHLTeam(team, nhlTeamName, displayName, city, playerNames, goalieName, talents, relics);
-    }
-
-    private static void SwapToNHLTeam(TeamData team, string nhlTeamName, string displayName, string city,
-        string[] playerNames, string goalieName, string[] talents, string[] relics)
-    {
-        team.teamName = displayName;
-        team.city = city;
-        // Disable soccer mode (Hockey FC slot)
-        try
-        {
-            var prop = team.GetType().GetProperty("IsSoccerTeam");
-            if (prop != null) prop.SetValue(team, false);
-            var field = team.GetType().GetField("isSoccer");
-            if (field != null) field.SetValue(team, false);
-        }
-        catch {}
-        Plugin.Log.LogInfo($"[Remix] === {displayName} ===");
-
-        var nhlTeam = FindTeamByName(nhlTeamName);
-        if (nhlTeam != null)
-        {
-            team.logo = nhlTeam.logo;
-            team.alternateBigLogo = nhlTeam.alternateBigLogo;
-            if (nhlTeam.homeColors != null) team.homeColors.CopyInPlace(nhlTeam.homeColors);
-            if (nhlTeam.awayColors != null) team.awayColors.CopyInPlace(nhlTeam.awayColors);
-            team.primaryColorPlayer = nhlTeam.primaryColorPlayer;
-            team.secondaryColorPlayer = nhlTeam.secondaryColorPlayer;
-            // Copy nickname (abbreviation shown in-game, e.g. "VAN", "TOR")
-            if (nhlTeam.nickname != null) team.nickname = nhlTeam.nickname;
-
-            // Copy players
-            var srcFwd = nhlTeam.forwards;
-            var dstFwd = team.forwards;
-            if (srcFwd != null && dstFwd != null)
-            {
-                int count = Math.Min(srcFwd.Count, dstFwd.Count);
-                for (int i = 0; i < count; i++)
-                    if (srcFwd[i] != null) dstFwd[i] = srcFwd[i];
-            }
-            if (nhlTeam.goalie != null && team.goalie != null)
-                CopyGoalieData(nhlTeam.goalie, team.goalie);
-            // Clear soccer player flag on all forwards
-            if (team.forwards != null)
-                for (int i = 0; i < team.forwards.Count; i++)
-                {
-                    try
-                    {
-                        var fwd = team.forwards[i];
-                        if (fwd == null) continue;
-                        var fp = fwd.GetType().GetField("isSoccerPlayer");
-                        if (fp != null) fp.SetValue(fwd, false);
-                    }
-                    catch {}
-                }
-            Plugin.Log.LogInfo($"[Remix] Copied {nhlTeamName} players/logo/colors (+ bench)");
-        }
-        else
-            Plugin.Log.LogWarning($"[Remix] {nhlTeamName} not found!");
-
-        // NUKE all existing talents, abilities, and relics on the team
-        var fwdsClear = team.forwards;
-        if (fwdsClear != null)
-        {
-            for (int i = 0; i < fwdsClear.Count; i++)
-            {
-                var p = fwdsClear[i];
-                if (p == null) continue;
-                // Try every possible way to clear
-                try { if (p.powerups != null) { for (int j = p.powerups.Count - 1; j >= 0; j--) p.powerups.RemoveAt(j); } } catch {}
-                try { p.powerups = new Il2CppSystem.Collections.Generic.List<Rogue.Talent>(); } catch {}
-                try { p.ability = null; } catch {}
-                Plugin.Log.LogInfo($"  [NUKE] {p.firstName} {p.lastName}: talents={p.powerups?.Count ?? -1} ability={p.ability?.name ?? "null"}");
-            }
-        }
-        if (team.goalie != null)
-        {
-            var gl = team.goalie;
-            try { if (gl.powerups != null) { for (int j = gl.powerups.Count - 1; j >= 0; j--) gl.powerups.RemoveAt(j); } } catch {}
-            try { gl.powerups = new Il2CppSystem.Collections.Generic.List<Rogue.Talent>(); } catch {}
-            Plugin.Log.LogInfo($"  [NUKE] Goalie {gl.firstName} {gl.lastName}: talents={gl.powerups?.Count ?? -1}");
-        }
-
-        // Rename players: "First Last" format, split on space
-        var forwards = team.forwards;
-        if (forwards != null && playerNames != null)
-        {
-            for (int i = 0; i < Math.Min(forwards.Count, playerNames.Length); i++)
-            {
-                if (forwards[i] == null || playerNames[i] == null) continue;
-                var parts = playerNames[i].Split(' ', 2);
-                forwards[i].firstName = parts[0];
-                forwards[i].lastName = parts.Length > 1 ? parts[1] : "";
-            }
-        }
-        if (team.goalie != null && goalieName != null)
-        {
-            var parts = goalieName.Split(' ', 2);
-            team.goalie.firstName = parts[0];
-            team.goalie.lastName = parts.Length > 1 ? parts[1] : "";
-        }
-
-        // Per-player talents
-        if (forwards != null && talents != null)
-        {
-            for (int i = 0; i < Math.Min(forwards.Count, talents.Length); i++)
-                if (talents[i] != null) GiveTalentToPlayer(forwards[i], talents[i]);
-        }
-
-        // Wipe existing relics item by item then add ours
-        if (team.relics != null)
-        {
-            int relicsBefore = team.relics.Count;
-            for (int i = team.relics.Count - 1; i >= 0; i--)
-            {
-                try { team.relics.RemoveAt(i); } catch {}
-            }
-            try { team.relics.Clear(); } catch {}
-            Plugin.Log.LogInfo($"  [Clear] Relics wiped ({relicsBefore} -> {team.relics.Count})");
-        }
-        else
-        {
-            team.relics = new Il2CppSystem.Collections.Generic.List<Rogue.Relic>();
-        }
-        if (relics != null)
-            foreach (var r in relics) GiveRelic(team, r);
-    }
 
     // ===== ABILITY HELPERS =====
 
     internal static Rogue.Ability FindAbility(string name)
     {
+        var all = UnityEngine.Resources.FindObjectsOfTypeAll<Rogue.Ability>();
+        var exact = all.FirstOrDefault(a => a != null && !a.name.EndsWith("(Clone)") &&
+            (string.Equals(a.id, name, StringComparison.OrdinalIgnoreCase) || string.Equals(a.name, name, StringComparison.OrdinalIgnoreCase)));
+        if (exact != null) return exact;
         var repos = UnityEngine.Resources.FindObjectsOfTypeAll<AbilityRepository>();
         var repo = repos != null && repos.Length > 0 ? repos[0] : null;
         if (repo?.abilities == null) return null;
@@ -7721,7 +6086,7 @@ public static class PatchBossLaunchMatch
         return null;
     }
 
-    private static void SetPlayerAbility(ForwardData f, string abilityName)
+    internal static void SetPlayerAbility(ForwardData f, string abilityName)
     {
         if (f == null) return;
         var ability = FindAbility(abilityName);
@@ -8063,28 +6428,7 @@ public static class PatchBossLaunchMatch
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[Materialize] Goalie write error: {ex.Message}"); }
 
-        // Also copy to library
-        try
-        {
-            string libDir = Path.Combine(Plugin.ModContentRoot, "library", "teams", team.teamName);
-            if (!Directory.Exists(libDir))
-            {
-                CopyDirectory(teamDir, libDir);
-                Plugin.Log.LogInfo($"[Materialize] Copied to library: {libDir}");
-            }
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[Materialize] Library copy failed: {ex.Message}"); }
-
         Plugin.Log.LogInfo($"[Materialize] Team '{team.teamName}' written to disk ({teamDir})");
-    }
-
-    private static void CopyDirectory(string src, string dst)
-    {
-        Directory.CreateDirectory(dst);
-        foreach (var file in Directory.GetFiles(src))
-            File.Copy(file, Path.Combine(dst, Path.GetFileName(file)), true);
-        foreach (var dir in Directory.GetDirectories(src))
-            CopyDirectory(dir, Path.Combine(dst, Path.GetFileName(dir)));
     }
 
     // ── REMOVED 2026-08-01: `Import Team = PLAYER` (mirror match) ──────────────
@@ -8104,6 +6448,17 @@ public static class PatchBossLaunchMatch
     // [DUMP/MatchInit-PRE(native)] hook, whose `team` argument is the real squad),
     // and apply the mirror there rather than at map generation or preview.
     internal static void ApplyTeamFromConfig(TeamData team, TeamConfig cfg)
+    {
+        OpponentRosterInheritance.PreserveNativeHelmetDefaults(team, cfg);
+        CustomTeamRules.Prepare(team, cfg);
+        ApplyTeamContents(team, cfg);
+        OpponentLineBehavior.Apply(team, cfg);
+        OpponentMatch.Apply(team, cfg);
+        CustomTeamRules.ExportLogo(team, cfg);
+        team.ResetRelicCache();
+    }
+
+    private static void ApplyTeamContents(TeamData team, TeamConfig cfg)
     {
         Plugin.Log.LogInfo($"[Config] Applying team: '{cfg.Name}' (import={cfg.IsImport})");
 
@@ -8318,7 +6673,7 @@ public static class PatchBossLaunchMatch
         else if (string.IsNullOrEmpty(team.nickname))
             team.nickname = !string.IsNullOrEmpty(Plugin.DefaultTeam.Abbreviation) ? Plugin.DefaultTeam.Abbreviation : "CUS";
 
-        // If no colors and no logo source, try defaults.txt then hardcoded
+        // Legacy authored defaults may supply colors; otherwise retain the native look.
         if (cfg.JerseyPrimary == null && cfg.JerseySecondary == null && cfg.JerseyAccent == null
             && string.IsNullOrEmpty(cfg.LogoFrom) && string.IsNullOrEmpty(cfg.ImportTeam))
         {
@@ -8358,23 +6713,13 @@ public static class PatchBossLaunchMatch
                 else
                     SetColors(team.awayColors, Color.white, defP, defS);
             }
-            else
-            {
-                // Hardcoded fallback
-                var defP = new Color(0.3f, 0.3f, 0.6f);
-                var defS = new Color(0.2f, 0.2f, 0.2f);
-                SetColors(team.homeColors, defP, defS, Color.white);
-                SetColors(team.awayColors, Color.white, defP, defS);
-                team.primaryColorPlayer = defP;
-                team.secondaryColorPlayer = defS;
-            }
         }
         if (cfg.JerseyPrimary != null || cfg.JerseySecondary != null || cfg.JerseyAccent != null)
         {
             var p = cfg.JerseyPrimary != null ? new Color(cfg.JerseyPrimary[0]/255f, cfg.JerseyPrimary[1]/255f, cfg.JerseyPrimary[2]/255f) : team.primaryColorPlayer;
             var s = cfg.JerseySecondary != null ? new Color(cfg.JerseySecondary[0]/255f, cfg.JerseySecondary[1]/255f, cfg.JerseySecondary[2]/255f) : team.secondaryColorPlayer;
             var a = cfg.JerseyAccent != null ? new Color(cfg.JerseyAccent[0]/255f, cfg.JerseyAccent[1]/255f, cfg.JerseyAccent[2]/255f) : Color.white;
-            SetColors(team.homeColors, p, s, a);
+            SetJerseyColors(team.homeColors, p, s, a);
             team.primaryColorPlayer = p;
             team.secondaryColorPlayer = s;
         }
@@ -8385,7 +6730,7 @@ public static class PatchBossLaunchMatch
             var ap = cfg.AwayPrimary != null ? new Color(cfg.AwayPrimary[0]/255f, cfg.AwayPrimary[1]/255f, cfg.AwayPrimary[2]/255f) : Color.white;
             var as2 = cfg.AwaySecondary != null ? new Color(cfg.AwaySecondary[0]/255f, cfg.AwaySecondary[1]/255f, cfg.AwaySecondary[2]/255f) : team.primaryColorPlayer;
             var aa = cfg.AwayAccent != null ? new Color(cfg.AwayAccent[0]/255f, cfg.AwayAccent[1]/255f, cfg.AwayAccent[2]/255f) : Color.white;
-            SetColors(team.awayColors, ap, as2, aa);
+            SetJerseyColors(team.awayColors, ap, as2, aa);
         }
 
         // Number colors
@@ -8403,7 +6748,8 @@ public static class PatchBossLaunchMatch
             try { team.tertiaryColorTransition = new Color(cfg.TransitionTertiary[0]/255f, cfg.TransitionTertiary[1]/255f, cfg.TransitionTertiary[2]/255f); } catch {}
 
         // Bench
-        if (cfg.BenchSize >= 0) team.benchSize = cfg.BenchSize;
+        if (CampaignCore.SquadTemplatePolicy.Identity(cfg.SquadTemplate) == "noeffects" && !SquadStartingScreens.Enabled(cfg, "bench_screen")) team.benchSize = 0;
+        else if (cfg.BenchSize >= 0) team.benchSize = cfg.BenchSize;
         if (!string.IsNullOrEmpty(cfg.BenchHead)) try { team.vanillaBenchPlayerHead = cfg.BenchHead; } catch {}
 
         // Nuke existing talents/abilities/relics
@@ -8412,6 +6758,7 @@ public static class PatchBossLaunchMatch
         {
             for (int i = 0; i < fwds.Count; i++)
             {
+                if (!OpponentRosterInheritance.ApplyAuthoredPlayer(cfg, i)) continue;
                 var f = fwds[i];
                 if (f == null) continue;
                 try { f.powerups = new Il2CppSystem.Collections.Generic.List<Rogue.Talent>(); } catch {}
@@ -8428,6 +6775,7 @@ public static class PatchBossLaunchMatch
         if (fwds != null)
             for (int i = 0; i < fwds.Count; i++)
             {
+                if (!OpponentRosterInheritance.ApplyAuthoredPlayer(cfg, i)) continue;
                 try { var fp = fwds[i]?.GetType().GetField("isSoccerPlayer"); if (fp != null) fp.SetValue(fwds[i], false); } catch {}
             }
 
@@ -8493,7 +6841,9 @@ public static class PatchBossLaunchMatch
         // starter so the whole roster reads as THIS team. Each keeps its own id,
         // so any team.lines[] references stay valid. (isSoccerPlayer on every
         // forward was already cleared above.)
-        if (fwds != null && fwds.Count > 5)
+        // Native-copy reserves are intentional parts of that opponent's roster.
+        // Explicit Line 2 slots are applied by OpponentLineBehavior afterward.
+        if (OpponentRosterInheritance.NeutralizeExtraPlayers(cfg) && fwds != null && fwds.Count > 5)
         {
             for (int i = 5; i < fwds.Count; i++)
             {
@@ -8559,6 +6909,7 @@ public static class PatchBossLaunchMatch
                     Plugin.Log.LogWarning($"[Config] Goalie '{cfg.Goalie.ImportPlayer}' not found for import");
             }
             ApplyGoalieConfig(team.goalie, cfg.Goalie, useAway: true);
+            team.goalie.numberFormat = (NumberFormat)(cfg.Goalie.NumberFormat >= 0 ? cfg.Goalie.NumberFormat : cfg.Uniform.NumberFormat);
             // Opponent = visitor → away kit (see forward call above).
             ApplyTeamEquipmentColorsToGoalie(team.goalie, team, cfg, useAway: true);
         }
@@ -8608,6 +6959,8 @@ public static class PatchBossLaunchMatch
                 gg.butterflySpeed = (int)(gg.butterflySpeed * s);
                 gg.controlSkill = (int)(gg.controlSkill * s);
                 gg.recoverySkill = (int)(gg.recoverySkill * s);
+                gg.passPower = (int)(gg.passPower * s);
+                gg.shotPower = (int)(gg.shotPower * s);
                 gg.pokecheckSkill = (int)(gg.pokecheckSkill * s);
                 gg.depth = (int)(gg.depth * s);
             }
@@ -8616,272 +6969,24 @@ public static class PatchBossLaunchMatch
         catch (Exception ex) { Plugin.Log.LogWarning($"[Config] ApplyStatScale: {ex.Message}"); }
     }
 
-    internal static void SetSchemeColor(ColorScheme scheme, int[] primary, int[] secondary, int[] tertiary)
-    {
-        if (scheme == null) return;
-        if (primary != null) scheme.primaryColor = new Color(primary[0]/255f, primary[1]/255f, primary[2]/255f);
-        if (secondary != null) scheme.secondaryColor = new Color(secondary[0]/255f, secondary[1]/255f, secondary[2]/255f);
-        if (tertiary != null) scheme.tertiaryColor = new Color(tertiary[0]/255f, tertiary[1]/255f, tertiary[2]/255f);
-    }
-
     internal static void ApplyPlayerColorOverrides(ForwardData f, PlayerConfig pc, bool useAway = false)
-    {
-        if (f == null || pc == null) return;
-
-        // Kit-aware pick: when the player's team wears its AWAY jersey the away
-        // override wins, falling back to the home override so away-only or
-        // home-only configs both behave sensibly.
-        int[] Pick(int[] home, int[] away) => useAway ? (away ?? home) : home;
-
-        int[] jerseyP = Pick(pc.JerseyColor, pc.JerseyColorAway);
-        int[] jerseyS = Pick(pc.JerseySecondaryColor, pc.JerseySecondaryColorAway);
-        int[] jerseyA = Pick(pc.JerseyAccentColor, pc.JerseyAccentColorAway);
-        int[] glovesP = Pick(pc.GlovesColor, pc.GlovesColorAway);
-        int[] glovesS = Pick(pc.GlovesSecondaryColor, pc.GlovesSecondaryColorAway);
-        int[] glovesT = Pick(pc.GlovesTertiaryColor, pc.GlovesTertiaryColorAway);
-        int[] helmetP = Pick(pc.HelmetColor, pc.HelmetColorAway);
-        int[] helmetS = Pick(pc.HelmetSecondaryColor, pc.HelmetSecondaryColorAway);
-        int[] helmetT = Pick(pc.HelmetTertiaryColor, pc.HelmetTertiaryColorAway);
-        int[] pantsP  = Pick(pc.PantsColor, pc.PantsColorAway);
-        int[] pantsS  = Pick(pc.PantsSecondaryColor, pc.PantsSecondaryColorAway);
-        int[] pantsT  = Pick(pc.PantsTertiaryColor, pc.PantsTertiaryColorAway);
-        int[] skates  = Pick(pc.SkatesColor, pc.SkatesColorAway);
-        int[] blade   = Pick(pc.BladeColor, pc.BladeColorAway);
-        int[] laces   = Pick(pc.LacesColor, pc.LacesColorAway);
-        int[] bicep   = Pick(pc.BicepColor, pc.BicepColorAway);
-        int[] number  = Pick(pc.NumberColor, pc.NumberColorAway);
-        int[] numberS = Pick(pc.NumberSecondaryColor, pc.NumberSecondaryColorAway);
-        int[] socksP  = Pick(pc.SocksColor, pc.SocksColorAway);
-        int[] socksS  = Pick(pc.SocksSecondaryColor, pc.SocksSecondaryColorAway);
-        int[] socksT  = Pick(pc.SocksTertiaryColor, pc.SocksTertiaryColorAway);
-
-        bool hasAnyColor = jerseyP != null || jerseyS != null || jerseyA != null ||
-            glovesP != null || glovesS != null || glovesT != null ||
-            helmetP != null || helmetS != null || helmetT != null ||
-            pantsP != null || pantsS != null || pantsT != null ||
-            skates != null || blade != null || laces != null ||
-            bicep != null || socksP != null || socksS != null || socksT != null;
-        if (!hasAnyColor && number == null && numberS == null) return;
-
-        try
-        {
-            if (hasAnyColor)
-            {
-                if (f.colorSchemes == null)
-                {
-                    var teamSels = UnityEngine.Resources.FindObjectsOfTypeAll<TeamSelection>();
-                    if (teamSels != null && teamSels.Length > 0 && teamSels[0].visitorTeam?.homeColors != null)
-                        f.colorSchemes = teamSels[0].visitorTeam.homeColors;
-                }
-
-                if (f.colorSchemes != null)
-                {
-                    // NOTE: Previously this cloned f.colorSchemes to isolate per-player colors,
-                    // but testing showed that broke application entirely — the game renderer
-                    // didn't read the cloned instance, so overrides didn't reach the mesh.
-                    // The shared-ref write IS what the game reads; bleed across the team was
-                    // not observed in practice (likely because every player on the team shares
-                    // team colors anyway, so "bleed" == "expected behavior" for unset fields).
-                    SetSchemeColor(f.colorSchemes.jerseyScheme, jerseyP, jerseyS, jerseyA);
-                    SetSchemeColor(f.colorSchemes.glovesScheme, glovesP, glovesS, glovesT);
-                    SetSchemeColor(f.colorSchemes.helmetScheme, helmetP, helmetS, helmetT);
-                    SetSchemeColor(f.colorSchemes.pantsScheme, pantsP, pantsS, pantsT);
-                    SetSchemeColor(f.colorSchemes.skatesScheme, skates, blade, laces);
-                    SetSchemeColor(f.colorSchemes.socksScheme, socksP, socksS, socksT);
-                    SetSchemeColor(f.colorSchemes.numberScheme, number, numberS, null);
-                    if (bicep != null)
-                        f.colorSchemes.jerseyScheme.secondaryColor = new Color(bicep[0]/255f, bicep[1]/255f, bicep[2]/255f);
-                    Plugin.Log.LogInfo($"[Color] Applied per-player overrides to {f.firstName} {f.lastName}{(useAway ? " (away kit)" : "")}");
-                }
-            }
-
-            if (number != null)
-                f.numberColorOverride = new Color(number[0]/255f, number[1]/255f, number[2]/255f);
-        }
-        catch (Exception ex)
-        {
-            Plugin.Log.LogWarning($"[Color] Player color override error: {ex.Message}");
-        }
-    }
+        => CampaignAppearanceRuntime.Player(f, pc, useAway);
 
     internal static void ApplyGoalieColorOverrides(GoaltenderData g, PlayerConfig pc, bool useAway = false)
-    {
-        if (g == null || pc == null) return;
-
-        // Same kit-aware pick as the skater path: away override wins on the
-        // away kit, falling back to the home override.
-        int[] Pick(int[] home, int[] away) => useAway ? (away ?? home) : home;
-
-        int[] jerseyP = Pick(pc.JerseyColor, pc.JerseyColorAway);
-        int[] jerseyS = Pick(pc.JerseySecondaryColor, pc.JerseySecondaryColorAway);
-        int[] jerseyA = Pick(pc.JerseyAccentColor, pc.JerseyAccentColorAway);
-        int[] glovesP = Pick(pc.GlovesColor, pc.GlovesColorAway);
-        int[] glovesS = Pick(pc.GlovesSecondaryColor, pc.GlovesSecondaryColorAway);
-        int[] glovesT = Pick(pc.GlovesTertiaryColor, pc.GlovesTertiaryColorAway);
-        int[] helmetP = Pick(pc.HelmetColor, pc.HelmetColorAway);
-        int[] helmetS = Pick(pc.HelmetSecondaryColor, pc.HelmetSecondaryColorAway);
-        int[] helmetT = Pick(pc.HelmetTertiaryColor, pc.HelmetTertiaryColorAway);
-        int[] pantsP  = Pick(pc.PantsColor, pc.PantsColorAway);
-        int[] pantsS  = Pick(pc.PantsSecondaryColor, pc.PantsSecondaryColorAway);
-        int[] pantsT  = Pick(pc.PantsTertiaryColor, pc.PantsTertiaryColorAway);
-        int[] skates  = Pick(pc.SkatesColor, pc.SkatesColorAway);
-        int[] blade   = Pick(pc.BladeColor, pc.BladeColorAway);
-        int[] laces   = Pick(pc.LacesColor, pc.LacesColorAway);
-        int[] number  = Pick(pc.NumberColor, pc.NumberColorAway);
-        int[] numberS = Pick(pc.NumberSecondaryColor, pc.NumberSecondaryColorAway);
-        int[] socksP  = Pick(pc.SocksColor, pc.SocksColorAway);
-        int[] socksS  = Pick(pc.SocksSecondaryColor, pc.SocksSecondaryColorAway);
-        int[] socksT  = Pick(pc.SocksTertiaryColor, pc.SocksTertiaryColorAway);
-
-        bool hasAny = jerseyP != null || jerseyS != null || jerseyA != null ||
-            glovesP != null || glovesS != null || glovesT != null ||
-            helmetP != null || helmetS != null || helmetT != null ||
-            pantsP != null || pantsS != null || pantsT != null ||
-            skates != null || blade != null || laces != null ||
-            socksP != null || socksS != null || socksT != null ||
-            number != null || numberS != null;
-        if (!hasAny) return;
-
-        try
-        {
-            // GoaltenderData has a colorSchemes field like ForwardData
-            if (g.colorSchemes != null)
-            {
-                SetSchemeColor(g.colorSchemes.jerseyScheme, jerseyP, jerseyS, jerseyA);
-                SetSchemeColor(g.colorSchemes.glovesScheme, glovesP, glovesS, glovesT);
-                SetSchemeColor(g.colorSchemes.helmetScheme, helmetP, helmetS, helmetT);
-                SetSchemeColor(g.colorSchemes.pantsScheme, pantsP, pantsS, pantsT);
-                SetSchemeColor(g.colorSchemes.skatesScheme, skates, blade, laces);
-                SetSchemeColor(g.colorSchemes.socksScheme, socksP, socksS, socksT);
-                SetSchemeColor(g.colorSchemes.numberScheme, number, numberS, null);
-                Plugin.Log.LogInfo($"[Color] Applied goalie color overrides to '{g.firstName} {g.lastName}'{(useAway ? " (away kit)" : "")}");
-            }
-
-        }
-        catch (Exception ex)
-        {
-            Plugin.Log.LogWarning($"[Color] Goalie color override error: {ex.Message}");
-        }
-    }
+        => CampaignAppearanceRuntime.Player(g, pc, useAway);
 
     internal static void ApplyTeamEquipmentColors(ForwardData f, TeamConfig cfg, TeamData team = null, bool useAway = false)
-    {
-        if (f == null || cfg == null) return;
-        try
-        {
-            if (f.colorSchemes == null) return;
+        => CampaignAppearanceRuntime.Team(f, cfg, team, useAway);
 
-            // Sync the jersey scheme from the team's fully-resolved HOME or AWAY
-            // colors (away for the visitor/opponent side) so Body/Customization
-            // renders in the right kit instead of black AND the two teams don't
-            // both wear their home jersey. Falls back to home if away is unset so
-            // we never render black. Must run before per-player Jersey Color
-            // overrides (ApplyPlayerColorOverrides), which stomp these if set.
-            var srcColors = useAway ? team?.awayColors : team?.homeColors;
-            if (srcColors?.jerseyScheme == null) srcColors = team?.homeColors;
-            if (srcColors?.jerseyScheme != null)
-            {
-                var jc = srcColors.jerseyScheme;
-                f.colorSchemes.jerseyScheme.primaryColor   = jc.primaryColor;
-                f.colorSchemes.jerseyScheme.secondaryColor = jc.secondaryColor;
-                f.colorSchemes.jerseyScheme.tertiaryColor  = jc.tertiaryColor;
-            }
-
-            // Equipment colors: prefer the AWAY variant when wearing the away
-            // jersey, falling back (??) to the home value so unset away pieces
-            // still match the kit instead of going blank.
-            SetSchemeColor(f.colorSchemes.glovesScheme,
-                useAway ? (cfg.TeamGlovesColorAway ?? cfg.TeamGlovesColor) : cfg.TeamGlovesColor,
-                useAway ? (cfg.TeamGlovesSecondaryAway ?? cfg.TeamGlovesSecondary) : cfg.TeamGlovesSecondary,
-                useAway ? (cfg.TeamGlovesTertiaryAway ?? cfg.TeamGlovesTertiary) : cfg.TeamGlovesTertiary);
-            SetSchemeColor(f.colorSchemes.helmetScheme,
-                useAway ? (cfg.TeamHelmetColorAway ?? cfg.TeamHelmetColor) : cfg.TeamHelmetColor,
-                useAway ? (cfg.TeamHelmetSecondaryAway ?? cfg.TeamHelmetSecondary) : cfg.TeamHelmetSecondary,
-                useAway ? (cfg.TeamHelmetTertiaryAway ?? cfg.TeamHelmetTertiary) : cfg.TeamHelmetTertiary);
-            SetSchemeColor(f.colorSchemes.pantsScheme,
-                useAway ? (cfg.TeamPantsColorAway ?? cfg.TeamPantsColor) : cfg.TeamPantsColor,
-                useAway ? (cfg.TeamPantsSecondaryAway ?? cfg.TeamPantsSecondary) : cfg.TeamPantsSecondary,
-                useAway ? (cfg.TeamPantsTertiaryAway ?? cfg.TeamPantsTertiary) : cfg.TeamPantsTertiary);
-            SetSchemeColor(f.colorSchemes.skatesScheme,
-                useAway ? (cfg.TeamSkatesColorAway ?? cfg.TeamSkatesColor) : cfg.TeamSkatesColor,
-                useAway ? (cfg.TeamBladeColorAway ?? cfg.TeamBladeColor) : cfg.TeamBladeColor,
-                useAway ? (cfg.TeamLacesColorAway ?? cfg.TeamLacesColor) : cfg.TeamLacesColor);
-            SetSchemeColor(f.colorSchemes.socksScheme,
-                useAway ? (cfg.TeamSocksColorAway ?? cfg.TeamSocksColor) : cfg.TeamSocksColor,
-                useAway ? (cfg.TeamSocksSecondaryAway ?? cfg.TeamSocksSecondary) : cfg.TeamSocksSecondary,
-                useAway ? (cfg.TeamSocksTertiaryAway ?? cfg.TeamSocksTertiary) : cfg.TeamSocksTertiary);
-            SetSchemeColor(f.colorSchemes.numberScheme,
-                useAway ? (cfg.TeamNumberColorAway ?? cfg.TeamNumberColor) : cfg.TeamNumberColor,
-                useAway ? (cfg.TeamNumberSecondaryAway ?? cfg.TeamNumberSecondary) : cfg.TeamNumberSecondary, null);
-
-            int[] bicep = useAway ? (cfg.TeamBicepColorAway ?? cfg.TeamBicepColor) : cfg.TeamBicepColor;
-            if (bicep != null)
-                f.colorSchemes.jerseyScheme.secondaryColor = new Color(bicep[0]/255f, bicep[1]/255f, bicep[2]/255f);
-            int[] stick = useAway ? (cfg.TeamStickColorAway ?? cfg.TeamStickColor) : cfg.TeamStickColor;
-            if (stick != null)
-                f.colorSchemes.stickScheme.primaryColor = new Color(stick[0]/255f, stick[1]/255f, stick[2]/255f);
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[Config] Team equipment color error: {ex.Message}"); }
-    }
-
-    /// <summary>
-    /// Give the goalie the SAME color schemes as the team's forwards so the
-    /// customizable mask (Helmet_Customization_colors) renders in team colors.
-    /// Painting individual fields on g.colorSchemes.helmetScheme didn't stick —
-    /// sharing the reference does.
-    /// </summary>
     internal static void ApplyTeamEquipmentColorsToGoalie(GoaltenderData g, TeamData team, TeamConfig cfg, bool useAway = false)
-    {
-        if (g == null || team == null) return;
-        try
-        {
-            // Link the goalie to the team's HOME or AWAY color set (away for the
-            // visitor/opponent), falling back to home so the mask is never black.
-            var linked = useAway ? team.awayColors : team.homeColors;
-            if (linked == null) linked = team.homeColors;
-            if (linked != null)
-            {
-                g.colorSchemes = linked;
-                Plugin.Log.LogInfo($"[Config] Goalie '{g.firstName} {g.lastName}' colorSchemes linked to team {(useAway ? "awayColors" : "homeColors")}");
-            }
-            // Then paint per-field cfg overrides on top. Each piece prefers the
-            // away value (when wearing away) then the home value, so the mask has
-            // a sensible color even when only some fields are set.
-            if (g.colorSchemes != null && cfg != null)
-            {
-                int[] helmetPrimary   = useAway ? (cfg.TeamHelmetColorAway     ?? cfg.TeamHelmetColor     ?? cfg.AwayPrimary   ?? cfg.JerseyPrimary)   : (cfg.TeamHelmetColor     ?? cfg.JerseyPrimary);
-                int[] helmetSecondary = useAway ? (cfg.TeamHelmetSecondaryAway ?? cfg.TeamHelmetSecondary ?? cfg.AwaySecondary ?? cfg.JerseySecondary) : (cfg.TeamHelmetSecondary ?? cfg.JerseySecondary);
-                int[] helmetTertiary  = useAway ? (cfg.TeamHelmetTertiaryAway  ?? cfg.TeamHelmetTertiary  ?? cfg.AwayAccent    ?? cfg.JerseyAccent)    : (cfg.TeamHelmetTertiary  ?? cfg.JerseyAccent);
-                SetSchemeColor(g.colorSchemes.helmetScheme, helmetPrimary, helmetSecondary, helmetTertiary);
-                SetSchemeColor(g.colorSchemes.glovesScheme,
-                    useAway ? (cfg.TeamGlovesColorAway ?? cfg.TeamGlovesColor) : cfg.TeamGlovesColor,
-                    useAway ? (cfg.TeamGlovesSecondaryAway ?? cfg.TeamGlovesSecondary) : cfg.TeamGlovesSecondary,
-                    useAway ? (cfg.TeamGlovesTertiaryAway ?? cfg.TeamGlovesTertiary) : cfg.TeamGlovesTertiary);
-                SetSchemeColor(g.colorSchemes.pantsScheme,
-                    useAway ? (cfg.TeamPantsColorAway ?? cfg.TeamPantsColor) : cfg.TeamPantsColor,
-                    useAway ? (cfg.TeamPantsSecondaryAway ?? cfg.TeamPantsSecondary) : cfg.TeamPantsSecondary,
-                    useAway ? (cfg.TeamPantsTertiaryAway ?? cfg.TeamPantsTertiary) : cfg.TeamPantsTertiary);
-                SetSchemeColor(g.colorSchemes.skatesScheme,
-                    useAway ? (cfg.TeamSkatesColorAway ?? cfg.TeamSkatesColor) : cfg.TeamSkatesColor,
-                    useAway ? (cfg.TeamBladeColorAway ?? cfg.TeamBladeColor) : cfg.TeamBladeColor,
-                    useAway ? (cfg.TeamLacesColorAway ?? cfg.TeamLacesColor) : cfg.TeamLacesColor);
-                SetSchemeColor(g.colorSchemes.socksScheme,
-                    useAway ? (cfg.TeamSocksColorAway ?? cfg.TeamSocksColor) : cfg.TeamSocksColor,
-                    useAway ? (cfg.TeamSocksSecondaryAway ?? cfg.TeamSocksSecondary) : cfg.TeamSocksSecondary,
-                    useAway ? (cfg.TeamSocksTertiaryAway ?? cfg.TeamSocksTertiary) : cfg.TeamSocksTertiary);
-                SetSchemeColor(g.colorSchemes.numberScheme,
-                    useAway ? (cfg.TeamNumberColorAway ?? cfg.TeamNumberColor) : cfg.TeamNumberColor,
-                    useAway ? (cfg.TeamNumberSecondaryAway ?? cfg.TeamNumberSecondary) : cfg.TeamNumberSecondary, null);
-            }
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[Config] Goalie team equipment color error: {ex.Message}"); }
-    }
+        => CampaignAppearanceRuntime.Team(g, cfg, team, useAway);
 
-    /// <summary>Does this config say anything about how the player LOOKS, as
-    /// opposed to who they are and how good they are?</summary>
     internal static bool HasAppearanceOverride(PlayerConfig pc)
     {
-        if (pc == null) return false;
+        if (pc != null && pc.NumberFormat >= 0) return true;
+        if (pc != null && HasSizeOffset(pc)) return true;
+        if (pc == null || !AppearanceFields.OverridesTeam(pc.Fields)) return false;
+        if (pc.LogoSkin != null || pc.NumberSkin != null || pc.Fields.Get("Logo From").Length > 0) return true;
         if (!string.IsNullOrEmpty(pc.Glasses)) return true;
         if (pc.StickOverride != null || pc.HelmetOverride != null || pc.HelmetAwayOverride != null
             || pc.BodyOverride != null || pc.BodyAwayOverride != null
@@ -8895,28 +7000,7 @@ public static class PatchBossLaunchMatch
 
     /// <summary>True when any per-player colour is set, home or away.</summary>
     internal static bool HasColorOverride(PlayerConfig pc)
-    {
-        if (pc == null) return false;
-        int[][] all =
-        {
-            pc.JerseyColor, pc.JerseySecondaryColor, pc.JerseyAccentColor,
-            pc.GlovesColor, pc.GlovesSecondaryColor, pc.GlovesTertiaryColor,
-            pc.HelmetColor, pc.HelmetSecondaryColor, pc.HelmetTertiaryColor,
-            pc.PantsColor, pc.PantsSecondaryColor, pc.PantsTertiaryColor,
-            pc.SkatesColor, pc.BladeColor, pc.LacesColor, pc.BicepColor,
-            pc.NumberColor, pc.NumberSecondaryColor,
-            pc.SocksColor, pc.SocksSecondaryColor, pc.SocksTertiaryColor,
-            pc.JerseyColorAway, pc.JerseySecondaryColorAway, pc.JerseyAccentColorAway,
-            pc.GlovesColorAway, pc.GlovesSecondaryColorAway, pc.GlovesTertiaryColorAway,
-            pc.HelmetColorAway, pc.HelmetSecondaryColorAway, pc.HelmetTertiaryColorAway,
-            pc.PantsColorAway, pc.PantsSecondaryColorAway, pc.PantsTertiaryColorAway,
-            pc.SkatesColorAway, pc.BladeColorAway, pc.LacesColorAway, pc.BicepColorAway,
-            pc.NumberColorAway, pc.NumberSecondaryColorAway,
-            pc.SocksColorAway, pc.SocksSecondaryColorAway, pc.SocksTertiaryColorAway,
-        };
-        foreach (var c in all) if (c != null) return true;
-        return false;
-    }
+        => pc != null && AppearanceFields.OverridesTeam(pc.Fields) && pc.Colors.Fields.Count > 0;
 
     /// <summary>Apply ONLY the per-player look: equipment skins, glasses and
     /// colours. Name, stats, face, number, talents and ability are left exactly
@@ -8926,24 +7010,41 @@ public static class PatchBossLaunchMatch
     /// configured for looks alone (the occupant is a draft pick whose stats must
     /// survive), and a Play Now custom player (whose identity and stats already
     /// round-trip through the game's own save file).</summary>
+    internal static string DefaultStick => !string.IsNullOrEmpty(Plugin.DefaultTeam?.Uniform?.Stick) ? Plugin.DefaultTeam.Uniform.Stick : AppearanceContract.DefaultSkin("skater", "Stick");
+    /// <summary>Size Offset multiplies the body scale for the player's Size
+    /// (ForwardData.GetBodySize, unclamped), so values past the base game's
+    /// 0.9-1.1 grow or shrink the skater in match.</summary>
+    internal static bool HasSizeOffset(PlayerConfig pc) => pc.Fields.Get("Size Offset").Length > 0 && pc.SizeOffset > 0;
     internal static void ApplyPlayerLookOnly(ForwardData f, PlayerConfig pc, bool useAway = false)
     {
         if (f == null || pc == null) return;
-        if (!string.IsNullOrEmpty(pc.Glasses)) f.glassesSkin = pc.Glasses;
+        if (pc.NumberFormat >= 0) f.numberFormat = (NumberFormat)pc.NumberFormat;
+        // Base game: the stick style is the player's own (player customizer), never the team's.
+        f.stickSkin = pc.StickOverride ?? DefaultStick;
+        // The player's body, not team equipment: applies whatever the Team equipment toggle says.
+        if (HasSizeOffset(pc)) f.sizeOffsetPercentage = pc.SizeOffset;
+        if (!AppearanceFields.OverridesTeam(pc.Fields))
+        {
+            PatchPlayerTeamInit.HandleNoHelmetSentinel(f);
+            ApplyPlayerColorOverrides(f, pc, useAway);
+            return;
+        }
+        if (pc.LogoSkin != null) f.logoSkin = pc.LogoSkin;
+        if (pc.NumberSkin != null) f.numberSkin = pc.NumberSkin;
+        if (!string.IsNullOrEmpty(pc.Glasses)) f.glassesSkin = Plugin.ResolveSkin(pc.Glasses, "glasses");
         if (pc.StickOverride != null)       f.stickSkin      = pc.StickOverride;
         if (pc.HelmetOverride != null)      f.helmetSkin     = pc.HelmetOverride;
-        if (pc.HelmetAwayOverride != null)  f.helmetAwaySkin = pc.HelmetAwayOverride;
+        if (pc.HelmetAwayOverride != null) f.helmetAwaySkin = pc.HelmetAwayOverride;
         if (pc.BodyOverride != null)        f.bodySkin       = pc.BodyOverride;
-        if (pc.BodyAwayOverride != null)    f.bodyAwaySkin   = pc.BodyAwayOverride;
+        if (pc.BodyAwayOverride != null) f.bodyAwaySkin = pc.BodyAwayOverride;
         if (pc.BicepOverride != null)       f.bicepSkin      = pc.BicepOverride;
-        if (pc.BicepAwayOverride != null)   f.bicepAwaySkin  = pc.BicepAwayOverride;
+        if (pc.BicepAwayOverride != null) f.bicepAwaySkin = pc.BicepAwayOverride;
         if (pc.GlovesOverride != null)      f.gloveSkin      = pc.GlovesOverride;
-        if (pc.GlovesAwayOverride != null)  f.gloveAwaySkin  = pc.GlovesAwayOverride;
+        if (pc.GlovesAwayOverride != null) f.gloveAwaySkin = pc.GlovesAwayOverride;
         if (pc.PantsOverride != null)       f.pantsSkin      = pc.PantsOverride;
-        if (pc.PantsAwayOverride != null)   f.pantsAwaySkin  = pc.PantsAwayOverride;
+        if (pc.PantsAwayOverride != null) f.pantsAwaySkin = pc.PantsAwayOverride;
         if (pc.SkatesOverride != null)      f.skateSkin      = pc.SkatesOverride;
-        if (pc.SkatesAwayOverride != null)  f.skateAwaySkin  = pc.SkatesAwayOverride;
-        if (pc.SizeOffset > 0)              f.sizeOffsetPercentage = pc.SizeOffset;
+        if (pc.SkatesAwayOverride != null) f.skateAwaySkin = pc.SkatesAwayOverride;
         // "Helmet = none" is two things, not one — see HandleNoHelmetSentinel.
         PatchPlayerTeamInit.HandleNoHelmetSentinel(f);
         ApplyPlayerColorOverrides(f, pc, useAway);
@@ -8991,26 +7092,8 @@ public static class PatchBossLaunchMatch
                 string resolvedFace = Plugin.ResolveSkin(pc.Face);
                 if (resolvedFace == "RANDOM_FACE")
                 {
-                    string[] allFaces = {
-                        "Faces/Twinfalls/Wiener", "Faces/Twinfalls/Haggis", "Faces/Twinfalls/Jerky", "Faces/Twinfalls/Crockett",
-                        "Faces/Toronto/Mathieu", "Faces/Toronto/Jelly", "Faces/Toronto/Kilmore", "Faces/Toronto/Spark",
-                        "Faces/Toronto/Dord", "Faces/Toronto/Popping",
-                        "Faces/Chicago/Angus", "Faces/Chicago/Rory", "Faces/Chicago/Grohl", "Faces/Chicago/Chicos",
-                        "Faces/Chicago/Chapstick", "Faces/Chicago/Louder",
-                        "Faces/Canadians/Captain", "Faces/Canadians/Poule", "Faces/Canadians/Gratz",
-                        "Faces/Midwest/Brie", "Faces/Midwest/Amber", "Faces/Midwest/Mental", "Faces/Midwest/Rochefort",
-                        "Faces/Moutaineers/Krupp", "Faces/Moutaineers/Wurst", "Faces/Moutaineers/Torte",
-                        "Faces/Moutaineers/Furter", "Faces/Moutaineers/Pianist",
-                        "Faces/Princess/Joan", "Faces/Princess/Clementine", "Faces/Princess/Boni",
-                        "Faces/Tycoons/Tycoons_Large", "Faces/Tycoons/Tycoons_Small", "Faces/Tycoons/Tycoons_Elite",
-                        "Faces/Prisoners/Dalton", "Faces/Prisoners/Ma", "Faces/Prisoners/Averell", "Faces/Prisoners/Joe",
-                        "Faces/Knights/Prince", "Faces/Knights/Lancelov",
-                        "Faces/Disco/Oioioi", "Faces/Custom/Helmet_Face",
-                        "Faces/Anyteam/Nasher", "Faces/Anyteam/Onepunch",
-                        "Faces/Golfers/Golfer_Lady", "Faces/Golfers/Golfer_Ramirez", "Faces/Golfers/Golfer_Elite"
-                    };
-                    var rng = new System.Random();
-                    resolvedFace = allFaces[rng.Next(allFaces.Length)];
+                    var allFaces = HeadAppearance.NativeChoices;
+                    resolvedFace = allFaces[Plugin.ConfigRng.Next(allFaces.Length)];
                     Plugin.Log.LogInfo($"  [Random] {f.firstName} got random face: {resolvedFace}");
                 }
                 f.headSkin = resolvedFace;
@@ -9019,7 +7102,7 @@ public static class PatchBossLaunchMatch
             f.isBlack = pc.Black;
 
             // Glasses
-            if (!string.IsNullOrEmpty(pc.Glasses)) f.glassesSkin = pc.Glasses;
+            if (AppearanceFields.OverridesTeam(pc.Fields) && !string.IsNullOrEmpty(pc.Glasses)) f.glassesSkin = Plugin.ResolveSkin(pc.Glasses, "glasses");
 
             // Look — uniform (team defaults first)
             if (!string.IsNullOrEmpty(uniform.Body)) f.bodySkin = uniform.Body;
@@ -9034,44 +7117,26 @@ public static class PatchBossLaunchMatch
             if (!string.IsNullOrEmpty(uniform.SkatesAway)) f.skateAwaySkin = uniform.SkatesAway;
             if (!string.IsNullOrEmpty(uniform.Helmet)) f.helmetSkin = uniform.Helmet;
             if (!string.IsNullOrEmpty(uniform.HelmetAway)) f.helmetAwaySkin = uniform.HelmetAway;
-            if (!string.IsNullOrEmpty(uniform.Stick)) f.stickSkin = uniform.Stick;
+            // Stick style is the player's (base game); the team uniform has none.
 
-            // Per-player uniform overrides (only apply if explicitly set)
-            if (pc.StickOverride != null) f.stickSkin = pc.StickOverride;
-            if (pc.HelmetOverride != null) f.helmetSkin = pc.HelmetOverride;
-            if (pc.HelmetAwayOverride != null) f.helmetAwaySkin = pc.HelmetAwayOverride;
-            if (pc.BodyOverride != null) f.bodySkin = pc.BodyOverride;
-            if (pc.BodyAwayOverride != null) f.bodyAwaySkin = pc.BodyAwayOverride;
-            if (pc.BicepOverride != null) f.bicepSkin = pc.BicepOverride;
-            if (pc.BicepAwayOverride != null) f.bicepAwaySkin = pc.BicepAwayOverride;
-            if (pc.GlovesOverride != null) f.gloveSkin = pc.GlovesOverride;
-            if (pc.GlovesAwayOverride != null) f.gloveAwaySkin = pc.GlovesAwayOverride;
-            if (pc.PantsOverride != null) f.pantsSkin = pc.PantsOverride;
-            if (pc.PantsAwayOverride != null) f.pantsAwaySkin = pc.PantsAwayOverride;
-            if (pc.SkatesOverride != null) f.skateSkin = pc.SkatesOverride;
-            if (pc.SkatesAwayOverride != null) f.skateAwaySkin = pc.SkatesAwayOverride;
-
-            // Logo skin based on handedness
-            f.logoSkin = pc.Lefty ? "Team_Logo/Custom_L" : "Team_Logo/Custom_R";
-
-            // Number skin (default to 88 if invalid)
-            int num = pc.Number > 0 && pc.Number < 100 ? pc.Number : 88;
-            f.numberSkin = $"Numbers/Number_{num}{(pc.Lefty ? "LH" : "")}";
-
-            // Helmet=none handling via shared helper — see HandleNoHelmetSentinel
-            // for details. Registers the face in HeadsWithoutHelmets so helmet
-            // is skipped at render time, keeping the user's chosen face intact.
+            // Shared look translation also serves benches, recruits and Play Now.
+            ApplyPlayerLookOnly(f, pc);
+            f.logoSkin = AppearanceFields.OverridesTeam(pc.Fields) && pc.LogoSkin != null
+                ? pc.LogoSkin : (pc.Lefty ? "Team_Logo/Custom_L" : "Team_Logo/Custom_R");
+            f.number = pc.Number >= 0 && pc.Number < 100 ? pc.Number : 88;
+            f.numberSkin = pc.NumberSkin ?? $"Numbers/Number_{f.number}{(pc.Lefty ? "LH" : "")}";
+            f.numberFormat = (NumberFormat)(pc.NumberFormat >= 0 ? pc.NumberFormat : uniform.NumberFormat);
             PatchPlayerTeamInit.HandleNoHelmetSentinel(f);
 
             // Fallback defaults from defaults.txt — ensure no invisible/broken assets
             var ds = Plugin.DefaultSkater;
             var du = Plugin.DefaultTeam.Uniform;
             if (string.IsNullOrEmpty(f.headSkin))
-                f.headSkin = !string.IsNullOrEmpty(ds.Face) ? Plugin.ResolveSkin(ds.Face) : "Faces/Custom/Helmet_Face";
+                f.headSkin = !string.IsNullOrEmpty(ds.Face) ? Plugin.ResolveSkin(ds.Face) : "Faces/Toronto/Mathieu";
             if (string.IsNullOrEmpty(f.bodySkin))
                 f.bodySkin = !string.IsNullOrEmpty(du.Body) ? du.Body : "Body/Customization/Customization_colors";
             if (string.IsNullOrEmpty(f.bodyAwaySkin))
-                f.bodyAwaySkin = !string.IsNullOrEmpty(du.BodyAway) ? du.BodyAway : f.bodySkin;
+                f.bodyAwaySkin = !string.IsNullOrEmpty(du.BodyAway) ? du.BodyAway : "Body/Customization/Customization_colors";
             if (string.IsNullOrEmpty(f.bicepSkin))
                 f.bicepSkin = !string.IsNullOrEmpty(du.Bicep) ? du.Bicep : "Body_Bicep/Customization/Customization_colors";
             if (string.IsNullOrEmpty(f.gloveSkin))
@@ -9080,6 +7145,10 @@ public static class PatchBossLaunchMatch
                 f.pantsSkin = !string.IsNullOrEmpty(du.Pants) ? du.Pants : "Body_Pants/Customization/Customization_colors";
             if (string.IsNullOrEmpty(f.skateSkin))
                 f.skateSkin = !string.IsNullOrEmpty(du.Skates) ? du.Skates : "Body_Skates/Customization/Customization_colors";
+            if (string.IsNullOrEmpty(f.bicepAwaySkin)) f.bicepAwaySkin = "Body_Bicep/Customization/Customization_colors";
+            if (string.IsNullOrEmpty(f.gloveAwaySkin)) f.gloveAwaySkin = "Body_Gloves/Customization/Customization_colors";
+            if (string.IsNullOrEmpty(f.pantsAwaySkin)) f.pantsAwaySkin = "Body_Pants/Customization/Customization_colors";
+            if (string.IsNullOrEmpty(f.skateAwaySkin)) f.skateAwaySkin = "Body_Skates/Customization/Customization_colors";
             // Skip helmet default-fill for players explicitly flagged as
             // no-helmet (Helmet = none). Without this gate, the fallback
             // would re-stamp Helmet_Colors onto them and the helmet would
@@ -9090,7 +7159,7 @@ public static class PatchBossLaunchMatch
                 if (string.IsNullOrEmpty(f.helmetSkin))
                     f.helmetSkin = !string.IsNullOrEmpty(du.Helmet) ? du.Helmet : "Faces/Custom/Helmet_Colors";
                 if (string.IsNullOrEmpty(f.helmetAwaySkin))
-                    f.helmetAwaySkin = !string.IsNullOrEmpty(du.HelmetAway) ? du.HelmetAway : f.helmetSkin;
+                    f.helmetAwaySkin = !string.IsNullOrEmpty(du.HelmetAway) ? du.HelmetAway : "Faces/Custom/Helmet_Colors";
             }
             if (string.IsNullOrEmpty(f.stickSkin))
                 f.stickSkin = !string.IsNullOrEmpty(du.Stick) ? du.Stick : "Sticks/Black";
@@ -9099,7 +7168,7 @@ public static class PatchBossLaunchMatch
                 int defNum = ds.Number > 0 && ds.Number < 100 ? ds.Number : 88;
                 f.numberSkin = $"Numbers/Number_{defNum}";
             }
-            if (string.IsNullOrEmpty(f.logoSkin)) f.logoSkin = "Team_Logo/Custom_R";
+            if (!AppearanceDecalRuntime.ClearIncompatibleLogo(f) && string.IsNullOrEmpty(f.logoSkin)) f.logoSkin = "Team_Logo/Custom_R";
             // Set default name if empty
             if (string.IsNullOrEmpty(f.firstName) && string.IsNullOrEmpty(f.lastName))
             {
@@ -9138,15 +7207,28 @@ public static class PatchBossLaunchMatch
                 }
                 if (pool != null && pool.Count > 0)
                 {
-                    var used = new HashSet<int>();
-                    int toGive = Math.Min(pc.RandomTalentCount, pool.Count);
-                    for (int rt = 0; rt < toGive; rt++)
+                    if (Plugin.FreeAgentPoolList.Contains(pc))
                     {
-                        int idx;
-                        do { idx = Plugin.ConfigRng.Next(pool.Count); } while (used.Contains(idx));
-                        used.Add(idx);
-                        GiveTalentToPlayer(f, pool[idx]);
-                        Plugin.Log.LogInfo($"  [Random] {f.firstName} got random talent: {pool[idx]}");
+                        // Imported recruitment templates can still contain legacy
+                        // random fields. Every random recruit grant must respect
+                        // the independent exact-level pool; fixed talents above
+                        // and ordinary roster randomization keep their own rules.
+                        EnsureRepos();
+                        foreach (string talentId in FreeAgentTalentWeightRuntime.SelectTemplateTalents(CachedTalentRepo, pool, f, pc.RandomTalentCount))
+                            GiveTalentToPlayer(f, talentId);
+                    }
+                    else
+                    {
+                        var used = new HashSet<int>();
+                        int toGive = Math.Min(pc.RandomTalentCount, pool.Count);
+                        for (int rt = 0; rt < toGive; rt++)
+                        {
+                            int idx;
+                            do { idx = Plugin.ConfigRng.Next(pool.Count); } while (used.Contains(idx));
+                            used.Add(idx);
+                            GiveTalentToPlayer(f, pool[idx]);
+                            Plugin.Log.LogInfo($"  [Random] {f.firstName} got random talent: {pool[idx]}");
+                        }
                     }
                 }
             }
@@ -9154,6 +7236,9 @@ public static class PatchBossLaunchMatch
             // Ability AFTER talents (so it doesn't get wiped)
             if (!string.IsNullOrEmpty(pc.Ability))
                 SetPlayerAbility(f, pc.Ability);
+            // A default face or a later equipment effect can arrive after the
+            // initial uniform pass. Keep unsupported heads helmetless here too.
+            PatchPlayerTeamInit.HandleNoHelmetSentinel(f);
         }
         catch (Exception ex)
         {
@@ -9161,91 +7246,10 @@ public static class PatchBossLaunchMatch
         }
     }
 
-    /// <summary>
-    /// Add a skin path to the goalie's private per-field list (_skins,
-    /// _helmetSkins, _gloveSkins, etc.). These lists are the pool the Spine
-    /// skeleton actually loads at runtime — setting g.helmetSkin to a path
-    /// NOT in _helmetSkins causes the slot to render empty (headless). We
-    /// must add the path to the pool whenever we override a skin.
-    /// </summary>
-    internal static void EnsureGoalieSkinInPool(GoaltenderData g, string fieldName, string path)
-    {
-        if (g == null || string.IsNullOrEmpty(path)) return;
-        try
-        {
-            var field = g.GetType().GetField(fieldName,
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (field == null) return;
-            var list = field.GetValue(g) as Il2CppSystem.Collections.Generic.List<string>;
-            if (list == null)
-            {
-                list = new Il2CppSystem.Collections.Generic.List<string>();
-                field.SetValue(g, list);
-            }
-            for (int i = 0; i < list.Count; i++)
-                if (list[i] == path) return;
-            list.Add(path);
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[Config] EnsureGoalieSkinInPool({fieldName}='{path}'): {ex.Message}"); }
-    }
-
-    /// <summary>
-    /// Copy every private _*Skins pool from a donor NPC goalie into the
-    /// target goalie. We populate the target's pool with the UNION of donor
-    /// + target so no pre-loaded skins are lost. Use this when cloning a
-    /// player-team template (Bobby Butcher) but the user wants a themed
-    /// mask (Knights, Canadians, etc.) that's only pre-loaded on the
-    /// corresponding NPC goalie (Sir Godfrey, etc.).
-    /// </summary>
-    internal static void CopyGoalieSkinPoolsFrom(GoaltenderData target, GoaltenderData donor)
-    {
-        if (target == null || donor == null) return;
-        string[] pools = { "_skins", "_awaySkin", "_helmetSkins", "_headSkins",
-                           "_logoSkins", "_blockerSkins", "_gloveSkins",
-                           "_padSkins", "_stickSkins" };
-        foreach (var p in pools)
-        {
-            try
-            {
-                var f = donor.GetType().GetField(p,
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (f == null) continue;
-                var dList = f.GetValue(donor) as Il2CppSystem.Collections.Generic.List<string>;
-                if (dList == null) continue;
-                for (int i = 0; i < dList.Count; i++)
-                    if (!string.IsNullOrEmpty(dList[i])) EnsureGoalieSkinInPool(target, p, dList[i]);
-            }
-            catch (Exception ex) { Plugin.Log.LogWarning($"[Config] CopyGoalieSkinPoolsFrom({p}): {ex.Message}"); }
-        }
-    }
-
-    /// <summary>
-    /// Scan all GoaltenderData in the asset pool and return the first one
-    /// whose helmetSkin matches the requested path. Used to find an NPC
-    /// goalie whose Spine pool already contains the helmet so we can copy
-    /// its skin pools onto our custom-squad clone.
-    /// </summary>
-    internal static GoaltenderData FindGoalieWithHelmet(string helmetPath)
-    {
-        if (string.IsNullOrEmpty(helmetPath)) return null;
-        try
-        {
-            var all = UnityEngine.Resources.FindObjectsOfTypeAll<GoaltenderData>();
-            if (all == null) return null;
-            for (int i = 0; i < all.Length; i++)
-            {
-                var cand = all[i];
-                if (cand == null) continue;
-                if (cand.helmetSkin == helmetPath) return cand;
-            }
-        }
-        catch { }
-        return null;
-    }
-
-    internal static void ApplyGoalieConfig(GoaltenderData g, PlayerConfig pc, bool useAway = false)
+    internal static void ApplyGoalieConfig(GoaltenderData g, PlayerConfig pc, bool useAway = false, bool appearanceOnly = false)
     {
         if (g == null || pc == null) return;
+        if (pc.NumberFormat >= 0) g.numberFormat = (NumberFormat)pc.NumberFormat;
 
         try
         {
@@ -9257,6 +7261,9 @@ public static class PatchBossLaunchMatch
                 g.lastName = parts.Length > 1 ? parts[1] : "";
             }
 
+            // Live campaign refreshes must retain training and earned rewards.
+            if (!appearanceOnly)
+            {
             // Stats
             g.skill = pc.Skill;
             g.catchingSkill = pc.Catching;
@@ -9272,77 +7279,32 @@ public static class PatchBossLaunchMatch
             g.pokecheckSkill = pc.Pokecheck;
             g.depth = pc.Depth;
             g.passReadSkill = pc.PassRead;
-
-
-            // Goalie-specific skins (all resolved through ResolveGoalieSkin for friendly names)
-            // Each override also gets registered in the private pool (_skins,
-            // _helmetSkins, etc.) — without that the Spine skeleton won't load
-            // the asset and the slot renders empty.
-            if (!string.IsNullOrEmpty(pc.GoalieSkin)) try { g.skin = Plugin.ResolveGoalieSkin(pc.GoalieSkin, "body"); EnsureGoalieSkinInPool(g, "_skins", g.skin); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieSkinAway)) try { g.awaySkin = Plugin.ResolveGoalieSkin(pc.GoalieSkinAway, "body"); EnsureGoalieSkinInPool(g, "_awaySkin", g.awaySkin); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieGloveSkin)) try { g.gloveSkin = Plugin.ResolveGoalieSkin(pc.GoalieGloveSkin, "glove"); EnsureGoalieSkinInPool(g, "_gloveSkins", g.gloveSkin); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieGloveAway)) try { g.awayGloveSkin = Plugin.ResolveGoalieSkin(pc.GoalieGloveAway, "glove"); EnsureGoalieSkinInPool(g, "_gloveSkins", g.awayGloveSkin); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieBlockerSkin)) try { g.blockerSkin = Plugin.ResolveGoalieSkin(pc.GoalieBlockerSkin, "blocker"); EnsureGoalieSkinInPool(g, "_blockerSkins", g.blockerSkin); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieBlockerAway)) try { g.awayBlockerSkin = Plugin.ResolveGoalieSkin(pc.GoalieBlockerAway, "blocker"); EnsureGoalieSkinInPool(g, "_blockerSkins", g.awayBlockerSkin); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoaliePadsSkin)) try { g.padsSkin = Plugin.ResolveGoalieSkin(pc.GoaliePadsSkin, "pads"); EnsureGoalieSkinInPool(g, "_padSkins", g.padsSkin); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoaliePadsAway)) try { g.awayPadsSkin = Plugin.ResolveGoalieSkin(pc.GoaliePadsAway, "pads"); EnsureGoalieSkinInPool(g, "_padSkins", g.awayPadsSkin); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieStickSkin)) try { g.stickSkin = Plugin.ResolveGoalieSkin(pc.GoalieStickSkin, "stick"); EnsureGoalieSkinInPool(g, "_stickSkins", g.stickSkin); } catch {}
-            if (!string.IsNullOrEmpty(pc.GoalieStickAway)) try { g.awayStickSkin = Plugin.ResolveGoalieSkin(pc.GoalieStickAway, "stick"); EnsureGoalieSkinInPool(g, "_stickSkins", g.awayStickSkin); } catch {}
-            // Always copy skin pools from any working NPC goalie first so the
-            // Spine pool is populated before we set our desired helmet path.
-            try
-            {
-                var allG = UnityEngine.Resources.FindObjectsOfTypeAll<GoaltenderData>();
-                GoaltenderData anyDonor = null;
-                if (allG != null)
-                    foreach (var d in allG)
-                        if (d != null && d != g && !string.IsNullOrEmpty(d.helmetSkin)) { anyDonor = d; break; }
-                if (anyDonor != null) CopyGoalieSkinPoolsFrom(g, anyDonor);
             }
-            catch { }
 
-            if (!string.IsNullOrEmpty(pc.GoalieHelmetSkin))
-                try
-                {
-                    var rh = Plugin.ResolveGoalieSkin(pc.GoalieHelmetSkin, "helmet");
-                    if (!string.IsNullOrEmpty(rh))
-                    {
-                        g.helmetSkin = rh;
-                        EnsureGoalieSkinInPool(g, "_helmetSkins", rh);
-                        var donor = FindGoalieWithHelmet(rh);
-                        if (donor != null && donor != g) CopyGoalieSkinPoolsFrom(g, donor);
-                    }
-                }
-                catch (Exception ex) { Plugin.Log.LogWarning($"[Config] Goalie helmet apply: {ex.Message}"); }
-            if (!string.IsNullOrEmpty(pc.GoalieLogoSkin)) try { g.logoSkin = pc.GoalieLogoSkin; EnsureGoalieSkinInPool(g, "_logoSkins", pc.GoalieLogoSkin); } catch {}
-
-            // Goalies render with a mask placed over the bare goalie face.
-            // If helmetSkin is empty OR doesn't start with the goalie helmet
-            // prefix (e.g. a stale dump wrote "Helmet_Canadians" before the
-            // reverse-map fix), fall back to the team-tinted default.
-            try
+            // Native SkinHelper resolves these names directly in the goalie
+            // skeleton. No donor or private randomization pool is involved.
+            // Own-look goalies use their file's gear; team-look goalies the team's
+            // goalie-equipment.cfg (merged into pc by LoadTeamGoalieGear).
+            bool ownLook = AppearanceFields.OverridesTeam(pc.Fields);
+            if (ownLook || pc.TeamGoalieGear)
             {
-                if (string.IsNullOrEmpty(g.helmetSkin) ||
-                    !g.helmetSkin.StartsWith("Helmet/", StringComparison.OrdinalIgnoreCase))
-                {
-                    g.helmetSkin = "Helmet/Helmet_Customization_colors";
-                    EnsureGoalieSkinInPool(g, "_helmetSkins", g.helmetSkin);
-                }
+                if (pc.GoalieSkin != null) g.skin = Plugin.ResolveGoalieSkin(pc.GoalieSkin, "body");
+                if (pc.GoalieSkinAway != null || pc.GoalieSkin != null) g.awaySkin = Plugin.ResolveGoalieSkin(string.IsNullOrEmpty(pc.GoalieSkinAway) ? "standard" : pc.GoalieSkinAway, "body");
+                if (pc.GoalieGloveSkin != null) g.gloveSkin = Plugin.ResolveGoalieSkin(pc.GoalieGloveSkin, "glove");
+                if (pc.GoalieGloveAway != null || pc.GoalieGloveSkin != null) g.awayGloveSkin = Plugin.ResolveGoalieSkin(string.IsNullOrEmpty(pc.GoalieGloveAway) ? "standard" : pc.GoalieGloveAway, "glove");
+                if (pc.GoalieBlockerSkin != null) g.blockerSkin = Plugin.ResolveGoalieSkin(pc.GoalieBlockerSkin, "blocker");
+                if (pc.GoalieBlockerAway != null || pc.GoalieBlockerSkin != null) g.awayBlockerSkin = Plugin.ResolveGoalieSkin(string.IsNullOrEmpty(pc.GoalieBlockerAway) ? "standard" : pc.GoalieBlockerAway, "blocker");
+                if (pc.GoaliePadsSkin != null) g.padsSkin = Plugin.ResolveGoalieSkin(pc.GoaliePadsSkin, "pads");
+                if (pc.GoaliePadsAway != null || pc.GoaliePadsSkin != null) g.awayPadsSkin = Plugin.ResolveGoalieSkin(string.IsNullOrEmpty(pc.GoaliePadsAway) ? "standard" : pc.GoaliePadsAway, "pads");
+                if (pc.GoalieStickSkin != null) g.stickSkin = Plugin.ResolveGoalieSkin(pc.GoalieStickSkin, "stick");
+                if (pc.GoalieStickAway != null || pc.GoalieStickSkin != null) g.awayStickSkin = Plugin.ResolveGoalieSkin(string.IsNullOrEmpty(pc.GoalieStickAway) ? "standard" : pc.GoalieStickAway, "stick");
+                if (pc.GoalieHelmetSkin != null) g.helmetSkin = Plugin.ResolveGoalieSkin(pc.GoalieHelmetSkin, "helmet");
             }
-            catch { }
-
-            // Diagnostic dump so we can see what actually got applied at
-            // runtime (distinct from what config requested).
-            try
-            {
-                Plugin.Log.LogInfo(
-                    $"[GoalieDbg] '{g.firstName} {g.lastName}' " +
-                    $"cfg.helmet='{pc.GoalieHelmetSkin}' -> g.helmetSkin='{g.helmetSkin}' " +
-                    $"g.headSkin='{g.headSkin}' g.skin='{g.skin}' g.awaySkin='{g.awaySkin}' " +
-                    $"colorsNull={(g.colorSchemes == null)} " +
-                    $"helmetSchemePri={(g.colorSchemes?.helmetScheme == null ? "null" : g.colorSchemes.helmetScheme.primaryColor.ToString())}");
-            }
-            catch { }
+            if (ownLook && pc.LogoSkin != null) g.logoSkin = pc.LogoSkin;
+            // The donor may have a premade jersey (e.g. The Officials) and no
+            // logo slot. Resolve again after applying the authored goalie kit.
+            if (!AppearanceDecalRuntime.ClearIncompatibleLogo(g) && string.IsNullOrEmpty(g.logoSkin)) g.logoSkin = "Team_Logo/Custom_R";
+            if (pc.Fields.Get("Number").Length > 0) g.number = pc.Number;
 
             // Fallback defaults for goalie from defaults.txt
             var dg = Plugin.DefaultGoalie;
@@ -9360,7 +7322,7 @@ public static class PatchBossLaunchMatch
             // caused rendering to break on some squads. Leave as-is.
 
             // Talents
-            if (pc.Talents != null)
+            if (!appearanceOnly && pc.Talents != null)
                 foreach (var t in pc.Talents)
                     if (!string.IsNullOrEmpty(t)) GiveGoalieTalent(g, t);
 
@@ -9392,7 +7354,10 @@ public static class PatchBossLaunchMatch
         dst.skateSkin = src.skateSkin; dst.skateAwaySkin = src.skateAwaySkin;
         dst.helmetSkin = src.helmetSkin; dst.helmetAwaySkin = src.helmetAwaySkin;
         dst.stickSkin = src.stickSkin;
+        dst.number = src.number;
         dst.numberSkin = src.numberSkin; dst.logoSkin = src.logoSkin;
+        dst.numberFormat = src.numberFormat;
+        CampaignAppearanceRuntime.Copy(src, dst);
         dst.glassesSkin = src.glassesSkin;
         // Copy color schemes (all equipment colors)
         dst.colorSchemes = src.colorSchemes;
@@ -9418,6 +7383,9 @@ public static class PatchBossLaunchMatch
         dst.shotPower = src.shotPower; dst.pokecheckSkill = src.pokecheckSkill;
         dst.depth = src.depth; dst.passReadSkill = src.passReadSkill;
         dst.headSkin = src.headSkin;
+        dst.number = src.number;
+        dst.numberFormat = src.numberFormat;
+        CampaignAppearanceRuntime.Copy(src, dst);
         // All goalie skins
         try { dst.skin = src.skin; } catch {}
         try { dst.awaySkin = src.awaySkin; } catch {}
@@ -9453,7 +7421,7 @@ public static class PatchBossLaunchMatch
         return AllForwardCache;
     }
 
-    private static ForwardData FindPlayerByName(string name)
+    internal static ForwardData FindPlayerByName(string name)
     {
         var found = FindPlayerByNameOnce(name, EnsureForwardCache());
         if (found != null) return found;
@@ -9524,2405 +7492,6 @@ public static class PatchBossLaunchMatch
         }
     }
 
-    // ========== ACT 1 ELITES ==========
-
-    private static void RemixGreasyLettuce(TeamData team, int round)
-    {
-        if (round == 0)
-        {
-            SwapToNHLTeam(team, "Vancouver", "Vancouver Canucks", "Vancouver",
-                new[] { "Elias Pettersson", "Brock Boeser", "Marco Rossi", "Zeev Buium", "Filip Hronek" },
-                "Kevin Lankinen", null,
-                new[] { "sorest_loser", "weak_shots" });
-
-            // --- Per-player stats, size, talents, abilities ---
-            var f = team.forwards;
-            if (f != null)
-            {
-                // LW: Elias Pettersson
-                if (f.Count > 0 && f[0] != null)
-                {
-                    f[0].speed = 64; f[0].shotPower = 65; f[0].shotAccuracy = 71; f[0].checking = 33;
-                    f[0].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f[0], "Human Shield");
-                    GiveTalentToPlayer(f[0], "Quick Draw");
-                    GiveTalentToPlayer(f[0], "Flawless Feeder");
-                }
-                // RW: Brock Boeser
-                if (f.Count > 1 && f[1] != null)
-                {
-                    f[1].speed = 52; f[1].shotPower = 63; f[1].shotAccuracy = 65; f[1].checking = 27;
-                    f[1].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f[1], "Point Sniper");
-                }
-                // C: Marco Rossi
-                if (f.Count > 2 && f[2] != null)
-                {
-                    f[2].speed = 69; f[2].shotPower = 59; f[2].shotAccuracy = 63; f[2].checking = 37;
-                    f[2].skaterSize = Data.SkaterSize.Small;
-                    GiveTalentToPlayer(f[2], "Speed Transfer");
-                }
-                // LD: Zeev Buium
-                if (f.Count > 3 && f[3] != null)
-                {
-                    f[3].speed = 59; f[3].shotPower = 47; f[3].shotAccuracy = 51; f[3].checking = 37;
-                    f[3].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f[3], "Blue Line Boost");
-                }
-                // RD: Filip Hronek
-                if (f.Count > 4 && f[4] != null)
-                {
-                    f[4].speed = 53; f[4].shotPower = 49; f[4].shotAccuracy = 54; f[4].checking = 43;
-                    f[4].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f[4], "Point Sniper");
-                }
-            }
-            // G: Kevin Lankinen
-            if (team.goalie != null)
-            {
-                var g = team.goalie;
-                g.skill = 31; g.catchingSkill = 35; g.gloveSkill = 33; g.blockerSkill = 31;
-                g.fiveHoleSkill = 29; g.standingSpeed = 48; g.butterflySpeed = 44;
-                g.controlSkill = 31; g.recoverySkill = 33; g.passPower = 38;
-                g.shotPower = 33; g.pokecheckSkill = 28; g.depth = 41; g.passReadSkill = 0.40f;
-                GiveGoalieTalent(g, "Goalie Enraged On Goal");
-            }
-        }
-        else if (round == 1)
-        {
-            SwapToNHLTeam(team, "Long Island", "New York Islanders", "New York",
-                new[] { "Anders Lee", "Bo Horvat", "Mathew Barzal", "Adam Pelech", "Matthew Schaefer" },
-                "Ilya Sorokin", null,
-                new[] { "self_defense" });
-
-            var f2 = team.forwards;
-            if (f2 != null)
-            {
-                // LW: Anders Lee
-                if (f2.Count > 0 && f2[0] != null)
-                {
-                    f2[0].speed = 57; f2[0].shotPower = 78; f2[0].shotAccuracy = 74; f2[0].checking = 81;
-                    f2[0].skaterSize = Data.SkaterSize.ExtraBig;
-                }
-                // RW: Bo Horvat
-                if (f2.Count > 1 && f2[1] != null)
-                {
-                    f2[1].speed = 76; f2[1].shotPower = 83; f2[1].shotAccuracy = 78; f2[1].checking = 68;
-                    f2[1].skaterSize = Data.SkaterSize.Medium;
-                }
-                // C: Mathew Barzal
-                if (f2.Count > 2 && f2[2] != null)
-                {
-                    f2[2].speed = 92; f2[2].shotPower = 74; f2[2].shotAccuracy = 83; f2[2].checking = 48;
-                    f2[2].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[2], "Velcro");
-                    GiveTalentToPlayer(f2[2], "En Garde!");
-                    GiveTalentToPlayer(f2[2], "Crit Boost");
-                }
-                // LD: Adam Pelech (STAR)
-                if (f2.Count > 3 && f2[3] != null)
-                {
-                    f2[3].speed = 68; f2[3].shotPower = 63; f2[3].shotAccuracy = 63; f2[3].checking = 74;
-                    f2[3].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[3], "Sonic Interception");
-                    GiveTalentToPlayer(f2[3], "Spiked Armor");
-                    SetPlayerAbility(f2[3], "Headshot Redirect");
-                }
-                // RD: Matthew Schaefer
-                if (f2.Count > 4 && f2[4] != null)
-                {
-                    f2[4].speed = 85; f2[4].shotPower = 74; f2[4].shotAccuracy = 74; f2[4].checking = 64;
-                    f2[4].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[4], "Flawless Feeder");
-                }
-            }
-            // G: Ilya Sorokin
-            if (team.goalie != null)
-            {
-                var g2 = team.goalie;
-                g2.skill = 58; g2.catchingSkill = 62; g2.gloveSkill = 64; g2.blockerSkill = 56;
-                g2.fiveHoleSkill = 54; g2.standingSpeed = 56; g2.butterflySpeed = 54;
-                g2.controlSkill = 60; g2.recoverySkill = 62; g2.passPower = 48;
-                g2.shotPower = 44; g2.pokecheckSkill = 52; g2.depth = 58; g2.passReadSkill = 0.60f;
-                GiveGoalieTalent(g2, "Crease Clearer");
-            }
-        }
-        else
-        {
-            SwapToNHLTeam(team, "Seattle", "Seattle Kraken", "Seattle",
-                new[] { "Jordan Eberle", "Matty Beniers", "Jared McCann", "Vince Dunn", "Brandon Montour" },
-                "Joey Daccord", null,
-                new[] { "briefcase", "rigged_faceoff" });
-
-            var f3 = team.forwards;
-            if (f3 != null)
-            {
-                // LW: Jordan Eberle
-                if (f3.Count > 0 && f3[0] != null)
-                {
-                    f3[0].speed = 92; f3[0].shotPower = 92; f3[0].shotAccuracy = 98; f3[0].checking = 53;
-                    f3[0].skaterSize = Data.SkaterSize.Small;
-                }
-                // RW: Matty Beniers
-                if (f3.Count > 1 && f3[1] != null)
-                {
-                    f3[1].speed = 98; f3[1].shotPower = 88; f3[1].shotAccuracy = 92; f3[1].checking = 66;
-                    f3[1].skaterSize = Data.SkaterSize.Medium;
-                }
-                // C: Jared McCann
-                if (f3.Count > 2 && f3[2] != null)
-                {
-                    f3[2].speed = 95; f3[2].shotPower = 98; f3[2].shotAccuracy = 95; f3[2].checking = 66;
-                    f3[2].skaterSize = Data.SkaterSize.Medium;
-                }
-                // LD: Vince Dunn
-                if (f3.Count > 3 && f3[3] != null)
-                {
-                    f3[3].speed = 95; f3[3].shotPower = 88; f3[3].shotAccuracy = 88; f3[3].checking = 75;
-                    f3[3].skaterSize = Data.SkaterSize.Medium;
-                }
-                // RD: Brandon Montour
-                if (f3.Count > 4 && f3[4] != null)
-                {
-                    f3[4].speed = 98; f3[4].shotPower = 92; f3[4].shotAccuracy = 92; f3[4].checking = 72;
-                    f3[4].skaterSize = Data.SkaterSize.Medium;
-                }
-
-                // Random talents per position
-                var rng = new System.Random();
-                var shootingPool = new[] { "Charge Shot", "Iron Helmet", "Mega Deflect", "Point Sniper", "Sword", "Wild Shot", "X-Ray Shot" };
-                var speedPool = new[] { "Backward Turbo", "Blue Line Boost", "Board Bumper", "Propeller Helmet", "Puck Hunter", "Puck Rocket", "Puckless Rocket", "Supernova Talent" };
-                var passingPool = new[] { "Express Delivery", "Flawless Feeder", "Pass Puncher", "Power Transfer", "Sonic Pass" };
-                var defensivePool = new[] { "Defensive Deflect", "En Garde!", "Poke Rage", "Bonecrusher", "Onepunch", "Enraged" };
-
-                // LW Eberle: 1 shooting + 1 speed
-                if (f3.Count > 0 && f3[0] != null)
-                {
-                    var pick1 = shootingPool[rng.Next(shootingPool.Length)];
-                    var pick2 = speedPool[rng.Next(speedPool.Length)];
-                    GiveTalentToPlayer(f3[0], pick1);
-                    GiveTalentToPlayer(f3[0], pick2);
-                    Plugin.Log.LogInfo($"  [Kraken] {f3[0].firstName} {f3[0].lastName} got {pick1} + {pick2}");
-                }
-                // RW Beniers: 1 passing
-                if (f3.Count > 1 && f3[1] != null)
-                {
-                    var pick = passingPool[rng.Next(passingPool.Length)];
-                    GiveTalentToPlayer(f3[1], pick);
-                    Plugin.Log.LogInfo($"  [Kraken] {f3[1].firstName} {f3[1].lastName} got {pick}");
-                }
-                // C McCann: 1 shooting
-                if (f3.Count > 2 && f3[2] != null)
-                {
-                    var pick = shootingPool[rng.Next(shootingPool.Length)];
-                    GiveTalentToPlayer(f3[2], pick);
-                    Plugin.Log.LogInfo($"  [Kraken] {f3[2].firstName} {f3[2].lastName} got {pick}");
-                }
-                // LD Dunn: 1 defensive
-                if (f3.Count > 3 && f3[3] != null)
-                {
-                    var pick = defensivePool[rng.Next(defensivePool.Length)];
-                    GiveTalentToPlayer(f3[3], pick);
-                    Plugin.Log.LogInfo($"  [Kraken] {f3[3].firstName} {f3[3].lastName} got {pick}");
-                }
-                // RD Montour: 1 defensive
-                if (f3.Count > 4 && f3[4] != null)
-                {
-                    var pick = defensivePool[rng.Next(defensivePool.Length)];
-                    GiveTalentToPlayer(f3[4], pick);
-                    Plugin.Log.LogInfo($"  [Kraken] {f3[4].firstName} {f3[4].lastName} got {pick}");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g3 = team.goalie;
-                g3.skill = 58; g3.catchingSkill = 62; g3.gloveSkill = 64; g3.blockerSkill = 58;
-                g3.fiveHoleSkill = 56; g3.standingSpeed = 58; g3.butterflySpeed = 56;
-                g3.controlSkill = 60; g3.recoverySkill = 64; g3.passPower = 54;
-                g3.shotPower = 50; g3.pokecheckSkill = 50; g3.depth = 60; g3.passReadSkill = 0.60f;
-                var goaliePool = new[] { "Goalie Assist", "Goalie Dance", "Goalie Enrage First30Sec", "Goalie Enrage Last30Sec", "Goalie Enraged On Breakaway", "Goalie Enraged On Goal", "Goalie Enraged On Shot", "Goalie Fart", "Goalie Headshot", "Goalie Pass Proepl", "Goalie Pass Rebound", "Goalie Speed Talent", "Goalie Throw Stick", "Crease Clearer", "Always Catch Pucks" };
-                var grng = new System.Random();
-                var gpick = goaliePool[grng.Next(goaliePool.Length)];
-                GiveGoalieTalent(g3, gpick);
-                Plugin.Log.LogInfo($"  [Kraken] Goalie got random talent: {gpick}");
-            }
-        }
-    }
-
-    private static void RemixMeatballs(TeamData team, int round)
-    {
-        if (round == 0)
-        {
-            SwapToNHLTeam(team, "St-Louis", "St. Louis Blues", "St. Louis",
-                new[] { "Jordan Kyrou", "Pavel Buchnevich", "Robert Thomas", "Philip Broberg", "Colton Parayko" },
-                "Jordan Binnington", null,
-                new[] { "buzzer_beater" });
-
-            var f = team.forwards;
-            if (f != null)
-            {
-                // LW: Jordan Kyrou (STAR)
-                if (f.Count > 0 && f[0] != null)
-                {
-                    f[0].speed = 73; f[0].shotPower = 67; f[0].shotAccuracy = 65; f[0].checking = 39;
-                    f[0].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f[0], "princeAI");
-                    GiveTalentToPlayer(f[0], "Charge Shot (Level 2)");
-                    GiveTalentToPlayer(f[0], "XRay Shot (Level 2)");
-                    GiveTalentToPlayer(f[0], "Sword (Level 2)");
-                    GiveTalentToPlayer(f[0], "Deadzone");
-                }
-                // RW: Pavel Buchnevich
-                if (f.Count > 1 && f[1] != null)
-                {
-                    f[1].speed = 49; f[1].shotPower = 55; f[1].shotAccuracy = 59; f[1].checking = 37;
-                    f[1].skaterSize = Data.SkaterSize.Big;
-                }
-                // C: Robert Thomas
-                if (f.Count > 2 && f[2] != null)
-                {
-                    f[2].speed = 52; f[2].shotPower = 49; f[2].shotAccuracy = 61; f[2].checking = 27;
-                    f[2].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f[2], "slugger");
-                    GiveTalentToPlayer(f[2], "Tong");
-                }
-                // LD: Philip Broberg
-                if (f.Count > 3 && f[3] != null)
-                {
-                    f[3].speed = 55; f[3].shotPower = 51; f[3].shotAccuracy = 52; f[3].checking = 51;
-                    f[3].skaterSize = Data.SkaterSize.ExtraBig;
-                }
-                // RD: Colton Parayko (STAR)
-                if (f.Count > 4 && f[4] != null)
-                {
-                    f[4].speed = 29; f[4].shotPower = 68; f[4].shotAccuracy = 59; f[4].checking = 74;
-                    f[4].skaterSize = Data.SkaterSize.ExtraExtraBig;
-                    GiveTalentToPlayer(f[4], "BoneCrusher (Level 2)");
-                    GiveTalentToPlayer(f[4], "Defensive Deflect (Level 2)");
-                    SetPlayerAbility(f[4], "wet_towel");
-                }
-            }
-            // G: Jordan Binnington
-            if (team.goalie != null)
-            {
-                var g = team.goalie;
-                g.skill = 38; g.catchingSkill = 42; g.gloveSkill = 40; g.blockerSkill = 38;
-                g.fiveHoleSkill = 36; g.standingSpeed = 52; g.butterflySpeed = 48;
-                g.controlSkill = 40; g.recoverySkill = 41; g.passPower = 44;
-                g.shotPower = 41; g.pokecheckSkill = 36; g.depth = 48; g.passReadSkill = 0.45f;
-                GiveGoalieTalent(g, "Goalie Pass Proepl");
-            }
-        }
-        else if (round == 1)
-        {
-            SwapToNHLTeam(team, "Boston", "Boston Bruins", "Boston",
-                new[] { "Morgan Geekie", "David Pastrnak", "Elias Lindholm", "Hampus Lindholm", "Charlie McAvoy" },
-                "Jeremy Swayman", null,
-                new[] { "dry_noodle", "slap_stick_relic" });
-
-            var f2 = team.forwards;
-            if (f2 != null)
-            {
-                // LW: Morgan Geekie
-                if (f2.Count > 0 && f2[0] != null)
-                {
-                    f2[0].speed = 70; f2[0].shotPower = 80; f2[0].shotAccuracy = 78; f2[0].checking = 72;
-                    f2[0].skaterSize = Data.SkaterSize.ExtraBig;
-                }
-                // RW: David Pastrnak
-                if (f2.Count > 1 && f2[1] != null)
-                {
-                    f2[1].speed = 84; f2[1].shotPower = 93; f2[1].shotAccuracy = 91; f2[1].checking = 50;
-                    f2[1].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[1], "Point Sniper (Level 2)");
-                    GiveTalentToPlayer(f2[1], "Sonic Slap");
-                    GiveTalentToPlayer(f2[1], "X-Ray Shot");
-                    GiveTalentToPlayer(f2[1], "Sword");
-                }
-                // C: Elias Lindholm
-                if (f2.Count > 2 && f2[2] != null)
-                {
-                    f2[2].speed = 73; f2[2].shotPower = 71; f2[2].shotAccuracy = 76; f2[2].checking = 65;
-                    f2[2].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[2], "Blue Line Boost (Level 2)");
-                }
-                // LD: Hampus Lindholm
-                if (f2.Count > 3 && f2[3] != null)
-                {
-                    f2[3].speed = 74; f2[3].shotPower = 73; f2[3].shotAccuracy = 71; f2[3].checking = 71;
-                    f2[3].skaterSize = Data.SkaterSize.ExtraBig;
-                }
-                // RD: Charlie McAvoy
-                if (f2.Count > 4 && f2[4] != null)
-                {
-                    f2[4].speed = 76; f2[4].shotPower = 78; f2[4].shotAccuracy = 76; f2[4].checking = 80;
-                    f2[4].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f2[4], "Enraged");
-                }
-            }
-            // G: Jeremy Swayman
-            if (team.goalie != null)
-            {
-                var g2 = team.goalie;
-                g2.skill = 46; g2.catchingSkill = 50; g2.gloveSkill = 52; g2.blockerSkill = 44;
-                g2.fiveHoleSkill = 42; g2.standingSpeed = 52; g2.butterflySpeed = 50;
-                g2.controlSkill = 48; g2.recoverySkill = 50; g2.passPower = 42;
-                g2.shotPower = 38; g2.pokecheckSkill = 40; g2.depth = 46; g2.passReadSkill = 0.54f;
-                GiveGoalieTalent(g2, "Goalie Enrage First30Sec");
-            }
-        }
-        else
-        {
-            SwapToNHLTeam(team, "Detroit", "Detroit Red Wings", "Detroit",
-                new[] { "Alex DeBrincat", "Dylan Larkin", "Lucas Raymond", "Moritz Seider", "Simon Edvinsson" },
-                "Cam Talbot", null,
-                new[] { "gurney" });
-
-            var f3 = team.forwards;
-            if (f3 != null)
-            {
-                // LW: Alex DeBrincat (STAR)
-                if (f3.Count > 0 && f3[0] != null)
-                {
-                    f3[0].speed = 100; f3[0].shotPower = 95; f3[0].shotAccuracy = 102; f3[0].checking = 36;
-                    f3[0].skaterSize = Data.SkaterSize.ExtraSmall;
-                    GiveTalentToPlayer(f3[0], "Crit Boost");
-                    GiveTalentToPlayer(f3[0], "Deadzone");
-                }
-                // RW: Dylan Larkin
-                if (f3.Count > 1 && f3[1] != null)
-                {
-                    f3[1].speed = 97; f3[1].shotPower = 92; f3[1].shotAccuracy = 92; f3[1].checking = 70;
-                    f3[1].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f3[1], "Speed Transfer");
-                }
-                // C: Lucas Raymond
-                if (f3.Count > 2 && f3[2] != null)
-                {
-                    f3[2].speed = 100; f3[2].shotPower = 87; f3[2].shotAccuracy = 95; f3[2].checking = 52;
-                    f3[2].skaterSize = Data.SkaterSize.Small;
-                }
-                // LD: Moritz Seider (STAR)
-                if (f3.Count > 3 && f3[3] != null)
-                {
-                    f3[3].speed = 81; f3[3].shotPower = 87; f3[3].shotAccuracy = 85; f3[3].checking = 87;
-                    f3[3].skaterSize = Data.SkaterSize.ExtraBig;
-                    GiveTalentToPlayer(f3[3], "Onepunch");
-                    GiveTalentToPlayer(f3[3], "Spiked Armor");
-                }
-                // RD: Simon Edvinsson
-                if (f3.Count > 4 && f3[4] != null)
-                {
-                    f3[4].speed = 84; f3[4].shotPower = 85; f3[4].shotAccuracy = 82; f3[4].checking = 82;
-                    f3[4].skaterSize = Data.SkaterSize.ExtraBig;
-                    GiveTalentToPlayer(f3[4], "Supernova Talent");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g3 = team.goalie;
-                g3.skill = 56; g3.catchingSkill = 60; g3.gloveSkill = 62; g3.blockerSkill = 56;
-                g3.fiveHoleSkill = 54; g3.standingSpeed = 58; g3.butterflySpeed = 56;
-                g3.controlSkill = 58; g3.recoverySkill = 62; g3.passPower = 52;
-                g3.shotPower = 48; g3.pokecheckSkill = 48; g3.depth = 58; g3.passReadSkill = 0.58f;
-                GiveGoalieTalent(g3, "Goalie Pass Proepl");
-            }
-        }
-    }
-
-    private static void RemixCalaveras(TeamData team, int round)
-    {
-        if (round == 0)
-        {
-            SwapToNHLTeam(team, "Vegas", "Vegas Golden Knights", "Las Vegas",
-                new[] { "Mark Stone", "Mitch Marner", "Jack Eichel", "Shea Theodore", "Noah Hanifin" },
-                "Carter Hart", null,
-                new[] { "blue_banana" });
-
-            var f = team.forwards;
-            if (f != null)
-            {
-                // LW: Mark Stone
-                if (f.Count > 0 && f[0] != null)
-                {
-                    f[0].speed = 41; f[0].shotPower = 49; f[0].shotAccuracy = 53; f[0].checking = 65;
-                    f[0].skaterSize = Data.SkaterSize.ExtraBig;
-                    GiveTalentToPlayer(f[0], "BoneCrusher (Level 2)");
-                    GiveTalentToPlayer(f[0], "Built Different");
-                }
-                // RW: Mitch Marner
-                if (f.Count > 1 && f[1] != null)
-                {
-                    f[1].speed = 77; f[1].shotPower = 59; f[1].shotAccuracy = 81; f[1].checking = 17;
-                    f[1].skaterSize = Data.SkaterSize.Small;
-                    GiveTalentToPlayer(f[1], "Flawless Feeder");
-                    GiveTalentToPlayer(f[1], "Blue Line Boost");
-                }
-                // C: Jack Eichel
-                if (f.Count > 2 && f[2] != null)
-                {
-                    f[2].speed = 73; f[2].shotPower = 73; f[2].shotAccuracy = 75; f[2].checking = 44;
-                    f[2].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f[2], "Trick Shot");
-                    GiveTalentToPlayer(f[2], "Rebound Magnet");
-                }
-                // LD: Shea Theodore
-                if (f.Count > 3 && f[3] != null)
-                {
-                    f[3].speed = 59; f[3].shotPower = 61; f[3].shotAccuracy = 63; f[3].checking = 47;
-                    f[3].skaterSize = Data.SkaterSize.Big;
-                }
-                // RD: Noah Hanifin
-                if (f.Count > 4 && f[4] != null)
-                {
-                    f[4].speed = 48; f[4].shotPower = 53; f[4].shotAccuracy = 51; f[4].checking = 49;
-                    f[4].skaterSize = Data.SkaterSize.ExtraBig;
-                }
-            }
-            // G: Carter Hart
-            if (team.goalie != null)
-            {
-                var g = team.goalie;
-                g.skill = 34; g.catchingSkill = 36; g.gloveSkill = 33; g.blockerSkill = 35;
-                g.fiveHoleSkill = 32; g.standingSpeed = 50; g.butterflySpeed = 46;
-                g.controlSkill = 34; g.recoverySkill = 37; g.passPower = 32;
-                g.shotPower = 30; g.pokecheckSkill = 26; g.depth = 37; g.passReadSkill = 0.44f;
-                GiveGoalieTalent(g, "Goalie Pass Rebound");
-            }
-        }
-        else if (round == 1)
-        {
-            SwapToNHLTeam(team, "Philadelphia", "Philadelphia Flyers", "Philadelphia",
-                new[] { "Travis Konecny", "Matvei Michkov", "Sean Couturier", "Travis Sanheim", "Cam York" },
-                "Samuel Ersson", null,
-                new[] { "enrage_bonus" });
-
-            var f2 = team.forwards;
-            if (f2 != null)
-            {
-                // LW: Travis Konecny
-                if (f2.Count > 0 && f2[0] != null)
-                {
-                    f2[0].speed = 82; f2[0].shotPower = 77; f2[0].shotAccuracy = 79; f2[0].checking = 48;
-                    f2[0].skaterSize = Data.SkaterSize.Small;
-                }
-                // RW: Matvei Michkov
-                if (f2.Count > 1 && f2[1] != null)
-                {
-                    f2[1].speed = 86; f2[1].shotPower = 81; f2[1].shotAccuracy = 86; f2[1].checking = 27;
-                    f2[1].skaterSize = Data.SkaterSize.ExtraSmall;
-                }
-                // C: Sean Couturier
-                if (f2.Count > 2 && f2[2] != null)
-                {
-                    f2[2].speed = 64; f2[2].shotPower = 73; f2[2].shotAccuracy = 73; f2[2].checking = 73;
-                    f2[2].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f2[2], "Quick Draw");
-                }
-                // LD: Travis Sanheim
-                if (f2.Count > 3 && f2[3] != null)
-                {
-                    f2[3].speed = 71; f2[3].shotPower = 71; f2[3].shotAccuracy = 68; f2[3].checking = 68;
-                    f2[3].skaterSize = Data.SkaterSize.Big;
-                }
-                // RD: Cam York
-                if (f2.Count > 4 && f2[4] != null)
-                {
-                    f2[4].speed = 75; f2[4].shotPower = 68; f2[4].shotAccuracy = 68; f2[4].checking = 58;
-                    f2[4].skaterSize = Data.SkaterSize.Medium;
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g2 = team.goalie;
-                g2.skill = 44; g2.catchingSkill = 48; g2.gloveSkill = 48; g2.blockerSkill = 42;
-                g2.fiveHoleSkill = 40; g2.standingSpeed = 50; g2.butterflySpeed = 48;
-                g2.controlSkill = 46; g2.recoverySkill = 46; g2.passPower = 40;
-                g2.shotPower = 36; g2.pokecheckSkill = 38; g2.depth = 44; g2.passReadSkill = 0.50f;
-                GiveGoalieTalent(g2, "Goalie Enraged On Shot");
-            }
-        }
-        else
-        {
-            SwapToNHLTeam(team, "Winnipeg", "Winnipeg Jets", "Winnipeg",
-                new[] { "Kyle Connor", "Mark Scheifele", "Nikolaj Ehlers", "Josh Morrissey", "Neal Pionk" },
-                "Connor Hellebuyck", null,
-                new[] { "stopwatch", "rare_berry" });
-
-            var f3 = team.forwards;
-            if (f3 != null)
-            {
-                // LW: Kyle Connor
-                if (f3.Count > 0 && f3[0] != null)
-                {
-                    f3[0].speed = 104; f3[0].shotPower = 98; f3[0].shotAccuracy = 96; f3[0].checking = 59;
-                    f3[0].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f3[0], "tornadoAI");
-                }
-                // RW: Mark Scheifele
-                if (f3.Count > 1 && f3[1] != null)
-                {
-                    f3[1].speed = 85; f3[1].shotPower = 98; f3[1].shotAccuracy = 93; f3[1].checking = 74;
-                    f3[1].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f3[1], "tornadoAI");
-                }
-                // C: Nikolaj Ehlers
-                if (f3.Count > 2 && f3[2] != null)
-                {
-                    f3[2].speed = 109; f3[2].shotPower = 90; f3[2].shotAccuracy = 93; f3[2].checking = 48;
-                    f3[2].skaterSize = Data.SkaterSize.Small;
-                    GiveTalentToPlayer(f3[2], "Built Different");
-                    GiveTalentToPlayer(f3[2], "Trick Shot (Level 2)");
-                }
-                // LD: Josh Morrissey
-                if (f3.Count > 3 && f3[3] != null)
-                {
-                    f3[3].speed = 90; f3[3].shotPower = 87; f3[3].shotAccuracy = 85; f3[3].checking = 75;
-                    f3[3].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f3[3], "Heavy Helmet");
-                    GiveTalentToPlayer(f3[3], "Armor");
-                    GiveTalentToPlayer(f3[3], "knightAI");
-                }
-                // RD: Neal Pionk
-                if (f3.Count > 4 && f3[4] != null)
-                {
-                    f3[4].speed = 87; f3[4].shotPower = 82; f3[4].shotAccuracy = 82; f3[4].checking = 75;
-                    f3[4].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f3[4], "Built Different");
-                    GiveTalentToPlayer(f3[4], "Defensive Deflect (Level 2)");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g3 = team.goalie;
-                g3.skill = 68; g3.catchingSkill = 70; g3.gloveSkill = 72; g3.blockerSkill = 66;
-                g3.fiveHoleSkill = 64; g3.standingSpeed = 62; g3.butterflySpeed = 60;
-                g3.controlSkill = 68; g3.recoverySkill = 70; g3.passPower = 58;
-                g3.shotPower = 54; g3.pokecheckSkill = 56; g3.depth = 62; g3.passReadSkill = 0.68f;
-                GiveGoalieTalent(g3, "Always Catch Pucks");
-                GiveGoalieTalent(g3, "Goalie Headshot");
-                GiveGoalieTalent(g3, "Goalie Throw Stick");
-                GiveGoalieTalent(g3, "Goalie Enraged On Shot");
-            }
-        }
-    }
-
-    private static void RemixTopCheese(TeamData team, int round)
-    {
-        if (round == 0)
-        {
-            SwapToNHLTeam(team, "Florida", "Florida Panthers", "Florida",
-                new[] { "Sam Bennett", "Sam Reinhart", "Aleksander Barkov", "Gustav Forsling", "Aaron Ekblad" },
-                "Sergei Bobrovsky", null,
-                new[] { "sorest_loser", "revenge" });
-
-            var f = team.forwards;
-            if (f != null)
-            {
-                // LW: Sam Bennett (STAR)
-                if (f.Count > 0 && f[0] != null)
-                {
-                    f[0].speed = 58; f[0].shotPower = 66; f[0].shotAccuracy = 60; f[0].checking = 64;
-                    f[0].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f[0], "Pressure Cooker");
-                }
-                // RW: Sam Reinhart
-                if (f.Count > 1 && f[1] != null)
-                {
-                    f[1].speed = 57; f[1].shotPower = 63; f[1].shotAccuracy = 67; f[1].checking = 31;
-                    f[1].skaterSize = Data.SkaterSize.Medium;
-                }
-                // C: Aleksander Barkov (STAR)
-                if (f.Count > 2 && f[2] != null)
-                {
-                    f[2].speed = 60; f[2].shotPower = 62; f[2].shotAccuracy = 64; f[2].checking = 66;
-                    f[2].skaterSize = Data.SkaterSize.Big;
-                }
-                // LD: Gustav Forsling
-                if (f.Count > 3 && f[3] != null)
-                {
-                    f[3].speed = 57; f[3].shotPower = 47; f[3].shotAccuracy = 51; f[3].checking = 43;
-                    f[3].skaterSize = Data.SkaterSize.Medium;
-                    SetPlayerAbility(f[3], "throwingStick");
-                }
-                // RD: Aaron Ekblad
-                if (f.Count > 4 && f[4] != null)
-                {
-                    f[4].speed = 45; f[4].shotPower = 57; f[4].shotAccuracy = 51; f[4].checking = 59;
-                    f[4].skaterSize = Data.SkaterSize.Big;
-                }
-            }
-            // G: Sergei Bobrovsky
-            if (team.goalie != null)
-            {
-                var g = team.goalie;
-                g.skill = 39; g.catchingSkill = 41; g.gloveSkill = 43; g.blockerSkill = 39;
-                g.fiveHoleSkill = 37; g.standingSpeed = 54; g.butterflySpeed = 50;
-                g.controlSkill = 41; g.recoverySkill = 41; g.passPower = 33;
-                g.shotPower = 31; g.pokecheckSkill = 29; g.depth = 39; g.passReadSkill = 0.47f;
-                GiveGoalieTalent(g, "Always Catch Pucks");
-            }
-        }
-        else if (round == 1)
-        {
-            SwapToNHLTeam(team, "San Jose", "San Jose Sharks", "San Jose",
-                new[] { "William Eklund", "Tyler Toffoli", "Macklin Celebrini", "Dmitry Orlov", "Mario Ferraro" },
-                "Yaroslav Askarov", null,
-                new[] { "invisible_thread", "whistle_of_time" });
-
-            var f2 = team.forwards;
-            if (f2 != null)
-            {
-                // LW: William Eklund
-                if (f2.Count > 0 && f2[0] != null)
-                {
-                    f2[0].speed = 80; f2[0].shotPower = 68; f2[0].shotAccuracy = 74; f2[0].checking = 40;
-                    f2[0].skaterSize = Data.SkaterSize.Small;
-                }
-                // RW: Tyler Toffoli
-                if (f2.Count > 1 && f2[1] != null)
-                {
-                    f2[1].speed = 70; f2[1].shotPower = 76; f2[1].shotAccuracy = 78; f2[1].checking = 52;
-                    f2[1].skaterSize = Data.SkaterSize.Medium;
-                }
-                // C: Macklin Celebrini (STAR)
-                if (f2.Count > 2 && f2[2] != null)
-                {
-                    f2[2].speed = 90; f2[2].shotPower = 86; f2[2].shotAccuracy = 88; f2[2].checking = 52;
-                    f2[2].skaterSize = Data.SkaterSize.Small;
-                    GiveTalentToPlayer(f2[2], "Blue Line Boost");
-                    GiveTalentToPlayer(f2[2], "Curve Ball");
-                    GiveTalentToPlayer(f2[2], "Puck Rocket");
-                    GiveTalentToPlayer(f2[2], "tornadoAI");
-                    GiveTalentToPlayer(f2[2], "slugger");
-                }
-                // LD: Dmitry Orlov
-                if (f2.Count > 3 && f2[3] != null)
-                {
-                    f2[3].speed = 64; f2[3].shotPower = 64; f2[3].shotAccuracy = 62; f2[3].checking = 76;
-                    f2[3].skaterSize = Data.SkaterSize.Big;
-                }
-                // RD: Mario Ferraro
-                if (f2.Count > 4 && f2[4] != null)
-                {
-                    f2[4].speed = 70; f2[4].shotPower = 62; f2[4].shotAccuracy = 60; f2[4].checking = 80;
-                    f2[4].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f2[4], "Tong (Level 2)");
-                    GiveTalentToPlayer(f2[4], "magnetInterception");
-                    GiveTalentToPlayer(f2[4], "Velcro");
-                    GiveTalentToPlayer(f2[4], "knightAI");
-                }
-            }
-            // G: Yaroslav Askarov
-            if (team.goalie != null)
-            {
-                var g2 = team.goalie;
-                g2.skill = 42; g2.catchingSkill = 46; g2.gloveSkill = 44; g2.blockerSkill = 40;
-                g2.fiveHoleSkill = 38; g2.standingSpeed = 52; g2.butterflySpeed = 50;
-                g2.controlSkill = 44; g2.recoverySkill = 46; g2.passPower = 38;
-                g2.shotPower = 34; g2.pokecheckSkill = 36; g2.depth = 42; g2.passReadSkill = 0.48f;
-                GiveGoalieTalent(g2, "Goalie Speed Talent");
-            }
-        }
-        else
-        {
-            SwapToNHLTeam(team, "Columbus", "Columbus Blue Jackets", "Columbus",
-                new[] { "Kirill Marchenko", "Patrik Laine", "Adam Fantilli", "Zach Werenski", "Jake Christiansen" },
-                "Elvis Merzlikins", null,
-                new[] { "bolt" });
-
-            var f3 = team.forwards;
-            if (f3 != null)
-            {
-                // LW: Kirill Marchenko
-                if (f3.Count > 0 && f3[0] != null)
-                {
-                    f3[0].speed = 87; f3[0].shotPower = 91; f3[0].shotAccuracy = 89; f3[0].checking = 68;
-                    f3[0].skaterSize = Data.SkaterSize.Big;
-                }
-                // RW: Patrik Laine (STAR)
-                if (f3.Count > 1 && f3[1] != null)
-                {
-                    f3[1].speed = 67; f3[1].shotPower = 115; f3[1].shotAccuracy = 104; f3[1].checking = 55;
-                    f3[1].skaterSize = Data.SkaterSize.ExtraBig;
-                    GiveTalentToPlayer(f3[1], "Crit Boost");
-                    GiveTalentToPlayer(f3[1], "Escalating Crit");
-                    GiveTalentToPlayer(f3[1], "Point Sniper (Level 2)");
-                    GiveTalentToPlayer(f3[1], "Glass Cannon");
-                    GiveTalentToPlayer(f3[1], "Charge Shot (Level 2)");
-                }
-                // C: Adam Fantilli
-                if (f3.Count > 2 && f3[2] != null)
-                {
-                    f3[2].speed = 95; f3[2].shotPower = 86; f3[2].shotAccuracy = 89; f3[2].checking = 71;
-                    f3[2].skaterSize = Data.SkaterSize.Big;
-                }
-                // LD: Zach Werenski
-                if (f3.Count > 3 && f3[3] != null)
-                {
-                    f3[3].speed = 89; f3[3].shotPower = 89; f3[3].shotAccuracy = 86; f3[3].checking = 62;
-                    f3[3].skaterSize = Data.SkaterSize.Medium;
-                }
-                // RD: Jake Christiansen
-                if (f3.Count > 4 && f3[4] != null)
-                {
-                    f3[4].speed = 81; f3[4].shotPower = 73; f3[4].shotAccuracy = 76; f3[4].checking = 72;
-                    f3[4].skaterSize = Data.SkaterSize.Medium;
-                }
-
-                // Random speed talent for everyone except Laine (idx 1) and Werenski (idx 3)
-                var speedPool = new[] { "Backward Turbo", "Blue Line Boost", "Board Bumper", "Propeller Helmet", "Puck Hunter", "Puck Rocket", "Puckless Rocket", "Supernova Talent" };
-                var rng = new System.Random();
-                for (int i = 0; i < f3.Count; i++)
-                {
-                    if (f3[i] == null || i == 1 || i == 3) continue;
-                    var pick = speedPool[rng.Next(speedPool.Length)];
-                    GiveTalentToPlayer(f3[i], pick);
-                    Plugin.Log.LogInfo($"  [CBJ] {f3[i].firstName} {f3[i].lastName} got random speed talent: {pick}");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g3 = team.goalie;
-                g3.skill = 60; g3.catchingSkill = 62; g3.gloveSkill = 64; g3.blockerSkill = 58;
-                g3.fiveHoleSkill = 56; g3.standingSpeed = 60; g3.butterflySpeed = 58;
-                g3.controlSkill = 60; g3.recoverySkill = 62; g3.passPower = 52;
-                g3.shotPower = 48; g3.pokecheckSkill = 48; g3.depth = 56; g3.passReadSkill = 0.58f;
-                GiveGoalieTalent(g3, "Goalie Speed Talent");
-            }
-        }
-    }
-
-    // ========== ACT 1 BOSSES ==========
-
-    private static void RemixPrisoners(TeamData team, int round)
-    {
-        if (round == 0)
-        {
-            SwapToNHLTeam(team, "Buffalo", "Buffalo Sabres", "Buffalo",
-                new[] { "Peyton Krebs", "Alex Tuch", "Tage Thompson", "Owen Power", "Rasmus Dahlin" },
-                "Ukko-Pekka Luukkonen", null,
-                new[] { "stick_breaking_knockout_relic", "crash_test_dummy" });
-
-            var f = team.forwards;
-            if (f != null)
-            {
-                // LW: Peyton Krebs
-                if (f.Count > 0 && f[0] != null)
-                {
-                    f[0].speed = 71; f[0].shotPower = 61; f[0].shotAccuracy = 65; f[0].checking = 41;
-                    f[0].skaterSize = Data.SkaterSize.Small;
-                }
-                // RW: Alex Tuch
-                if (f.Count > 1 && f[1] != null)
-                {
-                    f[1].speed = 67; f[1].shotPower = 71; f[1].shotAccuracy = 69; f[1].checking = 61;
-                    f[1].skaterSize = Data.SkaterSize.Big;
-                }
-                // C: Tage Thompson (STAR)
-                if (f.Count > 2 && f[2] != null)
-                {
-                    f[2].speed = 61; f[2].shotPower = 79; f[2].shotAccuracy = 77; f[2].checking = 57;
-                    f[2].skaterSize = Data.SkaterSize.ExtraBig;
-                    GiveTalentToPlayer(f[2], "Bouncy McBounce");
-                    GiveTalentToPlayer(f[2], "Fast Rebound");
-                }
-                // LD: Owen Power
-                if (f.Count > 3 && f[3] != null)
-                {
-                    f[3].speed = 63; f[3].shotPower = 67; f[3].shotAccuracy = 65; f[3].checking = 59;
-                    f[3].skaterSize = Data.SkaterSize.Big;
-                }
-                // RD: Rasmus Dahlin (STAR)
-                if (f.Count > 4 && f[4] != null)
-                {
-                    f[4].speed = 75; f[4].shotPower = 71; f[4].shotAccuracy = 73; f[4].checking = 55;
-                    f[4].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f[4], "Board Bumper");
-                    SetPlayerAbility(f[4], "Grappling Hook Mountaineer");
-                }
-                // Random checking talents — 2 for Dahlin (idx 4), 1 for everyone else, no dupes per player
-                var checkingTalents = new[] { "Armor", "Bonecrusher", "Chexplosion", "Enraged", "Feed", "Heavy Helmet", "Onepunch" };
-                var rng = new System.Random();
-                for (int i = 0; i < f.Count; i++)
-                {
-                    if (f[i] == null) continue;
-                    int count = (i == 4) ? 2 : 1; // Dahlin gets 2
-                    var used = new HashSet<int>();
-                    for (int j = 0; j < count; j++)
-                    {
-                        int idx;
-                        do { idx = rng.Next(checkingTalents.Length); } while (used.Contains(idx));
-                        used.Add(idx);
-                        GiveTalentToPlayer(f[i], checkingTalents[idx]);
-                        Plugin.Log.LogInfo($"  [Sabres] {f[i].firstName} {f[i].lastName} got random checking talent: {checkingTalents[idx]}");
-                    }
-                }
-            }
-            // G: Ukko-Pekka Luukkonen
-            if (team.goalie != null)
-            {
-                var g = team.goalie;
-                g.skill = 33; g.catchingSkill = 35; g.gloveSkill = 37; g.blockerSkill = 33;
-                g.fiveHoleSkill = 31; g.standingSpeed = 48; g.butterflySpeed = 44;
-                g.controlSkill = 32; g.recoverySkill = 33; g.passPower = 27;
-                g.shotPower = 23; g.pokecheckSkill = 19; g.depth = 31; g.passReadSkill = 0.38f;
-            }
-        }
-        else if (round == 1)
-        {
-            SwapToNHLTeam(team, "Calgary", "Calgary Flames", "Calgary",
-                new[] { "Jonathan Huberdeau", "Martin Pospisil", "Nazem Kadri", "Rasmus Andersson", "MacKenzie Weegar" },
-                "Dustin Wolf", null,
-                new[] { "bolt", "hot_cold" });
-
-            var f2 = team.forwards;
-            if (f2 != null)
-            {
-                // LW: Jonathan Huberdeau
-                if (f2.Count > 0 && f2[0] != null)
-                {
-                    f2[0].speed = 79; f2[0].shotPower = 74; f2[0].shotAccuracy = 83; f2[0].checking = 49;
-                    f2[0].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[0], "Cherry Picker");
-                    GiveTalentToPlayer(f2[0], "Mega Deflect (Level 2)");
-                    GiveTalentToPlayer(f2[0], "slugger");
-                    GiveTalentToPlayer(f2[0], "Redirector");
-                }
-                // RW: Martin Pospisil
-                if (f2.Count > 1 && f2[1] != null)
-                {
-                    f2[1].speed = 83; f2[1].shotPower = 72; f2[1].shotAccuracy = 70; f2[1].checking = 70;
-                    f2[1].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[1], "Cherry Picker");
-                    GiveTalentToPlayer(f2[1], "Mega Deflect (Level 2)");
-                    GiveTalentToPlayer(f2[1], "slugger");
-                    GiveTalentToPlayer(f2[1], "Redirector");
-                }
-                // C: Nazem Kadri
-                if (f2.Count > 2 && f2[2] != null)
-                {
-                    f2[2].speed = 77; f2[2].shotPower = 79; f2[2].shotAccuracy = 77; f2[2].checking = 66;
-                    f2[2].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[2], "Flawless Feeder (Level 2)");
-                    GiveTalentToPlayer(f2[2], "Supernova Talent");
-                }
-                // LD: Rasmus Andersson
-                if (f2.Count > 3 && f2[3] != null)
-                {
-                    f2[3].speed = 72; f2[3].shotPower = 72; f2[3].shotAccuracy = 70; f2[3].checking = 68;
-                    f2[3].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[3], "Point Sniper");
-                }
-                // RD: MacKenzie Weegar
-                if (f2.Count > 4 && f2[4] != null)
-                {
-                    f2[4].speed = 72; f2[4].shotPower = 70; f2[4].shotAccuracy = 70; f2[4].checking = 66;
-                    f2[4].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[4], "Point Sniper");
-                }
-
-                // Manual Hot & Cold: +10 OVR to one random player, -10 to another
-                var hcRng = new System.Random();
-                int boost = hcRng.Next(f2.Count);
-                int nerf;
-                do { nerf = hcRng.Next(f2.Count); } while (nerf == boost);
-                if (f2[boost] != null)
-                {
-                    f2[boost].speed += 10; f2[boost].shotPower += 10; f2[boost].shotAccuracy += 10; f2[boost].checking += 10;
-                    Plugin.Log.LogInfo($"  [Flames] Hot & Cold: {f2[boost].firstName} {f2[boost].lastName} BOOSTED +10");
-                }
-                if (f2[nerf] != null)
-                {
-                    f2[nerf].speed -= 10; f2[nerf].shotPower -= 10; f2[nerf].shotAccuracy -= 10; f2[nerf].checking -= 10;
-                    Plugin.Log.LogInfo($"  [Flames] Hot & Cold: {f2[nerf].firstName} {f2[nerf].lastName} NERFED -10");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g2 = team.goalie;
-                g2.skill = 54; g2.catchingSkill = 58; g2.gloveSkill = 60; g2.blockerSkill = 52;
-                g2.fiveHoleSkill = 50; g2.standingSpeed = 58; g2.butterflySpeed = 56;
-                g2.controlSkill = 56; g2.recoverySkill = 58; g2.passPower = 48;
-                g2.shotPower = 44; g2.pokecheckSkill = 46; g2.depth = 54; g2.passReadSkill = 0.60f;
-                GiveGoalieTalent(g2, "Goalie Enrage Last30Sec");
-            }
-        }
-        else
-        {
-            SwapToNHLTeam(team, "New Jersey", "New Jersey Devils", "New Jersey",
-                new[] { "Jack Hughes", "Nico Hischier", "Jesper Bratt", "Dougie Hamilton", "Luke Hughes" },
-                "Jacob Markstrom", null,
-                new[] { "odd_fungus", "hot_cake" });
-
-            var f3 = team.forwards;
-            if (f3 != null)
-            {
-                // LW: Jack Hughes (STAR)
-                if (f3.Count > 0 && f3[0] != null)
-                {
-                    f3[0].speed = 109; f3[0].shotPower = 93; f3[0].shotAccuracy = 104; f3[0].checking = 54;
-                    f3[0].skaterSize = Data.SkaterSize.Small;
-                    GiveTalentToPlayer(f3[0], "Puck Rocket");
-                    GiveTalentToPlayer(f3[0], "tornadoAI");
-                    GiveTalentToPlayer(f3[0], "Hidden Ace");
-                }
-                // RW: Nico Hischier
-                if (f3.Count > 1 && f3[1] != null)
-                {
-                    f3[1].speed = 96; f3[1].shotPower = 93; f3[1].shotAccuracy = 96; f3[1].checking = 76;
-                    f3[1].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f3[1], "Built Different");
-                    GiveTalentToPlayer(f3[1], "En Garde!");
-                    GiveTalentToPlayer(f3[1], "Crit Boost");
-                }
-                // C: Jesper Bratt
-                if (f3.Count > 2 && f3[2] != null)
-                {
-                    f3[2].speed = 104; f3[2].shotPower = 88; f3[2].shotAccuracy = 96; f3[2].checking = 52;
-                    f3[2].skaterSize = Data.SkaterSize.Small;
-                    GiveTalentToPlayer(f3[2], "Express Delivery");
-                    GiveTalentToPlayer(f3[2], "Trick Shot");
-                }
-                // LD: Dougie Hamilton (STAR)
-                if (f3.Count > 3 && f3[3] != null)
-                {
-                    f3[3].speed = 83; f3[3].shotPower = 101; f3[3].shotAccuracy = 96; f3[3].checking = 82;
-                    f3[3].skaterSize = Data.SkaterSize.ExtraExtraBig;
-                    GiveTalentToPlayer(f3[3], "The Howitzer");
-                    GiveTalentToPlayer(f3[3], "Sword");
-                }
-                // RD: Luke Hughes
-                if (f3.Count > 4 && f3[4] != null)
-                {
-                    f3[4].speed = 99; f3[4].shotPower = 91; f3[4].shotAccuracy = 91; f3[4].checking = 77;
-                    f3[4].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f3[4], "Board Bumper");
-                    GiveTalentToPlayer(f3[4], "Blue Line Boost");
-                    GiveTalentToPlayer(f3[4], "tornadoAI");
-                    GiveTalentToPlayer(f3[4], "Charge Shot");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g3 = team.goalie;
-                g3.skill = 61; g3.catchingSkill = 63; g3.gloveSkill = 65; g3.blockerSkill = 59;
-                g3.fiveHoleSkill = 57; g3.standingSpeed = 57; g3.butterflySpeed = 55;
-                g3.controlSkill = 61; g3.recoverySkill = 63; g3.passPower = 51;
-                g3.shotPower = 47; g3.pokecheckSkill = 47; g3.depth = 55; g3.passReadSkill = 0.59f;
-            }
-        }
-    }
-
-    private static void RemixOfficials(TeamData team, int round)
-    {
-        if (round == 0)
-        {
-            SwapToNHLTeam(team, "Edmonton", "Edmonton Oilers", "Edmonton",
-                new[] { "Leon Draisaitl", "Zach Hyman", "Connor McDavid", "Mattias Ekholm", "Evan Bouchard" },
-                "Connor Ingram", null,
-                new[] { "tied_homie" });
-
-            var f = team.forwards;
-            if (f != null)
-            {
-                // LW: Leon Draisaitl
-                if (f.Count > 0 && f[0] != null)
-                {
-                    f[0].speed = 66; f[0].shotPower = 74; f[0].shotAccuracy = 72; f[0].checking = 54;
-                    f[0].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f[0], "Quick Draw");
-                }
-                // RW: Zach Hyman
-                if (f.Count > 1 && f[1] != null)
-                {
-                    f[1].speed = 69; f[1].shotPower = 69; f[1].shotAccuracy = 67; f[1].checking = 57;
-                    f[1].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f[1], "Cherry Picker");
-                }
-                // C: Connor McDavid
-                if (f.Count > 2 && f[2] != null)
-                {
-                    f[2].speed = 90; f[2].shotPower = 80; f[2].shotAccuracy = 86; f[2].checking = 52;
-                    f[2].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f[2], "Flawless Feeder");
-                    GiveTalentToPlayer(f[2], "Quick Draw");
-                    GiveTalentToPlayer(f[2], "Blue Line Boost (Level 2)");
-                    GiveTalentToPlayer(f[2], "XRay Shot (Level 2)");
-                }
-                // LD: Mattias Ekholm
-                if (f.Count > 3 && f[3] != null)
-                {
-                    f[3].speed = 58; f[3].shotPower = 66; f[3].shotAccuracy = 64; f[3].checking = 74;
-                    f[3].skaterSize = Data.SkaterSize.ExtraBig;
-                }
-                // RD: Evan Bouchard
-                if (f.Count > 4 && f[4] != null)
-                {
-                    f[4].speed = 64; f[4].shotPower = 68; f[4].shotAccuracy = 68; f[4].checking = 46;
-                    f[4].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f[4], "Point Sniper (Level 2)");
-                    GiveTalentToPlayer(f[4], "The Howitzer");
-                }
-            }
-            // G: Connor Ingram
-            if (team.goalie != null)
-            {
-                var g = team.goalie;
-                g.skill = 36; g.catchingSkill = 38; g.gloveSkill = 36; g.blockerSkill = 34;
-                g.fiveHoleSkill = 32; g.standingSpeed = 50; g.butterflySpeed = 46;
-                g.controlSkill = 35; g.recoverySkill = 40; g.passPower = 27;
-                g.shotPower = 25; g.pokecheckSkill = 23; g.depth = 33; g.passReadSkill = 0.40f;
-            }
-        }
-        else if (round == 1)
-        {
-            SwapToNHLTeam(team, "Montreal", "Montreal Canadiens", "Montreal",
-                new[] { "Juraj Slafkovsky", "Cole Caufield", "Nick Suzuki", "Lane Hutson", "Noah Dobson" },
-                "Jakub Dobes", null,
-                new[] { "critical_one_timer_relic:2", "bolt:2" });
-
-            var f2 = team.forwards;
-            if (f2 != null)
-            {
-                // LW: Juraj Slafkovsky
-                if (f2.Count > 0 && f2[0] != null)
-                {
-                    f2[0].speed = 79; f2[0].shotPower = 84; f2[0].shotAccuracy = 80; f2[0].checking = 73;
-                    f2[0].skaterSize = Data.SkaterSize.ExtraBig;
-                }
-                // RW: Cole Caufield
-                if (f2.Count > 1 && f2[1] != null)
-                {
-                    f2[1].speed = 96; f2[1].shotPower = 86; f2[1].shotAccuracy = 91; f2[1].checking = 26;
-                    f2[1].skaterSize = Data.SkaterSize.ExtraSmall;
-                    GiveTalentToPlayer(f2[1], "Sonic Slap (Level 2)");
-                    GiveTalentToPlayer(f2[1], "Crit Boost");
-                    GiveTalentToPlayer(f2[1], "Point Sniper (Level 2)");
-                    GiveTalentToPlayer(f2[1], "Pressure Coooker (Level 2)");
-                    GiveTalentToPlayer(f2[1], "Sword (Level 2)");
-                }
-                // C: Nick Suzuki
-                if (f2.Count > 2 && f2[2] != null)
-                {
-                    f2[2].speed = 90; f2[2].shotPower = 75; f2[2].shotAccuracy = 82; f2[2].checking = 54;
-                    f2[2].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[2], "Puckless Rocket (Level 2)");
-                    SetPlayerAbility(f2[2], "Grappling Hook Mountaineer");
-                }
-                // LD: Lane Hutson
-                if (f2.Count > 3 && f2[3] != null)
-                {
-                    f2[3].speed = 99; f2[3].shotPower = 73; f2[3].shotAccuracy = 78; f2[3].checking = 43;
-                    f2[3].skaterSize = Data.SkaterSize.Small;
-                    GiveTalentToPlayer(f2[3], "Blue Line Boost (Level 2)");
-                }
-                // RD: Noah Dobson
-                if (f2.Count > 4 && f2[4] != null)
-                {
-                    f2[4].speed = 82; f2[4].shotPower = 80; f2[4].shotAccuracy = 80; f2[4].checking = 69;
-                    f2[4].skaterSize = Data.SkaterSize.ExtraBig;
-                    GiveTalentToPlayer(f2[4], "Onepunch");
-                    GiveTalentToPlayer(f2[4], "Human Shield");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g2 = team.goalie;
-                g2.skill = 46; g2.catchingSkill = 50; g2.gloveSkill = 52; g2.blockerSkill = 44;
-                g2.fiveHoleSkill = 42; g2.standingSpeed = 52; g2.butterflySpeed = 50;
-                g2.controlSkill = 48; g2.recoverySkill = 50; g2.passPower = 42;
-                g2.shotPower = 38; g2.pokecheckSkill = 40; g2.depth = 46; g2.passReadSkill = 0.52f;
-                GiveGoalieTalent(g2, "Goalie Speed Talent");
-            }
-        }
-        else
-        {
-            SwapToNHLTeam(team, "Tampa Bay", "Tampa Bay Lightning", "Tampa Bay",
-                new[] { "Nikita Kucherov", "Brandon Hagel", "Brayden Point", "Victor Hedman", "Erik Cernak" },
-                "Andrei Vasilevskiy", null,
-                new[] { "last_minute", "breakaway_boost" });
-
-            var f3 = team.forwards;
-            if (f3 != null)
-            {
-                // LW: Nikita Kucherov (STAR)
-                if (f3.Count > 0 && f3[0] != null)
-                {
-                    f3[0].speed = 99; f3[0].shotPower = 102; f3[0].shotAccuracy = 110; f3[0].checking = 50;
-                    f3[0].skaterSize = Data.SkaterSize.Small;
-                    GiveTalentToPlayer(f3[0], "Trick Shot (Level 2)");
-                    GiveTalentToPlayer(f3[0], "XRay Shot (Level 2)");
-                    GiveTalentToPlayer(f3[0], "Flawless Feeder");
-                }
-                // RW: Brandon Hagel
-                if (f3.Count > 1 && f3[1] != null)
-                {
-                    f3[1].speed = 105; f3[1].shotPower = 86; f3[1].shotAccuracy = 86; f3[1].checking = 69;
-                    f3[1].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f3[1], "Speed Transfer");
-                }
-                // C: Brayden Point
-                if (f3.Count > 2 && f3[2] != null)
-                {
-                    f3[2].speed = 102; f3[2].shotPower = 97; f3[2].shotAccuracy = 99; f3[2].checking = 55;
-                    f3[2].skaterSize = Data.SkaterSize.Small;
-                    GiveTalentToPlayer(f3[2], "Crit Boost");
-                }
-                // LD: Victor Hedman
-                if (f3.Count > 3 && f3[3] != null)
-                {
-                    f3[3].speed = 73; f3[3].shotPower = 97; f3[3].shotAccuracy = 94; f3[3].checking = 89;
-                    f3[3].skaterSize = Data.SkaterSize.ExtraExtraBig;
-                    GiveTalentToPlayer(f3[3], "Armor");
-                    GiveTalentToPlayer(f3[3], "knightAI");
-                }
-                // RD: Erik Cernak
-                if (f3.Count > 4 && f3[4] != null)
-                {
-                    f3[4].speed = 72; f3[4].shotPower = 81; f3[4].shotAccuracy = 78; f3[4].checking = 94;
-                    f3[4].skaterSize = Data.SkaterSize.ExtraBig;
-                    GiveTalentToPlayer(f3[4], "Spiked Armor");
-                    GiveTalentToPlayer(f3[4], "cultistPowerRD");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g3 = team.goalie;
-                g3.skill = 72; g3.catchingSkill = 74; g3.gloveSkill = 76; g3.blockerSkill = 70;
-                g3.fiveHoleSkill = 68; g3.standingSpeed = 65; g3.butterflySpeed = 63;
-                g3.controlSkill = 72; g3.recoverySkill = 74; g3.passPower = 62;
-                g3.shotPower = 56; g3.pokecheckSkill = 58; g3.depth = 66; g3.passReadSkill = 0.72f;
-                GiveGoalieTalent(g3, "Always Catch Pucks");
-                GiveGoalieTalent(g3, "Goalie Pass Proepl");
-            }
-        }
-    }
-
-    // ========== ACT 2 ELITES ==========
-
-    private static void RemixCrusaders(TeamData team, int round)
-    {
-        if (round == 0)
-        {
-            SwapToNHLTeam(team, "New York", "New York Rangers", "New York",
-                new[] { "Alexis Lafreniere", "Mika Zibanejad", "J.T. Miller", "Adam Fox", "Ryan Lindgren" },
-                "Igor Shesterkin", null,
-                new[] { "hot_cake", "false_goal_on_post" });
-
-            var f = team.forwards;
-            if (f != null)
-            {
-                // LW: Alexis Lafreniere
-                if (f.Count > 0 && f[0] != null)
-                {
-                    f[0].speed = 97; f[0].shotPower = 91; f[0].shotAccuracy = 93; f[0].checking = 73;
-                    f[0].skaterSize = Data.SkaterSize.Medium;
-                }
-                // RW: Mika Zibanejad
-                if (f.Count > 1 && f[1] != null)
-                {
-                    f[1].speed = 83; f[1].shotPower = 97; f[1].shotAccuracy = 95; f[1].checking = 79;
-                    f[1].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f[1], "Charge Shot (Level 2)");
-                }
-                // C: J.T. Miller
-                if (f.Count > 2 && f[2] != null)
-                {
-                    f[2].speed = 85; f[2].shotPower = 93; f[2].shotAccuracy = 91; f[2].checking = 83;
-                    f[2].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f[2], "Scrambled");
-                }
-                // LD: Adam Fox (STAR)
-                if (f.Count > 3 && f[3] != null)
-                {
-                    f[3].speed = 95; f[3].shotPower = 89; f[3].shotAccuracy = 95; f[3].checking = 61;
-                    f[3].skaterSize = Data.SkaterSize.Small;
-                    GiveTalentToPlayer(f[3], "Power Transfer");
-                    GiveTalentToPlayer(f[3], "ImperviousOnPass");
-                }
-                // RD: Ryan Lindgren
-                if (f.Count > 4 && f[4] != null)
-                {
-                    f[4].speed = 85; f[4].shotPower = 81; f[4].shotAccuracy = 81; f[4].checking = 87;
-                    f[4].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f[4], "Spring Board");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g = team.goalie;
-                g.skill = 77; g.catchingSkill = 79; g.gloveSkill = 81; g.blockerSkill = 75;
-                g.fiveHoleSkill = 75; g.standingSpeed = 60; g.butterflySpeed = 58;
-                g.controlSkill = 77; g.recoverySkill = 79; g.passPower = 63;
-                g.shotPower = 57; g.pokecheckSkill = 61; g.depth = 67; g.passReadSkill = 0.75f;
-                GiveGoalieTalent(g, "Goalie Dance");
-            }
-        }
-        else
-        {
-            SwapToNHLTeam(team, "Pittsburgh", "Pittsburgh Penguins", "Pittsburgh",
-                new[] { "Evgeni Malkin", "Rickard Rakell", "Sidney Crosby", "Erik Karlsson", "Kris Letang" },
-                "Stuart Skinner", null,
-                new[] { "pitiless", "oven_mitts", "silky_mitts", "reverse_odd_fungus" });
-
-            var f2 = team.forwards;
-            if (f2 != null)
-            {
-                // LW: Evgeni Malkin
-                if (f2.Count > 0 && f2[0] != null)
-                {
-                    f2[0].speed = 95; f2[0].shotPower = 126; f2[0].shotAccuracy = 124; f2[0].checking = 104;
-                    f2[0].skaterSize = Data.SkaterSize.ExtraBig;
-                    GiveTalentToPlayer(f2[0], "Enraged");
-                }
-                // RW: Rickard Rakell
-                if (f2.Count > 1 && f2[1] != null)
-                {
-                    f2[1].speed = 110; f2[1].shotPower = 114; f2[1].shotAccuracy = 114; f2[1].checking = 102;
-                    f2[1].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f2[1], "Speed Transfer");
-                }
-                // C: Sidney Crosby (STAR)
-                if (f2.Count > 2 && f2[2] != null)
-                {
-                    f2[2].speed = 115; f2[2].shotPower = 128; f2[2].shotAccuracy = 130; f2[2].checking = 102;
-                    f2[2].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[2], "Flawless Feeder (Level 2)");
-                    GiveTalentToPlayer(f2[2], "Power Transfer");
-                    GiveTalentToPlayer(f2[2], "Hidden Ace");
-                }
-                // LD: Erik Karlsson
-                if (f2.Count > 3 && f2[3] != null)
-                {
-                    f2[3].speed = 116; f2[3].shotPower = 114; f2[3].shotAccuracy = 118; f2[3].checking = 92;
-                    f2[3].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[3], "Blue Line Boost (Level 2)");
-                    GiveTalentToPlayer(f2[3], "Slapshot Slowmo");
-                    GiveTalentToPlayer(f2[3], "Charge Shot");
-                    GiveTalentToPlayer(f2[3], "cultistPowerLD");
-                }
-                // RD: Kris Letang
-                if (f2.Count > 4 && f2[4] != null)
-                {
-                    f2[4].speed = 108; f2[4].shotPower = 110; f2[4].shotAccuracy = 110; f2[4].checking = 102;
-                    f2[4].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[4], "Spring Board");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g2 = team.goalie;
-                g2.skill = 78; g2.catchingSkill = 80; g2.gloveSkill = 82; g2.blockerSkill = 76;
-                g2.fiveHoleSkill = 74; g2.standingSpeed = 62; g2.butterflySpeed = 60;
-                g2.controlSkill = 78; g2.recoverySkill = 80; g2.passPower = 64;
-                g2.shotPower = 58; g2.pokecheckSkill = 60; g2.depth = 68; g2.passReadSkill = 0.72f;
-                GiveGoalieTalent(g2, "Always Catch Pucks");
-                GiveGoalieTalent(g2, "Goalie Headshot");
-            }
-        }
-    }
-
-    private static void RemixMountaineers(TeamData team, int round)
-    {
-        if (round == 0)
-        {
-            SwapToNHLTeam(team, "Minnesota", "Minnesota Wild", "Minnesota",
-                new[] { "Kirill Kaprizov", "Mats Zuccarello", "Joel Eriksson Ek", "Quinn Hughes", "Brock Faber" },
-                "Filip Gustavsson", null,
-                new[] { "corn_dog", "frog_on_ability" });
-
-            var f = team.forwards;
-            if (f != null)
-            {
-                // LW: Kirill Kaprizov (STAR)
-                if (f.Count > 0 && f[0] != null)
-                {
-                    f[0].speed = 102; f[0].shotPower = 98; f[0].shotAccuracy = 100; f[0].checking = 54;
-                    f[0].skaterSize = Data.SkaterSize.Small;
-                    GiveTalentToPlayer(f[0], "Trick Shot (Level 2)");
-                    GiveTalentToPlayer(f[0], "Puck Rocket");
-                    GiveTalentToPlayer(f[0], "tornadoAI");
-                }
-                // RW: Mats Zuccarello
-                if (f.Count > 1 && f[1] != null)
-                {
-                    f[1].speed = 90; f[1].shotPower = 84; f[1].shotAccuracy = 94; f[1].checking = 36;
-                    f[1].skaterSize = Data.SkaterSize.ExtraSmall;
-                    GiveTalentToPlayer(f[1], "Express Delivery");
-                    GiveTalentToPlayer(f[1], "Sonic Pass");
-                }
-                // C: Joel Eriksson Ek
-                if (f.Count > 2 && f[2] != null)
-                {
-                    f[2].speed = 84; f[2].shotPower = 88; f[2].shotAccuracy = 86; f[2].checking = 82;
-                    f[2].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f[2], "Enraged");
-                }
-                // LD: Quinn Hughes (STAR)
-                if (f.Count > 3 && f[3] != null)
-                {
-                    f[3].speed = 104; f[3].shotPower = 86; f[3].shotAccuracy = 92; f[3].checking = 50;
-                    f[3].skaterSize = Data.SkaterSize.Small;
-                    GiveTalentToPlayer(f[3], "Board Bumper");
-                    GiveTalentToPlayer(f[3], "Blue Line Boost (Level 2)");
-                }
-                // RD: Brock Faber
-                if (f.Count > 4 && f[4] != null)
-                {
-                    f[4].speed = 90; f[4].shotPower = 86; f[4].shotAccuracy = 86; f[4].checking = 78;
-                    f[4].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f[4], "Human Shield");
-                    GiveTalentToPlayer(f[4], "Defensive Deflect");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g = team.goalie;
-                g.skill = 70; g.catchingSkill = 72; g.gloveSkill = 74; g.blockerSkill = 68;
-                g.fiveHoleSkill = 68; g.standingSpeed = 60; g.butterflySpeed = 58;
-                g.controlSkill = 70; g.recoverySkill = 70; g.passPower = 54;
-                g.shotPower = 48; g.pokecheckSkill = 50; g.depth = 56; g.passReadSkill = 0.66f;
-                GiveGoalieTalent(g, "Goalie Enraged On Breakaway");
-            }
-        }
-        else
-        {
-            SwapToNHLTeam(team, "Nashville", "Nashville Predators", "Nashville",
-                new[] { "Jonathan Marchessault", "Steven Stamkos", "Ryan O'Reilly", "Roman Josi", "Brady Skjei" },
-                "Juuse Saros", null,
-                new[] { "wasabi_paste", "dentist_drill", "revenge" });
-
-            var f2 = team.forwards;
-            if (f2 != null)
-            {
-                // LW: Jonathan Marchessault
-                if (f2.Count > 0 && f2[0] != null)
-                {
-                    f2[0].speed = 113; f2[0].shotPower = 115; f2[0].shotAccuracy = 119; f2[0].checking = 85;
-                    f2[0].skaterSize = Data.SkaterSize.Small;
-                    GiveTalentToPlayer(f2[0], "Puck Rocket");
-                    GiveTalentToPlayer(f2[0], "tornadoAI");
-                    GiveTalentToPlayer(f2[0], "Fragile Talent");
-                    GiveTalentToPlayer(f2[0], "Sado Maso");
-                }
-                // RW: Steven Stamkos (STAR)
-                if (f2.Count > 1 && f2[1] != null)
-                {
-                    f2[1].speed = 109; f2[1].shotPower = 127; f2[1].shotAccuracy = 127; f2[1].checking = 93;
-                    f2[1].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[1], "Fury Stick");
-                    GiveTalentToPlayer(f2[1], "Pass Back");
-                    GiveTalentToPlayer(f2[1], "karlsonBehavior");
-                }
-                // C: Ryan O'Reilly
-                if (f2.Count > 2 && f2[2] != null)
-                {
-                    f2[2].speed = 101; f2[2].shotPower = 113; f2[2].shotAccuracy = 113; f2[2].checking = 110;
-                    f2[2].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f2[2], "Tong (Level 2)");
-                    GiveTalentToPlayer(f2[2], "En Garde!");
-                }
-                // LD: Roman Josi (STAR)
-                if (f2.Count > 3 && f2[3] != null)
-                {
-                    f2[3].speed = 117; f2[3].shotPower = 115; f2[3].shotAccuracy = 117; f2[3].checking = 98;
-                    f2[3].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[3], "Homewrecker");
-                    GiveTalentToPlayer(f2[3], "Ball Chaser");
-                }
-                // RD: Brady Skjei
-                if (f2.Count > 4 && f2[4] != null)
-                {
-                    f2[4].speed = 98; f2[4].shotPower = 112; f2[4].shotAccuracy = 110; f2[4].checking = 113;
-                    f2[4].skaterSize = Data.SkaterSize.ExtraBig;
-                    GiveTalentToPlayer(f2[4], "Onepunch");
-                    GiveTalentToPlayer(f2[4], "knightAI");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g2 = team.goalie;
-                g2.skill = 80; g2.catchingSkill = 82; g2.gloveSkill = 84; g2.blockerSkill = 78;
-                g2.fiveHoleSkill = 78; g2.standingSpeed = 62; g2.butterflySpeed = 60;
-                g2.controlSkill = 80; g2.recoverySkill = 82; g2.passPower = 64;
-                g2.shotPower = 58; g2.pokecheckSkill = 62; g2.depth = 68; g2.passReadSkill = 0.76f;
-                GiveGoalieTalent(g2, "Always Catch Pucks");
-                GiveGoalieTalent(g2, "Goalie Throw Stick");
-            }
-        }
-    }
-
-    private static void RemixShootingStars(TeamData team, int round)
-    {
-        if (round == 0)
-        {
-            SwapToNHLTeam(team, "Toronto", "Toronto Maple Leafs", "Toronto",
-                new[] { "Matthew Knies", "William Nylander", "Auston Matthews", "Morgan Rielly", "Jake McCabe" },
-                "Joseph Woll", null,
-                new[] { "both_team_crit", "laser_pointer" });
-
-            var f = team.forwards;
-            if (f != null)
-            {
-                // LW: Matthew Knies
-                if (f.Count > 0 && f[0] != null)
-                {
-                    f[0].speed = 80; f[0].shotPower = 90; f[0].shotAccuracy = 90; f[0].checking = 84;
-                    f[0].skaterSize = Data.SkaterSize.ExtraBig;
-                    GiveTalentToPlayer(f[0], "Enraged");
-                }
-                // RW: William Nylander
-                if (f.Count > 1 && f[1] != null)
-                {
-                    f[1].speed = 96; f[1].shotPower = 92; f[1].shotAccuracy = 94; f[1].checking = 62;
-                    f[1].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f[1], "Speed Transfer");
-                    GiveTalentToPlayer(f[1], "Curve Ball");
-                }
-                // C: Auston Matthews (STAR)
-                if (f.Count > 2 && f[2] != null)
-                {
-                    f[2].speed = 82; f[2].shotPower = 108; f[2].shotAccuracy = 106; f[2].checking = 80;
-                    f[2].skaterSize = Data.SkaterSize.ExtraBig;
-                    GiveTalentToPlayer(f[2], "Crit Boost");
-                    GiveTalentToPlayer(f[2], "Charge Shot (Level 2)");
-                    GiveTalentToPlayer(f[2], "X-Ray Shot");
-                }
-                // LD: Morgan Rielly
-                if (f.Count > 3 && f[3] != null)
-                {
-                    f[3].speed = 90; f[3].shotPower = 86; f[3].shotAccuracy = 86; f[3].checking = 72;
-                    f[3].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f[3], "Blue Line Boost");
-                }
-                // RD: Jake McCabe
-                if (f.Count > 4 && f[4] != null)
-                {
-                    f[4].speed = 82; f[4].shotPower = 80; f[4].shotAccuracy = 80; f[4].checking = 82;
-                    f[4].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f[4], "Spiked Armor");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g = team.goalie;
-                g.skill = 65; g.catchingSkill = 67; g.gloveSkill = 69; g.blockerSkill = 63;
-                g.fiveHoleSkill = 63; g.standingSpeed = 58; g.butterflySpeed = 56;
-                g.controlSkill = 65; g.recoverySkill = 67; g.passPower = 55;
-                g.shotPower = 51; g.pokecheckSkill = 51; g.depth = 60; g.passReadSkill = 0.62f;
-                GiveGoalieTalent(g, "Goalie Assist");
-            }
-        }
-        else
-        {
-            SwapToNHLTeam(team, "Anaheim", "Anaheim Ducks", "Anaheim",
-                new[] { "Cutter Gauthier", "Beckett Sennecke", "Leo Carlsson", "Radko Gudas", "Olen Zellweger" },
-                "Lukas Dostal", null,
-                new[] { "egg_timer", "fragile" });
-
-            var f2 = team.forwards;
-            if (f2 != null)
-            {
-                // LW: Cutter Gauthier
-                if (f2.Count > 0 && f2[0] != null)
-                {
-                    f2[0].speed = 110; f2[0].shotPower = 118; f2[0].shotAccuracy = 116; f2[0].checking = 102;
-                    f2[0].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f2[0], "Feed");
-                    GiveTalentToPlayer(f2[0], "Avenge Me! (Level 2)");
-                    GiveTalentToPlayer(f2[0], "Porcelain Hammer");
-                    GiveTalentToPlayer(f2[0], "Scrambled");
-                    GiveTalentToPlayer(f2[0], "Poke Rage");
-                }
-                // RW: Beckett Sennecke
-                if (f2.Count > 1 && f2[1] != null)
-                {
-                    f2[1].speed = 114; f2[1].shotPower = 114; f2[1].shotAccuracy = 116; f2[1].checking = 92;
-                    f2[1].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[1], "Mega Deflect (Level 2)");
-                    GiveTalentToPlayer(f2[1], "Redirector");
-                }
-                // C: Leo Carlsson (STAR)
-                if (f2.Count > 2 && f2[2] != null)
-                {
-                    f2[2].speed = 118; f2[2].shotPower = 122; f2[2].shotAccuracy = 124; f2[2].checking = 96;
-                    f2[2].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[2], "Fury Stick");
-                    GiveTalentToPlayer(f2[2], "Anchor");
-                    GiveTalentToPlayer(f2[2], "Musical Nets");
-                    GiveTalentToPlayer(f2[2], "ImperviousOnPass");
-                    GiveTalentToPlayer(f2[2], "Ping King");
-                }
-                // LD: Radko Gudas
-                if (f2.Count > 3 && f2[3] != null)
-                {
-                    f2[3].speed = 96; f2[3].shotPower = 104; f2[3].shotAccuracy = 100; f2[3].checking = 124;
-                    f2[3].skaterSize = Data.SkaterSize.ExtraBig;
-                    GiveTalentToPlayer(f2[3], "Onepunch");
-                    GiveTalentToPlayer(f2[3], "Chexplosion");
-                    GiveTalentToPlayer(f2[3], "marauder");
-                    GiveTalentToPlayer(f2[3], "Homewrecker");
-                    GiveTalentToPlayer(f2[3], "Heavy Helmet");
-                }
-                // RD: Olen Zellweger
-                if (f2.Count > 4 && f2[4] != null)
-                {
-                    f2[4].speed = 122; f2[4].shotPower = 108; f2[4].shotAccuracy = 112; f2[4].checking = 80;
-                    f2[4].skaterSize = Data.SkaterSize.Small;
-                    GiveTalentToPlayer(f2[4], "Board Bumper");
-                    GiveTalentToPlayer(f2[4], "Puckless Rocket");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g2 = team.goalie;
-                g2.skill = 82; g2.catchingSkill = 84; g2.gloveSkill = 86; g2.blockerSkill = 80;
-                g2.fiveHoleSkill = 78; g2.standingSpeed = 64; g2.butterflySpeed = 62;
-                g2.controlSkill = 82; g2.recoverySkill = 84; g2.passPower = 66;
-                g2.shotPower = 60; g2.pokecheckSkill = 62; g2.depth = 70; g2.passReadSkill = 0.78f;
-                GiveGoalieTalent(g2, "Goalie Fart");
-            }
-        }
-    }
-
-    private static void RemixHockeyFC(TeamData team, int round)
-    {
-        if (round == 0)
-        {
-            SwapToNHLTeam(team, "Ottawa", "Ottawa Senators", "Ottawa",
-                new[] { "Brady Tkachuk", "Drake Batherson", "Tim Stutzle", "Thomas Chabot", "Jake Sanderson" },
-                "Anton Forsberg", null,
-                new[] { "macrocephalia", "sorest_loser" });
-
-            var f = team.forwards;
-            if (f != null)
-            {
-                // LW: Brady Tkachuk (STAR)
-                if (f.Count > 0 && f[0] != null)
-                {
-                    f[0].speed = 76; f[0].shotPower = 94; f[0].shotAccuracy = 90; f[0].checking = 96;
-                    f[0].skaterSize = Data.SkaterSize.ExtraBig;
-                    GiveTalentToPlayer(f[0], "Enraged");
-                    GiveTalentToPlayer(f[0], "Feed");
-                    GiveTalentToPlayer(f[0], "marauder");
-                    GiveTalentToPlayer(f[0], "Porcelain Hammer");
-                    GiveTalentToPlayer(f[0], "Explosion On Landing");
-                }
-                // RW: Drake Batherson
-                if (f.Count > 1 && f[1] != null)
-                {
-                    f[1].speed = 90; f[1].shotPower = 90; f[1].shotAccuracy = 92; f[1].checking = 66;
-                    f[1].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f[1], "Escalating Crit");
-                    GiveTalentToPlayer(f[1], "Glass Cannon");
-                    GiveTalentToPlayer(f[1], "Twig Tax");
-                }
-                // C: Tim Stutzle
-                if (f.Count > 2 && f[2] != null)
-                {
-                    f[2].speed = 98; f[2].shotPower = 92; f[2].shotAccuracy = 94; f[2].checking = 66;
-                    f[2].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f[2], "Backward Turbo");
-                    GiveTalentToPlayer(f[2], "Propeller Helmet");
-                }
-                // LD: Thomas Chabot
-                if (f.Count > 3 && f[3] != null)
-                {
-                    f[3].speed = 86; f[3].shotPower = 88; f[3].shotAccuracy = 88; f[3].checking = 80;
-                    f[3].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f[3], "Point Sniper");
-                }
-                // RD: Jake Sanderson
-                if (f.Count > 4 && f[4] != null)
-                {
-                    f[4].speed = 86; f[4].shotPower = 86; f[4].shotAccuracy = 86; f[4].checking = 82;
-                    f[4].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f[4], "Tong");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g = team.goalie;
-                g.skill = 68; g.catchingSkill = 70; g.gloveSkill = 72; g.blockerSkill = 66;
-                g.fiveHoleSkill = 66; g.standingSpeed = 58; g.butterflySpeed = 56;
-                g.controlSkill = 68; g.recoverySkill = 70; g.passPower = 58;
-                g.shotPower = 54; g.pokecheckSkill = 54; g.depth = 62; g.passReadSkill = 0.62f;
-                GiveGoalieTalent(g, "Goalie Fart");
-            }
-        }
-        else
-        {
-            SwapToNHLTeam(team, "Utah", "Utah Mammoth", "Utah",
-                new[] { "Michael Carcone", "Dylan Guenther", "Logan Cooley", "Ian Cole", "Nick DeSimone" },
-                "Vitek Vanecek", null,
-                new[] { "false_goal_on_post", "nutjob" });
-
-            var f2 = team.forwards;
-            if (f2 != null)
-            {
-                // LW: Michael Carcone
-                if (f2.Count > 0 && f2[0] != null)
-                {
-                    f2[0].speed = 108; f2[0].shotPower = 106; f2[0].shotAccuracy = 104; f2[0].checking = 100;
-                    f2[0].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[0], "Scrambled");
-                }
-                // RW: Dylan Guenther
-                if (f2.Count > 1 && f2[1] != null)
-                {
-                    f2[1].speed = 114; f2[1].shotPower = 122; f2[1].shotAccuracy = 124; f2[1].checking = 84;
-                    f2[1].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f2[1], "Ping King");
-                }
-                // C: Logan Cooley (STAR)
-                if (f2.Count > 2 && f2[2] != null)
-                {
-                    f2[2].speed = 120; f2[2].shotPower = 118; f2[2].shotAccuracy = 120; f2[2].checking = 88;
-                    f2[2].skaterSize = Data.SkaterSize.Small;
-                    GiveTalentToPlayer(f2[2], "Random Skill (Level 2)");
-                    GiveTalentToPlayer(f2[2], "Changeup");
-                }
-                // LD: Ian Cole
-                if (f2.Count > 3 && f2[3] != null)
-                {
-                    f2[3].speed = 96; f2[3].shotPower = 100; f2[3].shotAccuracy = 98; f2[3].checking = 118;
-                    f2[3].skaterSize = Data.SkaterSize.ExtraBig;
-                    GiveTalentToPlayer(f2[3], "Safety First");
-                    GiveTalentToPlayer(f2[3], "Anchor");
-                }
-                // RD: Nick DeSimone
-                if (f2.Count > 4 && f2[4] != null)
-                {
-                    f2[4].speed = 102; f2[4].shotPower = 98; f2[4].shotAccuracy = 98; f2[4].checking = 106;
-                    f2[4].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f2[4], "Pass Puncher");
-                }
-
-                // 2 random cultist teleport talents assigned to matching positions
-                var cultistByPos = new[] { "cultistPowerLW", "cultistPowerRW", "cultistPowerC", "cultistPowerLD", "cultistPowerRD" };
-                var cultRng = new System.Random();
-                var cultPicked = new HashSet<int>();
-                for (int c = 0; c < 2; c++)
-                {
-                    int idx;
-                    do { idx = cultRng.Next(5); } while (cultPicked.Contains(idx));
-                    cultPicked.Add(idx);
-                    if (f2[idx] != null)
-                    {
-                        GiveTalentToPlayer(f2[idx], cultistByPos[idx]);
-                        Plugin.Log.LogInfo($"  [Utah] {f2[idx].firstName} {f2[idx].lastName} got cultist: {cultistByPos[idx]}");
-                    }
-                }
-
-                // Random speed talent for everyone + random shooting for forwards (idx 0,1,2)
-                // 50/50 chance of Level 2 for talents that have it
-                var speedBase = new[] { "Backward Turbo", "Blue Line Boost", "Board Bumper", "Propeller Helmet", "Puck Hunter", "Puck Rocket", "Puckless Rocket", "Supernova Talent" };
-                var speedHasLv2 = new HashSet<string> { "Backward Turbo", "Blue Line Boost", "Propeller Helmet" };
-                var shootingBase = new[] { "Charge Shot", "Iron Helmet", "Mega Deflect", "Sword", "Wild Shot", "X-Ray Shot", "Trick Shot", "Changeup" };
-                var shootingHasLv2 = new HashSet<string> { "Charge Shot", "Iron Helmet", "Mega Deflect", "Sword", "Wild Shot", "Trick Shot" };
-                // X-Ray Shot Lv2 uses different naming: "XRay Shot (Level 2)"
-                var rng = new System.Random();
-                for (int i = 0; i < f2.Count; i++)
-                {
-                    if (f2[i] == null) continue;
-                    var sBase = speedBase[rng.Next(speedBase.Length)];
-                    var sPick = (speedHasLv2.Contains(sBase) && rng.Next(2) == 1) ? sBase + " (Level 2)" : sBase;
-                    GiveTalentToPlayer(f2[i], sPick);
-                    Plugin.Log.LogInfo($"  [Utah] {f2[i].firstName} {f2[i].lastName} got random speed: {sPick}");
-                    if (i <= 2) // forwards only
-                    {
-                        // Cooley (idx 2) already has Changeup, exclude it from his pool
-                        string[] pool = (i == 2) ?
-                            new[] { "Charge Shot", "Iron Helmet", "Mega Deflect", "Sword", "Wild Shot", "X-Ray Shot", "Trick Shot" } :
-                            shootingBase;
-                        var shBase = pool[rng.Next(pool.Length)];
-                        string shPick;
-                        if (shBase == "X-Ray Shot" && rng.Next(2) == 1)
-                            shPick = "XRay Shot (Level 2)";
-                        else if (shootingHasLv2.Contains(shBase) && rng.Next(2) == 1)
-                            shPick = shBase + " (Level 2)";
-                        else
-                            shPick = shBase;
-                        GiveTalentToPlayer(f2[i], shPick);
-                        Plugin.Log.LogInfo($"  [Utah] {f2[i].firstName} {f2[i].lastName} got random shooting: {shPick}");
-                    }
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g2 = team.goalie;
-                g2.skill = 76; g2.catchingSkill = 78; g2.gloveSkill = 80; g2.blockerSkill = 74;
-                g2.fiveHoleSkill = 72; g2.standingSpeed = 62; g2.butterflySpeed = 60;
-                g2.controlSkill = 76; g2.recoverySkill = 78; g2.passPower = 60;
-                g2.shotPower = 54; g2.pokecheckSkill = 56; g2.depth = 64; g2.passReadSkill = 0.70f;
-                GiveGoalieTalent(g2, "Goalie Enraged On Goal");
-            }
-        }
-    }
-
-    // ========== ACT 2 BOSS ==========
-
-    private static void RemixCupCultists(TeamData team, int round)
-    {
-        if (round == 0)
-        {
-            SwapToNHLTeam(team, "Dallas", "Dallas Stars", "Dallas",
-                new[] { "Jason Robertson", "Tyler Seguin", "Mikko Rantanen", "Miro Heiskanen", "Thomas Harley" },
-                "Jake Oettinger", null,
-                new[] { "voodoodoll:2", "lucky_molar", "tribal_mask_v2", "slapchot4000" });
-
-            var f = team.forwards;
-            if (f != null)
-            {
-                // LW: Jason Robertson (STAR)
-                if (f.Count > 0 && f[0] != null)
-                {
-                    f[0].speed = 92; f[0].shotPower = 104; f[0].shotAccuracy = 102; f[0].checking = 86;
-                    f[0].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f[0], "Wild Shot");
-                    GiveTalentToPlayer(f[0], "Bouncy McBounce");
-                }
-                // RW: Tyler Seguin
-                if (f.Count > 1 && f[1] != null)
-                {
-                    f[1].speed = 97; f[1].shotPower = 97; f[1].shotAccuracy = 99; f[1].checking = 77;
-                    f[1].skaterSize = Data.SkaterSize.Medium;
-                }
-                // C: Mikko Rantanen (STAR)
-                if (f.Count > 2 && f[2] != null)
-                {
-                    f[2].speed = 91; f[2].shotPower = 107; f[2].shotAccuracy = 105; f[2].checking = 86;
-                    f[2].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f[2], "Sword (Level 2)");
-                    GiveTalentToPlayer(f[2], "Sonic Slap");
-                }
-                // LD: Miro Heiskanen
-                if (f.Count > 3 && f[3] != null)
-                {
-                    f[3].speed = 103; f[3].shotPower = 93; f[3].shotAccuracy = 97; f[3].checking = 79;
-                    f[3].skaterSize = Data.SkaterSize.Medium;
-                    GiveTalentToPlayer(f[3], "Puckless Rocket");
-                }
-                // RD: Thomas Harley
-                if (f.Count > 4 && f[4] != null)
-                {
-                    f[4].speed = 89; f[4].shotPower = 91; f[4].shotAccuracy = 91; f[4].checking = 89;
-                    f[4].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f[4], "Defensive Deflect");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g = team.goalie;
-                g.skill = 72; g.catchingSkill = 74; g.gloveSkill = 76; g.blockerSkill = 70;
-                g.fiveHoleSkill = 70; g.standingSpeed = 60; g.butterflySpeed = 58;
-                g.controlSkill = 72; g.recoverySkill = 74; g.passPower = 58;
-                g.shotPower = 52; g.pokecheckSkill = 56; g.depth = 64; g.passReadSkill = 0.68f;
-                GiveGoalieTalent(g, "Goalie Enrage Last30Sec");
-                GiveGoalieTalent(g, "Always Catch Pucks");
-                GiveGoalieTalent(g, "Goalie Speed Talent");
-            }
-        }
-        else
-        {
-            SwapToNHLTeam(team, "Carolina", "Carolina Hurricanes", "Carolina",
-                new[] { "Nikolaj Ehlers", "Seth Jarvis", "Sebastian Aho", "K'Andre Miller", "Jaccob Slavin" },
-                "Brandon Bussi", null,
-                new[] { "shrink_serum_opponent", "express_delivery", "relic_freezer", "toothpick:2" });
-
-            var f2 = team.forwards;
-            if (f2 != null)
-            {
-                // Pools for random talents (used by Aho, Jarvis, and all-player speed)
-                var speedBase = new[] { "Backward Turbo", "Blue Line Boost", "Board Bumper", "Propeller Helmet", "Puck Hunter", "Puck Rocket", "Puckless Rocket", "Supernova Talent" };
-                var speedHasLv2 = new HashSet<string> { "Backward Turbo", "Blue Line Boost", "Propeller Helmet" };
-                var shootingBase = new[] { "Charge Shot", "Iron Helmet", "Mega Deflect", "Sword", "Wild Shot", "X-Ray Shot", "Trick Shot", "Changeup" };
-                var shootingHasLv2 = new HashSet<string> { "Charge Shot", "Iron Helmet", "Mega Deflect", "Sword", "Wild Shot", "Trick Shot" };
-                var rng = new System.Random();
-
-                // LW: Nikolaj Ehlers
-                if (f2.Count > 0 && f2[0] != null)
-                {
-                    f2[0].speed = 136; f2[0].shotPower = 126; f2[0].shotAccuracy = 130; f2[0].checking = 92;
-                    f2[0].skaterSize = Data.SkaterSize.Small;
-                    GiveTalentToPlayer(f2[0], "Mega Deflect (Level 2)");
-                    GiveTalentToPlayer(f2[0], "Redirector");
-                    GiveTalentToPlayer(f2[0], "Blue Line Boost (Level 2)");
-                }
-                // RW: Seth Jarvis
-                if (f2.Count > 1 && f2[1] != null)
-                {
-                    f2[1].speed = 130; f2[1].shotPower = 128; f2[1].shotAccuracy = 132; f2[1].checking = 96;
-                    f2[1].skaterSize = Data.SkaterSize.Medium;
-                    // 2 random shooting + 1 random speed (50/50 Lv2)
-                    var jUsed = new HashSet<int>();
-                    for (int j = 0; j < 2; j++)
-                    {
-                        int idx;
-                        do { idx = rng.Next(shootingBase.Length); } while (jUsed.Contains(idx));
-                        jUsed.Add(idx);
-                        var shBase = shootingBase[idx];
-                        string shPick;
-                        if (shBase == "X-Ray Shot" && rng.Next(2) == 1) shPick = "XRay Shot (Level 2)";
-                        else if (shootingHasLv2.Contains(shBase) && rng.Next(2) == 1) shPick = shBase + " (Level 2)";
-                        else shPick = shBase;
-                        GiveTalentToPlayer(f2[1], shPick);
-                        Plugin.Log.LogInfo($"  [Canes] Jarvis got random shooting: {shPick}");
-                    }
-                    var jSpd = speedBase[rng.Next(speedBase.Length)];
-                    var jSpdPick = (speedHasLv2.Contains(jSpd) && rng.Next(2) == 1) ? jSpd + " (Level 2)" : jSpd;
-                    GiveTalentToPlayer(f2[1], jSpdPick);
-                    Plugin.Log.LogInfo($"  [Canes] Jarvis got random speed: {jSpdPick}");
-                }
-                // C: Sebastian Aho (STAR)
-                if (f2.Count > 2 && f2[2] != null)
-                {
-                    f2[2].speed = 132; f2[2].shotPower = 136; f2[2].shotAccuracy = 138; f2[2].checking = 106;
-                    f2[2].skaterSize = Data.SkaterSize.Small;
-                    // 1 random shooting + 2 random speed (50/50 Lv2)
-                    var aShBase = shootingBase[rng.Next(shootingBase.Length)];
-                    string aShPick;
-                    if (aShBase == "X-Ray Shot" && rng.Next(2) == 1) aShPick = "XRay Shot (Level 2)";
-                    else if (shootingHasLv2.Contains(aShBase) && rng.Next(2) == 1) aShPick = aShBase + " (Level 2)";
-                    else aShPick = aShBase;
-                    GiveTalentToPlayer(f2[2], aShPick);
-                    Plugin.Log.LogInfo($"  [Canes] Aho got random shooting: {aShPick}");
-                    var aUsed = new HashSet<int>();
-                    for (int j = 0; j < 2; j++)
-                    {
-                        int idx;
-                        do { idx = rng.Next(speedBase.Length); } while (aUsed.Contains(idx));
-                        aUsed.Add(idx);
-                        var sBase = speedBase[idx];
-                        var sPick = (speedHasLv2.Contains(sBase) && rng.Next(2) == 1) ? sBase + " (Level 2)" : sBase;
-                        GiveTalentToPlayer(f2[2], sPick);
-                        Plugin.Log.LogInfo($"  [Canes] Aho got random speed: {sPick}");
-                    }
-                }
-                // LD: K'Andre Miller
-                if (f2.Count > 3 && f2[3] != null)
-                {
-                    f2[3].speed = 110; f2[3].shotPower = 122; f2[3].shotAccuracy = 120; f2[3].checking = 130;
-                    f2[3].skaterSize = Data.SkaterSize.ExtraBig;
-                    GiveTalentToPlayer(f2[3], "Onepunch");
-                    GiveTalentToPlayer(f2[3], "knightAI");
-                    GiveTalentToPlayer(f2[3], "Heavy Helmet");
-                    GiveTalentToPlayer(f2[3], "Porcelain Hammer");
-                    GiveTalentToPlayer(f2[3], "Built Different");
-                    GiveTalentToPlayer(f2[3], "Point Sniper (Level 2)");
-                }
-                // RD: Jaccob Slavin
-                if (f2.Count > 4 && f2[4] != null)
-                {
-                    f2[4].speed = 120; f2[4].shotPower = 118; f2[4].shotAccuracy = 116; f2[4].checking = 124;
-                    f2[4].skaterSize = Data.SkaterSize.Big;
-                    GiveTalentToPlayer(f2[4], "Sonic Pass");
-                }
-
-                // Random speed talent for each player (50/50 Lv2)
-                for (int i = 0; i < f2.Count; i++)
-                {
-                    if (f2[i] == null) continue;
-                    var sBase = speedBase[rng.Next(speedBase.Length)];
-                    var sPick = (speedHasLv2.Contains(sBase) && rng.Next(2) == 1) ? sBase + " (Level 2)" : sBase;
-                    GiveTalentToPlayer(f2[i], sPick);
-                    Plugin.Log.LogInfo($"  [Canes] {f2[i].firstName} {f2[i].lastName} got random speed: {sPick}");
-                }
-            }
-            if (team.goalie != null)
-            {
-                var g2 = team.goalie;
-                g2.skill = 84; g2.catchingSkill = 86; g2.gloveSkill = 88; g2.blockerSkill = 82;
-                g2.fiveHoleSkill = 80; g2.standingSpeed = 64; g2.butterflySpeed = 62;
-                g2.controlSkill = 84; g2.recoverySkill = 86; g2.passPower = 68;
-                g2.shotPower = 62; g2.pokecheckSkill = 64; g2.depth = 72; g2.passReadSkill = 0.80f;
-                var goaliePool = new[] { "Goalie Assist", "Goalie Dance", "Goalie Enrage First30Sec", "Goalie Enrage Last30Sec", "Goalie Enraged On Breakaway", "Goalie Enraged On Goal", "Goalie Enraged On Shot", "Goalie Fart", "Goalie Headshot", "Goalie Pass Proepl", "Goalie Pass Rebound", "Goalie Speed Talent", "Goalie Throw Stick", "Crease Clearer", "Always Catch Pucks" };
-                var grng = new System.Random();
-                var gUsed = new HashSet<int>();
-                for (int g = 0; g < 2; g++)
-                {
-                    int idx;
-                    do { idx = grng.Next(goaliePool.Length); } while (gUsed.Contains(idx));
-                    gUsed.Add(idx);
-                    GiveGoalieTalent(g2, goaliePool[idx]);
-                    Plugin.Log.LogInfo($"  [Canes] Goalie got random talent: {goaliePool[idx]}");
-                }
-            }
-        }
-    }
-
-    // ========== ACT 3 ELITES ==========
-
-    private static void RemixPrincess(TeamData team, int round)
-    {
-        SwapToNHLTeam(team, "Los Angeles", "Los Angeles Kings", "Los Angeles",
-            new[] { "Artemi Panarin", "Quinton Byfield", "Anze Kopitar", "Drew Doughty", "Brandt Clarke" },
-            "Darcy Kuemper", null,
-            new[] { "briefcase:2", "stopwatch", "ice_slapshot", "relic_freezer", "oaky_timer" });
-
-        var f = team.forwards;
-        if (f != null)
-        {
-            // LW: Artemi Panarin
-            if (f.Count > 0 && f[0] != null)
-            {
-                f[0].speed = 132; f[0].shotPower = 122; f[0].shotAccuracy = 130; f[0].checking = 82;
-                f[0].skaterSize = Data.SkaterSize.Small;
-                GiveTalentToPlayer(f[0], "Flawless Feeder (Level 2)");
-                GiveTalentToPlayer(f[0], "Power Transfer");
-                GiveTalentToPlayer(f[0], "Puck Rocket");
-                SetPlayerAbility(f[0], "jump");
-            }
-            // RW: Quinton Byfield
-            if (f.Count > 1 && f[1] != null)
-            {
-                f[1].speed = 120; f[1].shotPower = 124; f[1].shotAccuracy = 122; f[1].checking = 116;
-                f[1].skaterSize = Data.SkaterSize.Big;
-                GiveTalentToPlayer(f[1], "Onepunch");
-                GiveTalentToPlayer(f[1], "Scrambled");
-                GiveTalentToPlayer(f[1], "Charge Shot (Level 2)");
-                GiveTalentToPlayer(f[1], "marauder");
-                GiveTalentToPlayer(f[1], "Ball Chaser");
-            }
-            // C: Anze Kopitar
-            if (f.Count > 2 && f[2] != null)
-            {
-                f[2].speed = 106; f[2].shotPower = 120; f[2].shotAccuracy = 120; f[2].checking = 114;
-                f[2].skaterSize = Data.SkaterSize.Big;
-                GiveTalentToPlayer(f[2], "Tong (Level 2)");
-                GiveTalentToPlayer(f[2], "En Garde!");
-                GiveTalentToPlayer(f[2], "ImperviousOnPass");
-                GiveTalentToPlayer(f[2], "Hidden Ace");
-            }
-            // LD: Drew Doughty
-            if (f.Count > 3 && f[3] != null)
-            {
-                f[3].speed = 112; f[3].shotPower = 118; f[3].shotAccuracy = 118; f[3].checking = 118;
-                f[3].skaterSize = Data.SkaterSize.ExtraBig;
-                GiveTalentToPlayer(f[3], "Homewrecker");
-                GiveTalentToPlayer(f[3], "Human Shield");
-                GiveTalentToPlayer(f[3], "Velcro");
-                GiveTalentToPlayer(f[3], "Enraged");
-                GiveTalentToPlayer(f[3], "Feed");
-                GiveTalentToPlayer(f[3], "Enrage On Shot");
-                GiveTalentToPlayer(f[3], "Poke Rage");
-            }
-            // RD: Brandt Clarke
-            if (f.Count > 4 && f[4] != null)
-            {
-                f[4].speed = 120; f[4].shotPower = 118; f[4].shotAccuracy = 118; f[4].checking = 108;
-                f[4].skaterSize = Data.SkaterSize.ExtraBig;
-                GiveTalentToPlayer(f[4], "Homewrecker");
-                GiveTalentToPlayer(f[4], "Human Shield");
-                GiveTalentToPlayer(f[4], "Velcro");
-                GiveTalentToPlayer(f[4], "Triple Twig");
-                SetPlayerAbility(f[4], "throwingStick");
-            }
-
-            // 2 random players get immune to injury
-            var immRng = new System.Random();
-            var immPicked = new HashSet<int>();
-            for (int im = 0; im < 2; im++)
-            {
-                int idx;
-                do { idx = immRng.Next(f.Count); } while (immPicked.Contains(idx));
-                immPicked.Add(idx);
-                if (f[idx] != null)
-                {
-                    GiveTalentToPlayer(f[idx], "Built Different");
-                    Plugin.Log.LogInfo($"  [Kings] {f[idx].firstName} {f[idx].lastName} got immune to injury");
-                }
-            }
-        }
-        if (team.goalie != null)
-        {
-            var g = team.goalie;
-            g.skill = 94; g.catchingSkill = 96; g.gloveSkill = 98; g.blockerSkill = 92;
-            g.fiveHoleSkill = 92; g.standingSpeed = 68; g.butterflySpeed = 66;
-            g.controlSkill = 64; g.recoverySkill = 66; g.passPower = 56;
-            g.shotPower = 52; g.pokecheckSkill = 52; g.depth = 60; g.passReadSkill = 0.62f;
-            GiveGoalieTalent(g, "Always Catch Pucks");
-            GiveGoalieTalent(g, "Goalie Speed Talent");
-            GiveGoalieTalent(g, "Goalie Headshot");
-            GiveGoalieTalent(g, "Goalie Pass Rebound");
-            GiveGoalieTalent(g, "Goalie Pass Proepl");
-            GiveGoalieTalent(g, "Goalie Dance");
-        }
-    }
-
-    private static void RemixTeamCanada(TeamData team, int round)
-    {
-        SwapToNHLTeam(team, "Chicago", "Chicago Blackhawks", "Chicago",
-            new[] { "Tyler Bertuzzi", "Teuvo Teravainen", "Connor Bedard", "Artyom Levshunov", "Alex Vlasic" },
-            "Spencer Knight", null,
-            new[] { "sorest_loser", "fossilized_star", "nutjob", "double_incision", "blood_bonus" });
-
-        var f = team.forwards;
-        if (f != null)
-        {
-            // LW: Tyler Bertuzzi
-            if (f.Count > 0 && f[0] != null)
-            {
-                f[0].speed = 116; f[0].shotPower = 120; f[0].shotAccuracy = 118; f[0].checking = 114;
-                f[0].skaterSize = Data.SkaterSize.Big;
-                GiveTalentToPlayer(f[0], "Sado Maso");
-                GiveTalentToPlayer(f[0], "Enraged");
-                GiveTalentToPlayer(f[0], "Scrambled");
-                GiveTalentToPlayer(f[0], "Quick Draw (Level 2)");
-                GiveTalentToPlayer(f[0], "Curve Ball (Level 2)");
-            }
-            // RW: Teuvo Teravainen
-            if (f.Count > 1 && f[1] != null)
-            {
-                f[1].speed = 118; f[1].shotPower = 115; f[1].shotAccuracy = 120; f[1].checking = 92;
-                f[1].skaterSize = Data.SkaterSize.Medium;
-                GiveTalentToPlayer(f[1], "Sado Maso");
-                GiveTalentToPlayer(f[1], "Express Delivery (Level 2)");
-                GiveTalentToPlayer(f[1], "Flawless Feeder (Level 2)");
-            }
-            // C: Connor Bedard (STAR)
-            if (f.Count > 2 && f[2] != null)
-            {
-                f[2].speed = 122; f[2].shotPower = 122; f[2].shotAccuracy = 128; f[2].checking = 84;
-                f[2].skaterSize = Data.SkaterSize.Small;
-                GiveTalentToPlayer(f[2], "Sado Maso");
-                GiveTalentToPlayer(f[2], "Trick Shot (Level 2)");
-                GiveTalentToPlayer(f[2], "Crit Boost");
-                GiveTalentToPlayer(f[2], "Curve Ball (Level 2)");
-                GiveTalentToPlayer(f[2], "Puck Rocket");
-                GiveTalentToPlayer(f[2], "Blue Line Boost (Level 2)");
-                GiveTalentToPlayer(f[2], "Cherry Picker");
-                GiveTalentToPlayer(f[2], "Anchor");
-                GiveTalentToPlayer(f[2], "XRay Shot (Level 2)");
-            }
-            // LD: Artyom Levshunov
-            if (f.Count > 3 && f[3] != null)
-            {
-                f[3].speed = 120; f[3].shotPower = 116; f[3].shotAccuracy = 115; f[3].checking = 110;
-                f[3].skaterSize = Data.SkaterSize.Big;
-                GiveTalentToPlayer(f[3], "Sado Maso");
-                GiveTalentToPlayer(f[3], "Blue Line Boost (Level 2)");
-                GiveTalentToPlayer(f[3], "Charge Shot");
-                GiveTalentToPlayer(f[3], "knightAI");
-                GiveTalentToPlayer(f[3], "magnetInterception");
-            }
-            // RD: Alex Vlasic (BERZERKER)
-            if (f.Count > 4 && f[4] != null)
-            {
-                f[4].speed = 120; f[4].shotPower = 110; f[4].shotAccuracy = 106; f[4].checking = 120;
-                f[4].skaterSize = Data.SkaterSize.ExtraExtraBig;
-                GiveTalentToPlayer(f[4], "Sado Maso");
-                GiveTalentToPlayer(f[4], "berserk");
-                GiveTalentToPlayer(f[4], "Spiked Armor");
-                GiveTalentToPlayer(f[4], "Chexplosion");
-                GiveTalentToPlayer(f[4], "Built Different");
-            }
-        }
-        if (team.goalie != null)
-        {
-            var g = team.goalie;
-            g.skill = 82; g.catchingSkill = 85; g.gloveSkill = 88; g.blockerSkill = 82;
-            g.fiveHoleSkill = 80; g.standingSpeed = 65; g.butterflySpeed = 65;
-            g.controlSkill = 55; g.recoverySkill = 58; g.passPower = 52;
-            g.shotPower = 48; g.pokecheckSkill = 46; g.depth = 56; g.passReadSkill = 0.55f;
-            GiveGoalieTalent(g, "Goalie Pass Rebound");
-            GiveGoalieTalent(g, "Goalie Pass Proepl");
-            // 3 random goalie talents (no dupes, excluding the 2 already given)
-            var goaliePool = new[] { "Goalie Assist", "Goalie Dance", "Goalie Enrage First30Sec", "Goalie Enrage Last30Sec", "Goalie Enraged On Breakaway", "Goalie Enraged On Goal", "Goalie Enraged On Shot", "Goalie Fart", "Goalie Headshot", "Goalie Speed Talent", "Goalie Throw Stick", "Crease Clearer", "Always Catch Pucks" };
-            var grng = new System.Random();
-            var gUsed = new HashSet<int>();
-            for (int gt = 0; gt < 3; gt++)
-            {
-                int idx;
-                do { idx = grng.Next(goaliePool.Length); } while (gUsed.Contains(idx));
-                gUsed.Add(idx);
-                GiveGoalieTalent(g, goaliePool[idx]);
-                Plugin.Log.LogInfo($"  [Hawks] Goalie got random talent: {goaliePool[idx]}");
-            }
-        }
-    }
-
-    private static void RemixTycoons(TeamData team, int round)
-    {
-        SwapToNHLTeam(team, "Washington", "Washington Capitals", "Washington",
-            new[] { "Alex Ovechkin", "Tom Wilson", "Dylan Strome", "Jakob Chychrun", "Matt Roy" },
-            "Logan Thompson", null,
-            new[] { "cushioned:2", "bubble_wrap", "frog_on_faceoff" });
-
-        var f = team.forwards;
-        if (f != null)
-        {
-            // LW: Alex Ovechkin
-            if (f.Count > 0 && f[0] != null)
-            {
-                f[0].speed = 110; f[0].shotPower = 146; f[0].shotAccuracy = 142; f[0].checking = 118;
-                f[0].skaterSize = Data.SkaterSize.ExtraBig;
-                GiveTalentToPlayer(f[0], "The Howitzer");
-                GiveTalentToPlayer(f[0], "Charge Shot (Level 2)");
-                GiveTalentToPlayer(f[0], "Sonic Slap (Level 2)");
-                GiveTalentToPlayer(f[0], "Deadzone");
-                GiveTalentToPlayer(f[0], "Quick Draw (Level 2)");
-                GiveTalentToPlayer(f[0], "Hidden Ace");
-                GiveTalentToPlayer(f[0], "Avenge Me! (Level 2)");
-                GiveTalentToPlayer(f[0], "Bouncy McBounce");
-                GiveTalentToPlayer(f[0], "Rebound Magnet (Level 2)");
-                GiveTalentToPlayer(f[0], "Fast Rebound");
-            }
-            // RW: Tom Wilson
-            if (f.Count > 1 && f[1] != null)
-            {
-                f[1].speed = 112; f[1].shotPower = 122; f[1].shotAccuracy = 116; f[1].checking = 128;
-                f[1].skaterSize = Data.SkaterSize.ExtraBig;
-                GiveTalentToPlayer(f[1], "Onepunch");
-                GiveTalentToPlayer(f[1], "marauder");
-                GiveTalentToPlayer(f[1], "Enraged");
-                GiveTalentToPlayer(f[1], "Porcelain Hammer");
-                GiveTalentToPlayer(f[1], "Explosion On Landing");
-            }
-            // C: Dylan Strome
-            if (f.Count > 2 && f[2] != null)
-            {
-                f[2].speed = 110; f[2].shotPower = 120; f[2].shotAccuracy = 118; f[2].checking = 106;
-                f[2].skaterSize = Data.SkaterSize.ExtraBig;
-                GiveTalentToPlayer(f[2], "Flawless Feeder (Level 2)");
-                GiveTalentToPlayer(f[2], "Power Transfer");
-            }
-            // LD: Jakob Chychrun
-            if (f.Count > 3 && f[3] != null)
-            {
-                f[3].speed = 112; f[3].shotPower = 122; f[3].shotAccuracy = 118; f[3].checking = 114;
-                f[3].skaterSize = Data.SkaterSize.ExtraBig;
-                GiveTalentToPlayer(f[3], "Point Sniper (Level 2)");
-                GiveTalentToPlayer(f[3], "Slapshot Slowmo");
-            }
-            // RD: Matt Roy
-            if (f.Count > 4 && f[4] != null)
-            {
-                f[4].speed = 112; f[4].shotPower = 110; f[4].shotAccuracy = 110; f[4].checking = 112;
-                f[4].skaterSize = Data.SkaterSize.Medium;
-                GiveTalentToPlayer(f[4], "Human Shield");
-                GiveTalentToPlayer(f[4], "Defensive Deflect (Level 2)");
-            }
-
-            // Copy Washington jerseys/skins onto line 2 players
-            for (int li2 = 5; li2 < f.Count && li2 <= 9; li2++)
-            {
-                if (f[li2] == null || f[0] == null) continue;
-                var src = f[li2 - 5]; // copy visuals from matching line 1 player
-                f[li2].headSkin = src.headSkin;
-                f[li2].numberSkin = src.numberSkin;
-                f[li2].logoSkin = src.logoSkin;
-                f[li2].helmetSkin = src.helmetSkin;
-                f[li2].helmetAwaySkin = src.helmetAwaySkin;
-                f[li2].stickSkin = src.stickSkin;
-                f[li2].bodySkin = src.bodySkin;
-                f[li2].bicepSkin = src.bicepSkin;
-                f[li2].gloveSkin = src.gloveSkin;
-                f[li2].skateSkin = src.skateSkin;
-                f[li2].pantsSkin = src.pantsSkin;
-                f[li2].bodyAwaySkin = src.bodyAwaySkin;
-                f[li2].colorSchemes = src.colorSchemes;
-            }
-
-            // === LINE 2 (indices 5-9) ===
-            // LW: Connor McMichael
-            if (f.Count > 5 && f[5] != null)
-            {
-                f[5].firstName = "Connor"; f[5].lastName = "McMichael";
-                f[5].speed = 100; f[5].shotPower = 110; f[5].shotAccuracy = 108; f[5].checking = 96;
-                f[5].skaterSize = Data.SkaterSize.Medium;
-                GiveTalentToPlayer(f[5], "Cherry Picker");
-                GiveTalentToPlayer(f[5], "Puck Rocket");
-            }
-            // RW: Andrew Mangiapane
-            if (f.Count > 6 && f[6] != null)
-            {
-                f[6].firstName = "Andrew"; f[6].lastName = "Mangiapane";
-                f[6].speed = 104; f[6].shotPower = 106; f[6].shotAccuracy = 104; f[6].checking = 100;
-                f[6].skaterSize = Data.SkaterSize.Medium;
-                GiveTalentToPlayer(f[6], "Speed Transfer");
-                GiveTalentToPlayer(f[6], "Crit Boost");
-            }
-            // C: Pierre-Luc Dubois
-            if (f.Count > 7 && f[7] != null)
-            {
-                f[7].firstName = "Pierre-Luc"; f[7].lastName = "Dubois";
-                f[7].speed = 98; f[7].shotPower = 112; f[7].shotAccuracy = 108; f[7].checking = 108;
-                f[7].skaterSize = Data.SkaterSize.ExtraBig;
-                GiveTalentToPlayer(f[7], "Flawless Feeder");
-                GiveTalentToPlayer(f[7], "Enraged");
-            }
-            // LD: Rasmus Sandin
-            if (f.Count > 8 && f[8] != null)
-            {
-                f[8].firstName = "Rasmus"; f[8].lastName = "Sandin";
-                f[8].speed = 106; f[8].shotPower = 104; f[8].shotAccuracy = 106; f[8].checking = 96;
-                f[8].skaterSize = Data.SkaterSize.Medium;
-                GiveTalentToPlayer(f[8], "Blue Line Boost");
-                GiveTalentToPlayer(f[8], "Board Bumper");
-            }
-            // RD: John Carlson
-            if (f.Count > 9 && f[9] != null)
-            {
-                f[9].firstName = "John"; f[9].lastName = "Carlson";
-                f[9].speed = 96; f[9].shotPower = 114; f[9].shotAccuracy = 112; f[9].checking = 102;
-                f[9].skaterSize = Data.SkaterSize.Big;
-                GiveTalentToPlayer(f[9], "Point Sniper");
-                GiveTalentToPlayer(f[9], "Slapshot Slowmo");
-            }
-
-            // Update Lineup entries so the game knows which players are on each line
-            if (team.lines != null)
-            {
-                for (int li = 0; li < team.lines.Count; li++)
-                {
-                    var lineup = team.lines[li];
-                    if (lineup == null) continue;
-                    int offset = li * 5; // line 0 = forwards 0-4, line 1 = forwards 5-9
-                    if (f.Count > offset + 0 && f[offset + 0] != null) lineup.leftWinger = f[offset + 0].id;
-                    if (f.Count > offset + 1 && f[offset + 1] != null) lineup.rightWinger = f[offset + 1].id;
-                    if (f.Count > offset + 2 && f[offset + 2] != null) lineup.center = f[offset + 2].id;
-                    if (f.Count > offset + 3 && f[offset + 3] != null) lineup.leftDefensemen = f[offset + 3].id;
-                    if (f.Count > offset + 4 && f[offset + 4] != null) lineup.rightDefensemen = f[offset + 4].id;
-                    Plugin.Log.LogInfo($"  [Lineup] Line {li+1}: LW={lineup.leftWinger} RW={lineup.rightWinger} C={lineup.center} LD={lineup.leftDefensemen} RD={lineup.rightDefensemen}");
-                }
-            }
-        }
-        if (team.goalie != null)
-        {
-            var g = team.goalie;
-            g.skill = 96; g.catchingSkill = 98; g.gloveSkill = 98; g.blockerSkill = 94;
-            g.fiveHoleSkill = 94; g.standingSpeed = 68; g.butterflySpeed = 66;
-            g.controlSkill = 66; g.recoverySkill = 68; g.passPower = 56;
-            g.shotPower = 50; g.pokecheckSkill = 52; g.depth = 60; g.passReadSkill = 0.62f;
-            GiveGoalieTalent(g, "Always Catch Pucks");
-            GiveGoalieTalent(g, "Goalie Enraged On Shot");
-            GiveGoalieTalent(g, "Goalie Headshot");
-            GiveGoalieTalent(g, "Goalie Throw Stick");
-        }
-    }
-
-    // ========== ACT 3 BOSS ==========
-
-    private static void RemixGolfers(TeamData team, int round)
-    {
-        SwapToNHLTeam(team, "Colorado", "Colorado Avalanche", "Colorado",
-            new[] { "Gabriel Landeskog", "Martin Necas", "Nathan MacKinnon", "Devon Toews", "Cale Makar" },
-            "Mackenzie Blackwood", null,
-            new[] { "crit_shot_knockout", "critical_mass", "voodoodoll:2", "briefcase:2", "shrink_serum_opponent", "crit_shot_frog", "double_incision:2", "cushioned:2", "bubble_wrap:2", "greater_cooldown" });
-
-        var f = team.forwards;
-        if (f != null)
-        {
-            // LW: Gabriel Landeskog (IMMUNE)
-            if (f.Count > 0 && f[0] != null)
-            {
-                f[0].speed = 210; f[0].shotPower = 220; f[0].shotAccuracy = 216; f[0].checking = 220;
-                f[0].skaterSize = Data.SkaterSize.ExtraBig;
-                GiveTalentToPlayer(f[0], "Built Different");
-                GiveTalentToPlayer(f[0], "Onepunch");
-                GiveTalentToPlayer(f[0], "Chexplosion");
-                GiveTalentToPlayer(f[0], "marauder");
-                GiveTalentToPlayer(f[0], "Homewrecker");
-                GiveTalentToPlayer(f[0], "Enraged");
-                GiveTalentToPlayer(f[0], "Avenge Me! (Level 2)");
-                GiveTalentToPlayer(f[0], "Spiked Armor");
-            }
-            // RW: Martin Necas
-            if (f.Count > 1 && f[1] != null)
-            {
-                f[1].speed = 220; f[1].shotPower = 218; f[1].shotAccuracy = 222; f[1].checking = 196;
-                f[1].skaterSize = Data.SkaterSize.Medium;
-                GiveTalentToPlayer(f[1], "Trick Shot (Level 2)");
-                GiveTalentToPlayer(f[1], "Curve Ball (Level 2)");
-                GiveTalentToPlayer(f[1], "Crit Boost");
-                GiveTalentToPlayer(f[1], "Escalating Crit");
-                GiveTalentToPlayer(f[1], "Puck Rocket");
-                GiveTalentToPlayer(f[1], "tornadoAI");
-                GiveTalentToPlayer(f[1], "Cherry Picker");
-            }
-            // C: Nathan MacKinnon (GOD MODE - IMMUNE)
-            if (f.Count > 2 && f[2] != null)
-            {
-                f[2].speed = 260; f[2].shotPower = 250; f[2].shotAccuracy = 255; f[2].checking = 235;
-                f[2].skaterSize = Data.SkaterSize.Medium;
-                GiveTalentToPlayer(f[2], "Built Different");
-                GiveTalentToPlayer(f[2], "Hidden Ace");
-                GiveTalentToPlayer(f[2], "Flawless Feeder (Level 2)");
-                GiveTalentToPlayer(f[2], "Power Transfer");
-                GiveTalentToPlayer(f[2], "XRay Shot (Level 2)");
-                GiveTalentToPlayer(f[2], "Charge Shot (Level 2)");
-                GiveTalentToPlayer(f[2], "Bouncy McBounce");
-                GiveTalentToPlayer(f[2], "Rebound Magnet (Level 2)");
-                GiveTalentToPlayer(f[2], "Fast Rebound");
-                GiveTalentToPlayer(f[2], "Anchor");
-            }
-            // LD: Devon Toews (IMMUNE)
-            if (f.Count > 3 && f[3] != null)
-            {
-                f[3].speed = 214; f[3].shotPower = 212; f[3].shotAccuracy = 212; f[3].checking = 210;
-                f[3].skaterSize = Data.SkaterSize.ExtraBig;
-                GiveTalentToPlayer(f[3], "Built Different");
-                GiveTalentToPlayer(f[3], "Human Shield");
-                GiveTalentToPlayer(f[3], "Velcro");
-                GiveTalentToPlayer(f[3], "Defensive Deflect (Level 2)");
-                GiveTalentToPlayer(f[3], "knightAI");
-                GiveTalentToPlayer(f[3], "Sonic Interception");
-                GiveTalentToPlayer(f[3], "En Garde!");
-                GiveTalentToPlayer(f[3], "Triple Twig");
-                GiveTalentToPlayer(f[3], "Fury Stick (Level 2)");
-                GiveTalentToPlayer(f[3], "Porcelain Hammer");
-                GiveTalentToPlayer(f[3], "Onepunch");
-                SetPlayerAbility(f[3], "throwingStick");
-            }
-            // RD: Cale Makar
-            if (f.Count > 4 && f[4] != null)
-            {
-                f[4].speed = 240; f[4].shotPower = 236; f[4].shotAccuracy = 238; f[4].checking = 218;
-                f[4].skaterSize = Data.SkaterSize.Medium;
-                GiveTalentToPlayer(f[4], "Blue Line Boost (Level 2)");
-                GiveTalentToPlayer(f[4], "Point Sniper (Level 2)");
-                GiveTalentToPlayer(f[4], "Slapshot Slowmo");
-                GiveTalentToPlayer(f[4], "Sonic Slap (Level 2)");
-                GiveTalentToPlayer(f[4], "Board Bumper");
-                GiveTalentToPlayer(f[4], "Puckless Rocket");
-                GiveTalentToPlayer(f[4], "princeAI");
-                GiveTalentToPlayer(f[4], "Sword (Level 2)");
-                GiveTalentToPlayer(f[4], "Triple Twig");
-                GiveTalentToPlayer(f[4], "Fury Stick (Level 2)");
-                GiveTalentToPlayer(f[4], "Porcelain Hammer");
-                GiveTalentToPlayer(f[4], "Explosion On Landing");
-                SetPlayerAbility(f[4], "throwingStick");
-            }
-        }
-        if (team.goalie != null)
-        {
-            var g = team.goalie;
-            g.skill = 120; g.catchingSkill = 122; g.gloveSkill = 124; g.blockerSkill = 118;
-            g.fiveHoleSkill = 116; g.standingSpeed = 75; g.butterflySpeed = 73;
-            g.controlSkill = 120; g.recoverySkill = 122; g.passPower = 80;
-            g.shotPower = 70; g.pokecheckSkill = 72; g.depth = 80; g.passReadSkill = 0.90f;
-            GiveGoalieTalent(g, "Always Catch Pucks");
-            GiveGoalieTalent(g, "Crease Clearer");
-            GiveGoalieTalent(g, "Goalie Headshot");
-            GiveGoalieTalent(g, "Goalie Throw Stick");
-            GiveGoalieTalent(g, "Goalie Enraged On Shot");
-            GiveGoalieTalent(g, "Goalie Pass Proepl");
-            GiveGoalieTalent(g, "Goalie Speed Talent");
-            GiveGoalieTalent(g, "Goalie Dance");
-        }
-    }
-
-    // ========== GENERIC FALLBACK ==========
-
-    private static void RemixGeneric(TeamData team)
-    {
-        team.teamName = "Remix " + team.teamName;
-        Plugin.Log.LogInfo($"[Remix] === GENERIC: {team.teamName} ===");
-        SetColors(team.homeColors, new Color(0f, 1f, 1f), new Color(1f, 0f, 1f), new Color(1f, 1f, 1f));
-        SetColors(team.awayColors, new Color(1f, 0f, 1f), new Color(0f, 1f, 1f), new Color(1f, 1f, 1f));
-    }
 }
 
 // ============================================================
@@ -11946,18 +7515,10 @@ public static class PatchBossLaunchMatch
 // vanilla stadiums.
 // ============================================================
 // ============================================================
-// Late node probe. The map-generation probe ran before the node had finished
-// building itself — every Spine slot read attachment='none', and anything created
-// after map generation (very possibly a SEPARATE skeleton for the team mascot)
-// simply wasn't there to be found.
-//
-// MapObject.RefreshNodeStates runs once the map is live and again on navigation,
-// so by then the node is whole. Dumps every renderer AND every skeleton under the
-// node, with the animation each is playing, once per session.
+// Refresh the campaign logo after the native map UI creates its renderers.
 // ============================================================
-public static class PatchLateNodeProbe
+public static class PatchLateNodeArt
 {
-    private static bool _done;
 
     public static void Postfix(STS.Map.MapObject __instance)
     {
@@ -11966,144 +7527,18 @@ public static class PatchLateNodeProbe
             if (__instance == null || Plugin.IsDefaultMode) return;
             var nodes = __instance.MapNodes;
             if (nodes == null) return;
-
-            // Point each node's own 'rewardIcon_image' at the campaign logo. Done
-            // here as well as at map generation because the node can still be
-            // half-built then — which is what made the first probe report every
-            // Spine slot as empty. Cheap and idempotent.
+            // Refresh logos after the native node UI has finished building.
             for (int i = 0; i < nodes.Count; i++)
             {
-                var mn = nodes[i];
-                if (mn == null) continue;
-                STS.Map.MatchMapNode m = null;
-                try { m = mn.TryCast<STS.Map.MatchMapNode>(); } catch { }
-                if (m != null) PatchMapOpponents.EnsureNodeArt(m);
-            }
-
-            if (_done) return;
-            for (int i = 0; i < nodes.Count; i++)
-            {
-                var mn = nodes[i];
-                if (mn == null) continue;
+                var node = nodes[i];
+                if (node == null) continue;
                 STS.Map.MatchMapNode match = null;
-                try { match = mn.TryCast<STS.Map.MatchMapNode>(); } catch { }
-                if (match == null) continue;
-
-                var go = mn.gameObject;
-                if (go == null) continue;
-                var root = go.transform;
-                _done = true;
-
-                string opp = "?";
-                try { opp = match.opponent != null ? match.opponent.teamName : "null"; } catch { }
-                Plugin.Log.LogInfo($"[LateArt] === '{go.name}' opponent='{opp}' (fully built) ===");
-
-                // EVERY renderer, not just SpriteRenderers — the mascot may well be
-                // a mesh drawn by a second Spine skeleton.
-                try
-                {
-                    var rends = go.GetComponentsInChildren<Renderer>(true);
-                    if (rends != null)
-                        foreach (var r in rends)
-                        {
-                            if (r == null) continue;
-                            string extra = "";
-                            try
-                            {
-                                var sr = r.TryCast<SpriteRenderer>();
-                                if (sr != null) extra = $" sprite='{(sr.sprite != null ? sr.sprite.name : "null")}'";
-                            }
-                            catch { }
-                            string type = "?";
-                            try { type = r.GetIl2CppType().Name; } catch { }
-                            Plugin.Log.LogInfo($"[LateArt]   {type} '{PathOfT(r.transform, root)}'"
-                                + $" enabled={r.enabled} order={r.sortingOrder}{extra}");
-                        }
-                }
-                catch (Exception ex) { Plugin.Log.LogWarning($"[LateArt]   renderer sweep: {ex.Message}"); }
-
-                // Every skeleton under the node, and what it's playing. A second
-                // skeleton here is the most likely home of the mascot.
-                try
-                {
-                    var skels = go.GetComponentsInChildren<Spine.Unity.SkeletonAnimation>(true);
-                    Plugin.Log.LogInfo($"[LateArt]   skeletons found: {(skels != null ? skels.Length : 0)}");
-                    if (skels != null)
-                        foreach (var sk in skels)
-                        {
-                            if (sk == null) continue;
-                            string anim = "?", skinName = "?", dataName = "?";
-                            try
-                            {
-                                // No GetCurrent in this interop build — read track 0
-                                // straight off the exposed Tracks list.
-                                var st = sk.AnimationState;
-                                var tracks = st != null ? st.Tracks : null;
-                                var items = tracks != null ? tracks.Items : null;
-                                var cur = items != null && tracks.Count > 0 && items.Length > 0 ? items[0] : null;
-                                anim = cur != null && cur.Animation != null ? cur.Animation.Name : "none";
-                            }
-                            catch (Exception ex) { anim = "unreadable:" + ex.GetType().Name; }
-                            try
-                            {
-                                var sd = sk.Skeleton;
-                                if (sd != null)
-                                {
-                                    skinName = sd.Skin != null ? sd.Skin.Name : "null";
-                                    dataName = sd.Data != null ? sd.Data.Name : "null";
-                                }
-                            }
-                            catch { }
-                            Plugin.Log.LogInfo($"[LateArt]   Skeleton '{PathOfT(sk.transform, root)}'"
-                                + $" data='{dataName}' animation='{anim}' skin='{skinName}'");
-
-                            // Slots actually showing something, now that the node is built.
-                            try
-                            {
-                                var skeleton = sk.Skeleton;
-                                var data = skeleton != null ? skeleton.Data : null;
-                                var slots = data != null ? data.Slots : null;
-                                var items = slots != null ? slots.Items : null;
-                                int shown = 0;
-                                if (items != null)
-                                    for (int s = 0; s < slots.Count && s < items.Length; s++)
-                                    {
-                                        string slotName = null;
-                                        try { var sdta = items[s]; if (sdta != null) slotName = sdta.Name; } catch { }
-                                        if (string.IsNullOrEmpty(slotName)) continue;
-                                        try
-                                        {
-                                            var live = skeleton.FindSlot(slotName);
-                                            var a = live != null && live.Pose != null ? live.Pose.Attachment : null;
-                                            if (a != null)
-                                            {
-                                                Plugin.Log.LogInfo($"[LateArt]     VISIBLE slot '{slotName}' attachment='{a.Name}'");
-                                                shown++;
-                                            }
-                                        }
-                                        catch { }
-                                    }
-                                Plugin.Log.LogInfo($"[LateArt]     ({shown} visible slot(s))");
-                            }
-                            catch (Exception ex) { Plugin.Log.LogWarning($"[LateArt]     slot sweep: {ex.Message}"); }
-                        }
-                }
-                catch (Exception ex) { Plugin.Log.LogWarning($"[LateArt]   skeleton sweep: {ex.Message}"); }
-
-                break;   // one node is plenty
+                try { match = node.TryCast<STS.Map.MatchMapNode>(); } catch { }
+                if (match != null) PatchMapOpponents.EnsureNodeArt(match);
             }
         }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[LateArt] probe: {ex.Message}"); }
-    }
-
-    private static string PathOfT(Transform t, Transform root)
-    {
-        var parts = new List<string>();
-        int guard = 0;
-        while (t != null && t != root && guard++ < 12) { parts.Insert(0, t.name); t = t.parent; }
-        return parts.Count > 0 ? string.Join("/", parts.ToArray()) : ".";
-    }
-}
+        catch (Exception ex) { Plugin.Log.LogWarning($"[NodeArt] Could not refresh map logos: {ex.Message}"); }
+    }}
 
 // ============================================================
 // Give the mascot skeleton back for the post-match explosion.
@@ -12131,50 +7566,6 @@ public static class PatchPlayExplosionAnim
     }
 }
 
-public static class PatchNodeStadiumAnimation
-{
-    // Any animation on the node skeleton works here. The full list, read off a
-    // runtime probe, is: Campfire, Campfire_Act2, Challenge_Act2, Challenge_Act3,
-    // Chopper, Explosion, Explosion_Act1, Explosion_Act2, Outside_Rink1, Poisson,
-    // Rogue_Blademaster, Rogue_Chaos, Rogue_Coach, Rogue_Fan, Rogue_GM,
-    // Rogue_Infirmary, Rogue_Training, Ship_Flags, Smity, Smity_Act2,
-    // Stadium_Cheese, Stadium_Cultists, Stadium_Disco, Stadium_Golfers,
-    // Stadium_Knights, Stadium_Lettuce, Stadium_Meatballs, Stadium_Meatballs_Alt,
-    // Stadium_Mountaineers, Stadium_Princess, Stadium_Ref.
-    internal const string NeutralNodeAnimation = "Outside_Rink1";
-
-    // DISABLED. Swapping the stadium animation did NOT remove the mascot — it only
-    // made every campaign node share one rink, losing the variety of the vanilla
-    // stadiums for no gain. So the mascot is not driven by the stadium animation
-    // after all; it is set up somewhere we haven't looked yet (see the late probe
-    // in PatchLateNodeProbe — the early probe ran before the node finished
-    // building, which is why every slot read 'none').
-    //
-    // Kept, switched off, because the animation-name inventory in the comment above
-    // is hard-won and this is where it belongs if a neutral node look is ever
-    // wanted deliberately.
-    private const bool ReplaceStadiumAnimation = false;
-
-    private static bool ShouldReplace()
-    {
-        return ReplaceStadiumAnimation && !Plugin.IsDefaultMode && Plugin.ConfigTeams.Count > 0;
-    }
-
-    public static void ElitePrefix(ref string eliteSkin)
-    {
-        if (!ShouldReplace()) return;
-        Plugin.Log.LogInfo($"[NodeArt] SetElite: stadium animation '{eliteSkin}' -> '{NeutralNodeAnimation}' (drops the vanilla mascot)");
-        eliteSkin = NeutralNodeAnimation;
-    }
-
-    public static void BossPrefix(ref string bossSkin)
-    {
-        if (!ShouldReplace()) return;
-        Plugin.Log.LogInfo($"[NodeArt] SetBoss: stadium animation '{bossSkin}' -> '{NeutralNodeAnimation}' (drops the vanilla mascot)");
-        bossSkin = NeutralNodeAnimation;
-    }
-}
-
 [HarmonyPatch(typeof(EliteMapNode), nameof(EliteMapNode.LaunchMatch))]
 public static class PatchEliteLaunchMatch
 {
@@ -12193,9 +7584,13 @@ public static class PatchEliteLaunchMatch
             {
                 // See PatchBossLaunchMatch.Prefix — normally already done at map
                 // generation; this is the correcting fallback.
+                if (!Plugin.IsDefaultMode && Plugin.GamesPlayed < Plugin.ConfigTeams.Count)
+                    opponent = CustomTeamRules.OwnOpponent(__instance);
                 if (CampaignOpponents.Ensure(opponent, Plugin.GamesPlayed, "EliteMapNode.LaunchMatch"))
                     Plugin.Log.LogInfo($"[Remix] Elite '{opponent.teamName}' configured at launch (game {Plugin.GamesPlayed + 1})");
             }
+            CustomMatchCompletion.Begin(__instance, false);
+            OpponentMatch.Begin(__instance);
         }
         catch (Exception ex) { Plugin.Log.LogError($"[Remix] EliteLaunch: {ex}"); }
     }
@@ -12244,11 +7639,46 @@ public static class PatchDefaultModeDump
 
 public static class LogRepositories
 {
+    /// <summary>Dumps describe the shipped game only. FindObjectsOfTypeAll also returns
+    /// objects made at runtime: the game's own custom teams and players (loaded from its
+    /// save folder, Studio's Play Now exports included) and every clone this mod builds
+    /// from campaign files, which carry campaign names and looks. Unity gives objects
+    /// created at runtime negative instance ids; assets loaded from the game files have
+    /// positive ones.</summary>
+    internal static bool IsShipped(UnityEngine.Object o)
+    {
+        if (o == null) return false;
+        try
+        {
+            if (o.GetInstanceID() < 0) return false;
+            string name = o.name ?? "";
+            if (name.EndsWith("(Clone)", StringComparison.Ordinal) || name.StartsWith("StudioBench_", StringComparison.Ordinal)) return false;
+            var team = o.TryCast<TeamData>();
+            if (team != null) return !CampaignCore.CustomTeamIdentity.IsCustom(team.id);
+            var player = o.TryCast<SkaterData>();
+            return player == null || !player.isCustomSkater;
+        }
+        catch { return false; }
+    }
+
+    internal static List<T> Shipped<T>(IEnumerable<T> loaded) where T : UnityEngine.Object
+    {
+        var kept = new List<T>(); int total = 0;
+        if (loaded != null)
+            foreach (var item in loaded)
+            {
+                if (item == null) continue;
+                total++;
+                if (IsShipped(item)) kept.Add(item);
+            }
+        Plugin.Log.LogInfo($"[Dump] {typeof(T).Name}: {kept.Count} shipped of {total} loaded (runtime and custom objects skipped)");
+        return kept;
+    }
+
     /// <summary>Collect every distinct value the game uses for each skin field and
     /// write them to _game_skins.txt, grouped by field. _gen_game_data.py turns this
     /// into the Creator's dropdown lists.</summary>
-    internal static void DumpSkinFields(string root, Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppArrayBase<ForwardData> skaters,
-                                        Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppArrayBase<GoaltenderData> goalies)
+    internal static void DumpSkinFields(string root, IEnumerable<ForwardData> skaters, IEnumerable<GoaltenderData> goalies)
     {
         try
         {
@@ -12326,196 +7756,6 @@ public static class LogRepositories
         catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Skin field dump failed: {ex.Message}"); }
     }
 
-    // Called directly by PatchSetCurrentAct — not a Harmony patch.
-    public static void OnTeamInitialized(Team __instance, TeamData teamData)
-    {
-        if (!Plugin.ReposLogged)
-        {
-            Plugin.ReposLogged = true;
-        }
-
-        // Always auto-dump team+player list for the GUI tool (not gated by DumpData).
-        // Written to ModContentRoot so the GUI's "Import Game Team" picker can read it.
-        try
-        {
-            AutoDumpNameLists();
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Name list dump failed: {ex.Message}"); }
-
-        if (!Plugin.DumpData) return;
-        if (Plugin.SeparateFilesWritten) return; // only dump once
-        Plugin.SeparateFilesWritten = true;
-        Plugin.Log.LogInfo("[Dump] Generating data dumps...");
-
-        var sb = new StringBuilder();
-        sb.AppendLine("=== TAPE TO TAPE - GAME DATA DUMP ===");
-        sb.AppendLine($"Generated: {DateTime.Now}");
-        sb.AppendLine();
-
-        // Dump all league teams (NHL parody teams not in campaign)
-        try
-        {
-            var ptAll = UnityEngine.Resources.FindObjectsOfTypeAll<PlayableTeams>();
-            var playableTeams = ptAll != null && ptAll.Length > 0 ? ptAll[0] : null;
-            if (playableTeams != null)
-            {
-                sb.AppendLine("========== LEAGUE TEAMS (NHL parody teams) ==========");
-                var league = playableTeams.leagueTeams;
-                if (league != null)
-                {
-                    for (int i = 0; i < league.Count; i++)
-                    {
-                        var t = league[i];
-                        if (t == null) continue;
-                        sb.AppendLine($"  Team: '{t.teamName}' (id={t.id})");
-                        var fwds = t.forwards;
-                        if (fwds != null)
-                            for (int j = 0; j < fwds.Count; j++)
-                            {
-                                var f = fwds[j];
-                                if (f == null) continue;
-                                sb.AppendLine($"    Forward: '{f.firstName} {f.lastName}' SP={f.shotPower} SPD={f.speed} CHK={f.checking} ACC={f.shotAccuracy}");
-                            }
-                        if (t.goalie != null)
-                            sb.AppendLine($"    Goalie: '{t.goalie.firstName} {t.goalie.lastName}' skill={t.goalie.skill}");
-                    }
-                }
-
-                sb.AppendLine();
-                sb.AppendLine("========== CAMPAIGN EXCLUSIVE TEAMS ==========");
-                var campExcl = playableTeams.campaignExclusiveTeams;
-                if (campExcl != null)
-                {
-                    for (int i = 0; i < campExcl.Count; i++)
-                    {
-                        var t = campExcl[i];
-                        if (t == null) continue;
-                        sb.AppendLine($"  Team: '{t.teamName}' (id={t.id})");
-                        var fwds = t.forwards;
-                        if (fwds != null)
-                            for (int j = 0; j < fwds.Count; j++)
-                            {
-                                var f = fwds[j];
-                                if (f == null) continue;
-                                sb.AppendLine($"    Forward: '{f.firstName} {f.lastName}' SP={f.shotPower} SPD={f.speed} CHK={f.checking} ACC={f.shotAccuracy}");
-                            }
-                        if (t.goalie != null)
-                            sb.AppendLine($"    Goalie: '{t.goalie.firstName} {t.goalie.lastName}' skill={t.goalie.skill}");
-                    }
-                }
-
-                sb.AppendLine();
-                sb.AppendLine("========== ALL CAMPAIGN TEAMS ==========");
-                var campTeams = playableTeams.campaignTeams;
-                if (campTeams != null)
-                {
-                    for (int i = 0; i < campTeams.Count; i++)
-                    {
-                        var t = campTeams[i];
-                        if (t == null) continue;
-                        sb.AppendLine($"  Team: '{t.teamName}' (id={t.id})");
-                    }
-                }
-                sb.AppendLine();
-            }
-            else sb.AppendLine("PlayableTeams NOT FOUND");
-        }
-        catch (Exception ex) { sb.AppendLine($"PlayableTeams error: {ex.Message}"); }
-
-        // Dump ALL TeamData objects in memory (campaign + league + everything)
-        try
-        {
-            var allTeams = UnityEngine.Resources.FindObjectsOfTypeAll<TeamData>();
-            sb.AppendLine($"========== ALL TEAM DATA IN MEMORY ({allTeams.Length}) ==========");
-            for (int i = 0; i < allTeams.Length; i++)
-            {
-                var t = allTeams[i];
-                if (t == null) continue;
-                bool hasLogo = t.logo != null;
-                bool hasBigLogo = t.alternateBigLogo != null;
-                sb.AppendLine($"  '{t.teamName}' id={t.id} city={t.city} hasLogo={hasLogo} hasBigLogo={hasBigLogo}");
-            }
-            sb.AppendLine();
-        }
-        catch (Exception ex) { sb.AppendLine($"TeamData dump error: {ex.Message}"); }
-
-        // Try to get repositories via Resources.FindObjectsOfTypeAll
-        try
-        {
-            var relicRepos = UnityEngine.Resources.FindObjectsOfTypeAll<RelicRepository>();
-            var relicRepo = relicRepos != null && relicRepos.Length > 0 ? relicRepos[0] : null;
-            if (relicRepo != null)
-            {
-                sb.AppendLine("========== RELICS ==========");
-                DumpRelicList(sb, relicRepo.offensiveRelics, "Offensive");
-                DumpRelicList(sb, relicRepo.defensiveRelics, "Defensive");
-                DumpRelicList(sb, relicRepo.utilityRelics, "Utility");
-                DumpRelicList(sb, relicRepo.speedRelics, "Speed");
-                DumpRelicList(sb, relicRepo.checkingRelics, "Checking");
-                DumpRelicList(sb, relicRepo.powerRelics, "Power");
-                DumpRelicList(sb, relicRepo.accuracyRelics, "Accuracy");
-                DumpRelicList(sb, relicRepo.chaosRelics, "Chaos");
-                DumpRelicList(sb, relicRepo.bossRelics, "Boss");
-                DumpRelicList(sb, relicRepo.goalieRelics, "Goalie");
-                DumpRelicList(sb, relicRepo.coachRelics, "Coach");
-                sb.AppendLine();
-            }
-            else sb.AppendLine("RelicRepository NOT FOUND");
-        }
-        catch (Exception ex) { sb.AppendLine($"Relic error: {ex.Message}"); }
-
-        try
-        {
-            var abilityRepos = UnityEngine.Resources.FindObjectsOfTypeAll<AbilityRepository>();
-            var abilityRepo = abilityRepos != null && abilityRepos.Length > 0 ? abilityRepos[0] : null;
-            if (abilityRepo != null)
-            {
-                sb.AppendLine("========== ABILITIES ==========");
-                DumpAbilityList(sb, abilityRepo.abilities, "All");
-                sb.AppendLine();
-            }
-            else sb.AppendLine("AbilityRepository NOT FOUND");
-        }
-        catch (Exception ex) { sb.AppendLine($"Ability error: {ex.Message}"); }
-
-        try
-        {
-            var talentRepos = UnityEngine.Resources.FindObjectsOfTypeAll<TalentRepository>();
-            var talentRepo = talentRepos != null && talentRepos.Length > 0 ? talentRepos[0] : null;
-            if (talentRepo != null)
-            {
-                sb.AppendLine("========== TALENTS ==========");
-                DumpTalentList(sb, talentRepo.talents, "All");
-                sb.AppendLine();
-            }
-            else sb.AppendLine("TalentRepository NOT FOUND");
-        }
-        catch (Exception ex) { sb.AppendLine($"Talent error: {ex.Message}"); }
-
-        // Write to file
-        string path = Path.Combine(BepInEx.Paths.PluginPath, "game_data_dump.txt");
-        try
-        {
-            File.WriteAllText(path, sb.ToString());
-            Plugin.Log.LogInfo($"[Repo] Game data dumped to {path}");
-        }
-        catch (Exception ex) { Plugin.Log.LogError($"[Repo] File write error: {ex}"); }
-
-        // Write 3 separate files
-        try
-        {
-            WriteSeparateFiles();
-        }
-        catch (Exception ex) { Plugin.Log.LogError($"[Dump] WriteSeparateFiles failed: {ex}"); }
-
-        // Dump all player look data from parody teams
-        try
-        {
-            DumpPlayerLooks();
-        }
-        catch (Exception ex) { Plugin.Log.LogError($"[Dump] DumpPlayerLooks failed: {ex}"); }
-
-    }
 
     // Helper: extract short name from a skin path (last path segment, no extension)
     private static string SkinShortName(string path)
@@ -12591,7 +7831,7 @@ public static class LogRepositories
     private static void DumpPlayerLooks()
     {
         // ── Folder structure ──────────────────────────────────────────────
-        string root         = Path.Combine(BepInEx.Paths.PluginPath, "T2T_Dumps");
+        string root         = Plugin.DumpRoot;
         string dirPlayers   = Path.Combine(root, "players");
         string dirTeams     = Path.Combine(root, "teams");
         string dirSkSkins   = Path.Combine(root, "skins_skater");
@@ -12611,20 +7851,20 @@ public static class LogRepositories
         {
             if (pt.leagueTeams != null)
                 for (int i = 0; i < pt.leagueTeams.Count; i++)
-                    if (pt.leagueTeams[i] != null) leagueTeams.Add(pt.leagueTeams[i]);
+                    if (IsShipped(pt.leagueTeams[i])) leagueTeams.Add(pt.leagueTeams[i]);
 
             var seenCamp = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (pt.campaignTeams != null)
                 for (int i = 0; i < pt.campaignTeams.Count; i++)
                 {
                     var t = pt.campaignTeams[i];
-                    if (t != null && seenCamp.Add(t.teamName)) campaignTeams.Add(t);
+                    if (IsShipped(t) && seenCamp.Add(t.teamName)) campaignTeams.Add(t);
                 }
             if (pt.campaignExclusiveTeams != null)
                 for (int i = 0; i < pt.campaignExclusiveTeams.Count; i++)
                 {
                     var t = pt.campaignExclusiveTeams[i];
-                    if (t != null && seenCamp.Add(t.teamName)) campaignTeams.Add(t);
+                    if (IsShipped(t) && seenCamp.Add(t.teamName)) campaignTeams.Add(t);
                 }
         }
 
@@ -12864,7 +8104,7 @@ public static class LogRepositories
             {
                 foreach (var f in allMem)
                 {
-                    if (f == null || string.IsNullOrEmpty(f.firstName)) continue;
+                    if (!IsShipped(f) || string.IsNullOrEmpty(f.firstName)) continue;
                     if (ownedPtr.Contains(f.Pointer)) continue;
                     freeCount++;
                     sb2.AppendLine($"{f.firstName} {f.lastName}");
@@ -12979,6 +8219,7 @@ public static class LogRepositories
             sb.AppendLine("# Regenerated every launch. Structure: SQUAD > MAP(act) > TEMPLATE > LAYER > NODE");
             sb.AppendLine("# NODE: n=<nodeIndex> type=<NodeType> pos=<x>,<y> out=[<nodeIndex>,..]");
             sb.AppendLine("#       group='<eliteGroupId>' team='<eliteTeamId>' gm=<n> talents=<n> relics=<n>");
+            sb.AppendLine("#       weights=[<NodeType>:<weight>,..] is the node's native pool, or its map's fallback pool.");
             sb.AppendLine("# SHAPE=[nodes per layer] — templates of one map with equal SHAPE are");
             sb.AppendLine("# structurally interchangeable; see SUMMARY at the end.");
             sb.AppendLine();
@@ -12989,7 +8230,7 @@ public static class LogRepositories
 
             foreach (var sq in squads)
             {
-                if (sq == null) continue;
+                if (!IsShipped(sq)) continue;
                 string sqName = null;
                 try { sqName = sq.squadName; } catch { }
                 if (string.IsNullOrEmpty(sqName)) sqName = "(unnamed)";
@@ -13097,9 +8338,30 @@ public static class LogRepositories
                                 try { tal = nd.talentRewardCount; } catch { }
                                 try { rel = nd.relicRewardCount; } catch { }
 
+                                string pool = "";
+                                if (typeName == "NULL")
+                                {
+                                    try
+                                    {
+                                        var weights = new Dictionary<string, float>();
+                                        if (nd.nodeTypeWeights != null && nd.nodeTypeWeights.Count > 0)
+                                        {
+                                            foreach (var weight in nd.nodeTypeWeights)
+                                                if (weight != null) weights[weight.type.ToString()] = weight.weight;
+                                        }
+                                        else if (cfg.nodeTypeConfig?.nodeTypeChances != null)
+                                        {
+                                            foreach (var weight in cfg.nodeTypeConfig.nodeTypeChances)
+                                                weights[weight.Key.ToString()] = weight.Value;
+                                        }
+                                        pool = " weights=[" + string.Join(",", weights.OrderBy(w => w.Key, StringComparer.Ordinal)
+                                            .Select(w => w.Key + ":" + w.Value.ToString("R", System.Globalization.CultureInfo.InvariantCulture))) + "]";
+                                    }
+                                    catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Random pool unavailable for {sqName}/{mi}/{ti}/{layerIndex}/{nodeIndex}: {ex.Message}"); }
+                                }
                                 sb.AppendLine($"        NODE n={nodeIndex} type={typeName} pos={pos}"
                                     + $" out=[{outs}] group='{grp}' team='{team}'"
-                                    + $" gm={gm} talents={tal} relics={rel}");
+                                    + $" gm={gm} talents={tal} relics={rel}" + pool);
                             }
                         }
                     }
@@ -13137,7 +8399,7 @@ public static class LogRepositories
                 if (allTeams != null)
                     foreach (var t in allTeams)
                     {
-                        if (t == null) continue;
+                        if (!IsShipped(t)) continue;
                         string tid = null, tn = null;
                         try { tid = t.id; tn = t.teamName; } catch { }
                         if (string.IsNullOrEmpty(tid) || !seen.Add(tid)) continue;
@@ -13179,8 +8441,8 @@ public static class LogRepositories
         string root = Plugin.ModContentRoot;
         if (string.IsNullOrEmpty(root) || !Directory.Exists(root)) return;
 
-        var allTeams = UnityEngine.Resources.FindObjectsOfTypeAll<TeamData>();
-        if (allTeams == null || allTeams.Length == 0)
+        var loadedTeams = UnityEngine.Resources.FindObjectsOfTypeAll<TeamData>();
+        if (loadedTeams == null || loadedTeams.Length == 0)
         {
             Plugin.Log.LogInfo("[Dump] AutoDumpNameLists: TeamData not loaded yet — will retry on next trigger.");
             return;
@@ -13188,10 +8450,23 @@ public static class LogRepositories
 
         // Mark done only AFTER we have team data so callers can retry if teams weren't ready.
         _guiListsDumped = true;
+        var allTeams = Shipped(loadedTeams);
+        var allPlayers = Shipped(UnityEngine.Resources.FindObjectsOfTypeAll<ForwardData>());
+        var allGoalies = Shipped(UnityEngine.Resources.FindObjectsOfTypeAll<GoaltenderData>());
+        if (allTeams.Count == 0 || allPlayers.Count == 0)
+        {
+            // Never replace good lists with empty ones if shipped objects can't be told apart.
+            Plugin.Log.LogError("[Dump] No shipped teams or players recognised; name, skin and logo lists left unchanged.");
+            try { DumpMapLayouts(root); } catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Map layouts: {ex.Message}"); }
+            try { GameCatalogBridge.WriteSquads(root); } catch (Exception ex) { Plugin.Log.LogWarning($"[GameCatalog] Squad catalog: {ex.Message}"); }
+            return;
+        }
 
         // Map layer/node layouts, for the per-node team editor. Read-only.
         try { DumpMapLayouts(root); }
         catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Map layouts: {ex.Message}"); }
+        try { GameCatalogBridge.WriteSquads(root); }
+        catch (Exception ex) { Plugin.Log.LogWarning($"[GameCatalog] Squad catalog: {ex.Message}"); }
 
         // 1. Name lists (for GUI dropdowns)
         try
@@ -13203,8 +8478,6 @@ public static class LogRepositories
             teamNames.Sort();
             File.WriteAllLines(Path.Combine(root, "_game_team_names.txt"), teamNames.ToArray());
 
-            var allPlayers = UnityEngine.Resources.FindObjectsOfTypeAll<ForwardData>();
-            var allGoalies = UnityEngine.Resources.FindObjectsOfTypeAll<GoaltenderData>();
             var skaterNames = new HashSet<string>();
             var goalieNames = new HashSet<string>();
             if (allPlayers != null)
@@ -13234,162 +8507,16 @@ public static class LogRepositories
         //     Makes the vanilla logos available to the in-game logo picker AND
         //     gives the GUI a list to populate the Logo From dropdown.
         DumpTeamLogosToCustomLogos(allTeams, root);
-
-        // 2. Full library dump — write every game team as editable files
-        //    into library/Base Game Teams/<TeamName>/team.txt + players/
-        //    Runs EVERY launch to catch updates. Overwrites existing files.
-        //    Users should COPY teams/players out if they want to customize.
-        string baseGameDir = Path.Combine(root, "library", "Base Game Teams");
-        string basePlayersDir = Path.Combine(root, "library", "Base Game Players");
-
-        // Only exclude the user's personal in-game team (runtime-created, not a real game team)
-        var excludeTeams = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { "My Team" };
-
-        // Detect custom (in-game-editor) teams by reading CustomTeam-*.json from the
-        // game's save folder. This is more reliable than a hardcoded name whitelist
-        // because base game teams change with every game update and the whitelist rots.
-        // Anything NOT in this set is treated as a base game team.
-        var customEditorTeamNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        try
-        {
-            string tdmPath = Path.Combine(UnityEngine.Application.persistentDataPath, "TeamDataModels");
-            if (Directory.Exists(tdmPath))
-            {
-                foreach (var jsonFile in Directory.GetFiles(tdmPath, "CustomTeam-*.json"))
-                {
-                    string json = File.ReadAllText(jsonFile);
-                    var m = System.Text.RegularExpressions.Regex.Match(
-                        json, "\"TeamName\"\\s*:\\s*\"([^\"]+)\"");
-                    if (m.Success)
-                        customEditorTeamNames.Add(m.Groups[1].Value);
-                }
-                Plugin.Log.LogInfo($"[Dump] Detected {customEditorTeamNames.Count} custom (in-game editor) teams in TeamDataModels");
-            }
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Custom team detection: {ex.Message}"); }
-
-        string customTeamsDir = Path.Combine(root, "library", "Custom Teams");
-        string customPlayersDir = Path.Combine(root, "library", "Custom Players");
-
-        // Create all four up front. These used to be created near the END of this
-        // routine, AFTER the player files were written into them — which worked
-        // only because the folders already existed from a previous run. On a fresh
-        // or deleted library every player write failed with "Could not find a part
-        // of the path" and the dump reported "0 players", while teams (which make
-        // their own subfolder) came through fine. The later calls are idempotent.
-        try
-        {
-            Directory.CreateDirectory(baseGameDir);
-            Directory.CreateDirectory(basePlayersDir);
-            Directory.CreateDirectory(customTeamsDir);
-            Directory.CreateDirectory(customPlayersDir);
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Could not create library folders: {ex.Message}"); }
-
-        Plugin.Log.LogInfo($"[Dump] Dumping all game teams + players to library...");
-        int teamCount = 0;
-        foreach (var team in allTeams)
-        {
-            if (team == null || string.IsNullOrEmpty(team.teamName)) continue;
-            if (excludeTeams.Contains(team.teamName.Trim())) continue;
-            try
-            {
-                bool isCustomEditor = customEditorTeamNames.Contains(team.teamName.Trim());
-                string targetTeamDir = isCustomEditor ? customTeamsDir : baseGameDir;
-                DumpTeamToLibrary(targetTeamDir, team);
-                teamCount++;
-            }
-            catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Team '{team.teamName}' failed: {ex.Message}"); }
-        }
-
-        // Dump EVERY ForwardData and GoaltenderData in memory to Base Game Players /
-        // Custom Players — regardless of whether they're on a team roster.
-        // This is the only way to capture free agents, bench players, and any other
-        // player objects that aren't reachable via team.forwards / team.goalie.
-        try
-        {
-            var allFwds = UnityEngine.Resources.FindObjectsOfTypeAll<ForwardData>();
-            var allGkps = UnityEngine.Resources.FindObjectsOfTypeAll<GoaltenderData>();
-            int playerCount = 0;
-
-            // Build two pointer sets:
-            //   baseGamePlayerPtrs — players on ANY base game team (takes priority)
-            //   customOnlyPtrs     — players exclusively on in-game editor teams
-            // If the editor reuses a base-game ForwardData object, that player is
-            // already in baseGamePlayerPtrs and stays in Base Game Players.
-            var baseGamePlayerPtrs = new HashSet<System.IntPtr>();
-            var customOnlyPtrs    = new HashSet<System.IntPtr>();
-            foreach (var td in allTeams)
-            {
-                if (td == null) continue;
-                bool isCustomEditor = customEditorTeamNames.Contains(td.teamName?.Trim() ?? "");
-                if (td.forwards != null)
-                    foreach (var f in td.forwards) { if (f != null) (isCustomEditor ? customOnlyPtrs : baseGamePlayerPtrs).Add(f.Pointer); }
-                if (td.goalie != null)
-                    (isCustomEditor ? customOnlyPtrs : baseGamePlayerPtrs).Add(td.goalie.Pointer);
-            }
-            // Remove from custom set any pointer that also appears on a base game team
-            customOnlyPtrs.ExceptWith(baseGamePlayerPtrs);
-
-            if (allFwds != null)
-            {
-                foreach (var f in allFwds)
-                {
-                    if (f == null) continue;
-                    string pname = $"{f.firstName} {f.lastName}".Trim();
-                    if (string.IsNullOrEmpty(pname)) continue;
-                    string dir = customOnlyPtrs.Contains(f.Pointer) ? customPlayersDir : basePlayersDir;
-                    try { DumpSkaterToFile(dir, "Center", f, flat: true); playerCount++; }
-                    catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Player '{pname}': {ex.Message}"); }
-                }
-            }
-            if (allGkps != null)
-            {
-                foreach (var g in allGkps)
-                {
-                    if (g == null) continue;
-                    string pname = $"{g.firstName} {g.lastName}".Trim();
-                    if (string.IsNullOrEmpty(pname)) continue;
-                    string dir = customOnlyPtrs.Contains(g.Pointer) ? customPlayersDir : basePlayersDir;
-                    try { DumpGoalieToFile(dir, g, flat: true); playerCount++; }
-                    catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Goalie '{pname}': {ex.Message}"); }
-                }
-            }
-            Plugin.Log.LogInfo($"[Dump] Dumped {playerCount} players to library (all in memory)");
-        }
-        catch (Exception ex) { Plugin.Log.LogError($"[Dump] Player dump failed: {ex}"); }
-
-        // Write a README note in all auto-generated folders
-        try
-        {
-            string note = "# AUTO-GENERATED — DO NOT EDIT IN PLACE\r\n"
-                + "# These files are regenerated every time the game launches.\r\n"
-                + "# To customize a team or player, COPY them to:\r\n"
-                + "#   library/teams/<YourTeamName>/\r\n"
-                + "#   library/players/<PlayerName>.txt\r\n"
-                + "# Your copies will NOT be overwritten.\r\n";
-            Directory.CreateDirectory(baseGameDir);
-            Directory.CreateDirectory(basePlayersDir);
-            Directory.CreateDirectory(customTeamsDir);
-            Directory.CreateDirectory(customPlayersDir);
-            File.WriteAllText(Path.Combine(baseGameDir, "_README.txt"), note);
-            File.WriteAllText(Path.Combine(basePlayersDir, "_README.txt"), note);
-            File.WriteAllText(Path.Combine(customTeamsDir, "_README.txt"), note);
-            File.WriteAllText(Path.Combine(customPlayersDir, "_README.txt"), note);
-        } catch {}
-
-        Plugin.Log.LogInfo($"[Dump] Dumped {teamCount} teams to library");
     }
 
     private static bool _logosDumped = false;
-    private static void DumpTeamLogosToCustomLogos(TeamData[] allTeams, string modRoot)
+    private static void DumpTeamLogosToCustomLogos(IEnumerable<TeamData> allTeams, string modRoot)
     {
         if (_logosDumped) return;
         _logosDumped = true;
         try
         {
-            string logoDir = Path.Combine(UnityEngine.Application.persistentDataPath, "CustomLogos");
+            string logoDir = Path.Combine(modRoot, "_team_logos");
             Directory.CreateDirectory(logoDir);
 
             int wrote = 0, skipped = 0, failed = 0;
@@ -13397,7 +8524,7 @@ public static class LogRepositories
             foreach (var t in allTeams)
             {
                 if (t == null || string.IsNullOrEmpty(t.teamName)) continue;
-                if (t.logo == null) continue;
+                if (t.logo == null || CampaignCore.CustomTeamIdentity.IsCustom(t.id) || (t.logo.name ?? "").StartsWith("custom_", StringComparison.OrdinalIgnoreCase)) continue;
                 // Never export the repository's fallback sprite. A team whose logo
                 // never resolved still carries defaultLogo ('Teams_TapetoTape'),
                 // and dumping that wrote the game's own house logo out under the
@@ -13405,16 +8532,14 @@ public static class LogRepositories
                 // artwork and looked like "custom logos don't work".
                 if (IsFallbackLogo(t.logo))
                 {
-                    Plugin.Log.LogDebug($"[Dump] Logo '{t.teamName}' is the fallback sprite — not exported");
                     continue;
                 }
 
                 string safe = t.teamName;
                 foreach (char c in Path.GetInvalidFileNameChars()) safe = safe.Replace(c, '_');
-                logoNames.Add(safe);
+                logoNames.Add(t.teamName);
 
-                string outPath = Path.Combine(logoDir, safe + ".png");
-                if (File.Exists(outPath)) { skipped++; continue; }
+                string outPath = CampaignCore.LogoFiles.NativeFile(modRoot, t.teamName);
 
                 try
                 {
@@ -13429,7 +8554,6 @@ public static class LogRepositories
                 catch (Exception ex)
                 {
                     failed++;
-                    Plugin.Log.LogDebug($"[Dump] Logo '{t.teamName}' failed: {ex.Message}");
                 }
             }
 
@@ -13488,6 +8612,16 @@ public static class LogRepositories
             readable.ReadPixels(new UnityEngine.Rect(x, y, w, h), 0, 0);
             readable.Apply();
 
+            // Some startup/headless graphics contexts return uninitialized memory
+            // without throwing. Never replace a good cached crest with that PNG.
+            var pixels = readable.GetPixels32();
+            bool varied = false;
+            if (pixels.Length > 0)
+                for (int i = 1; i < pixels.Length; i++)
+                    if (pixels[i].r != pixels[0].r || pixels[i].g != pixels[0].g ||
+                        pixels[i].b != pixels[0].b || pixels[i].a != pixels[0].a) { varied = true; break; }
+            if (!varied) throw new InvalidDataException("Logo readback returned a blank/constant image; keeping existing artwork.");
+
             return UnityEngine.ImageConversion.EncodeToPNG(readable);
         }
         finally
@@ -13498,387 +8632,6 @@ public static class LogRepositories
         }
     }
 
-    private static void DumpTeamToLibrary(string baseDir, TeamData team)
-    {
-        string safe = team.teamName;
-        foreach (char c in Path.GetInvalidFileNameChars()) safe = safe.Replace(c, '_');
-        string teamDir = Path.Combine(baseDir, safe);
-        string playersDir = Path.Combine(teamDir, "players");
-        Directory.CreateDirectory(playersDir);
-
-        var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"# Base game team: {team.teamName}");
-        sb.AppendLine($"Team Name               = {team.teamName}");
-        if (!string.IsNullOrEmpty(team.city)) sb.AppendLine($"City                    = {team.city}");
-        if (!string.IsNullOrEmpty(team.nickname)) sb.AppendLine($"Abbreviation            = {team.nickname}");
-        sb.AppendLine($"Logo From               = {team.teamName}");
-
-        // Colors
-        try
-        {
-            var hc = team.homeColors;
-            if (hc != null)
-            {
-                if (hc.jerseyScheme != null)
-                {
-                    sb.AppendLine($"Jersey Primary          = {PatchBossLaunchMatch.ColorToRGB(hc.jerseyScheme.primaryColor)}");
-                    sb.AppendLine($"Jersey Secondary        = {PatchBossLaunchMatch.ColorToRGB(hc.jerseyScheme.secondaryColor)}");
-                    sb.AppendLine($"Jersey Accent           = {PatchBossLaunchMatch.ColorToRGB(hc.jerseyScheme.tertiaryColor)}");
-                }
-                if (hc.helmetScheme != null)
-                {
-                    sb.AppendLine($"Helmet Color            = {PatchBossLaunchMatch.ColorToRGB(hc.helmetScheme.primaryColor)}");
-                    sb.AppendLine($"Helmet Secondary Color  = {PatchBossLaunchMatch.ColorToRGB(hc.helmetScheme.secondaryColor)}");
-                    sb.AppendLine($"Helmet Tertiary Color   = {PatchBossLaunchMatch.ColorToRGB(hc.helmetScheme.tertiaryColor)}");
-                }
-                if (hc.glovesScheme != null)
-                {
-                    sb.AppendLine($"Gloves Color            = {PatchBossLaunchMatch.ColorToRGB(hc.glovesScheme.primaryColor)}");
-                    sb.AppendLine($"Gloves Secondary Color  = {PatchBossLaunchMatch.ColorToRGB(hc.glovesScheme.secondaryColor)}");
-                    sb.AppendLine($"Gloves Tertiary Color   = {PatchBossLaunchMatch.ColorToRGB(hc.glovesScheme.tertiaryColor)}");
-                }
-                if (hc.pantsScheme != null)
-                {
-                    sb.AppendLine($"Pants Color             = {PatchBossLaunchMatch.ColorToRGB(hc.pantsScheme.primaryColor)}");
-                    sb.AppendLine($"Pants Secondary Color   = {PatchBossLaunchMatch.ColorToRGB(hc.pantsScheme.secondaryColor)}");
-                    sb.AppendLine($"Pants Tertiary Color    = {PatchBossLaunchMatch.ColorToRGB(hc.pantsScheme.tertiaryColor)}");
-                }
-                if (hc.skatesScheme != null)
-                {
-                    sb.AppendLine($"Skates Color            = {PatchBossLaunchMatch.ColorToRGB(hc.skatesScheme.primaryColor)}");
-                    sb.AppendLine($"Blade Color             = {PatchBossLaunchMatch.ColorToRGB(hc.skatesScheme.secondaryColor)}");
-                    sb.AppendLine($"Laces Color             = {PatchBossLaunchMatch.ColorToRGB(hc.skatesScheme.tertiaryColor)}");
-                }
-                if (hc.socksScheme != null)
-                {
-                    sb.AppendLine($"Socks Color             = {PatchBossLaunchMatch.ColorToRGB(hc.socksScheme.primaryColor)}");
-                    sb.AppendLine($"Socks Secondary Color   = {PatchBossLaunchMatch.ColorToRGB(hc.socksScheme.secondaryColor)}");
-                    sb.AppendLine($"Socks Tertiary Color    = {PatchBossLaunchMatch.ColorToRGB(hc.socksScheme.tertiaryColor)}");
-                }
-                if (hc.numberScheme != null)
-                {
-                    sb.AppendLine($"Number Color Home       = {PatchBossLaunchMatch.ColorToRGB(hc.numberScheme.primaryColor)}");
-                    sb.AppendLine($"Number Color Away       = {PatchBossLaunchMatch.ColorToRGB(hc.numberScheme.secondaryColor)}");
-                }
-                if (hc.stickScheme != null)
-                    sb.AppendLine($"Stick Color             = {PatchBossLaunchMatch.ColorToRGB(hc.stickScheme.primaryColor)}");
-            }
-            // Away colors
-            var ac = team.awayColors;
-            if (ac != null && ac.jerseyScheme != null)
-            {
-                sb.AppendLine($"Away Primary            = {PatchBossLaunchMatch.ColorToRGB(ac.jerseyScheme.primaryColor)}");
-                sb.AppendLine($"Away Secondary          = {PatchBossLaunchMatch.ColorToRGB(ac.jerseyScheme.secondaryColor)}");
-                sb.AppendLine($"Away Accent             = {PatchBossLaunchMatch.ColorToRGB(ac.jerseyScheme.tertiaryColor)}");
-            }
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Colors for '{team.teamName}': {ex.Message}"); }
-
-        // Skins
-        sb.AppendLine($"Body                    = standard");
-        sb.AppendLine($"Bicep                   = standard");
-        sb.AppendLine($"Gloves                  = standard");
-        sb.AppendLine($"Pants                   = standard");
-        sb.AppendLine($"Skates                  = standard");
-        sb.AppendLine($"Helmet                  = team colors");
-        sb.AppendLine($"Stick                   = black");
-
-        // Relics
-        try
-        {
-            if (team.relics != null && team.relics.Count > 0)
-            {
-                var rnames = new List<string>();
-                for (int i = 0; i < team.relics.Count; i++)
-                    if (team.relics[i] != null) rnames.Add(team.relics[i].name);
-                if (rnames.Count > 0)
-                    sb.AppendLine($"Team Relics             = {string.Join(", ", rnames)}");
-            }
-        } catch {}
-
-        File.WriteAllText(Path.Combine(teamDir, "team.txt"), sb.ToString());
-
-        // Forwards
-        try
-        {
-            var forwards = team.GetForwards();
-            string[] posNames = { "Left Wing", "Right Wing", "Center", "Left Defense", "Right Defense" };
-            if (forwards != null)
-            {
-                for (int i = 0; i < Math.Min(forwards.Count, posNames.Length); i++)
-                {
-                    var f = forwards[i];
-                    if (f == null) continue;
-                    DumpSkaterToFile(playersDir, posNames[i], f);
-                }
-            }
-        } catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Forwards for '{team.teamName}': {ex.Message}"); }
-
-        // Goalie
-        try
-        {
-            var g = team.goalie;
-            if (g != null) DumpGoalieToFile(playersDir, g);
-        } catch (Exception ex) { Plugin.Log.LogWarning($"[Dump] Goalie for '{team.teamName}': {ex.Message}"); }
-    }
-
-    private static void DumpTeamPlayersFlat(string basePlayersDir, TeamData team)
-    {
-        Directory.CreateDirectory(basePlayersDir);
-        try
-        {
-            var forwards = team.GetForwards();
-            if (forwards != null)
-            {
-                for (int i = 0; i < forwards.Count; i++)
-                {
-                    var f = forwards[i];
-                    if (f == null) continue;
-                    string pname = $"{f.firstName} {f.lastName}".Trim();
-                    if (string.IsNullOrEmpty(pname)) continue;
-                    string safe = pname;
-                    foreach (char c in Path.GetInvalidFileNameChars()) safe = safe.Replace(c, '_');
-                    // Write flat file (no position prefix — these are library players)
-                    string path = Path.Combine(basePlayersDir, safe + ".txt");
-                    // Reuse the skater dump logic but write to flat path
-                    string[] posNames = { "Left Wing", "Right Wing", "Center", "Left Defense", "Right Defense" };
-                    string pos = i < posNames.Length ? posNames[i] : "Center";
-                    DumpSkaterToFile(basePlayersDir, pos, f, flat: true);
-                }
-            }
-        } catch {}
-        try
-        {
-            var g = team.goalie;
-            if (g != null) DumpGoalieToFile(basePlayersDir, g, flat: true);
-        } catch {}
-    }
-
-    private static void DumpSkaterToFile(string playersDir, string position, ForwardData f, bool flat = false)
-    {
-        string pname = $"{f.firstName} {f.lastName}".Trim();
-        if (string.IsNullOrEmpty(pname)) pname = position;
-        string safe = pname;
-        foreach (char c in Path.GetInvalidFileNameChars()) safe = safe.Replace(c, '_');
-        // flat = library player (just Name.txt); non-flat = team player (Position - Name.txt)
-        string fname = flat ? $"{safe}.txt" : $"{position} - {safe}.txt";
-
-        var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"Name                    = {pname}");
-        sb.AppendLine($"Number                  = {f.number}");
-        try { sb.AppendLine($"Face                    = {PatchBossLaunchMatch.ReverseSkinPath(f.headSkin, "face")}"); } catch {}
-        sb.AppendLine($"Left Handed             = {(f.isLefty ? "yes" : "no")}");
-        sb.AppendLine($"Skin Color              = {(f.isBlack ? "dark" : "light")}");
-        sb.AppendLine($"Size                    = {f.skaterSize}");
-        try
-        {
-            float so = f.sizeOffsetPercentage;
-            if (Math.Abs(so - 1.0f) > 0.01f)
-                sb.AppendLine($"Size Offset             = {so:F2}");
-        } catch {}
-        sb.AppendLine($"Speed                   = {f.speed}");
-        sb.AppendLine($"Shot Power              = {f.shotPower}");
-        sb.AppendLine($"Accuracy                = {f.shotAccuracy}");
-        sb.AppendLine($"Checking                = {f.checking}");
-        // Ability
-        try
-        {
-            if (f.ability != null && !string.IsNullOrEmpty(f.ability.name))
-                sb.AppendLine($"Ability                 = {f.ability.name}");
-        } catch {}
-        // Talents
-        try
-        {
-            if (f.powerups != null && f.powerups.Count > 0)
-            {
-                var tnames = new List<string>();
-                for (int ti = 0; ti < f.powerups.Count; ti++)
-                    if (f.powerups[ti] != null) tnames.Add(f.powerups[ti].name);
-                if (tnames.Count > 0)
-                    sb.AppendLine($"Talents                 = {string.Join(", ", tnames)}");
-            }
-        } catch {}
-        // Skins
-        try { sb.AppendLine($"Stick                   = {PatchBossLaunchMatch.ReverseSkinPath(f.stickSkin, "stick")}"); } catch {}
-        try { sb.AppendLine($"Helmet                  = {PatchBossLaunchMatch.ReverseSkinPath(f.helmetSkin, "helmet")}"); } catch {}
-        try { sb.AppendLine($"Helmet Away             = {PatchBossLaunchMatch.ReverseSkinPath(f.helmetAwaySkin, "helmet")}"); } catch {}
-        try { sb.AppendLine($"Body                    = {PatchBossLaunchMatch.ReverseSkinPath(f.bodySkin, "body")}"); } catch {}
-        try { sb.AppendLine($"Body Away               = {PatchBossLaunchMatch.ReverseSkinPath(f.bodyAwaySkin, "body")}"); } catch {}
-        try { sb.AppendLine($"Bicep                   = {PatchBossLaunchMatch.ReverseSkinPath(f.bicepSkin, "bicep")}"); } catch {}
-        try { if (!string.IsNullOrEmpty(f.bicepAwaySkin)) sb.AppendLine($"Bicep Away              = {PatchBossLaunchMatch.ReverseSkinPath(f.bicepAwaySkin, "bicep")}"); } catch {}
-        try { sb.AppendLine($"Gloves                  = {PatchBossLaunchMatch.ReverseSkinPath(f.gloveSkin, "gloves")}"); } catch {}
-        try { if (!string.IsNullOrEmpty(f.gloveAwaySkin)) sb.AppendLine($"Gloves Away             = {PatchBossLaunchMatch.ReverseSkinPath(f.gloveAwaySkin, "gloves")}"); } catch {}
-        try { sb.AppendLine($"Pants                   = {PatchBossLaunchMatch.ReverseSkinPath(f.pantsSkin, "pants")}"); } catch {}
-        try { sb.AppendLine($"Skates                  = {PatchBossLaunchMatch.ReverseSkinPath(f.skateSkin, "skates")}"); } catch {}
-        try
-        {
-            if (!string.IsNullOrEmpty(f.glassesSkin))
-                sb.AppendLine($"Glasses                 = {f.glassesSkin}");
-        } catch {}
-
-        File.WriteAllText(Path.Combine(playersDir, fname), sb.ToString());
-    }
-
-    private static void DumpGoalieToFile(string playersDir, GoaltenderData g, bool flat = false)
-    {
-        string gname = $"{g.firstName} {g.lastName}".Trim();
-        if (string.IsNullOrEmpty(gname)) gname = "Goalie";
-        string safe = gname;
-        foreach (char c in Path.GetInvalidFileNameChars()) safe = safe.Replace(c, '_');
-
-        var sb = new System.Text.StringBuilder();
-        sb.AppendLine($"Name                    = {gname}");
-        try { sb.AppendLine($"Skill                   = {g.skill}"); } catch {}
-        try { sb.AppendLine($"Catching                = {g.catchingSkill}"); } catch {}
-        try { sb.AppendLine($"Glove                   = {g.gloveSkill}"); } catch {}
-        try { sb.AppendLine($"Blocker                 = {g.blockerSkill}"); } catch {}
-        try { sb.AppendLine($"Five Hole               = {g.fiveHoleSkill}"); } catch {}
-        try { sb.AppendLine($"Standing Speed          = {g.standingSpeed}"); } catch {}
-        try { sb.AppendLine($"Butterfly Speed         = {g.butterflySpeed}"); } catch {}
-        try { sb.AppendLine($"Control                 = {g.controlSkill}"); } catch {}
-        try { sb.AppendLine($"Recovery                = {g.recoverySkill}"); } catch {}
-        try { sb.AppendLine($"Pass Power              = {g.passPower}"); } catch {}
-        try { sb.AppendLine($"Shot Power              = {g.shotPower}"); } catch {}
-        try { sb.AppendLine($"Poke Check              = {g.pokecheckSkill}"); } catch {}
-        try { sb.AppendLine($"Depth                   = {g.depth}"); } catch {}
-        try { sb.AppendLine($"Pass Read               = {g.passReadSkill}"); } catch {}
-        // Goalie talents
-        try
-        {
-            if (g.powerups != null && g.powerups.Count > 0)
-            {
-                var tnames = new List<string>();
-                for (int ti = 0; ti < g.powerups.Count; ti++)
-                    if (g.powerups[ti] != null) tnames.Add(g.powerups[ti].name);
-                if (tnames.Count > 0)
-                    sb.AppendLine($"Goalie Talents          = {string.Join(", ", tnames)}");
-            }
-        } catch {}
-        // Goalie skins
-        try { if (!string.IsNullOrEmpty(g.helmetSkin)) sb.AppendLine($"Helmet Skin             = {PatchBossLaunchMatch.ReverseSkinPath(g.helmetSkin, "helmet", goalie: true)}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.skin)) sb.AppendLine($"Skin                    = {PatchBossLaunchMatch.ReverseSkinPath(g.skin, "body", goalie: true)}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.awaySkin)) sb.AppendLine($"Skin Away               = {PatchBossLaunchMatch.ReverseSkinPath(g.awaySkin, "body", goalie: true)}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.gloveSkin)) sb.AppendLine($"Glove Skin              = {PatchBossLaunchMatch.ReverseSkinPath(g.gloveSkin, "glove", goalie: true)}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.awayGloveSkin)) sb.AppendLine($"Glove Away              = {PatchBossLaunchMatch.ReverseSkinPath(g.awayGloveSkin, "glove", goalie: true)}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.blockerSkin)) sb.AppendLine($"Blocker Skin            = {PatchBossLaunchMatch.ReverseSkinPath(g.blockerSkin, "blocker", goalie: true)}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.awayBlockerSkin)) sb.AppendLine($"Blocker Away            = {PatchBossLaunchMatch.ReverseSkinPath(g.awayBlockerSkin, "blocker", goalie: true)}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.padsSkin)) sb.AppendLine($"Pads Skin               = {PatchBossLaunchMatch.ReverseSkinPath(g.padsSkin, "pads", goalie: true)}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.awayPadsSkin)) sb.AppendLine($"Pads Away               = {PatchBossLaunchMatch.ReverseSkinPath(g.awayPadsSkin, "pads", goalie: true)}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.stickSkin)) sb.AppendLine($"Stick Skin              = {PatchBossLaunchMatch.ReverseSkinPath(g.stickSkin, "stick", goalie: true)}"); } catch {}
-        try { if (!string.IsNullOrEmpty(g.awayStickSkin)) sb.AppendLine($"Stick Away              = {PatchBossLaunchMatch.ReverseSkinPath(g.awayStickSkin, "stick", goalie: true)}"); } catch {}
-
-        string gfname = $"Goalie - {safe}.txt";
-        File.WriteAllText(Path.Combine(playersDir, gfname), sb.ToString());
-    }
-
-    private static void DumpTeamFull(StringBuilder sb, TeamData t)
-    {
-        sb.AppendLine($"========== {t.teamName} ==========");
-        sb.AppendLine($"  city: \"{t.city ?? ""}\"");
-        sb.AppendLine($"  nickname: \"{t.nickname ?? ""}\"");
-        sb.AppendLine($"  id: \"{t.id ?? ""}\"");
-        sb.AppendLine($"  hasLogo: {t.logo != null}");
-        sb.AppendLine($"  hasBigLogo: {t.alternateBigLogo != null}");
-
-        // Relics
-        if (t.relics != null && t.relics.Count > 0)
-        {
-            sb.Append("  relics: [");
-            for (int i = 0; i < t.relics.Count; i++)
-            {
-                if (i > 0) sb.Append(", ");
-                sb.Append($"\"{t.relics[i]?.name ?? "null"}\"");
-            }
-            sb.AppendLine("]");
-        }
-
-        // Forwards
-        var fwds = t.forwards;
-        if (fwds != null)
-        {
-            for (int i = 0; i < fwds.Count; i++)
-            {
-                var f = fwds[i];
-                if (f == null) continue;
-                string pos = i == 0 ? "LW" : i == 1 ? "RW" : i == 2 ? "C" : i == 3 ? "LD" : i == 4 ? "RD" : $"Line2[{i-5}]";
-                sb.AppendLine($"  {pos}: {f.firstName} {f.lastName}");
-                sb.AppendLine($"    speed: {f.speed}, shotPower: {f.shotPower}, shotAccuracy: {f.shotAccuracy}, checking: {f.checking}");
-                sb.AppendLine($"    size: {f.skaterSize}, type: {f.defaultSkaterType}");
-                sb.AppendLine($"    isLefty: {f.isLefty}, isBlack: {f.isBlack}");
-                sb.AppendLine($"    headSkin: \"{f.headSkin ?? ""}\"");
-                sb.AppendLine($"    bodySkin: \"{f.bodySkin ?? ""}\"");
-                sb.AppendLine($"    helmetSkin: \"{f.helmetSkin ?? ""}\"");
-                sb.AppendLine($"    stickSkin: \"{f.stickSkin ?? ""}\"");
-                sb.AppendLine($"    bicepSkin: \"{f.bicepSkin ?? ""}\"");
-                sb.AppendLine($"    gloveSkin: \"{f.gloveSkin ?? ""}\"");
-                sb.AppendLine($"    pantsSkin: \"{f.pantsSkin ?? ""}\"");
-                sb.AppendLine($"    skateSkin: \"{f.skateSkin ?? ""}\"");
-                sb.AppendLine($"    bodyAwaySkin: \"{f.bodyAwaySkin ?? ""}\"");
-                sb.AppendLine($"    helmetAwaySkin: \"{f.helmetAwaySkin ?? ""}\"");
-                sb.AppendLine($"    numberSkin: \"{f.numberSkin ?? ""}\"");
-                sb.AppendLine($"    logoSkin: \"{f.logoSkin ?? ""}\"");
-                sb.AppendLine($"    glassesSkin: \"{f.glassesSkin ?? ""}\"");
-                sb.AppendLine($"    sizeOffsetPercentage: {f.sizeOffsetPercentage}");
-                if (f.ability != null)
-                    sb.AppendLine($"    ability: \"{f.ability.name}\"");
-                if (f.powerups != null && f.powerups.Count > 0)
-                {
-                    sb.Append("    talents: [");
-                    for (int j = 0; j < f.powerups.Count; j++)
-                    {
-                        if (j > 0) sb.Append(", ");
-                        sb.Append($"\"{f.powerups[j]?.name ?? "null"}\"");
-                    }
-                    sb.AppendLine("]");
-                }
-                sb.AppendLine();
-            }
-        }
-
-        // Goalie
-        var g = t.goalie;
-        if (g != null)
-        {
-            sb.AppendLine($"  Goalie: {g.firstName} {g.lastName}");
-            sb.AppendLine($"    skill: {g.skill}, catching: {g.catchingSkill}, glove: {g.gloveSkill}, blocker: {g.blockerSkill}");
-            sb.AppendLine($"    fiveHole: {g.fiveHoleSkill}, standSpd: {g.standingSpeed}, buttSpd: {g.butterflySpeed}");
-            sb.AppendLine($"    control: {g.controlSkill}, recovery: {g.recoverySkill}, passPower: {g.passPower}");
-            sb.AppendLine($"    shotPower: {g.shotPower}, pokecheck: {g.pokecheckSkill}, depth: {g.depth}, passRead: {g.passReadSkill}");
-            sb.AppendLine($"    headSkin: \"{g.headSkin ?? ""}\"");
-            try { sb.AppendLine($"    skin: \"{g.skin ?? ""}\""); } catch {}
-            try { sb.AppendLine($"    awaySkin: \"{g.awaySkin ?? ""}\""); } catch {}
-            try { sb.AppendLine($"    gloveSkin: \"{g.gloveSkin ?? ""}\""); } catch {}
-            try { sb.AppendLine($"    blockerSkin: \"{g.blockerSkin ?? ""}\""); } catch {}
-            try { sb.AppendLine($"    padsSkin: \"{g.padsSkin ?? ""}\""); } catch {}
-            try { sb.AppendLine($"    stickSkin: \"{g.stickSkin ?? ""}\""); } catch {}
-            try { sb.AppendLine($"    helmetSkin: \"{g.helmetSkin ?? ""}\""); } catch {}
-            try { sb.AppendLine($"    logoSkin: \"{g.logoSkin ?? ""}\""); } catch {}
-            if (g.powerups != null && g.powerups.Count > 0)
-            {
-                sb.Append("    talents: [");
-                for (int j = 0; j < g.powerups.Count; j++)
-                {
-                    if (j > 0) sb.Append(", ");
-                    sb.Append($"\"{g.powerups[j]?.name ?? "null"}\"");
-                }
-                sb.AppendLine("]");
-            }
-        }
-        sb.AppendLine();
-    }
-
-    private static string ResolveI2(string key)
-    {
-        if (string.IsNullOrEmpty(key)) return "";
-        try
-        {
-            string result = LocalizationManager.GetTranslation(key, true, 0, true, false, null, null, true);
-            if (!string.IsNullOrEmpty(result))
-                return StripKeywordTags(result);
-        }
-        catch { }
-        return "";
-    }
 
     private static string StripKeywordTags(string text)
     {
@@ -13891,124 +8644,30 @@ public static class LogRepositories
         return text.Trim();
     }
 
-    // Field names that are metadata, not gameplay values — skip when filling {0}/{1} placeholders.
-    private static readonly HashSet<string> s_skipFieldNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    // Use the same virtual formatters as the native UI. Reflection field order is
+    // not a format-argument contract (and can expose IL2CPP object addresses).
+    private static string RewardText(Func<string> read)
     {
-        "name", "description", "statBonusDescription", "id", "level", "relicName",
-        "localizedRelicName", "m_InstanceID", "hideFlags", "icon", "sprite", "animatorController",
-        "sfx", "audio", "prefab", "particles", "hasLevel2", "isBossRelic", "isCoachRelic"
-    };
-
-    // Substitute {0}, {1}, … in a description string using the object's non-zero numeric public fields.
-    // Fields are visited in declaration order, matching how the game calls string.Format internally.
-    private static string FillFromFields(string text, Il2CppSystem.Reflection.FieldInfo[] fields, Il2CppSystem.Object obj)
-    {
-        if (string.IsNullOrEmpty(text) || !text.Contains("{")) return text;
-        var vals = new List<string>();
-        foreach (var f in fields)
+        try { return StripKeywordTags(read() ?? "").Replace("\r", "").Replace("\n", "\n    "); }
+        catch (Exception ex)
         {
-            try
-            {
-                if (s_skipFieldNames.Contains(f.Name)) continue;
-                var v = f.GetValue(obj);
-                if (v == null) continue;
-                string vs = v.ToString() ?? "";
-                if (vs == "0" || vs == "0.0" || vs == "" || vs == "null" || vs == "False" || vs == "True") continue;
-                if (float.TryParse(vs, System.Globalization.NumberStyles.Any,
-                        System.Globalization.CultureInfo.InvariantCulture, out float fv) && fv != 0f)
-                {
-                    vals.Add(fv == MathF.Floor(fv) ? ((int)fv).ToString() : fv.ToString("0.##"));
-                }
-            }
-            catch {}
-        }
-        if (vals.Count == 0) return text;
-        for (int i = 0; i < vals.Count; i++)
-            text = text.Replace("{" + i + "}", vals[i]);
-        return text;
-    }
-
-    private static void DumpSingleRelic(StringBuilder sb, Rogue.Relic r)
-    {
-        string desc = "";
-        try { desc = r.description ?? ""; } catch { }
-        string statDesc = "";
-        try { statDesc = r.statBonusDescription ?? ""; } catch { }
-        string descText = ResolveI2(desc);
-        string statText = ResolveI2(statDesc);
-        string relicNameKey = "";
-        if (!string.IsNullOrEmpty(desc) && desc.EndsWith("/description"))
-            relicNameKey = desc.Replace("/description", "/name");
-        string relicDisplayName = ResolveI2(relicNameKey);
-        sb.AppendLine($"  [{r.relicName}] \"{(relicDisplayName != "" ? relicDisplayName : r.relicName)}\" (Lv{r.level}) Asset={r.name}");
-        if (descText != "") sb.AppendLine($"    {descText}");
-        if (statText != "") sb.AppendLine($"    Stats: {statText}");
-        // Dump all public fields to find actual values
-        try
-        {
-            var fields = r.GetIl2CppType().GetFields(Il2CppSystem.Reflection.BindingFlags.Public | Il2CppSystem.Reflection.BindingFlags.Instance);
-            foreach (var field in fields)
-            {
-                string fname = field.Name;
-                if (fname == "relicName" || fname == "description" || fname == "statBonusDescription" || fname == "id" || fname == "level" || fname == "name") continue;
-                try
-                {
-                    var val = field.GetValue(r);
-                    string vs = val?.ToString() ?? "null";
-                    if (vs != "0" && vs != "" && vs != "null" && vs != "False" && vs != "0.0")
-                        sb.AppendLine($"    {fname}={vs}");
-                }
-                catch { }
-            }
-        }
-        catch { }
-        sb.AppendLine();
-    }
-
-    private static void DumpRelicList(StringBuilder sb, Il2CppSystem.Collections.Generic.List<Rogue.Relic> list, string category)
-    {
-        if (list == null) return;
-        sb.AppendLine($"  --- {category} ({list.Count}) ---");
-        for (int i = 0; i < list.Count; i++)
-        {
-            var r = list[i];
-            if (r == null) continue;
-            sb.AppendLine($"    {r.relicName} | id={r.id} | level={r.level} | type={r.GetType().Name}");
+            Plugin.Log.LogWarning($"[Dump] Native reward text unavailable: {ex.Message}");
+            return "[In-game text unavailable]";
         }
     }
 
-    private static void DumpAbilityList(StringBuilder sb, Il2CppSystem.Collections.Generic.List<Rogue.Ability> list, string category)
-    {
-        if (list == null) return;
-        sb.AppendLine($"  --- {category} ({list.Count}) ---");
-        for (int i = 0; i < list.Count; i++)
-        {
-            var a = list[i];
-            if (a == null) continue;
-            sb.AppendLine($"    {a.name} | id={a.id} | type={a.GetType().Name}");
-        }
-    }
-
-    private static void DumpTalentList(StringBuilder sb, Il2CppSystem.Collections.Generic.List<Rogue.Talent> list, string category)
-    {
-        if (list == null) return;
-        sb.AppendLine($"  --- {category} ({list.Count}) ---");
-        for (int i = 0; i < list.Count; i++)
-        {
-            var t = list[i];
-            if (t == null) continue;
-            sb.AppendLine($"    {t.name} | id={t.id} | type={t.GetType().Name}");
-        }
-    }
 
     private static void WriteSeparateFiles()
     {
         Plugin.Log.LogInfo("[Dump] WriteSeparateFiles starting...");
-        string root      = Path.Combine(BepInEx.Paths.PluginPath, "T2T_Dumps");
+        string root      = Plugin.DumpRoot;
         string dirRewards = Path.Combine(root, "rewards");
         string dirGui    = Path.Combine(root, "_gui_data"); // internal — read by Campaign Creator
         foreach (var d in new[]{ root, dirRewards, dirGui })
             Directory.CreateDirectory(d);
+
+        try { RewardInventory.Write(dirGui); }
+        catch (Exception ex) { Plugin.Log.LogError($"[RewardInventory] {ex}"); }
 
         // ── rewards/RELICS.txt ────────────────────────────────────────────
         try
@@ -14056,11 +8715,8 @@ public static class LogRepositories
                         string display = ""; try { display = r.localizedRelicName ?? ""; } catch {}
                         if (string.IsNullOrEmpty(display)) display = r.relicName ?? r.id;
                         string cat2 = catHint.TryGetValue(r.id, out var ch) ? ch : "Misc";
-                        string rawDesc = ""; try { rawDesc = r.description ?? ""; } catch {}
-                        string desc = !string.IsNullOrEmpty(rawDesc) ? (ResolveI2(rawDesc) ?? "") : "";
-                        if (string.IsNullOrEmpty(desc)) desc = rawDesc;
-                        if (!string.IsNullOrEmpty(desc) && desc.Contains("{"))
-                            try { var rf = r.GetIl2CppType().GetFields(Il2CppSystem.Reflection.BindingFlags.Public | Il2CppSystem.Reflection.BindingFlags.NonPublic | Il2CppSystem.Reflection.BindingFlags.Instance); if (rf != null) desc = FillFromFields(desc, rf, r); } catch {}
+                        display = RewardText(() => r.localizedRelicName);
+                        string desc = RewardText(() => r.GetDescription(false, true, "1FFF75"));
                         relicList.Add((r.id, display, cat2, desc));
                     }
                 }
@@ -14117,14 +8773,8 @@ public static class LogRepositories
                     for (int i = 0; i < aList.Count; i++)
                     {
                         var a = aList[i]; if (a == null) continue;
-                        string dKey = ""; try { dKey = a.description ?? ""; } catch {}
-                        string desc = ResolveI2(dKey);
-                        if (!string.IsNullOrEmpty(desc) && desc.Contains("{"))
-                            try { var af = a.GetIl2CppType().GetFields(Il2CppSystem.Reflection.BindingFlags.Public | Il2CppSystem.Reflection.BindingFlags.NonPublic | Il2CppSystem.Reflection.BindingFlags.Instance); if (af != null) desc = FillFromFields(desc, af, a); } catch {}
-                        string nKey = !string.IsNullOrEmpty(dKey) && dKey.EndsWith("/description")
-                            ? dKey.Replace("/description", "/name") : "";
-                        string dName = ResolveI2(nKey);
-                        if (string.IsNullOrEmpty(dName)) dName = a.name;
+                        string desc = RewardText(() => a.GetDescription(false, true, "1FFF75"));
+                        string dName = RewardText(() => a.localizedPowerupName);
                         string tName = a.GetType().Name;
                         bool isGk    = tName.IndexOf("Goalie", StringComparison.OrdinalIgnoreCase) >= 0
                                     || tName.IndexOf("Goaltender", StringComparison.OrdinalIgnoreCase) >= 0;
@@ -14141,19 +8791,16 @@ public static class LogRepositories
                 // GUI-support: ability name → GUID
                 var sbMap = new StringBuilder();
                 sbMap.AppendLine("[abilities]");
-                if (aList != null)
-                    for (int i = 0; i < aList.Count; i++)
-                    { var a = aList[i]; if (a != null && !string.IsNullOrEmpty(a.id) && !string.IsNullOrEmpty(a.name)) sbMap.AppendLine($"{a.name}|{a.id}"); }
+                foreach (var a in UnityEngine.Resources.FindObjectsOfTypeAll<Rogue.Ability>())
+                    if (a != null && !string.IsNullOrEmpty(a.id) && !string.IsNullOrEmpty(a.name) && !a.name.EndsWith("(Clone)")) sbMap.AppendLine($"{a.name}|{a.id}");
                 // Talent GUIDs appended to the same map file
-                var talRepos3 = UnityEngine.Resources.FindObjectsOfTypeAll<TalentRepository>();
-                var talRepo3  = talRepos3 != null && talRepos3.Length > 0 ? talRepos3[0] : null;
-                if (talRepo3 != null)
+                var allExportTalents = UnityEngine.Resources.FindObjectsOfTypeAll<Rogue.Talent>();
+                if (allExportTalents != null)
                 {
                     sbMap.AppendLine("[talents]");
-                    var tList3 = talRepo3.talents;
-                    if (tList3 != null)
-                        for (int i = 0; i < tList3.Count; i++)
-                        { var t = tList3[i]; if (t != null && !string.IsNullOrEmpty(t.id) && !string.IsNullOrEmpty(t.name)) sbMap.AppendLine($"{t.name}|{t.id}"); }
+                    foreach (var t in allExportTalents)
+                        if (t != null && !string.IsNullOrEmpty(t.id) && !string.IsNullOrEmpty(t.name) && !t.name.EndsWith("(Clone)"))
+                            sbMap.AppendLine($"{t.name}|{t.id}");
                 }
                 // Relic GUIDs, so the Creator can fill CustomTeam.relics — the
                 // Play Now team format stores relics by id and the Creator had no
@@ -14174,15 +8821,7 @@ public static class LogRepositories
                         foreach (var r in allRelics)
                         {
                             if (r == null || string.IsNullOrEmpty(r.id)) continue;
-                            string nameKey = "";
-                            try
-                            {
-                                string d = r.description ?? "";
-                                if (d.EndsWith("/description")) nameKey = d.Replace("/description", "/name");
-                            }
-                            catch {}
-                            string display = ResolveI2(nameKey);
-                            if (string.IsNullOrEmpty(display) || display.StartsWith("[missing:")) display = r.relicName;
+                            string display = RewardText(() => r.localizedRelicName);
                             if (string.IsNullOrEmpty(display) || !seenRelic.Add(display)) continue;
                             sbMap.AppendLine($"{display}|{r.id}");
                         }
@@ -14217,16 +8856,9 @@ public static class LogRepositories
                     for (int i = 0; i < tList.Count; i++)
                     {
                         var t = tList[i]; if (t == null) continue;
-                        string dKey = ""; try { dKey = t.description ?? ""; } catch {}
-                        string sKey = ""; try { sKey = t.statBonusDescription ?? ""; } catch {}
-                        string desc = ResolveI2(dKey);
-                        string stat = ResolveI2(sKey);
-                        if ((!string.IsNullOrEmpty(desc) && desc.Contains("{")) || (!string.IsNullOrEmpty(stat) && stat.Contains("{")))
-                            try { var tf = t.GetIl2CppType().GetFields(Il2CppSystem.Reflection.BindingFlags.Public | Il2CppSystem.Reflection.BindingFlags.NonPublic | Il2CppSystem.Reflection.BindingFlags.Instance); if (tf != null) { desc = FillFromFields(desc, tf, t); stat = FillFromFields(stat, tf, t); } } catch {}
-                        string nKey = !string.IsNullOrEmpty(dKey) && dKey.EndsWith("/description")
-                            ? dKey.Replace("/description", "/name") : "";
-                        string dName = ResolveI2(nKey);
-                        if (string.IsNullOrEmpty(dName)) dName = t.name;
+                        string desc = RewardText(() => t.GetDescription(false, true, "1FFF75"));
+                        string stat = ""; // Included by the native formatter above.
+                        string dName = RewardText(() => t.localizedPowerupName);
                         bool isGk    = s_goalieTalentKeys.Contains(t.name);
                         var target   = isGk ? sbGk : sbSk;
                         target.AppendLine($"  [{t.name}] {dName} (Lv{t.level})");
@@ -14266,11 +8898,7 @@ public static class LogRepositories
                     {
                         var t = tList[i];
                         if (t == null || string.IsNullOrEmpty(t.name) || !seenT.Add(t.name)) continue;
-                        string dKey2 = ""; try { dKey2 = t.description ?? ""; } catch {}
-                        string nKey2 = !string.IsNullOrEmpty(dKey2) && dKey2.EndsWith("/description")
-                            ? dKey2.Replace("/description", "/name") : "";
-                        string disp2 = ResolveI2(nKey2);
-                        if (string.IsNullOrEmpty(disp2)) disp2 = t.name;
+                        string disp2 = RewardText(() => t.localizedPowerupName);
                         sb2.AppendLine($"{t.name}|{disp2}|{(poolNames.Contains(t.name) ? 1 : 0)}");
                     }
                 File.WriteAllText(Path.Combine(dirGui, "_reward_talents.txt"), sb2.ToString());
@@ -14282,65 +8910,7 @@ public static class LogRepositories
 }
 
 // ============================================================
-// DEBUG: Boost player team
-// ============================================================
-// Team.Initialize(TeamData) removed in post-May-2026 game update — patch disabled.
-// No [HarmonyPatch] attribute: PatchAll() skips this class entirely.
-public static class DebugTeamBoost
-{
-
-    private static readonly HashSet<IntPtr> BoostedPtrs = new();
-    private static readonly string[] PlayerPrefixes = { "Basic", "Defense", "Speed", "Trio" };
-
-    [HarmonyPostfix]
-    public static void Postfix(Team __instance, TeamData teamData)
-    {
-        if (!Plugin.DebugSkipEnabled || teamData == null) return;
-        string name = teamData.teamName?.Trim() ?? "";
-        bool isPlayer = false;
-        foreach (var p in PlayerPrefixes)
-            if (name.StartsWith(p, StringComparison.OrdinalIgnoreCase)) { isPlayer = true; break; }
-        if (!isPlayer) return;
-
-        var forwards = teamData.forwards;
-        if (forwards != null)
-            for (int i = 0; i < forwards.Count; i++)
-            {
-                var f = forwards[i];
-                if (f == null || BoostedPtrs.Contains(f.Pointer)) continue;
-                BoostedPtrs.Add(f.Pointer);
-                f.shotPower += 200; f.speed += 200; f.checking += 200; f.shotAccuracy += 200;
-            }
-        var allFwd = __instance.AllForwards;
-        if (allFwd != null)
-            for (int i = 0; i < allFwd.Count; i++)
-            {
-                var fwd = allFwd[i];
-                if (fwd?._forwardData == null || BoostedPtrs.Contains(fwd._forwardData.Pointer)) continue;
-                BoostedPtrs.Add(fwd._forwardData.Pointer);
-                fwd._forwardData.shotPower += 200; fwd._forwardData.speed += 200;
-                fwd._forwardData.checking += 200; fwd._forwardData.shotAccuracy += 200;
-            }
-        var g = teamData.goalie;
-        if (g != null && !BoostedPtrs.Contains(g.Pointer))
-        {
-            BoostedPtrs.Add(g.Pointer);
-            g.skill += 200; g.catchingSkill += 200; g.gloveSkill += 200;
-            g.blockerSkill += 200; g.fiveHoleSkill += 200; g.standingSpeed += 200;
-            g.butterflySpeed += 200; g.controlSkill += 200; g.recoverySkill += 200;
-            g.pokecheckSkill += 200; g.depth += 200; g.passPower += 200; g.shotPower += 200;
-        }
-        Plugin.Log.LogInfo($"[DEBUG] Boosted '{name}' +200");
-    }
-}
-
-// ============================================================
-// Reconcile drafted FAs right before match launch. The game's match
-// controller calls InitializeForwardsForTeam to build the on-ice roster
-// — if our drafted FAs aren't in teamData.forwards at that moment, they
-// never appear on the ice. Running reconcile here (in addition to the
-// Team.Initialize postfix) makes sure the TeamData the match sees has
-// all the drafted players injected.
+// Apply authored appearance before the native match builds skaters.
 // ============================================================
 [HarmonyPatch]
 public static class PatchMatchInitForwards
@@ -14359,189 +8929,18 @@ public static class PatchMatchInitForwards
     [HarmonyPrefix]
     public static void Prefix(TeamData team)
     {
-        if (Plugin.IsDefaultMode) return;
+        if (Plugin.IsDefaultMode || GameManager.GameType != GameType.Rogue) return;
         if (team == null) return;
-        string name = "";
-        try { name = team.teamName?.Trim() ?? ""; } catch { return; }
-
-        // DIAGNOSTIC: vanilla Basic baseline — capture the on-ice roster the game
-        // assembled with ZERO mod involvement, to mirror it for custom squads.
-        if (name.IndexOf("Basic", StringComparison.OrdinalIgnoreCase) >= 0)
-            PatchChooseMetaUI.DumpTeamStructure(team, "VANILLA-Basic@MatchInit");
-
-        if (Plugin.PlayerTeamConfigs == null || Plugin.PlayerTeamConfigs.Count == 0) return;
-        bool isCustom = false;
-        foreach (var key in Plugin.PlayerTeamConfigs.Keys)
-        {
-            if (PatchPlayerTeamInit.IsPresetKey(key)) continue;
-            if (name.StartsWith(key, StringComparison.OrdinalIgnoreCase)) { isCustom = true; break; }
-        }
-
-        if (isCustom) PatchChooseMetaUI.DumpTeamStructure(team, "MatchInit-PRE(native)");
-
+        // Native starting-team construction/save rehydration can restore the
+        // donor's black skate preset after authoring. Normalize only the style;
+        // keep the saved roster, earned progress and personal palettes intact.
+        if (CustomTeamRules.IsCustom(team) && team.forwards != null)
+            foreach (var forward in team.forwards)
+                if (forward != null)
+                    forward.skateSkin = forward.skateAwaySkin = AppearanceContract.StandardSkates;
         // Apply player team config here since Team.Initialize(TeamData) was removed.
         PatchPlayerTeamInit.ApplyForTeamData(team);
-
-        // EnsureLineupShowsRoster DISABLED for this diagnostic pass: it rewrote
-        // lines[0] positionally from forwards[0..4], which clobbered the native
-        // draft/superstar lineup. Dump what the native flow + ApplyForTeamData
-        // leaves so we can see exactly what reaches the ice unaided.
-        if (isCustom)
-        {
-            PatchChooseMetaUI.DumpTeamStructure(team, "MatchInit-POST(applied)");
-            // PatchPlayerTeamInit.EnsureLineupShowsRoster(team, "MatchInit");  // disabled
-        }
     }
-}
-
-// ============================================================
-// Intercept TeamData.AddForward* — when the game drafts an FA onto a
-// custom squad, the native AddForwardToActiveLine can't find a null
-// slot in fwds[0..4] (our blanks are non-null), so it appends to
-// fwds[5+]. We move it into the first unconfigured slot immediately
-// and write the FA's id into lines[0] so InitializeLine resolves the
-// id at match-init. Patches all three variants because the draft can
-// go through any of them depending on the event path.
-// ============================================================
-internal static class DraftAddForwardHelper
-{
-    public static void MoveIntoBlank(TeamData team, ForwardData forward, string source)
-    {
-        try
-        {
-            if (team == null || forward == null) return;
-            if (Plugin.PlayerTeamConfigs == null || Plugin.PlayerTeamConfigs.Count == 0) return;
-
-            string name = "";
-            try { name = team.teamName?.Trim() ?? ""; } catch { return; }
-            if (string.IsNullOrEmpty(name)) return;
-            TeamConfig cfg = null;
-            foreach (var kvp in Plugin.PlayerTeamConfigs)
-            {
-                if (PatchPlayerTeamInit.IsPresetKey(kvp.Key)) continue;
-                if (name.StartsWith(kvp.Key, StringComparison.OrdinalIgnoreCase))
-                {
-                    cfg = kvp.Value;
-                    break;
-                }
-            }
-            Plugin.Log.LogInfo($"[PatchAddForward/{source}] fired: team='{name}' cfgMatched={(cfg != null)} fwd='{forward.firstName} {forward.lastName}' id='{forward.id}'");
-            if (cfg == null) return;
-
-            var fwds = team.forwards;
-            if (fwds == null) return;
-            Plugin.Log.LogInfo($"[PatchAddForward/{source}] fwds.Count={fwds.Count}");
-
-            PlayerConfig[] slotCfgs = { cfg.LW, cfg.RW, cfg.C, cfg.LD, cfg.RD };
-            int blankIdx = -1;
-            for (int i = 0; i < 5 && i < fwds.Count; i++)
-            {
-                if (!PatchChooseMetaUI.SlotIsConfigured(slotCfgs[i])) { blankIdx = i; break; }
-            }
-            if (blankIdx < 0)
-            {
-                Plugin.Log.LogInfo($"[PatchAddForward/{source}] no blank slot available (all 5 configured)");
-                return;
-            }
-
-            for (int j = fwds.Count - 1; j >= 5; j--)
-            {
-                var f = fwds[j];
-                if (f != null && f.Pointer == forward.Pointer)
-                {
-                    try { fwds.RemoveAt(j); } catch { }
-                    break;
-                }
-            }
-
-            fwds[blankIdx] = forward;
-            string faId = "";
-            try { faId = forward.id ?? ""; } catch { }
-            try
-            {
-                var lns = team.lines;
-                if (lns != null && lns.Count > 0 && lns[0] != null)
-                {
-                    switch (blankIdx)
-                    {
-                        case 0: lns[0].leftWinger = faId; break;
-                        case 1: lns[0].rightWinger = faId; break;
-                        case 2: lns[0].center = faId; break;
-                        case 3: lns[0].leftDefensemen = faId; break;
-                        case 4: lns[0].rightDefensemen = faId; break;
-                    }
-                }
-            }
-            catch { }
-            Plugin.Log.LogInfo($"[PatchAddForward/{source}] Moved '{forward.firstName} {forward.lastName}' into slot {blankIdx}");
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[PatchAddForward/{source}] {ex.Message}"); }
-    }
-}
-
-// AddForward / AddForwardToActiveLine / AddForwardToBench patches DISABLED.
-// They previously rerouted drafted players into blank line slots (reshuffling).
-// User wants the game's natural draft placement — no interception. The
-// [HarmonyPatch] attributes are intentionally removed so PatchAll() skips
-// these classes. The helper (DraftAddForwardHelper.MoveIntoBlank) is kept
-// in source above in case a more targeted hook is needed later.
-public static class PatchTeamDataAddForward_DISABLED { }
-public static class PatchTeamDataAddForwardToActiveLine_DISABLED { }
-public static class PatchTeamDataAddForwardToBench_DISABLED { }
-
-// ── DIAGNOSTIC (log-only, NO mutation) ──────────────────────────────────────
-// Trace every forward the game adds onto a tracked player team (Basic Squad or
-// any custom squad) so we can see exactly when the picked superstar and drafted
-// skaters land, and via which method. Single line per add — no structure dump
-// here (to avoid flooding when the match-init line builder adds in bulk).
-internal static class DraftTrace
-{
-    internal static bool IsTracked(TeamData team)
-    {
-        if (team == null) return false;
-        string n = ""; try { n = team.teamName?.Trim() ?? ""; } catch { return false; }
-        if (string.IsNullOrEmpty(n)) return false;
-        if (n.IndexOf("Basic", StringComparison.OrdinalIgnoreCase) >= 0) return true;
-        if (Plugin.PlayerTeamConfigs != null)
-            foreach (var k in Plugin.PlayerTeamConfigs.Keys)
-            {
-                if (PatchPlayerTeamInit.IsPresetKey(k)) continue;
-                if (n.StartsWith(k, StringComparison.OrdinalIgnoreCase)) return true;
-            }
-        return false;
-    }
-
-    internal static void Log(TeamData team, ForwardData f, string via)
-    {
-        try
-        {
-            if (!IsTracked(team)) return;
-            string fn = ""; try { fn = ((f?.firstName ?? "") + " " + (f?.lastName ?? "")).Trim(); } catch { }
-            string id = ""; try { id = f?.id ?? ""; } catch { }
-            string cat = ""; try { cat = f != null ? f.skaterCategory.ToString() : ""; } catch { }
-            int cnt = -1; try { cnt = team.forwards?.Count ?? -1; } catch { }
-            Plugin.Log.LogInfo($"[DraftTrace/{via}] team='{team.teamName}' +'{fn}' id={(id.Length > 8 ? id.Substring(0, 8) : id)} cat={cat} -> forwards.Count={cnt}");
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[DraftTrace] {ex.Message}"); }
-    }
-}
-
-[HarmonyPatch(typeof(TeamData), "AddForward", new Type[] { typeof(ForwardData) })]
-public static class PatchDraftTrace_AddForward
-{
-    [HarmonyPostfix] public static void Postfix(TeamData __instance, ForwardData __0) => DraftTrace.Log(__instance, __0, "AddForward");
-}
-
-[HarmonyPatch(typeof(TeamData), "AddForwardToBench", new Type[] { typeof(ForwardData) })]
-public static class PatchDraftTrace_AddForwardToBench
-{
-    [HarmonyPostfix] public static void Postfix(TeamData __instance, ForwardData __0) => DraftTrace.Log(__instance, __0, "AddForwardToBench");
-}
-
-[HarmonyPatch(typeof(TeamData), "AddForwardToActiveLine", new Type[] { typeof(ForwardData) })]
-public static class PatchDraftTrace_AddForwardToActiveLine
-{
-    [HarmonyPostfix] public static void Postfix(TeamData __instance, ForwardData __0) => DraftTrace.Log(__instance, __0, "AddForwardToActiveLine");
 }
 
 // ============================================================
@@ -14572,7 +8971,12 @@ public static class PatchPlayerTeamInit
     [HarmonyPostfix]
     public static void Postfix(Team __instance, TeamData teamData)
     {
-        if (Plugin.IsDefaultMode) return;
+        // A Play Now export can have the same name as its source squad. Only
+        // campaign matches may resolve that name back to campaign authoring.
+        if (Plugin.IsDefaultMode || GameManager.GameType != GameType.Rogue) return;
+        // Studio squads are fully authored before the selection menu. Match
+        // initialization and save/resume must not reapply their starting data.
+        if (CustomTeamRules.IsCustom(teamData)) return;
 
         // Draft pool runs on EVERY Team.Initialize (including mid-run) so that
         // free agents which load lazily still get their names/stats/skins
@@ -14625,77 +9029,13 @@ public static class PatchPlayerTeamInit
 
         if (!Plugin.PlayerTeamConfigs.ContainsKey(matchedKey)) return;
 
-        // Re-apply on every Team.Initialize during the fresh-run window
-        // (GamesPlayed == 0) — the game re-initializes the Team between map
-        // generation and match launch (including for Spartan/Challenge), which
-        // resets stats/skins/colors back to defaults. Only the first call for
-        // each TeamData does the destructive talent/relic wipe; subsequent
-        // calls refresh the non-destructive fields so the player still sees
-        // their modded team during the Spartan match.
+        // Legacy named presets use appearance-only refreshes. Modern custom
+        // IDs returned above; no live path reapplies starting gameplay values.
         bool firstApply = !AppliedTeamPtrs.Contains(teamData.Pointer);
         if (firstApply) AppliedTeamPtrs.Add(teamData.Pointer);
 
         var cfg = Plugin.PlayerTeamConfigs[matchedKey];
         Plugin.Log.LogInfo($"[PlayerTeam] Applying config for '{matchedKey}' to team '{name}' (firstApply={firstApply})");
-
-        // For custom squads: reconcile drafted FAs into the starting-five
-        // slots. The problem: our blank placeholder slots at fwds[0..2] (for
-        // unconfigured LW/RW/C) are non-null, so the game's AddForwardToActiveLine
-        // doesn't recognize them as "empty" — it appends the drafted FA to
-        // fwds[5+] instead of overwriting the blank. Result: lines[0] still
-        // references blank.id, the drafted FA is stuck on the bench, and
-        // nothing renders on the ice at that position.
-        //
-        // Fix: scan fwds[0..4] for blank placeholders (empty firstName AND
-        // lastName — the marker we set in BlankUnconfiguredSlots), scan
-        // fwds[5+] for real drafted forwards, and swap them in. Also update
-        // lines[0] to reference the drafted FA's id at each moved slot.
-        // Reconcile intentionally DISABLED at Team.Init — user explicitly
-        // asked for no reshuffling on run start. Keep the chosen players where
-        // the game placed them. (Was: ReconcileDraftedFAs(teamData, "Team.Init"))
-
-
-        // Re-sync lines[0] for CONFIGURED positions only. The game
-        // regenerates forward ids between menu-inject and match-init (the
-        // log showed lines[0].LW pointing at a defunct id 7aa98674 while
-        // fwds[0] had the new BigBOy id 5beebbe6), so Big BOy never
-        // resolved at render time → not on the ice. We only rewrite the
-        // slots WE configured; free-agent picks in other slots stay put.
-        if (!IsPresetKey(matchedKey))
-        {
-            try
-            {
-                var lns = teamData.lines;
-                if (lns != null && lns.Count > 0 && lns[0] != null)
-                {
-                    var l0 = lns[0];
-                    var fwds = teamData.forwards;
-                    void SyncSlot(int idx, PlayerConfig pc, Action<string> setter)
-                    {
-                        if (pc == null) return;
-                        bool has = !string.IsNullOrEmpty(pc.Name)
-                                    || !string.IsNullOrEmpty(pc.ImportPlayer)
-                                    || !string.IsNullOrEmpty(pc.Face)
-                                    || !string.IsNullOrEmpty(pc.Ability)
-                                    || (pc.Talents != null && pc.Talents.Count > 0)
-                                    || pc.Speed != 50 || pc.ShotPower != 50
-                                    || pc.Accuracy != 50 || pc.Checking != 50;
-                        if (!has) return;
-                        if (fwds == null || idx >= fwds.Count) return;
-                        var f = fwds[idx];
-                        if (f == null) return;
-                        try { setter(f.id ?? ""); } catch { }
-                    }
-                    SyncSlot(0, cfg.LW, id => l0.leftWinger = id);
-                    SyncSlot(1, cfg.RW, id => l0.rightWinger = id);
-                    SyncSlot(2, cfg.C,  id => l0.center = id);
-                    SyncSlot(3, cfg.LD, id => l0.leftDefensemen = id);
-                    SyncSlot(4, cfg.RD, id => l0.rightDefensemen = id);
-                    Plugin.Log.LogInfo($"[PlayerTeam] Re-synced lines[0]: LW='{l0.leftWinger}' RW='{l0.rightWinger}' C='{l0.center}' LD='{l0.leftDefensemen}' RD='{l0.rightDefensemen}'");
-                }
-            }
-            catch (Exception ex) { Plugin.Log.LogWarning($"[PlayerTeam] Re-sync lines failed: {ex.Message}"); }
-        }
 
         // Roster snapshot pre-apply so we can diagnose "game one has no
         // players except goalie" situations.
@@ -14720,7 +9060,8 @@ public static class PatchPlayerTeamInit
             else Plugin.Log.LogInfo($"[PlayerTeam] pre-apply lines is null/empty");
         }
         catch { }
-        ApplyPlayerTeamConfig(teamData, cfg, __instance, firstApply);
+        ApplyPlayerTeamConfig(teamData, cfg, __instance, firstApply, liveRun: true);
+
         // Snapshot after apply too, so we can see whether the game or our
         // code mutated the roster between menu-inject and match-init.
         try
@@ -14737,324 +9078,47 @@ public static class PatchPlayerTeamInit
         }
         catch { }
 
-        // PopulateCustomSquadBench DISABLED — it was injecting random base-game
-        // benchwarmers/superstars instead of preserving the user's actual picks.
-        // Per user: no reshuffling, no auto-fills, keep whatever the game's
-        // squad-confirm flow produces. The method body remains below in case
-        // we need to re-enable a more targeted version later.
-
-        // Superstar inject at Team.Init REMOVED per user. The base game's
-        // squad-confirm flow places the picked superstar wherever it places it —
-        // we don't move it after the fact.
     }
 
-    private static void PopulateCustomSquadBench(TeamData teamData)
+    internal static void ApplyPlayerTeamConfig(TeamData team, TeamConfig cfg, Team instance, bool firstApply, bool liveRun = false)
     {
-        var fwds = teamData.forwards;
-        if (fwds == null) return;
-
-        var byPtr = new HashSet<IntPtr>();
-        var byName = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        for (int i = 0; i < fwds.Count; i++)
+        if(VanillaCampaignRuntime.InheritedSquad(cfg))return;
+        CustomTeamRules.Prepare(team, cfg);
+        var fwds = team.forwards;
+        PlayerConfig[] slotCfgs = { cfg.LW, cfg.RW, cfg.C, cfg.LD, cfg.RD,
+            cfg.L2_LW, cfg.L2_RW, cfg.L2_C, cfg.L2_LD, cfg.L2_RD };
+        var rosterNames = new string[fwds?.Count ?? 0];
+        for (int i = 0; i < rosterNames.Length; i++)
         {
-            var f = fwds[i];
-            if (f == null) continue;
-            byPtr.Add(f.Pointer);
-            byName.Add($"{f.firstName} {f.lastName}".Trim());
+            var forward = fwds[i];
+            if (forward != null) rosterNames[i] = ((forward.firstName ?? "") + " " + (forward.lastName ?? "")).Trim();
         }
-
-        // Bench cap. TeamData.benchSize defaults to ~7 on vanilla squads; if
-        // it's 0 (custom clone case) bump it to 7 so the game shows the seats.
-        int benchCap = 7;
-        try
-        {
-            if (teamData.benchSize > 0) benchCap = teamData.benchSize;
-            else { try { teamData.benchSize = 7; } catch { } }
-        }
-        catch { }
-
-        var allFwds = UnityEngine.Resources.FindObjectsOfTypeAll<Data.ForwardData>();
-        if (allFwds == null || allFwds.Length == 0) return;
-
-        int addedBenchwarmers = 0;
-        int addedSuperstar = 0;
-
-        // Pass 1: append benchwarmers (the user's renamed draft_pool players).
-        foreach (var f in allFwds)
-        {
-            if (f == null) continue;
-            if (f.skaterCategory != Data.SkaterCategory.Benchwarmer) continue;
-            if (byPtr.Contains(f.Pointer)) continue;
-            string nm = $"{f.firstName} {f.lastName}".Trim();
-            if (string.IsNullOrEmpty(nm)) continue;
-            if (!byName.Add(nm)) continue;
-            if ((fwds.Count - 5) >= benchCap) break;
-            try
-            {
-                fwds.Add(f);
-                byPtr.Add(f.Pointer);
-                addedBenchwarmers++;
-                Plugin.Log.LogInfo($"[BenchPop] Added benchwarmer '{nm}' → fwds[{fwds.Count - 1}]");
-            }
-            catch (Exception ex) { Plugin.Log.LogWarning($"[BenchPop] add '{nm}': {ex.Message}"); }
-        }
-
-        // Pass 2: ensure ONE Superstar is on the team (the player's pick lands
-        // somewhere the squad-confirm flow doesn't carry into fwds). If any
-        // superstar is already on the team, do nothing. Otherwise append the
-        // first found superstar — it lands on the bench so Bench Bonus picks
-        // it up; the player can swap to a line slot in Edit Lineup.
-        bool hasSuperstar = false;
-        for (int i = 0; i < fwds.Count; i++)
-        {
-            var f = fwds[i];
-            if (f != null && f.skaterCategory == Data.SkaterCategory.Superstar) { hasSuperstar = true; break; }
-        }
-        if (!hasSuperstar)
-        {
-            foreach (var f in allFwds)
-            {
-                if (f == null) continue;
-                if (f.skaterCategory != Data.SkaterCategory.Superstar) continue;
-                if (byPtr.Contains(f.Pointer)) continue;
-                string nm = $"{f.firstName} {f.lastName}".Trim();
-                if (string.IsNullOrEmpty(nm)) continue;
-                if (!byName.Add(nm)) continue;
-                try
-                {
-                    fwds.Add(f);
-                    addedSuperstar++;
-                    Plugin.Log.LogInfo($"[BenchPop] Added superstar '{nm}' → fwds[{fwds.Count - 1}] (the squad-confirm flow dropped the pick)");
-                    break;
-                }
-                catch (Exception ex) { Plugin.Log.LogWarning($"[BenchPop] add superstar '{nm}': {ex.Message}"); }
-            }
-        }
-
-        Plugin.Log.LogInfo($"[BenchPop] Done: +{addedBenchwarmers} benchwarmer(s), +{addedSuperstar} superstar, fwds.Count now {fwds.Count}, benchSize={teamData.benchSize}");
-    }
-
-    // Finds ForwardData whose id appears in lines[0] but is missing from
-    // teamData.forwards, and injects a clone into the matching slot. The
-    // game's FA draft for custom squads writes the id to lines[0] but
-    // never adds the SO to fwds (because our non-null blank placeholders
-    // block AddForwardToActiveLine's null-slot search). Instantiate the
-    // ForwardData (not share the template) so lifetime is owned by us.
-    internal static void ReconcileDraftedFAs(TeamData teamData, string source)
-    {
-        if (teamData == null) return;
-        try
-        {
-            var lns = teamData.lines;
-            var fwds = teamData.forwards;
-            if (lns == null || lns.Count == 0 || lns[0] == null) return;
-            if (fwds == null || fwds.Count < 5) return;
-
-            string[] lineIds = {
-                lns[0].leftWinger ?? "",
-                lns[0].rightWinger ?? "",
-                lns[0].center ?? "",
-                lns[0].leftDefensemen ?? "",
-                lns[0].rightDefensemen ?? ""
-            };
-            Plugin.Log.LogInfo($"[Reconcile/{source}] team='{teamData.teamName}' lineIds: LW='{lineIds[0]}' RW='{lineIds[1]}' C='{lineIds[2]}' LD='{lineIds[3]}' RD='{lineIds[4]}'");
-
-            bool IsInFwds(string id)
-            {
-                if (string.IsNullOrEmpty(id)) return false;
-                for (int i = 0; i < fwds.Count; i++)
-                {
-                    var f = fwds[i];
-                    if (f != null && f.id == id) return true;
-                }
-                return false;
-            }
-
-            var missingByPos = new System.Collections.Generic.Dictionary<int, string>();
-            for (int pos = 0; pos < 5; pos++)
-            {
-                if (!string.IsNullOrEmpty(lineIds[pos]) && !IsInFwds(lineIds[pos]))
-                    missingByPos[pos] = lineIds[pos];
-            }
-            if (missingByPos.Count == 0) return;
-            Plugin.Log.LogInfo($"[Reconcile/{source}] missing FA ids: {missingByPos.Count}");
-
-            var allCS = UnityEngine.Resources.FindObjectsOfTypeAll<State.CampaignState>();
-            Il2CppSystem.Collections.Generic.List<Data.ForwardData> freeAgents = null;
-            if (allCS != null && allCS.Length > 0) freeAgents = allCS[0].freeAgents;
-
-            Data.ForwardData[] allFwdsScene = null;
-            try { allFwdsScene = UnityEngine.Resources.FindObjectsOfTypeAll<Data.ForwardData>(); }
-            catch { }
-
-            Data.ForwardData LookupById(string id)
-            {
-                if (string.IsNullOrEmpty(id)) return null;
-                if (freeAgents != null)
-                {
-                    for (int i = 0; i < freeAgents.Count; i++)
-                    {
-                        var f = freeAgents[i];
-                        if (f != null && f.id == id) return f;
-                    }
-                }
-                if (allFwdsScene != null)
-                {
-                    for (int i = 0; i < allFwdsScene.Length; i++)
-                    {
-                        var f = allFwdsScene[i];
-                        if (f != null && f.id == id) return f;
-                    }
-                }
-                return null;
-            }
-
-            int moved = 0;
-            foreach (var kvp in missingByPos)
-            {
-                int pos = kvp.Key;
-                string id = kvp.Value;
-                var fa = LookupById(id);
-                if (fa == null)
-                {
-                    Plugin.Log.LogWarning($"[Reconcile/{source}] FA id '{id}' for slot {pos} NOT FOUND");
-                    continue;
-                }
-                if (pos >= fwds.Count) continue;
-                // Instantiate so we own the SO (no unloading surprises) and
-                // preserve the id so lines[0] lookups still resolve.
-                Data.ForwardData injected = fa;
-                try
-                {
-                    var clone = UnityEngine.Object.Instantiate(fa);
-                    try { clone.id = fa.id; } catch { }
-                    injected = clone;
-                }
-                catch { }
-                fwds[pos] = injected;
-                moved++;
-                Plugin.Log.LogInfo($"[Reconcile/{source}] Injected FA '{injected.firstName} {injected.lastName}' into slot {pos}");
-            }
-            Plugin.Log.LogInfo($"[Reconcile/{source}] done moved={moved}");
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[Reconcile/{source}] {ex.Message}"); }
-    }
-
-    // Repoint lines[0] at the forwards actually sitting on the roster, so the
-    // player's picked superstar + drafted skaters (which are present in
-    // team.forwards by match start, but unreferenced because the cloned Basic
-    // template left lines[0] pointing at dead ids) actually take the ice.
-    //
-    // NOT a reshuffle: every forward keeps its exact forwards-array slot. We
-    // only (a) rewrite the five line id pointers to match forwards[0..4],
-    // clearing any that resolve to nothing, and (b) move the captured superstar
-    // to center by swapping the two id pointers (the forwards don't move). Any
-    // genuinely empty line slot is left "" so the base game fills it from the
-    // bench exactly as it does for vanilla squads.
-    internal static void EnsureLineupShowsRoster(TeamData team, string source)
-    {
-        if (team == null) return;
-        try
-        {
-            var fwds = team.forwards;
-            var lns = team.lines;
-            if (fwds == null || lns == null || lns.Count == 0 || lns[0] == null) return;
-            var l0 = lns[0];
-
-            bool IsReal(Data.ForwardData f)
-            {
-                if (f == null) return false;
-                string fn = "", ln = "";
-                try { fn = f.firstName ?? ""; ln = f.lastName ?? ""; } catch { }
-                return !(string.IsNullOrWhiteSpace(fn) && string.IsNullOrWhiteSpace(ln));
-            }
-
-            // Full roster snapshot — so the log shows exactly what reached the
-            // team by match start (superstar? drafted skaters? bench?).
-            for (int i = 0; i < fwds.Count; i++)
-            {
-                var f = fwds[i];
-                Plugin.Log.LogInfo($"[Lineup/{source}] fwds[{i}] = {(f == null ? "null" : (f.firstName + " " + f.lastName + " id=" + (f.id ?? "") + " cat=" + f.skaterCategory))}");
-            }
-
-            // Build the five line ids positionally from forwards[0..4].
-            string[] ids = new string[5];
-            for (int i = 0; i < 5; i++)
-                ids[i] = (i < fwds.Count && IsReal(fwds[i])) ? (fwds[i].id ?? "") : "";
-
-            // Move the captured superstar to center (slot 2) by swapping id
-            // pointers. The forwards stay put; only the on-ice position label
-            // changes. If center was empty, this just relocates the superstar
-            // there and clears its old slot.
-            var ss = PatchOldSquadMenuSuperstar.PickedSuperstar;
-            if (ss != null && !string.IsNullOrEmpty(ss.id))
-            {
-                int k = -1;
-                for (int i = 0; i < 5; i++)
-                    if (ids[i] == ss.id) { k = i; break; }
-                if (k >= 0 && k != 2)
-                {
-                    string tmp = ids[2];
-                    ids[2] = ids[k];
-                    ids[k] = tmp;
-                    Plugin.Log.LogInfo($"[Lineup/{source}] Moved superstar '{ss.firstName} {ss.lastName}' to center (was line slot {k})");
-                }
-            }
-
-            l0.leftWinger = ids[0];
-            l0.rightWinger = ids[1];
-            l0.center = ids[2];
-            l0.leftDefensemen = ids[3];
-            l0.rightDefensemen = ids[4];
-            Plugin.Log.LogInfo($"[Lineup/{source}] lines[0] now: LW='{l0.leftWinger}' RW='{l0.rightWinger}' C='{l0.center}' LD='{l0.leftDefensemen}' RD='{l0.rightDefensemen}'");
-        }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[Lineup/{source}] {ex.Message}"); }
-    }
-
-    internal static void ApplyPlayerTeamConfig(TeamData team, TeamConfig cfg, Team instance, bool firstApply)
-    {
-        // Diagnostic: print which slot configs the loader populated so we can
-        // tell "loaded but skipped" from "never loaded at all".
-        try
-        {
-            Plugin.Log.LogDebug(
-                $"[PlayerTeam] Slot cfg for '{team?.teamName}': " +
-                $"LW='{cfg?.LW?.Name}' RW='{cfg?.RW?.Name}' C='{cfg?.C?.Name}' " +
-                $"LD='{cfg?.LD?.Name}' RD='{cfg?.RD?.Name}' G='{cfg?.Goalie?.Name}'");
-        }
-        catch { }
-        // On firstApply only: wipe earned talents/relics from previous runs so
-        // the config's Talents + Relics are the only ones present. Re-entries
-        // during the same run (e.g. Spartan match re-init) MUST NOT wipe —
-        // that would destroy in-run earned progress.
+        var authoredNames = new string[slotCfgs.Length];
+        for (int i = 0; i < slotCfgs.Length; i++) authoredNames[i] = slotCfgs[i]?.Name;
+        var targets = AuthoredRosterMatcher.Resolve(authoredNames, rosterNames, liveRun);
+        // Only the detached new-run authoring clone may replace starting data.
+        // Even the first live match can follow Coach, training or recruitment.
+        // Its relics, talents, stats and abilities are already run progress.
         //
-        // CRITICAL (v2.1.27 talent fix): wipe ONLY the forwards sitting in
-        // user-CONFIGURED lineup slots (the ones whose talents we re-apply from
-        // cfg right below). The picked superstar and drafted skaters occupy the
-        // OTHER slots — their talents are applied elsewhere (the superstar at
-        // GenerateSuperStarSkaters, drafts via ApplyDraftPool) and NOTHING
-        // re-applies them here, so wiping every forward stripped the superstar's
-        // talents at match start ("not all talents copied when picking
-        // superstar"). Configured players always sit at their own slot index
-        // (the clone seats them in Basic's real forward slot; the native draft
-        // only fills the empty slots around them), so a per-slot wipe is exact.
-        if (firstApply)
+        // Wipe only authored players that we can identify. A chosen superstar
+        // or draft pick can occupy an authored position in the live list.
+        if (firstApply && !liveRun)
         {
             try
             {
-                if (team.forwards != null)
+                if (fwds != null)
                 {
-                    PlayerConfig[] slotCfgs = { cfg?.LW, cfg?.RW, cfg?.C, cfg?.LD, cfg?.RD };
-                    for (int i = 0; i < team.forwards.Count; i++)
+                    for (int slot = 0; slot < targets.Length; slot++)
                     {
-                        var fwd = team.forwards[i];
+                        int index = targets[slot];
+                        if (index < 0 || index >= fwds.Count) continue;
+                        var fwd = fwds[index];
                         if (fwd == null) continue;
-                        // Skip the superstar / drafted skaters — wipe only configured slots.
-                        if (i >= slotCfgs.Length || !PatchChooseMetaUI.SlotIsConfigured(slotCfgs[i])) continue;
+                        if (!PatchChooseMetaUI.SlotIsConfigured(slotCfgs[slot])) continue;
                         try { fwd.powerups = new Il2CppSystem.Collections.Generic.List<Rogue.Talent>(); } catch {}
                     }
                 }
-                if (team.goalie != null)
+                if (team.goalie != null && !string.IsNullOrEmpty(cfg.Goalie?.Name))
                     try { team.goalie.powerups = new Il2CppSystem.Collections.Generic.List<Rogue.Talent>(); } catch {}
                 try { team.relics = new Il2CppSystem.Collections.Generic.List<Rogue.Relic>(); } catch {}
             }
@@ -15101,7 +9165,7 @@ public static class PatchPlayerTeamInit
             var p = cfg.JerseyPrimary != null ? new Color(cfg.JerseyPrimary[0]/255f, cfg.JerseyPrimary[1]/255f, cfg.JerseyPrimary[2]/255f) : team.primaryColorPlayer;
             var s = cfg.JerseySecondary != null ? new Color(cfg.JerseySecondary[0]/255f, cfg.JerseySecondary[1]/255f, cfg.JerseySecondary[2]/255f) : team.secondaryColorPlayer;
             var a = cfg.JerseyAccent != null ? new Color(cfg.JerseyAccent[0]/255f, cfg.JerseyAccent[1]/255f, cfg.JerseyAccent[2]/255f) : Color.white;
-            PatchBossLaunchMatch.SetColors(team.homeColors, p, s, a);
+            PatchBossLaunchMatch.SetJerseyColors(team.homeColors, p, s, a);
             team.primaryColorPlayer = p;
             team.secondaryColorPlayer = s;
         }
@@ -15112,7 +9176,7 @@ public static class PatchPlayerTeamInit
             var ap = cfg.AwayPrimary != null ? new Color(cfg.AwayPrimary[0]/255f, cfg.AwayPrimary[1]/255f, cfg.AwayPrimary[2]/255f) : Color.white;
             var as2 = cfg.AwaySecondary != null ? new Color(cfg.AwaySecondary[0]/255f, cfg.AwaySecondary[1]/255f, cfg.AwaySecondary[2]/255f) : team.primaryColorPlayer;
             var aa = cfg.AwayAccent != null ? new Color(cfg.AwayAccent[0]/255f, cfg.AwayAccent[1]/255f, cfg.AwayAccent[2]/255f) : Color.white;
-            PatchBossLaunchMatch.SetColors(team.awayColors, ap, as2, aa);
+            PatchBossLaunchMatch.SetJerseyColors(team.awayColors, ap, as2, aa);
         }
 
         // Number colors
@@ -15130,11 +9194,14 @@ public static class PatchPlayerTeamInit
             try { team.tertiaryColorTransition = new Color(cfg.TransitionTertiary[0]/255f, cfg.TransitionTertiary[1]/255f, cfg.TransitionTertiary[2]/255f); } catch {}
 
         // Bench
-        if (cfg.BenchSize >= 0) team.benchSize = cfg.BenchSize;
+        if (!liveRun)
+        {
+            if (CampaignCore.SquadTemplatePolicy.Identity(cfg.SquadTemplate) == "noeffects" && !SquadStartingScreens.Enabled(cfg, "bench_screen")) team.benchSize = 0;
+            else if (cfg.BenchSize >= 0) team.benchSize = cfg.BenchSize;
+        }
         if (!string.IsNullOrEmpty(cfg.BenchHead)) try { team.vanillaBenchPlayerHead = cfg.BenchHead; } catch {}
 
         // Apply uniform skins and equipment colors to existing forwards
-        var fwds = team.forwards;
         if (fwds != null)
         {
             for (int i = 0; i < fwds.Count; i++)
@@ -15144,16 +9211,19 @@ public static class PatchPlayerTeamInit
                 PatchBossLaunchMatch.ApplyTeamEquipmentColors(fwds[i], cfg, team);
             }
 
-            // Per-slot player overrides — for each starting lineup slot that
-            // has a file on disk, apply that player's name/stats/face/colors
-            // to the matching forward. Positions in cfg are set by
-            // LoadPlayersFolder (matches the "Left Defense.txt" etc. filenames).
-            // Forward array order: 0=LW, 1=RW, 2=C, 3=LD, 4=RD.
-            PlayerConfig[] line1 = { cfg.LW, cfg.RW, cfg.C, cfg.LD, cfg.RD };
-            for (int i = 0; i < Math.Min(fwds.Count, line1.Length); i++)
+            // The clone uses position order. The live roster may contain chosen
+            // skaters between authored players, so match by unique identity.
+            for (int slot = 0; slot < slotCfgs.Length; slot++)
             {
-                var pc = line1[i];
-                if (pc == null || fwds[i] == null) continue;
+                var pc = slotCfgs[slot];
+                int index = targets[slot];
+                if (pc == null || index < 0 || index >= fwds.Count || fwds[index] == null) continue;
+                var forward = fwds[index];
+                if (liveRun)
+                {
+                    PatchBossLaunchMatch.ApplyPlayerLookOnly(forward, pc);
+                    continue;
+                }
                 // Skip slots with no real data — LoadPlayersFolder leaves
                 // untouched slots at their default empty PlayerConfig.
                 bool hasAny = !string.IsNullOrEmpty(pc.Name) || !string.IsNullOrEmpty(pc.ImportPlayer)
@@ -15178,29 +9248,27 @@ public static class PatchPlayerTeamInit
                     {
                         try
                         {
-                            PatchBossLaunchMatch.ApplyPlayerLookOnly(fwds[i], pc);
-                            Plugin.Log.LogInfo($"[PlayerTeam] slot {i}: appearance-only override applied to "
-                                + $"'{fwds[i].firstName} {fwds[i].lastName}' (stats and talents left alone)");
+                            PatchBossLaunchMatch.ApplyPlayerLookOnly(forward, pc);
+                            Plugin.Log.LogInfo($"[PlayerTeam] slot {slot}: appearance-only override applied to "
+                                + $"'{forward.firstName} {forward.lastName}' (stats and talents left alone)");
                         }
-                        catch (Exception ex) { Plugin.Log.LogWarning($"[PlayerTeam] slot {i} look apply error: {ex.Message}"); }
+                        catch (Exception ex) { Plugin.Log.LogWarning($"[PlayerTeam] slot {slot} look apply error: {ex.Message}"); }
                     }
                     continue;
                 }
-                try { PatchBossLaunchMatch.ApplyPlayerConfig(fwds[i], pc, cfg.Uniform); }
-                catch (Exception ex) { Plugin.Log.LogWarning($"[PlayerTeam] slot {i} apply error: {ex.Message}"); }
+                try { PatchBossLaunchMatch.ApplyPlayerConfig(forward, pc, cfg.Uniform); }
+                catch (Exception ex) { Plugin.Log.LogWarning($"[PlayerTeam] slot {slot} apply error: {ex.Message}"); }
                 // Stat Scale (custom squads): multiply the configured player's
                 // freshly-set stats. ApplyPlayerConfig writes the config's
                 // ABSOLUTE stat values every apply, so scaling here is
-                // idempotent across re-applies (Spartan re-init etc.) — it never
-                // compounds. Drafted/superstar skaters sit in the OTHER slots and
-                // are skipped by the hasAny gate above, so they're left at their
-                // own (pool/native) stats and never double-scaled.
+                // idempotent across re-applies (Spartan re-init etc.). Chosen
+                // skaters have no authored match and keep their own stats.
                 if (cfg.StatScale != 1.0f)
                 {
-                    fwds[i].speed = (int)(fwds[i].speed * cfg.StatScale);
-                    fwds[i].shotPower = (int)(fwds[i].shotPower * cfg.StatScale);
-                    fwds[i].shotAccuracy = (int)(fwds[i].shotAccuracy * cfg.StatScale);
-                    fwds[i].checking = (int)(fwds[i].checking * cfg.StatScale);
+                    forward.speed = (int)(forward.speed * cfg.StatScale);
+                    forward.shotPower = (int)(forward.shotPower * cfg.StatScale);
+                    forward.shotAccuracy = (int)(forward.shotAccuracy * cfg.StatScale);
+                    forward.checking = (int)(forward.checking * cfg.StatScale);
                 }
                 Plugin.Log.LogInfo($"[PlayerTeam] Applied slot override: {pc.Name ?? pc.ImportPlayer}{(cfg.StatScale != 1.0f ? $" (stats x{cfg.StatScale})" : "")}");
             }
@@ -15209,7 +9277,7 @@ public static class PatchPlayerTeamInit
         // Apply goalie config
         if (team.goalie != null && cfg.Goalie != null && !string.IsNullOrEmpty(cfg.Goalie.Name))
         {
-            if (!string.IsNullOrEmpty(cfg.Goalie.ImportPlayer))
+            if (!liveRun && !string.IsNullOrEmpty(cfg.Goalie.ImportPlayer))
             {
                 var srcGoalie = PatchBossLaunchMatch.FindGoalieByName(cfg.Goalie.ImportPlayer);
                 if (srcGoalie != null)
@@ -15218,11 +9286,12 @@ public static class PatchPlayerTeamInit
                     Plugin.Log.LogInfo($"[PlayerTeam] Imported goalie '{srcGoalie.firstName} {srcGoalie.lastName}'");
                 }
             }
-            PatchBossLaunchMatch.ApplyGoalieConfig(team.goalie, cfg.Goalie);
+            PatchBossLaunchMatch.ApplyGoalieConfig(team.goalie, cfg.Goalie, appearanceOnly: liveRun);
+            team.goalie.numberFormat = (NumberFormat)(cfg.Goalie.NumberFormat >= 0 ? cfg.Goalie.NumberFormat : cfg.Uniform.NumberFormat);
             // Stat Scale (custom squads): scale the goalie's freshly-set stats.
             // ApplyGoalieConfig writes the config's absolute values, so this is
             // idempotent across re-applies just like the forwards above.
-            if (cfg.StatScale != 1.0f)
+            if (!liveRun && cfg.StatScale != 1.0f)
             {
                 var gg = team.goalie;
                 gg.skill = (int)(gg.skill * cfg.StatScale);
@@ -15234,6 +9303,8 @@ public static class PatchPlayerTeamInit
                 gg.butterflySpeed = (int)(gg.butterflySpeed * cfg.StatScale);
                 gg.controlSkill = (int)(gg.controlSkill * cfg.StatScale);
                 gg.recoverySkill = (int)(gg.recoverySkill * cfg.StatScale);
+                gg.passPower = (int)(gg.passPower * cfg.StatScale);
+                gg.shotPower = (int)(gg.shotPower * cfg.StatScale);
                 gg.pokecheckSkill = (int)(gg.pokecheckSkill * cfg.StatScale);
                 gg.depth = (int)(gg.depth * cfg.StatScale);
                 Plugin.Log.LogInfo($"[PlayerTeam] Goalie stats scaled x{cfg.StatScale}");
@@ -15244,7 +9315,7 @@ public static class PatchPlayerTeamInit
         // Apply relics (additive — adds starting relics). Only on firstApply:
         // subsequent re-applies during the same run (e.g. Spartan match init)
         // must not add duplicate copies of every starting relic.
-        if (firstApply && cfg.Relics.Count > 0)
+        if (firstApply && !liveRun && cfg.Relics.Count > 0)
         {
             foreach (var r in cfg.Relics)
                 PatchBossLaunchMatch.GiveRelic(team, r);
@@ -15254,7 +9325,7 @@ public static class PatchPlayerTeamInit
         Plugin.Log.LogInfo($"[PlayerTeam] Applied team config for '{team.teamName}'");
     }
 
-    private static void ApplyUniformToForward(ForwardData f, UniformConfig uniform)
+    internal static void ApplyUniformToForward(ForwardData f, UniformConfig uniform)
     {
         try
         {
@@ -15270,7 +9341,11 @@ public static class PatchPlayerTeamInit
             if (!string.IsNullOrEmpty(uniform.SkatesAway)) f.skateAwaySkin = uniform.SkatesAway;
             if (!string.IsNullOrEmpty(uniform.Bicep)) f.bicepSkin = uniform.Bicep;
             if (!string.IsNullOrEmpty(uniform.BicepAway)) f.bicepAwaySkin = uniform.BicepAway;
-            if (!string.IsNullOrEmpty(uniform.Stick)) f.stickSkin = uniform.Stick;
+            // Native saved skaters omit numberFormat. This appearance-only helper
+            // also runs after Continue; retain the saved number and restore its style.
+            if (uniform.NumberFormat >= 0 && uniform.NumberFormat < FieldSchema.NumberStyles.Length)
+                f.numberFormat = (NumberFormat)uniform.NumberFormat;
+            // Stick style is the player's (base game); the team uniform has none.
             HandleNoHelmetSentinel(f);
         }
         catch (Exception ex) { Plugin.Log.LogError($"[PlayerTeam] Uniform apply error: {ex.Message}"); }
@@ -15281,38 +9356,18 @@ public static class PatchPlayerTeamInit
     // doesn't sneak back in for these players.
     internal static readonly HashSet<IntPtr> NoHelmetForwards = new HashSet<IntPtr>();
 
-    /// Shared no-helmet sentinel handler. If helmetSkin was stamped with the
-    /// `__NO_HELMET__` marker by ResolveSkin (Helmet = none in config), this
-    /// registers the forward's face in ForwardDataExtensions.HeadsWithoutHelmets
-    /// and flags the forward in NoHelmetForwards so the default-fill code
-    /// won't re-stamp a helmet skin onto it. MUST be called from every code
-    /// path that assigns helmetSkin.
+    // Keep the per-kit sentinel until rendering. Registering the face globally
+    // would also remove helmets from other players who share that face.
     internal static void HandleNoHelmetSentinel(ForwardData f)
     {
         if (f == null) return;
-
-        // Themed "Canadians" faces bake hair/beards into the head mesh, so
-        // helmets clip or don't render. Force helmet off regardless of
-        // uniform or per-player override settings.
-        if (!string.IsNullOrEmpty(f.headSkin) &&
-            f.headSkin.StartsWith("Faces/Canadians/", System.StringComparison.Ordinal))
-        {
-            Plugin.RegisterFaceAsHelmetless(f.headSkin);
-            f.helmetSkin = "";
-            f.helmetAwaySkin = "";
+        HeadAppearanceRuntime.Configure(f);
+        // Base game: no skate style in either customizer. Colors come from the team kit or the
+        // player's own skate colors (colorSchemes.skatesScheme).
+        f.skateSkin = f.skateAwaySkin = AppearanceContract.StandardSkates;
+        if (f.helmetSkin == "__NO_HELMET__" && f.helmetAwaySkin == "__NO_HELMET__")
             NoHelmetForwards.Add(f.Pointer);
-            Plugin.Log.LogInfo($"[NoHelmet] '{f.firstName} {f.lastName}' head '{f.headSkin}' auto-bared (themed Canadians face)");
-            return;
-        }
-
-        if (f.helmetSkin == "__NO_HELMET__" || f.helmetAwaySkin == "__NO_HELMET__")
-        {
-            Plugin.RegisterFaceAsHelmetless(f.headSkin);
-            if (f.helmetSkin == "__NO_HELMET__") f.helmetSkin = "";
-            if (f.helmetAwaySkin == "__NO_HELMET__") f.helmetAwaySkin = "";
-            NoHelmetForwards.Add(f.Pointer);
-            Plugin.Log.LogInfo($"[NoHelmet] '{f.firstName} {f.lastName}' face '{f.headSkin}' flagged as helmetless");
-        }
+        else NoHelmetForwards.Remove(f.Pointer);
     }
 
     // Names we've already announced in the log this session. ApplyDraftPool
@@ -15322,6 +9377,9 @@ public static class PatchPlayerTeamInit
 
     internal static void ApplyDraftPool()
     {
+        // The new selected pool creates isolated players on each custom squad.
+        // Legacy name-based mutation would alter shared base players as well.
+        if (File.Exists(Path.Combine(Plugin.ModFolder, "player_teams", "draft_pool", CampaignCore.SelectedPlayerPool.Manifest))) return;
         var allFwds = UnityEngine.Resources.FindObjectsOfTypeAll<ForwardData>();
         if (allFwds == null || allFwds.Length == 0) return;
 
@@ -15380,6 +9438,8 @@ public static class PatchPlayerTeamInit
     internal static void ApplyFreeAgentPool()
     {
         if (Plugin.FreeAgentPoolList == null || Plugin.FreeAgentPoolList.Count == 0) return;
+        // The template swap already makes every free agent an authored one; name mapping would re-dress them.
+        if (CustomFreeAgentTemplates.Active) return;
 
         var rawList = PatchPreGenerateFreeAgents.LastOutput;
         if (rawList == null || rawList.Count == 0)
@@ -15388,7 +9448,8 @@ public static class PatchPlayerTeamInit
             return;
         }
 
-        int N = Plugin.FreeAgentPoolList.Count;
+        var candidates = CampaignCore.RewardPoolSelection.Shuffle(Plugin.FreeAgentPoolList, max => UnityEngine.Random.Range(0, max));
+        int N = candidates.Count;
         int poolSize = rawList.Count;
 
         // FILL the entire pool: every slot becomes one of the editor's free
@@ -15408,7 +9469,7 @@ public static class PatchPlayerTeamInit
                 if (entry == null) continue;
                 string tmpl = entry.templateFullName?.Trim() ?? "";
                 if (string.IsNullOrEmpty(tmpl)) continue;
-                var cfg = Plugin.FreeAgentPoolList[i % N];
+                var cfg = candidates[i % N];
                 Plugin.FreeAgentSignedConfigs[tmpl.ToLowerInvariant()] = cfg;
                 mapped++;
             }
@@ -15427,6 +9488,7 @@ public static class PatchPlayerTeamInit
     // DraftPoolConfigs are untouched.
     internal static void ApplySignedFreeAgents()
     {
+        if (CustomFreeAgentTemplates.Active) return;
         if (Plugin.FreeAgentSignedConfigs.Count == 0) return;
 
         var allFwds = UnityEngine.Resources.FindObjectsOfTypeAll<ForwardData>();
@@ -15556,13 +9618,13 @@ public static class PatchPlayerTeamInit
             }
 
             // Apply stats (only if non-default, i.e. not 50)
-            if (pc.Speed != 50) f.speed = pc.Speed;
-            if (pc.ShotPower != 50) f.shotPower = pc.ShotPower;
-            if (pc.Accuracy != 50) f.shotAccuracy = pc.Accuracy;
-            if (pc.Checking != 50) f.checking = pc.Checking;
+            if (pc.Fields.Get("Speed").Length > 0 || pc.Speed != 50) f.speed = pc.Speed;
+            if (pc.Fields.Get("Shot Power").Length > 0 || pc.ShotPower != 50) f.shotPower = pc.ShotPower;
+            if (pc.Fields.Get("Accuracy").Length > 0 || pc.Accuracy != 50) f.shotAccuracy = pc.Accuracy;
+            if (pc.Fields.Get("Checking").Length > 0 || pc.Checking != 50) f.checking = pc.Checking;
 
             // Apply size
-            if (!string.IsNullOrEmpty(pc.Size) && pc.Size != "Medium")
+            if (pc.Fields.Get("Size").Length > 0 || (!string.IsNullOrEmpty(pc.Size) && pc.Size != "Medium"))
             {
                 try
                 {
@@ -15585,39 +9647,11 @@ public static class PatchPlayerTeamInit
             }
 
             // Apply handedness and skin color
-            if (pc.Lefty) f.isLefty = true;
-            if (pc.Black) f.isBlack = true;
+            if (pc.Fields.Get("Left Handed").Length > 0 || pc.Lefty) f.isLefty = pc.Lefty;
+            if (pc.Fields.Get("Skin Color").Length > 0 || pc.Black) f.isBlack = pc.Black;
 
             // Apply number
-            if (pc.Number != 88) f.number = pc.Number;
-
-            // Apply ability
-            if (!string.IsNullOrEmpty(pc.Ability))
-            {
-                try
-                {
-                    PatchBossLaunchMatch.EnsureRepos();
-                    var abilityRepos = UnityEngine.Resources.FindObjectsOfTypeAll<Rogue.Powerups.Repository.AbilityRepository>();
-                    if (abilityRepos != null && abilityRepos.Length > 0)
-                    {
-                        var repo = abilityRepos[0];
-                        if (repo.abilities != null)
-                        {
-                            for (int ai = 0; ai < repo.abilities.Count; ai++)
-                            {
-                                var ab = repo.abilities[ai];
-                                if (ab != null && ab.name.Equals(pc.Ability, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    f.ability = ab;
-                                    Plugin.Log.LogInfo($"[PlayerTeam]   Set ability: {ab.name}");
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex) { Plugin.Log.LogError($"[PlayerTeam] Ability error: {ex.Message}"); }
-            }
+            if (pc.Fields.Get("Number").Length > 0 || pc.Number != 88) f.number = pc.Number;
 
             // Apply talents
             if (pc.Talents.Count > 0)
@@ -15627,27 +9661,11 @@ public static class PatchPlayerTeamInit
                     PatchBossLaunchMatch.GiveTalentToPlayer(f, talentName);
             }
 
-            // Apply per-player uniform overrides
-            if (pc.StickOverride != null) f.stickSkin = pc.StickOverride;
-            if (pc.HelmetOverride != null) f.helmetSkin = pc.HelmetOverride;
-            if (pc.BodyOverride != null) f.bodySkin = pc.BodyOverride;
-            if (pc.BodyAwayOverride != null) f.bodyAwaySkin = pc.BodyAwayOverride;
-            if (pc.GlovesOverride != null) f.gloveSkin = pc.GlovesOverride;
-            if (pc.PantsOverride != null) f.pantsSkin = pc.PantsOverride;
-            if (pc.SkatesOverride != null) f.skateSkin = pc.SkatesOverride;
-            if (pc.BicepOverride != null) f.bicepSkin = pc.BicepOverride;
+            // The first authored talent clears the donor ability. Restore the
+            // authored ability afterward, as ApplyPlayerConfig does for starters.
+            if (!string.IsNullOrEmpty(pc.Ability)) PatchBossLaunchMatch.SetPlayerAbility(f, pc.Ability);
 
-            // Apply per-player color overrides
-            PatchBossLaunchMatch.ApplyPlayerColorOverrides(f, pc);
-
-            // Apply glasses
-            if (!string.IsNullOrEmpty(pc.Glasses))
-                try { f.glassesSkin = pc.Glasses; } catch {}
-
-            // Helmet=none: catch the sentinel from team uniform OR per-player
-            // override paths that assigned it above — final check so all
-            // helmet-set flows normalize through the same logic.
-            HandleNoHelmetSentinel(f);
+            PatchBossLaunchMatch.ApplyPlayerLookOnly(f, pc);
             // Tail stats-log removed — the "Modifying" line in ApplyDraftPool
             // already announces each unique player once per session. Leaving
             // it in here caused N-copy-per-name spam since the game keeps
@@ -15673,13 +9691,20 @@ public class UniformConfig
     public string Helmet = "";
     public string HelmetAway = "";
     public string Stick = "";
+    // Team default; an explicit PlayerConfig.NumberFormat takes precedence.
+    public int NumberFormat = 0;
 }
 
 public class PlayerConfig
 {
+    public readonly CampaignDocument Fields = new("");
+    public readonly CampaignDocument Colors = new("");
+    public string LogoSkin = null, NumberSkin = null;
     public string Name = "";
     public string ImportPlayer = "";
     public int Number = 88;
+    // -1 follows the team's style; explicit native imports may differ per player.
+    public int NumberFormat = -1;
     public string Face = "";
     public bool Lefty = false;
     public bool Black = false;
@@ -15724,52 +9749,6 @@ public class PlayerConfig
     public string PantsAwayOverride = null;
     public string SkatesOverride = null;
     public string SkatesAwayOverride = null;
-    // Per-player color overrides (null = use team colors)
-    public int[] JerseyColor = null;
-    public int[] JerseySecondaryColor = null;
-    public int[] JerseyAccentColor = null;
-    public int[] GlovesColor = null;
-    public int[] GlovesSecondaryColor = null;
-    public int[] GlovesTertiaryColor = null;
-    public int[] HelmetColor = null;
-    public int[] HelmetSecondaryColor = null;
-    public int[] HelmetTertiaryColor = null;
-    public int[] PantsColor = null;
-    public int[] PantsSecondaryColor = null;
-    public int[] PantsTertiaryColor = null;
-    public int[] SkatesColor = null;        // skate body color
-    public int[] BladeColor = null;          // blade color
-    public int[] LacesColor = null;          // laces color
-    public int[] BicepColor = null;
-    public int[] NumberColor = null;
-    public int[] NumberSecondaryColor = null;
-    public int[] SocksColor = null;
-    public int[] SocksSecondaryColor = null;
-    public int[] SocksTertiaryColor = null;
-    // Per-player AWAY color overrides (used when this player's team wears its
-    // away jersey — the opponent/visitor side). Null = fall back to the
-    // matching home override above, then to team colors.
-    public int[] JerseyColorAway = null;
-    public int[] JerseySecondaryColorAway = null;
-    public int[] JerseyAccentColorAway = null;
-    public int[] GlovesColorAway = null;
-    public int[] GlovesSecondaryColorAway = null;
-    public int[] GlovesTertiaryColorAway = null;
-    public int[] HelmetColorAway = null;
-    public int[] HelmetSecondaryColorAway = null;
-    public int[] HelmetTertiaryColorAway = null;
-    public int[] PantsColorAway = null;
-    public int[] PantsSecondaryColorAway = null;
-    public int[] PantsTertiaryColorAway = null;
-    public int[] SkatesColorAway = null;
-    public int[] BladeColorAway = null;
-    public int[] LacesColorAway = null;
-    public int[] BicepColorAway = null;
-    public int[] NumberColorAway = null;
-    public int[] NumberSecondaryColorAway = null;
-    public int[] SocksColorAway = null;
-    public int[] SocksSecondaryColorAway = null;
-    public int[] SocksTertiaryColorAway = null;
     // Goalie-specific skins
     public string GoalieSkin = null;
     public string GoalieSkinAway = null;
@@ -15782,16 +9761,36 @@ public class PlayerConfig
     public string GoalieStickSkin = null;
     public string GoalieStickAway = null;
     public string GoalieHelmetSkin = null;
-    public string GoalieLogoSkin = null;
+    public bool TeamGoalieGear = false; // goalie skins above came from the team's goalie-equipment.cfg
 }
 
 public class TeamConfig
 {
+    public readonly CampaignDocument Fields = new("");
+    public readonly CampaignDocument Colors = new("");
+    public string GoalSound = "", GoalSoundData = "", GoalSoundVolume = "100";
+    public string OpponentPreset = "";
+    public string OpponentEffects = "";
+    public string RefereeHandsInteraction = "";
+    public string OpponentTwoLines = "";
+    public string OpponentOffense = "";
+    public string OpponentDefense = "";
+    public string MatchPuck = "";
+    public string MatchSurface = "";
+    public string GolfFairway = "";
+    public string TycoonsSponsors = "";
+    public string CanadaCurses = "";
+    internal string IdentityKey = "";
+    public string SquadTemplate = "";
+    public Dictionary<string, string> SquadBehaviors = new(StringComparer.OrdinalIgnoreCase);
+    public string StartingBenchPositions = "";
     public string Name = "";
     public string City = "";
     public string Abbreviation = "";
     public string Description = "";
     public string SquadHead = "";     // face name for the custom-squad tile icon
+    public string ZamboniHead = "";   // blank preserves the legacy SquadHead fallback
+    public string Mascot = "";        // base-game squad ID supplying its plushie sprite
     public string LogoFrom = "";
     public string ImportTeam = "";
     public float StatScale = 1.0f;
@@ -15859,6 +9858,9 @@ public class TeamConfig
     // mechanic of player-chosen squads). Set "No Bench Bonus = yes" in
     // team.txt to disable.
     public bool NoBenchBonus = false;
+    public bool NoEffectsBench = false;
+    public bool CustomStartingRelics = false;
+    public bool NoEffectsSuperstars = false;
     public int TeamRandomTalents = 0;
     public List<string> TeamRandomPool = new List<string>();
     public bool TeamRandomPoolAll = false;
@@ -15875,3 +9877,5 @@ public class TeamConfig
     public PlayerConfig L2_RD = new PlayerConfig();
     public bool IsImport => !string.IsNullOrEmpty(ImportTeam);
 }
+
+

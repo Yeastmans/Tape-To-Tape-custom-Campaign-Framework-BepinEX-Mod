@@ -1,0 +1,704 @@
+{
+  "skins": [
+    {
+      "name": "Faces/Toronto/Mathieu",
+      "attachments": [
+        {
+          "slot": "Glove right",
+          "slotIndex": 25,
+          "placeholder": "clutching",
+          "name": "clutching",
+          "path": "clutching",
+          "x": 103.33831787109375,
+          "y": 11.215507507324219,
+          "scaleX": 1.3236384391784668,
+          "scaleY": 1.3236384391784668,
+          "rotation": 24.635665893554688,
+          "width": 189,
+          "height": 138,
+          "regions": [
+            "clutching"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "E-Helmet",
+          "name": "E-Helmet",
+          "path": "Matthews/W-Helmet_Top",
+          "x": 124.8128662109375,
+          "y": -12.3680419921875,
+          "scaleX": -1,
+          "scaleY": 1,
+          "rotation": -49.68883514404297,
+          "width": 363,
+          "height": 408,
+          "regions": [
+            "Matthews/W-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "N-Helmet",
+          "name": "N-Helmet",
+          "path": "Matthews/N-Helmet_Top",
+          "x": 61.3880615234375,
+          "y": 51.31410598754883,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": -86.12077331542969,
+          "width": 306,
+          "height": 339,
+          "regions": [
+            "Matthews/N-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "NE-Helmet",
+          "name": "NE-Helmet",
+          "path": "Matthews/NE-Helmet_Top",
+          "x": 111.21124267578125,
+          "y": 27.786808013916016,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": -74.07620239257812,
+          "width": 344,
+          "height": 377,
+          "regions": [
+            "Matthews/NE-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "NW-Helmet",
+          "name": "NW-Helmet",
+          "path": "Matthews/NE-Helmet_Top",
+          "x": 97.43902587890625,
+          "y": 69.44135284423828,
+          "scaleX": -1,
+          "scaleY": 1,
+          "rotation": -101.02098083496094,
+          "width": 344,
+          "height": 377,
+          "regions": [
+            "Matthews/NE-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "S-Helmet",
+          "name": "S-Helmet",
+          "path": "Matthews/S-Helmet_Top",
+          "width": 310,
+          "height": 399,
+          "regions": [
+            "Matthews/S-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          },
+          "vertices": [
+            -115.59320068359375,
+            -176.97134399414062,
+            -238.14434814453125,
+            81.04178619384766,
+            56.898799896240234,
+            220.77182006835938,
+            180.10467529296875,
+            -37.271270751953125
+          ],
+          "regionUVs": [
+            0.9506511688232422,
+            0.9664376378059387,
+            0.029237881302833557,
+            0.9681436419487,
+            0.02792198583483696,
+            0.14995314180850983,
+            0.9503241777420044,
+            0.14679580926895142
+          ],
+          "triangles": [
+            2,
+            3,
+            0,
+            1,
+            2,
+            0
+          ],
+          "worldVerticesLength": 8
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "SE-Helmet",
+          "name": "SE-Helmet",
+          "path": "Matthews/SW-Helmet_Top",
+          "x": 24.95086669921875,
+          "y": -9.724056243896484,
+          "scaleX": -1,
+          "scaleY": 1,
+          "rotation": -29.523773193359375,
+          "width": 358,
+          "height": 414,
+          "regions": [
+            "Matthews/SW-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "SW-Helmet",
+          "name": "SW-Helmet",
+          "path": "Matthews/SW-Helmet_Top",
+          "x": 84.818359375,
+          "y": 46.257568359375,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": -97.32766723632812,
+          "width": 358,
+          "height": 414,
+          "regions": [
+            "Matthews/SW-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "W-Helmet",
+          "name": "W-Helmet",
+          "path": "Matthews/W-Helmet_Top",
+          "x": 92.97125244140625,
+          "y": 108.3084487915039,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": -105.92449951171875,
+          "width": 363,
+          "height": 408,
+          "regions": [
+            "Matthews/W-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "N-Helmet2",
+          "name": "N-Helmet",
+          "path": "Matthews/N-Helmet_Top",
+          "x": 42.052001953125,
+          "y": 46.978145599365234,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": -87.65286254882812,
+          "width": 306,
+          "height": 339,
+          "regions": [
+            "Matthews/N-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "openhand",
+          "slotIndex": 76,
+          "placeholder": "openhand",
+          "name": "openhand",
+          "path": "openhand",
+          "x": 98.23062133789062,
+          "y": -7.229927062988281,
+          "scaleX": 1.2235945463180542,
+          "scaleY": 1.2235945463180542,
+          "rotation": 22.673641204833984,
+          "width": 189,
+          "height": 138,
+          "regions": [
+            "openhand"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "openhand",
+          "slotIndex": 76,
+          "placeholder": "openhand_right",
+          "name": "openhand_right",
+          "path": "openhand_right",
+          "x": 99.74322509765625,
+          "y": 6.70892333984375,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": 153.2146759033203,
+          "width": 168,
+          "height": 120,
+          "regions": [
+            "openhand_right"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Faces/Toronto/Mathieu_Helmet",
+      "attachments": [
+        {
+          "slot": "Glove right",
+          "slotIndex": 25,
+          "placeholder": "clutching",
+          "name": "clutching",
+          "path": "clutching",
+          "x": 103.33831787109375,
+          "y": 11.215507507324219,
+          "scaleX": 1.3236384391784668,
+          "scaleY": 1.3236384391784668,
+          "rotation": 24.635665893554688,
+          "width": 189,
+          "height": 138,
+          "regions": [
+            "clutching"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "E-Helmet",
+          "name": "E-Helmet",
+          "path": "Matthews/W-Helmet_Top",
+          "x": 124.8128662109375,
+          "y": -12.3680419921875,
+          "scaleX": -1,
+          "scaleY": 1,
+          "rotation": -49.68883514404297,
+          "width": 363,
+          "height": 408,
+          "regions": [
+            "Matthews/W-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "N-Helmet",
+          "name": "N-Helmet",
+          "path": "Matthews/N-Helmet_Top",
+          "x": 61.3880615234375,
+          "y": 51.31410598754883,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": -86.12077331542969,
+          "width": 306,
+          "height": 339,
+          "regions": [
+            "Matthews/N-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "NE-Helmet",
+          "name": "NE-Helmet",
+          "path": "Matthews/NE-Helmet_Top",
+          "x": 117.3880615234375,
+          "y": 22.49712371826172,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": -65.68464660644531,
+          "width": 344,
+          "height": 377,
+          "regions": [
+            "Matthews/NE-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "NW-Helmet",
+          "name": "NW-Helmet",
+          "path": "Matthews/NE-Helmet_Top",
+          "x": 97.43902587890625,
+          "y": 69.44135284423828,
+          "scaleX": -1,
+          "scaleY": 1,
+          "rotation": -101.02098083496094,
+          "width": 344,
+          "height": 377,
+          "regions": [
+            "Matthews/NE-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "S-Helmet",
+          "name": "S-Helmet",
+          "path": "Matthews/S-Helmet_Top",
+          "width": 310,
+          "height": 399,
+          "regions": [
+            "Matthews/S-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          },
+          "vertices": [
+            -108.43895721435547,
+            -167.10202026367188,
+            -233.3187255859375,
+            92.41178894042969,
+            62.922000885009766,
+            231.04666137695312,
+            185.27264404296875,
+            -26.38323974609375
+          ],
+          "regionUVs": [
+            0.9563578963279724,
+            0.9631106853485107,
+            0.027360502630472183,
+            0.9684885740280151,
+            0.03088848665356636,
+            0.14875589311122894,
+            0.9503242373466492,
+            0.14688052237033844
+          ],
+          "triangles": [
+            2,
+            3,
+            0,
+            1,
+            2,
+            0
+          ],
+          "worldVerticesLength": 8
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "SE-Helmet",
+          "name": "SE-Helmet",
+          "path": "Matthews/SW-Helmet_Top",
+          "x": 24.95086669921875,
+          "y": -9.724056243896484,
+          "scaleX": -1,
+          "scaleY": 1,
+          "rotation": -29.523773193359375,
+          "width": 358,
+          "height": 414,
+          "regions": [
+            "Matthews/SW-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "SW-Helmet",
+          "name": "SW-Helmet",
+          "path": "Matthews/SW-Helmet_Top",
+          "x": 89.09857177734375,
+          "y": 46.06204605102539,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": -100.31951904296875,
+          "width": 358,
+          "height": 414,
+          "regions": [
+            "Matthews/SW-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "W-Helmet",
+          "name": "W-Helmet",
+          "path": "Matthews/W-Helmet_Top",
+          "x": 92.97125244140625,
+          "y": 108.3084487915039,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": -105.92449951171875,
+          "width": 363,
+          "height": 408,
+          "regions": [
+            "Matthews/W-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "Helmet",
+          "slotIndex": 29,
+          "placeholder": "N-Helmet2",
+          "name": "N-Helmet",
+          "path": "Matthews/N-Helmet_Top",
+          "x": 42.052001953125,
+          "y": 46.978145599365234,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": -87.65286254882812,
+          "width": 306,
+          "height": 339,
+          "regions": [
+            "Matthews/N-Helmet_Top"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "openhand",
+          "slotIndex": 76,
+          "placeholder": "openhand",
+          "name": "openhand",
+          "path": "openhand",
+          "x": 98.23062133789062,
+          "y": -7.229927062988281,
+          "scaleX": 1.2235945463180542,
+          "scaleY": 1.2235945463180542,
+          "rotation": 22.673641204833984,
+          "width": 189,
+          "height": 138,
+          "regions": [
+            "openhand"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        },
+        {
+          "slot": "openhand",
+          "slotIndex": 76,
+          "placeholder": "openhand_right",
+          "name": "openhand_right",
+          "path": "openhand_right",
+          "x": 99.74322509765625,
+          "y": 6.70892333984375,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": 153.2146759033203,
+          "width": 168,
+          "height": 120,
+          "regions": [
+            "openhand_right"
+          ],
+          "sequence": {
+            "start": 0,
+            "digits": 0,
+            "setupIndex": 0
+          }
+        }
+      ]
+    }
+  ],
+  "regions": [
+    {
+      "name": "clutching",
+      "page": "Player_Sprite.png",
+      "x": 3418,
+      "y": 1389,
+      "width": 189,
+      "height": 138,
+      "originalWidth": 189,
+      "originalHeight": 138,
+      "offsetX": 0,
+      "offsetY": 0,
+      "degrees": 0,
+      "editableFile": "support/clutching.png"
+    },
+    {
+      "name": "Matthews/W-Helmet_Top",
+      "page": "Player_Sprite_105.png",
+      "x": 362,
+      "y": 14,
+      "width": 363,
+      "height": 408,
+      "originalWidth": 363,
+      "originalHeight": 408,
+      "offsetX": 0,
+      "offsetY": 0,
+      "degrees": 0,
+      "editableFile": "frames/W-Helmet_Top.png"
+    },
+    {
+      "name": "Matthews/N-Helmet_Top",
+      "page": "Player_Sprite_105.png",
+      "x": 2883,
+      "y": 526,
+      "width": 306,
+      "height": 339,
+      "originalWidth": 306,
+      "originalHeight": 339,
+      "offsetX": 0,
+      "offsetY": 0,
+      "degrees": 90,
+      "editableFile": "frames/N-Helmet_Top.png"
+    },
+    {
+      "name": "Matthews/NE-Helmet_Top",
+      "page": "Player_Sprite_105.png",
+      "x": 1784,
+      "y": 488,
+      "width": 344,
+      "height": 377,
+      "originalWidth": 344,
+      "originalHeight": 377,
+      "offsetX": 0,
+      "offsetY": 0,
+      "degrees": 90,
+      "editableFile": "frames/NE-Helmet_Top.png"
+    },
+    {
+      "name": "Matthews/S-Helmet_Top",
+      "page": "Player_Sprite_105.png",
+      "x": 727,
+      "y": 32,
+      "width": 310,
+      "height": 399,
+      "originalWidth": 310,
+      "originalHeight": 399,
+      "offsetX": 0,
+      "offsetY": 0,
+      "degrees": 0,
+      "editableFile": "frames/S-Helmet_Top.png"
+    },
+    {
+      "name": "Matthews/SW-Helmet_Top",
+      "page": "Player_Sprite_105.png",
+      "x": 2,
+      "y": 2,
+      "width": 358,
+      "height": 414,
+      "originalWidth": 358,
+      "originalHeight": 414,
+      "offsetX": 0,
+      "offsetY": 0,
+      "degrees": 0,
+      "editableFile": "frames/SW-Helmet_Top.png"
+    },
+    {
+      "name": "openhand",
+      "page": "Player_Sprite.png",
+      "x": 2924,
+      "y": 803,
+      "width": 189,
+      "height": 138,
+      "originalWidth": 189,
+      "originalHeight": 138,
+      "offsetX": 0,
+      "offsetY": 0,
+      "degrees": 0,
+      "editableFile": "support/openhand.png"
+    },
+    {
+      "name": "openhand_right",
+      "page": "Player_Sprite.png",
+      "x": 1840,
+      "y": 338,
+      "width": 168,
+      "height": 120,
+      "originalWidth": 168,
+      "originalHeight": 120,
+      "offsetX": 0,
+      "offsetY": 0,
+      "degrees": 0,
+      "editableFile": "support/openhand_right.png"
+    }
+  ]
+}
