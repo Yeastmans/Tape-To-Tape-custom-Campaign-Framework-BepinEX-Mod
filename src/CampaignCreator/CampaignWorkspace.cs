@@ -22,6 +22,7 @@ public sealed partial class CampaignWorkspace : UserControl
     public void SelectTeamSection(bool customSquad) => ShowSection(customSquad ? CustomSquadsSection : OpponentsSection);
     private readonly GameData data;
     private readonly Action<string> open;
+    private readonly Action back;
     private readonly TextBlock message = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Dictionary<string, Func<string>> fields = new(StringComparer.OrdinalIgnoreCase);
     private CampaignDocument settings, rewards;
@@ -60,7 +61,7 @@ public sealed partial class CampaignWorkspace : UserControl
     }
     public CampaignWorkspace(Window owner, string root, string directory, Action back, Action<string> open, Func<Task> newTeam, bool isNew = false, Action<string>? created = null, string initialName = "")
     {
-        this.owner = owner; this.root = root; this.directory = directory; this.open = open;
+        this.owner = owner; this.root = root; this.directory = directory; this.open = open; this.back = back;
         this.isNew = isNew; this.created = created;
         data = new GameData(root);
         campaignName.Text = initialName;
@@ -95,10 +96,13 @@ public sealed partial class CampaignWorkspace : UserControl
         ];
         ShowSection(0);
         Grid.SetRow(navigation, 1); shell.Children.Add(navigation);
-        var footer = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = StudioTheme.SpaceLg }; StudioTheme.Footer(footer);
+        var footer = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"), ColumnSpacing = StudioTheme.SpaceLg }; StudioTheme.Footer(footer);
         message.Text = isNew ? "Name your campaign above, then save to create it." : "Changes apply to this campaign only."; footer.Children.Add(message);
+        deleteCampaign.IsVisible = !isNew;
+        deleteCampaign.Click += async (_, _) => await DeleteCampaign();
+        Grid.SetColumn(deleteCampaign, 1); footer.Children.Add(deleteCampaign);
         var save = ActionButton("Save campaign", Save); StudioTheme.Primary(save);
-        Grid.SetColumn(save, 1); footer.Children.Add(save); Grid.SetRow(footer, 2); shell.Children.Add(footer); Content = shell;
+        Grid.SetColumn(save, 2); footer.Children.Add(save); Grid.SetRow(footer, 2); shell.Children.Add(footer); Content = shell;
     }
     private void ShowSection(int index)
     {
@@ -604,6 +608,7 @@ public sealed partial class CampaignWorkspace : UserControl
         SaveWorkingCopy(); Directory.CreateDirectory(Path.GetDirectoryName(target)!);
         Directory.Move(directory, target);
         directory = target; mapEditor?.SetCampaignDirectory(directory); isNew = false; campaignName.Text = name; campaignName.IsReadOnly = true;
+        deleteCampaign.IsVisible = true;
         foreach (var refresh in refreshRosters) refresh();
         message.Text = "Campaign saved"; created?.Invoke(directory);
     }

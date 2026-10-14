@@ -33,6 +33,7 @@ public sealed partial class MainWindow
 
         if (Content is CampaignWorkspace campaign)
         {
+            if (!campaign.IsNew) Add("Delete campaign", "Permanently removes this campaign from this computer after confirmation. Cancel is the default. Close Tape to Tape first. Shared libraries and custom heads are kept. If this is the selected campaign, Home switches to None (base game).", "DeleteCampaign");
             switch (campaign.CurrentSection)
             {
                 case 0:

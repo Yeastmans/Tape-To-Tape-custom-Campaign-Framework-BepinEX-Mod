@@ -36,6 +36,7 @@ internal static class StudioGuideReference
             new("Offside in every match", "Enable the campaign's offside rule. Save campaign keeps the setting."),
             new("Offside penalty", "Player's setting, Whistle, Lose Puck or Knockout. Enabled only when campaign offside is on."),
             new("Save campaign", "Save campaign settings and pending pool/map edits. Players and teams have their own save buttons."),
+            new("Delete campaign", "Permanently delete this saved campaign from this computer after confirming its name. Cancel is the default. Close Tape to Tape first. The campaign's maps, opponents and campaign players are removed; shared libraries and custom heads are kept. If selected for play, it switches to None (base game)."),
             new("Back", "Returns from a section to the overview. Back from the overview returns Home and discards unsaved campaign edits."),
             new("Import / Upload", "Import from file or Download and install brings in a campaign. Keep both gives a duplicate a new name; Replace mine first keeps the old campaign in campaign_backups. Upload publishes the saved campaign and referenced logos to the public community folder.")],
         "sources" => [
