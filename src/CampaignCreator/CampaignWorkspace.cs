@@ -289,9 +289,28 @@ public sealed partial class CampaignWorkspace : UserControl
         page.Children.Add(InsetPoolPanel.Frame(pool, "FreeAgentPoolPanel"));
         if (VanillaCopyData.IsPool(Path.Combine(directory,"player_teams","free_agents")))
         {
-            nativeFreeAgents=new NativePlayerPoolEditor(owner,root,()=>Path.Combine(directory,"player_teams","free_agents"),
-                file=>{SaveWorkingCopy();open(file);},()=>message.Text="Unsaved free-agent choices",insetList:true);
-            pool.Children.Add(nativeFreeAgents);return page;
+            void RefreshNative()
+            {
+                if (nativeFreeAgents != null) pool.Children.Remove(nativeFreeAgents);
+                nativeFreeAgents=new NativePlayerPoolEditor(owner,root,()=>Path.Combine(directory,"player_teams","free_agents"),
+                    file=>{SaveWorkingCopy();open(file);},()=>message.Text="Unsaved free-agent choices",insetList:true);
+                pool.Children.Add(nativeFreeAgents);
+            }
+            var nativeBulkImport = ActionButton("Bulk import players", async () =>
+            {
+                try
+                {
+                    if (!CanLeave(true)) return;
+                    await ContentImport.PickPlayers(owner, root, null, sources =>
+                    {
+                        var files = PlayerPoolImport.IntoFreeAgents(root, directory, sources);
+                        RefreshNative(); message.Text = $"Imported {files.Length} players. All new free agents are checked.";
+                    });
+                }
+                catch (Exception ex) { message.Text = ex.Message; }
+            });
+            nativeBulkImport.Name = "BulkImportFreeAgents";
+            pool.Children.Add(nativeBulkImport); RefreshNative(); return page;
         }
         selectedBaseAgents = FreeAgentContent.Selected(directory);
         selectedCustomAgents = FreeAgentContent.SelectedCustom(directory);
@@ -337,6 +356,23 @@ public sealed partial class CampaignWorkspace : UserControl
                 }
         }
         var actions = new WrapPanel { Orientation = Orientation.Horizontal };
+        var bulkImport = ActionButton("Bulk import players", async () =>
+        {
+            try
+            {
+                if (!CanLeave(true)) return;
+                await ContentImport.PickPlayers(owner, root, null, sources =>
+                {
+                    var files = PlayerPoolImport.IntoFreeAgents(root, directory, sources);
+                    foreach (string file in files) selectedCustomAgents.Add(FreeAgentContent.SelectionKey(directory, file));
+                    Refresh();
+                    message.Text = $"Imported {files.Length} players. All new free agents are checked.";
+                });
+            }
+            catch (Exception ex) { message.Text = ex.Message; }
+        });
+        bulkImport.Name = "BulkImportFreeAgents";
+        actions.Children.Add(bulkImport);
         actions.Children.Add(ActionButton("Import", async () =>
         {
             try

@@ -26,6 +26,7 @@ public sealed partial class StartingPoolEditor : UserControl
     private readonly Grid baseCards = new() { ColumnDefinitions = new ColumnDefinitions("*,*,*"), RowDefinitions = new RowDefinitions("Auto,Auto,Auto"), ColumnSpacing = StudioTheme.SpaceLg, RowSpacing = StudioTheme.SpaceLg };
     private readonly TextBlock count = new() { Name = "StartingPoolCount", TextWrapping = TextWrapping.Wrap, FontWeight = FontWeight.SemiBold };
     private CheckBox? useBaseGame;
+    private Button? bulkImport;
     private NativePlayerPoolEditor? nativePool;
     private bool changedState;
     public bool HasChanges { get => changedState || nativePool?.HasChanges == true; private set => changedState=value; }
@@ -50,6 +51,8 @@ public sealed partial class StartingPoolEditor : UserControl
         for (int i = 0; i < customSlots.Length && i < custom.Length; i++) customSlots[i] = Path.GetFileName(custom[i]);
         RestoreSlots("custom-slots.list", customSlots);
         var panel = new StackPanel { Spacing = StudioTheme.SpaceMd };
+        bulkImport = Button("Bulk import players", async () => await ImportLibraryPlayers());
+        bulkImport.Name = Bench ? "BulkImportBench" : "BulkImportSuperstars";
         if (Bench)
         {
             panel.Children.Add(new TextBlock { Text = PoolChoiceGuidance.Bench, TextWrapping = TextWrapping.Wrap });
@@ -69,7 +72,7 @@ public sealed partial class StartingPoolEditor : UserControl
                 ? File.ReadAllText(Path.Combine(DirectoryPath, "source.mode")).Trim() == "base"
                 : custom.Length == 0 && (selected.Length > 0 || !File.Exists(Path.Combine(DirectoryPath, SelectedPlayerPool.Manifest)));
             useBaseGame = new CheckBox { Name = "UseBaseGameBench", Content = "Use base-game bench", IsChecked = nativeMode };
-            var customView = Frame(customCards); var baseView = Frame(baseCards);
+            var customView = Frame(new StackPanel { Spacing = StudioTheme.SpaceMd, Children = { bulkImport, customCards } }); var baseView = Frame(baseCards);
             customView.IsVisible = !nativeMode; baseView.IsVisible = nativeMode;
             useBaseGame.IsCheckedChanged += (_, _) => {
                 baseView.IsVisible = useBaseGame.IsChecked == true; customView.IsVisible = !baseView.IsVisible;
@@ -84,6 +87,7 @@ public sealed partial class StartingPoolEditor : UserControl
             panel.Children.Add(new TextBlock { Text = PoolChoiceGuidance.Superstars, TextWrapping = TextWrapping.Wrap });
             panel.Children.Add(count);
             panel.Children.Add(new TextBlock { Text = "Kit colors come from the player team selected for the run; each superstar can choose its own stick and skate colors, and its own equipment styles with Team equipment off.", TextWrapping = TextWrapping.Wrap });
+            panel.Children.Add(bulkImport);
             panel.Children.Add(customCards);
             if (custom.Length > 3) panel.Children.Add(new TextBlock { Text = "This older pool has more than three choices. Saving changes uses the three shown here; other player files remain available to import.", TextWrapping = TextWrapping.Wrap });
         }
@@ -110,11 +114,30 @@ public sealed partial class StartingPoolEditor : UserControl
     }
     private void UpdateCount()
     {
+        if (bulkImport != null)
+        {
+            int empty = customSlots.Count(s => s == null);
+            bulkImport.IsEnabled = empty > 0;
+            ToolTip.SetTip(bulkImport, empty > 0 ? $"Import up to {empty} players into empty slots." : "All slots are full. Remove a player to make room.");
+        }
         bool native = Bench && useBaseGame?.IsChecked == true;
         var slots = native ? baseSlots : customSlots;
         int filled = slots.Count(s => s != null);
         count.Text = $"{filled} / {slots.Length} " + (Bench ? "draft candidate slots filled · " + (native ? "Base game" : "Custom")
             : "superstar slots filled" + (filled == 0 ? " · Superstar screen will be skipped." : filled < 3 ? " · Players repeat to fill the offer." : " · 3 different choices."));
+    }
+    private async Task ImportLibraryPlayers()
+    {
+        try
+        {
+            await ContentImport.PickPlayers(owner, root, customSlots.Count(s => s == null), sources =>
+            {
+                var imported = PlayerPoolImport.IntoSlots(root, campaign(), folder, customSlots, sources);
+                Array.Copy(imported, customSlots, customSlots.Length);
+                HasChanges = true; changed(); RefreshCustomCards();
+            });
+        }
+        catch (Exception ex) { count.Text = ex.Message; }
     }
     private void RefreshBaseCards()
     {

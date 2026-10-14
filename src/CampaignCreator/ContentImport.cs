@@ -7,7 +7,7 @@ using CampaignCore;
 
 namespace CampaignCreator;
 
-public static class ContentImport
+public static partial class ContentImport
 {
     public static CampaignDocument ReadDocument(string file)
     {
@@ -27,6 +27,7 @@ public static class ContentImport
 
     public const string BaseGame = "Base game", InGame = "In-game custom", CampaignCustom = "Campaign custom";
     public const string PlayerTeamLibrary = "Player team library";
+    public const string PlayerLibrary = "Player library";
     public sealed record Entry(string Name, string File, string Source) { public override string ToString() => Name; }
     public static bool IsGoalie(CampaignDocument doc, string file) => doc.Get("Export Role") == "goalie" || doc.Get("Position").Contains("Goalie", StringComparison.OrdinalIgnoreCase)
         || doc.Fields.ContainsKey("Catching") || doc.Fields.ContainsKey("Goalie Skill") || Path.GetFileName(file).Contains("goalie", StringComparison.OrdinalIgnoreCase);
@@ -49,8 +50,9 @@ public static class ContentImport
             }).OrderBy(e => e.Name).ToList();
         // Studio exports live in the game, so they are listed only under In-game custom.
         var folders = source == PlayerTeamLibrary ? new[] { "player_teams" }
+            : source == PlayerLibrary ? new[] { "players" }
             : source == BaseGame ? new[] { "Base Game Teams", "Base Game Players" }
-            : new[] { "teams", "players" };
+            : kind == "team" ? new[] { "teams", "players" } : new[] { "teams", "players", "player_teams" };
         // Base game comes only from the snapshot decoded from the player's game files (StudioArt).
         // Runtime dumps in the library held campaign edits and custom players.
         var locations = source == BaseGame
@@ -70,7 +72,7 @@ public static class ContentImport
             var doc = new CampaignDocument(System.IO.File.ReadAllText(file));
             if (custom && (doc.Get(FreeAgentContent.Marker).Length > 0 || doc.Get(StartingPoolEditor.BaseMarker).Length > 0)) continue;
             string name = doc.Get(kind == "team" ? "Team Name" : "Name", doc.Get("Import Player", Path.GetFileNameWithoutExtension(file)));
-            if (!custom && !seen.Add(name + "|" + (kind == "team" ? "team" : IsGoalie(doc, file) ? "goalie" : "skater"))) continue;
+            if (!custom && source != PlayerLibrary && !seen.Add(name + "|" + (kind == "team" ? "team" : IsGoalie(doc, file) ? "goalie" : "skater"))) continue;
             string detail = Path.GetFileName(Path.GetDirectoryName(file))!;
             result.Add(new Entry(name + (kind == "team" ? "" : IsGoalie(doc, file) ? " · Goalie" : " · Skater") + (detail == name ? "" : " · " + detail), file, source));
         }
