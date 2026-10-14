@@ -8,6 +8,21 @@ namespace CampaignCreator;
 
 public sealed partial class MainWindow
 {
+    private async Task BulkImportRosterPlayers(string teamFile, string[] slots)
+    {
+        if (dirty) { status.Text = "Save your team before importing players."; return; }
+        try
+        {
+            if (await ContentImport.PickPlayers(this, root, slots.Length,
+                sources => PlayerPoolImport.IntoRoster(root, teamFile, slots, sources)))
+            {
+                OpenFile(teamFile);
+                status.Text = "Imported players into the team roster. Original players are unchanged.";
+            }
+        }
+        catch (Exception ex) { status.Text = ex.Message; }
+    }
+
     private async Task AddRosterPlayer(string teamFile, string position, bool import)
     {
         try

@@ -67,7 +67,8 @@ internal sealed partial class TeamEditorView : UserControl
 
     internal TeamEditorView(Window owner, CampaignDocument document, GameData data, string root, string file,
         Action changed, Action<string, Func<string>> register, Action save, Action back, Action import,
-        Action<string> openPlayer, Action<string, bool> addPlayer, Action addSquad, TextBlock status, Action? export = null, bool defaultsOnly = false)
+        Action<string> openPlayer, Action<string, bool> addPlayer, Action addSquad, TextBlock status, Action? export = null, bool defaultsOnly = false,
+        Action<string[]>? bulkImportPlayers = null)
     {
         this.owner = owner; this.defaultsOnly = defaultsOnly;
         bool customSquad = IsCustomSquad(file);
@@ -239,7 +240,7 @@ internal sealed partial class TeamEditorView : UserControl
         if (customSquad) settings.Children.Insert(1, InjuryControls());
         if (export != null) actions.Children.Add(ActionButton("Export to Play Now", export));
 
-        var roster = Roster(file, openPlayer, addPlayer);
+        var roster = Roster(file, openPlayer, addPlayer, bulkImportPlayers);
         var lookTab = new TabItem { Header = "Team look", Content = look };
         var rosterTab = new TabItem { Header = "Team roster", Content = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = roster, VerticalAlignment = VerticalAlignment.Top, HorizontalAlignment = HorizontalAlignment.Center } };
         var teamTabs = new List<TabItem> { lookTab, rosterTab };

@@ -11,7 +11,7 @@ namespace CampaignCreator;
 internal sealed partial class TeamEditorView
 {
     private static readonly HashSet<string> preparingTwoLineTeams = new(StringComparer.OrdinalIgnoreCase);
-    private Control Roster(string file, Action<string> openPlayer, Action<string, bool> addPlayer)
+    private Control Roster(string file, Action<string> openPlayer, Action<string, bool> addPlayer, Action<string[]>? bulkImportPlayers)
     {
         var layout = new Grid { Width = 1080, ColumnDefinitions = new ColumnDefinitions("*,260"), ColumnSpacing = StudioTheme.SpaceLg, Margin = new Thickness(0,12,0,0) };
         string directory = Path.Combine(Path.GetDirectoryName(file)!, "players");
@@ -70,6 +70,26 @@ internal sealed partial class TeamEditorView
         Button first = null!, second = null!;
         var lineTwoOverflow = new StackPanel { Spacing = 6, IsVisible = false };
         bool showingLineTwo = false;
+        bool AuthoringTwoLines() => TwoLines() || IsCustomSquad(file) && prepareTwoLines.IsChecked == true;
+        bool Locked(string position)
+        {
+            bool setupRequired = SquadBehaviors.Enabled(Value("Squad Template"), "superstar_screen", Value);
+            bool unlockedTrio = template?.Id == "trio" && !SquadBehaviors.Enabled(Value("Squad Template"), "three_skaters", Value);
+            return template != null && !AuthoringTwoLines() && setupRequired && !unlockedTrio
+                && !template.StartingPositions.Contains(position, StringComparer.OrdinalIgnoreCase);
+        }
+        string[] EmptySkaterSlots()
+        {
+            var available = RosterLines.Skaters.Where(p => !Locked(p));
+            if (!IsCustomSquad(file) || AuthoringTwoLines())
+                available = available.Concat(RosterLines.Skaters.Select(p => "Line 2 " + p));
+            return available.Where(p => !entries.Any(e => !removedRosterPlayers.Contains(e.path)
+                && linePositions[e.path].Equals(p, StringComparison.OrdinalIgnoreCase))).ToArray();
+        }
+        var bulkImport = ActionButton("Bulk import players", () => bulkImportPlayers?.Invoke(EmptySkaterSlots()));
+        bulkImport.Name = "BulkImportRosterPlayers";
+        var bulkHint = new TextBlock { Name = "BulkRosterSlots", TextWrapping = TextWrapping.Wrap, FontSize = 12, Foreground = Muted };
+        players.Children.Add(new StackPanel { Spacing = StudioTheme.SpaceSm, Children = { bulkImport, bulkHint } });
         Button RemoveButton(string playerFile, string name)
         {
             var button = ActionButton("×", async () => {
@@ -88,7 +108,11 @@ internal sealed partial class TeamEditorView
         void ShowLine(bool line2)
         {
             if (IsCustomSquad(file)) template = SquadTemplateCatalog.Find(Value("Squad Template")) ?? TemplateForTeam(file);
-            bool twoLines = TwoLines(), authoringTwoLines = twoLines || IsCustomSquad(file) && prepareTwoLines.IsChecked == true;
+            bool twoLines = TwoLines(), authoringTwoLines = AuthoringTwoLines();
+            int emptySlots = EmptySkaterSlots().Length;
+            bulkImport.IsEnabled = bulkImportPlayers != null && emptySlots > 0;
+            bulkHint.Text = $"{emptySlots} empty skater slots across available lines. Original positions are matched where possible; other players fill the remaining openings. Import the goalie separately.";
+            ToolTip.SetTip(bulkImport, emptySlots == 0 ? "Remove a player and save the team to make room." : "Fill empty skater slots across all available lines. Filled and squad-setup slots stay as they are.");
             templateSummary.Text = twoLines
                 ? "Two-line roster flow · fill ten skaters and the goalie before saving. All ten skaters are active; starting superstar and bench drafts are skipped, and in-match lineup editing is locked."
                 : authoringTwoLines
@@ -131,9 +155,7 @@ internal sealed partial class TeamEditorView
                 slot.Children.Add(slotHeader);
                 var body = new Grid { Height = 210, RowDefinitions = new RowDefinitions("Auto,*,Auto") };
                 var card = RosterSelectionCard.Shell(body, entry.path == null);
-                bool setupRequired = SquadBehaviors.Enabled(Value("Squad Template"), "superstar_screen", Value);
-                bool unlockedTrio = template?.Id == "trio" && !SquadBehaviors.Enabled(Value("Squad Template"), "three_skaters", Value);
-                bool locked = entry.path == null && template != null && !authoringTwoLines && setupRequired && !unlockedTrio && !template.StartingPositions.Contains(position, StringComparer.OrdinalIgnoreCase);
+                bool locked = entry.path == null && Locked(position);
                 if (locked)
                 {
                     var notice = new StackPanel { Spacing = StudioTheme.SpaceSm, VerticalAlignment = VerticalAlignment.Center };

@@ -5,6 +5,46 @@ namespace CampaignCreator;
 /// <summary>Validate the entire batch before publishing independent campaign copies.</summary>
 public static class PlayerPoolImport
 {
+    public static string[] IntoRoster(string root, string teamFile, IReadOnlyList<string> slots, string[] sources)
+    {
+        if (!File.Exists(teamFile)) throw new FileNotFoundException("The destination team is missing.", teamFile);
+        var valid = RosterLines.Skaters.Concat(RosterLines.Skaters.Select(p => "Line 2 " + p)).ToArray();
+        if (slots.Distinct(StringComparer.OrdinalIgnoreCase).Count() != slots.Count
+            || slots.Any(p => !valid.Contains(p, StringComparer.OrdinalIgnoreCase)))
+            throw new ArgumentException("Choose empty skater slots in the team roster.");
+        string directory = Path.Combine(Path.GetDirectoryName(teamFile)!, "players");
+        var existing = RosterLines.Assign(directory);
+        if (slots.Any(p => existing.Values.Contains(p, StringComparer.OrdinalIgnoreCase)))
+            throw new ArgumentException("The roster changed. Reopen the team before importing players.");
+        return CopyBatch(root, directory, sources, slots.Count, documents =>
+        {
+            var names = existing.Keys.Select(f => new CampaignDocument(File.ReadAllText(f)).Get("Name").Trim())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (var doc in documents)
+                if (names.Contains(doc.Get("Name"))) throw new ArgumentException($"A player named '{doc.Get("Name")}' already exists on this team.");
+            var remaining = slots.ToList();
+            var assigned = new string?[documents.Length];
+            // Reserve every exact match before assigning unmatched players to another opening.
+            for (int i = 0; i < documents.Length; i++)
+            {
+                string? match = remaining.FirstOrDefault(p => p.Equals(documents[i].Get("Position"), StringComparison.OrdinalIgnoreCase));
+                if (match != null) { assigned[i] = match; remaining.Remove(match); }
+            }
+            for (int i = 0; i < documents.Length; i++)
+            {
+                if (assigned[i] != null) continue;
+                string position = documents[i].Get("Position").Replace("Line 2 ", "", StringComparison.OrdinalIgnoreCase);
+                string? match = remaining.FirstOrDefault(p => p.Replace("Line 2 ", "", StringComparison.OrdinalIgnoreCase).Equals(position, StringComparison.OrdinalIgnoreCase));
+                if (match != null) { assigned[i] = match; remaining.Remove(match); }
+            }
+            for (int i = 0; i < documents.Length; i++)
+            {
+                if (assigned[i] == null) { assigned[i] = remaining[0]; remaining.RemoveAt(0); }
+                documents[i].Set("Position", assigned[i]!);
+            }
+        });
+    }
+
     public static string?[] IntoSlots(string root, string campaign, string folder, IReadOnlyList<string?> slots, string[] sources)
     {
         int limit = folder switch { "draft_pool" => 9, "superstars" => 3, _ => throw new ArgumentException("Unknown starting pool.") };
@@ -35,7 +75,7 @@ public static class PlayerPoolImport
         }
     }
 
-    private static string[] CopyBatch(string root, string directory, string[] sources, int maximum)
+    private static string[] CopyBatch(string root, string directory, string[] sources, int maximum, Action<CampaignDocument[]>? prepare = null)
     {
         if (sources.Length == 0) throw new ArgumentException("Check at least one player.");
         if (sources.Length > maximum) throw new ArgumentException($"Only {maximum} empty slots are available. Uncheck players to fit.");
@@ -53,6 +93,7 @@ public static class PlayerPoolImport
             doc.Remove(VanillaCopyData.PlayerId); doc.Remove(VanillaCopyData.PlayerAsset);
             return doc;
         }).ToArray();
+        prepare?.Invoke(documents);
         string staging = Path.Combine(root, ".studio-staging", "pool-" + Guid.NewGuid().ToString("N"));
         var written = new List<string>();
         try

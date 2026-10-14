@@ -236,7 +236,8 @@ public sealed partial class MainWindow : Window
                 (key, read) => editors[key] = read, Save, () => ReturnToTeamSection(file), async () => await ImportTeam(),
                 playerFile => { if (dirty) { status.Text = "Save your team before editing a player."; return; } OpenFile(playerFile); },
                 async (position, importPlayer) => { if (dirty) { status.Text = "Save your team before adding a player."; return; } await AddRosterPlayer(file, position, importPlayer); },
-                async () => await AddSquad(), status, Export);
+                async () => await AddSquad(), status, Export,
+                bulkImportPlayers: async slots => await BulkImportRosterPlayers(file, slots));
             if (teamTabs.TryGetValue(Path.GetFullPath(file), out int selectedTab))
                 ((TeamEditorView)editorShell).SelectedTab = selectedTab;
             loading = false; dirty = false; status.Text = heading.Text; RefreshAttention(); Content = editorShell; return;
