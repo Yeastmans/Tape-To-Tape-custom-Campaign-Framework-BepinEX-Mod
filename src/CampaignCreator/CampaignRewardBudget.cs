@@ -4,12 +4,14 @@ namespace CampaignCreator;
 
 public sealed record RewardBudget(string Kind, int Selections, int Minimum, int EligibleFamilies, int StartingFamilies, int SelectedEntries, IReadOnlyList<string> Errors)
 {
-    public string Summary => $"{SelectedEntries} entries · {EligibleFamilies} distinct reward families available · minimum {Minimum}"
-        + $"\nLongest route: {Selections} selections + 2 spare choices. {StartingFamilies} families already on starting/recruitable players or teams are not counted.";
+    public string Summary => $"{SelectedEntries} selected entries · {EligibleFamilies} different {CampaignRewardBudget.RewardName(Kind)} (upgrade levels count together)."
+        + (Errors.Count > 0 ? "\n" + string.Join("\n", Errors) : "");
 }
 
 public static class CampaignRewardBudget
 {
+    public static int MinimumChoices(string kind) => kind switch { "Abilities" => 1, RewardPoolDefinition.ChaosTalents => 2, _ => 3 };
+    public static string RewardName(string kind) => kind switch { "Relics" => "relics", "Abilities" => "abilities", "Goalie Talents" => "goalie talents", RewardPoolDefinition.ChaosTalents => "Chaos talents", _ => "talents" };
     private sealed record RewardInfo(string Kind, string Id, string Family, int Level, string Asset, long Category);
     private static readonly List<RewardInfo> Info = Load();
     private static readonly string[][] NativeStarting = LoadStarting();
@@ -71,7 +73,9 @@ public static class CampaignRewardBudget
                     starting.Add(Family(kind, item[2]));
             }
             int blocked = families.Count(starting.Contains);
-            families.ExceptWith(starting);
+            // Ownership is checked for the actual recipient at runtime. Rewards on
+            // another starter, optional recruit or alternative squad do not remove
+            // that type from the campaign's pool for every player.
             int selections = 0;
             foreach (var team in teams)
             {
@@ -108,12 +112,14 @@ public static class CampaignRewardBudget
                 }
                 selections = Math.Max(selections, route);
             }
-            int minimum = RewardRouteBudget.Minimum(selections);
+            // A pool is reused by successive offers. Route length and bonus reward
+            // selections cannot require a new unique reward for the entire run.
+            int minimum = MinimumChoices(kind);
             var errors = new List<string>();
             if (!pool.UseBaseGame)
             {
                 if (pool.Selected.Any(id => !entries.ContainsKey(id))) errors.Add(kind + ": remove or replace unavailable selected rewards.");
-                if (families.Count < minimum) errors.Add($"{kind}: need {minimum} distinct reward families beyond starting rewards for this route; {families.Count} selected. Add {minimum - families.Count} or use Base game pool.");
+                if (families.Count < minimum) errors.Add($"Select at least {minimum} different {RewardName(kind)} for a normal offer, or use Base game pool.");
                 bool statBonus = relics.Selected.Any(id => Family("Relics", id) == "Rogue.StatRewardRelic")
                     || records.Any(d => Tokens(d.Get("Team Relics", d.Get("Relics"))).Any(id => Family("Relics", RewardCatalog.ResolveKey(root, "Relics", id)) == "Rogue.StatRewardRelic"));
                 if (kind == "Talents" && statBonus && !selected.Any(e => Info.Any(i => i.Kind == kind && i.Id == e.Id && (i.Category & 65536) != 0)))
@@ -122,8 +128,8 @@ public static class CampaignRewardBudget
                 {
                     long statFlag = kind == "Relics" ? 512 : 65536;
                     int statFamilies = selected.Where(e => Info.Any(i => i.Kind == kind && i.Id == e.Id && (i.Category & statFlag) != 0))
-                        .Select(e => Family(kind, e.Id)).Where(f => !starting.Contains(f)).Distinct().Count();
-                    if (statFamilies < minimum) errors.Add($"{kind}: Stats reward rules need {minimum} selected stat-reward families beyond starting rewards for the same whole-route reserve; {statFamilies} selected.");
+                        .Select(e => Family(kind, e.Id)).Distinct().Count();
+                    if (statFamilies < minimum) errors.Add($"{kind}: Stats reward rules need at least {minimum} different selected stat rewards for a normal offer; {statFamilies} selected.");
                 }
             }
             result.Add(new(kind, selections, minimum, families.Count, blocked, selected.Count, errors));

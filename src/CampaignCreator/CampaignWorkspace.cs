@@ -452,7 +452,7 @@ public sealed partial class CampaignWorkspace : UserControl
             var reminders = RewardCatalog.Descriptions(root, kind);
             foreach (string id in selected) entries.TryAdd(id, "Unavailable reward · " + id);
             bool hasExpansion = RewardPoolDefinition.CatalogExpansionKey(kind).Length > 0;
-            var panel = new Grid { RowDefinitions = new RowDefinitions(hasExpansion ? "Auto,Auto,Auto,Auto,*" : "Auto,Auto,Auto,*"), RowSpacing = StudioTheme.SpaceXs };
+            var panel = new Grid { RowDefinitions = new RowDefinitions(hasExpansion ? "Auto,Auto,Auto,Auto,Auto,*" : "Auto,Auto,Auto,Auto,*"), RowSpacing = StudioTheme.SpaceXs };
             string label = kind switch { "Talents" => "Regular talents", "Abilities" => "Skater abilities", RewardPoolDefinition.ChaosTalents => "Chaos talents", _ => kind };
             var heading = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"), ColumnSpacing = StudioTheme.SpaceMd };
             heading.Children.Add(new TextBlock { Text = label, FontSize = 20, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center });
@@ -483,6 +483,11 @@ public sealed partial class CampaignWorkspace : UserControl
             refreshRewardCounts.Add(UpdateCount);
             var search = new TextBox { Watermark = "Search " + kind.ToLowerInvariant() };
             var items = new StackPanel { Spacing = StudioTheme.SpaceXs };
+            var selectAll = new Button { Name = "SelectAllRewards", Content = "Select all", IsEnabled = !definition.UseBaseGame };
+            var deselectAll = new Button { Name = "DeselectAllRewards", Content = "Deselect all", IsEnabled = !definition.UseBaseGame };
+            ToolTip.SetTip(selectAll, "Select every available entry in this tab, including entries hidden by search. Uncheck Base game pool to edit.");
+            ToolTip.SetTip(deselectAll, "Clear every selection in this tab, including entries hidden by search. Uncheck Base game pool to edit.");
+            var bulkActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = StudioTheme.SpaceSm, Children = { selectAll, deselectAll } };
             CheckBox? includeOther = null;
             void Refresh()
             {
@@ -512,6 +517,17 @@ public sealed partial class CampaignWorkspace : UserControl
                 if (items.Children.Count == 0) items.Children.Add(new TextBlock { Text = entries.Count == 0 ? "No exported entries are available for this section." : "No matching rewards.", TextWrapping = TextWrapping.Wrap });
                 UpdateCount();
             }
+            void SetAll(bool enabled)
+            {
+                if (definition.UseBaseGame) return;
+                if (enabled) selected.UnionWith(available.Where(id => RewardCatalog.BelongsToPool(kind, id) || definition.IncludeOtherCategory || selected.Contains(id)).ToArray());
+                else selected.Clear();
+                rewardDirty = true; message.Text = "Unsaved reward pool changes";
+                Refresh();
+                foreach (var refreshCount in refreshRewardCounts) refreshCount();
+            }
+            selectAll.Click += (_, _) => SetAll(true);
+            deselectAll.Click += (_, _) => SetAll(false);
             if (hasExpansion)
             {
                 includeOther = new CheckBox { Name = "IncludeOtherRewardCategory", Content = kind == "Talents" ? "Include Chaos talents" : "Include regular talents",
@@ -528,6 +544,7 @@ public sealed partial class CampaignWorkspace : UserControl
             basePool.IsCheckedChanged += (_, _) =>
             {
                 definition.UseBaseGame = basePool.IsChecked == true;
+                selectAll.IsEnabled = deselectAll.IsEnabled = !definition.UseBaseGame;
                 if (includeOther != null) includeOther.IsEnabled = !definition.UseBaseGame;
                 rewardDirty = true;
                 message.Text = "Unsaved reward pool changes";
@@ -537,7 +554,8 @@ public sealed partial class CampaignWorkspace : UserControl
             search.TextChanged += (_, _) => Refresh(); Refresh();
             int searchRow = hasExpansion ? 3 : 2;
             Grid.SetRow(search, searchRow); panel.Children.Add(search);
-            var list = RewardRow.ListBox(items); Grid.SetRow(list, searchRow + 1); panel.Children.Add(list);
+            Grid.SetRow(bulkActions, searchRow + 1); panel.Children.Add(bulkActions);
+            var list = RewardRow.ListBox(items); Grid.SetRow(list, searchRow + 2); panel.Children.Add(list);
             sectionTabs.Add(new TabItem { Header = label, Content = panel, Padding = new Thickness(10, 8), HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch });
         }
         sections.ItemsSource = sectionTabs; sections.SelectedIndex = 0;
