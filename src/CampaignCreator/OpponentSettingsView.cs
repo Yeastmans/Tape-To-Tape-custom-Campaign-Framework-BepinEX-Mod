@@ -132,10 +132,10 @@ public sealed class OpponentSettingsView : UserControl
         sections.Add((Section("Match setup", setup), 0));
         string twoLines = document.Get("Opponent Two Lines");
         var lineBehavior = new CheckBox { Name = "TycoonsTwoLines", Content = "Tycoons two-line behavior", IsChecked = twoLines.Equals("yes", StringComparison.OrdinalIgnoreCase) };
-        register("Opponent Two Lines", () => twoLines);
+        register("Opponent Two Lines", () => lineBehavior.IsChecked == true ? "yes" : "no");
         lineBehavior.IsCheckedChanged += (_, _) => { twoLines = lineBehavior.IsChecked == true ? "yes" : "no"; changed(); };
         sections.Add((Section("Roster behavior", new StackPanel { Spacing = 6, Children = { lineBehavior,
-            new TextBlock { Text = "Use the native opponent line-changing system. Fill all five positions on Line 2 in Team roster. The game controls when lines change; this does not replace the defensive formation or add a player-squad bench.", TextWrapping = TextWrapping.Wrap, Foreground = StudioTheme.Muted } } }), 0));
+            new TextBlock { Text = "Unchecked uses one line and disables inherited opponent line changes. Check to use the native line-changing system after filling all five positions on Line 2 in Team roster. Line 2 files remain available while this is off.", TextWrapping = TextWrapping.Wrap, Foreground = StudioTheme.Muted } } }), 0));
         string cursesSetting = document.Get("Canada Curses");
         var curses = new CheckBox { Name = "CanadaCurses", Content = "Canada curses",
             IsChecked = OpponentOptions.CanadaCursesEnabled(cursesSetting) };

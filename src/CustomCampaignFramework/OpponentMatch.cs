@@ -102,7 +102,7 @@ internal static class OpponentMatch
         Plugin.Log.LogInfo($"[Opponent] '{team?.teamName}': preset={Preset(team)}, puck={Puck}, surface={Surface}");
     }
     internal static void End() { Puck = Surface = ""; Plugin.SoccerThisMatch = false; TycoonsSponsorsMenu.End(); CanadaCursesMatch.End(); MatchPeriods.End(); }
-    internal static void Clear() { End(); Settings.Clear(); Effects.Clear(); }
+    internal static void Clear() { End(); Settings.Clear(); Effects.Clear(); OpponentLineBehavior.Clear(); }
 }
 
 [HarmonyPatch]
