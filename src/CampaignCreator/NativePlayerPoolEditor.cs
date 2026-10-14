@@ -38,7 +38,9 @@ public sealed class NativePlayerPoolEditor : UserControl
         {
             string? source=await ContentImport.Pick(owner,root,"skater");if(source==null)return;
             string key="custom-"+Guid.NewGuid().ToString("N")+".txt";
-            var doc=ContentImport.ReadDocument(source);doc.Remove(VanillaCopyData.PlayerId);doc.Remove(VanillaCopyData.PlayerAsset);
+            var sourceDoc=ContentImport.ReadDocument(source);
+            var doc=CreatorContent.CustomPlayerCopy(source,CreatorContent.AvailablePlayerName(directory(),sourceDoc.Get("Name",sourceDoc.Get("Import Player"))));
+            doc.Remove(VanillaCopyData.PlayerId);doc.Remove(VanillaCopyData.PlayerAsset);
             doc.Save(Path.Combine(directory(),key));selected.Add(key);HasChanges=true;changed();Refresh();
         };
         Content=new StackPanel {Spacing=12,Children={
@@ -51,7 +53,6 @@ public sealed class NativePlayerPoolEditor : UserControl
     public void Save()
     {
         if(!HasChanges)return;
-        if(selected.Count==0)throw new InvalidOperationException("Select at least one candidate. Starting screens can be disabled in Squad behaviors.");
         SelectedPlayerPool.Save(directory(),selected.Order(StringComparer.OrdinalIgnoreCase));HasChanges=false;
     }
 }

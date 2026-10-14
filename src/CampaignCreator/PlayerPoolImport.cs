@@ -18,10 +18,6 @@ public static class PlayerPoolImport
             throw new ArgumentException("The roster changed. Reopen the team before importing players.");
         return CopyBatch(root, directory, sources, slots.Count, documents =>
         {
-            var names = existing.Keys.Select(f => new CampaignDocument(File.ReadAllText(f)).Get("Name").Trim())
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            foreach (var doc in documents)
-                if (names.Contains(doc.Get("Name"))) throw new ArgumentException($"A player named '{doc.Get("Name")}' already exists on this team.");
             var remaining = slots.ToList();
             var assigned = new string?[documents.Length];
             // Reserve every exact match before assigning unmatched players to another opening.
@@ -86,9 +82,8 @@ public static class PlayerPoolImport
         {
             if (!ContentImport.Matches(source, "skater")) throw new ArgumentException($"'{Path.GetFileName(source)}' is not a skater file.");
             var original = new CampaignDocument(File.ReadAllText(source));
-            string name = CreatorContent.ValidateName(original.Get("Name", original.Get("Import Player")));
-            if (!names.Add(name)) throw new ArgumentException($"Two selected players are named '{name}'. Uncheck one or rename it in the library.");
-            CreatorContent.ValidatePlayerName(directory, name);
+            string name = CreatorContent.AvailablePlayerName(directory, original.Get("Name", original.Get("Import Player")), names);
+            names.Add(name);
             var doc = CreatorContent.CustomPlayerCopy(source, name);
             doc.Remove(VanillaCopyData.PlayerId); doc.Remove(VanillaCopyData.PlayerAsset);
             return doc;

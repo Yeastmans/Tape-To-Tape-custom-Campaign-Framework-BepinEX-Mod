@@ -119,7 +119,7 @@ internal static class ExportTranslation
             if (index < 0 || Path.GetRelativePath(players, file).Contains(Path.DirectorySeparatorChar) || model.ContainsKey(slots[index]))
                 throw new ArgumentException($"Play Now supports one player per starting position. '{Path.GetFileName(file)}' cannot be represented in that roster; nothing was exported.");
             string role = index == 5 ? "goalie" : "skater", id = Guid.NewGuid().ToString();
-            var doc = Player(raw, team, goalieDefaults, role);
+            var doc = Player(ExportPlayerResolver.Resolve(raw, role), team, goalieDefaults, role);
             if (doc.Get("Logo From") == team.Get("Logo From")) LogoExport.Copy(team, doc);
             doc = LogoExport.Snapshot(doc, sourceRoot ?? game.Root);
             if (statScale != 1) ApplyStatScale(doc, role, statScale);

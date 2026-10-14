@@ -28,14 +28,13 @@ public static class CreatorContent
     public static void ValidatePlayerName(string location, string name, string? exceptFile = null)
     {
         name = ValidateName(name);
-        // The same native player can appear in several copied rosters/pools.
-        // Keep that original name editable; a rename still uses uniqueness rules.
-        if (exceptFile != null && File.Exists(exceptFile) && File.Exists(exceptFile + ".native"))
+        // Roster and pool imports create independent copies. Editing one must
+        // remain possible even when another copy already has the same name.
+        // New players and actual renames still use the uniqueness rules below.
+        if (exceptFile != null && File.Exists(exceptFile))
         {
             var saved = new CampaignDocument(File.ReadAllText(exceptFile));
-            var native = new CampaignDocument(File.ReadAllText(exceptFile + ".native"));
-            string id = native.Get(VanillaCopyData.PlayerId);
-            if (id.Length > 0 && saved.Get(VanillaCopyData.PlayerId) == id && native.Get("Name").Trim() == name) return;
+            if (saved.Get("Name").Trim().Equals(name, StringComparison.OrdinalIgnoreCase)) return;
         }
         string? campaign = PlayerCampaign(location);
         if (campaign == null) return;
@@ -48,6 +47,37 @@ public static class CreatorContent
             if (doc.Get("Name").Trim().Equals(name, StringComparison.OrdinalIgnoreCase))
                 throw new ArgumentException("A custom player named '" + name + "' already exists in this campaign. Choose a different name.");
         }
+    }
+
+    // Copies get their own display name as well as their own file. Reserve names
+    // across the destination campaign, or the local collection outside a campaign.
+    public static string AvailablePlayerName(string directory, string requested, IEnumerable<string>? reserved = null)
+    {
+        requested = ValidateName(requested);
+        string scope = PlayerCampaign(directory) ?? directory;
+        var names = new HashSet<string>(reserved ?? [], StringComparer.OrdinalIgnoreCase);
+        if (Directory.Exists(scope))
+            foreach (string file in Directory.EnumerateFiles(scope, "*.txt", SearchOption.AllDirectories))
+            {
+                if (Path.GetRelativePath(scope, file).Split(Path.DirectorySeparatorChar).SkipLast(1)
+                    .Any(part => part.StartsWith('.') || part.StartsWith('_')) || !ContentImport.Matches(file, "player")) continue;
+                var player = new CampaignDocument(File.ReadAllText(file));
+                names.Add(player.Get("Name", player.Get("Import Player")).Trim());
+            }
+        bool Taken(string name) => names.Contains(name) || File.Exists(Path.Combine(directory, name + ".txt"))
+            || Directory.Exists(Path.Combine(directory, name + ".txt"));
+        if (!Taken(requested)) return requested;
+        string basis = requested;
+        int space = requested.LastIndexOf(' ');
+        if (space > 0 && int.TryParse(requested[(space + 1)..], out int suffix) && suffix >= 2 && names.Contains(requested[..space]))
+            basis = requested[..space];
+        for (int number = 2; number < int.MaxValue; number++)
+        {
+            string ending = " " + number;
+            string candidate = basis[..Math.Min(basis.Length, 80 - ending.Length)].TrimEnd() + ending;
+            if (!Taken(candidate)) return candidate;
+        }
+        throw new ArgumentException("No numbered copy name is available.");
     }
 
     public static CampaignDocument CustomPlayerCopy(string source, string name)
@@ -63,20 +93,15 @@ public static class CreatorContent
     public static string Create(string root, string kind, string name, string source, string? campaign, string? team, string? initialCampaignText = null, string initialPlayerPosition = "Center", string? defaultLookRoot = null)
     {
         name = ValidateName(name);
-        if (kind == "player") ValidatePlayerName(campaign ?? team ?? root, name);
+        string playerDirectory = team != null ? Path.Combine(team, "players") : campaign != null ? Path.Combine(campaign, "free_agents") : Path.Combine(root, "library", "players");
+        if (kind == "player") name = AvailablePlayerName(playerDirectory, name);
         string target = kind switch {
             "campaign" => Path.Combine(root, "campaigns", name),
             "team" => campaign != null ? Path.Combine(campaign, "teams", name) : Path.Combine(root, "library", "teams", name),
             "player-team" => Path.Combine(root, "library", "player_teams", name),
-            "player" => Path.Combine(team != null ? Path.Combine(team, "players") : campaign != null ? Path.Combine(campaign, "free_agents") : Path.Combine(root, "library", "players"), name + ".txt"),
+            "player" => Path.Combine(playerDirectory, name + ".txt"),
             _ => throw new ArgumentException("Unknown content type.")
         };
-        if (kind == "player" && File.Exists(target))
-        {
-            var existing = new CampaignDocument(File.ReadAllText(target));
-            if (existing.Get(FreeAgentContent.Marker).Length > 0 || existing.Get(StartingPoolEditor.BaseMarker).Length > 0)
-                target = Path.Combine(Path.GetDirectoryName(target)!, "custom-" + Guid.NewGuid().ToString("N") + ".txt");
-        }
         if (File.Exists(target) || Directory.Exists(target)) throw new ArgumentException("That name already exists. Choose a different name.");
         string stage = Path.Combine(root, ".studio-staging", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(stage);

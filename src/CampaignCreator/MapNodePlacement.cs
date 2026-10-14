@@ -30,21 +30,22 @@ public static class MapNodePlacement
     public static Point ConstrainToLayer(MapLayoutNode node, Point wanted) => new(
         Math.Clamp(HorizontallyFixed(node) ? Position(node).X : wanted.X, LayerCenterLeft(node.Layer) - MaxXOffsetPixels, LayerCenterLeft(node.Layer) + MaxXOffsetPixels),
         Math.Clamp(wanted.Y, MinY, MaxY));
-    public static bool Overlaps(Point p, MapLayoutNode other)
+    public static bool Overlaps(Point p, MapLayoutNode other, double verticalSpacing = VerticalSpacing)
     {
         var q = Position(other);
-        return Math.Abs(p.X - q.X) < Width + Gap - .001 && Math.Abs(p.Y - q.Y) < VerticalSpacing - .000001;
+        return Math.Abs(p.X - q.X) < Width + Gap - .001 && Math.Abs(p.Y - q.Y) < verticalSpacing - .000001;
     }
     public static Point DragPosition(MapLayoutNode node, Point wanted, IEnumerable<MapLayoutNode> others)
     {
         var start = Position(node); var end = ConstrainToLayer(node, wanted);
         var blockers = others.Where(n => n != node).ToArray();
+        double spacing = MapPlacementBounds.Separation(blockers.Count(n => n.Layer == node.Layer) + 1) * Units;
         int steps = Math.Max(1, (int)Math.Ceiling(((Vector)(end - start)).Length / 3));
         var result = start;
         for (int i = 1; i <= steps; i++)
         {
             var candidate = start + (end - start) * ((double)i / steps);
-            if (blockers.Any(n => Overlaps(candidate, n))) break;
+            if (blockers.Any(n => Overlaps(candidate, n, spacing))) break;
             result = candidate;
         }
         return result;

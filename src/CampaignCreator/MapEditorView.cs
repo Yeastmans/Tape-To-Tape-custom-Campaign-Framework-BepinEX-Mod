@@ -323,7 +323,7 @@ public sealed class MapEditorView : UserControl
         var cancel = new Button { Content = "Cancel" }; cancel.Click += (_, _) => dialog.Close();
         dialog.Content = new StackPanel { Margin = new Thickness(20), Spacing = StudioTheme.SpaceMd, Children = {
             new TextBlock { Text = newLayer ? "Add a layer" : $"Layer {layer + 1} - choose a node", FontSize = 23, FontWeight = FontWeight.Bold },
-            new TextBlock { Text = $"Up to {MapPlacementBounds.MaxNodesPerLayer} nodes per layer, with room for native map artwork." }, choices, cancel } };
+            new TextBlock { Text = "Add choices freely. Layers with three or more nodes use closer row spacing." }, choices, cancel } };
         _ = dialog.ShowDialog(DialogOwner);
     }
     private void AddLayerNode(int layer, bool newLayer, string type)
@@ -344,13 +344,13 @@ public sealed class MapEditorView : UserControl
         }
         var existing = working.InLayer(layer).ToArray();
         double spacing = MapNodePlacement.VerticalSpacing;
-        var positions = existing.SelectMany(n => new[] { NodePosition(n).Y - spacing, NodePosition(n).Y + spacing })
+        var positions = existing.SelectMany(n => new[] { MapNodePlacement.Position(n).Y - spacing, MapNodePlacement.Position(n).Y + spacing })
             .Concat(new[] { nextY, MapNodePlacement.MinY, MapNodePlacement.MaxY })
             .Where(y => y >= MapNodePlacement.MinY && y <= MapNodePlacement.MaxY)
             .Select(y => new Point(MapNodePlacement.LayerCenterLeft(layer), y))
             .Where(p => existing.All(n => !MapNodePlacement.Overlaps(p, n)))
             .OrderBy(p => Math.Abs(p.Y - nextY)).ToArray();
-        if (positions.Length == 0)
+        if (existing.Length >= 2 || positions.Length == 0)
         {
             // Repack a crowded layer as one undoable edit. Preserve the existing
             // top-to-bottom order, with the added choice in the last row.
@@ -449,7 +449,7 @@ public sealed class MapEditorView : UserControl
             ? "Map placement needs attention. " + string.Join("  ", MapPlacementBounds.Validate(map!).Take(2))
             : drafts[index].NeedsSpacingSave
             ? "This map used older node spacing. Save maps to update the in-game route, then start a new run."
-            : $"Click + on a layer to choose a node. Up to {MapPlacementBounds.MaxNodesPerLayer} nodes per layer, with space for native map artwork.";
+            : "Click + on a layer to add a node. Three or more choices share closer row spacing.";
         if (map!.VanillaRandom) message.Text = NativeGenerationMessage;
     }
     private const string NativeGenerationMessage = "Vanilla random · one editable layout. Each random node rolls from its own choices on a new run. Open that node's Random event options to edit them.";
@@ -553,13 +553,15 @@ public sealed class MapEditorView : UserControl
                 .Select(n => $"Stadium '{n.Stadium}' is unavailable. Choose a current stadium."))
             .Distinct().ToList();
     private void Validate() { if (map == null) return; var errors = ValidateLayout(map); message.Text = errors.Count == 0 ? map.VanillaRandom ? NativeGenerationMessage : "Unsaved map · all nodes connect from entry to boss." : string.Join("  ", errors.Take(3)); }
+    private double BuilderRowScale => Math.Max(1, ((map?.Nodes.GroupBy(n => n.Layer).Select(g => g.Count()).DefaultIfEmpty(1).Max() ?? 1) - 1)
+        * (MapNodePlacement.Height + MapNodePlacement.Gap) / ((MapPlacementBounds.PairBottomY - MapPlacementBounds.PairTopY) * MapNodePlacement.Units));
     private Point NodePosition(MapLayoutNode n)
     {
         var position = MapNodePlacement.Position(n);
         // Keep invalid imported nodes reachable in the editor while preserving
         // their stored coordinates until the user explicitly fits or drags them.
         double y = double.IsFinite(position.Y) ? Math.Clamp(position.Y, MapNodePlacement.MinY, MapNodePlacement.MaxY) : MapNodePlacement.MinY;
-        return new Point(position.X, y);
+        return new Point(position.X, MapNodePlacement.MinY + (y - MapNodePlacement.MinY) * BuilderRowScale);
     }
     private void EnableNodeDragging()
     {
@@ -591,8 +593,10 @@ public sealed class MapEditorView : UserControl
             if (!gesture && ((Vector)delta).Length < 5) return;
             gesture = true;
             draggingNode = true;
-            var next = MapNodePlacement.DragPosition(dragged, nodeStart + delta, map.Nodes);
-            if (((Vector)(next - NodePosition(dragged))).Length < .01) return;
+            var wanted = nodeStart + delta;
+            wanted = new Point(wanted.X, MapNodePlacement.MinY + (wanted.Y - MapNodePlacement.MinY) / BuilderRowScale);
+            var next = MapNodePlacement.DragPosition(dragged, wanted, map.Nodes);
+            if (((Vector)(next - MapNodePlacement.Position(dragged))).Length < .01) return;
             if (!moved) { Checkpoint(); moved = true; }
             MapNodePlacement.Set(dragged, next);
             selected = dragged; Draw();
@@ -629,7 +633,7 @@ public sealed class MapEditorView : UserControl
             Canvas.SetLeft(lane, x); Canvas.SetTop(lane, 18); canvas.Children.Add(lane);
             var title = new TextBlock { Text = bossLayer ? "FINAL MATCH" : $"LAYER {layer + 1:00}", FontSize = 17, FontWeight = FontWeight.SemiBold, Foreground = Brush.Parse(bossLayer ? "#D6B6EF" : "#D6E4F5") };
             Canvas.SetLeft(title, x + 16); Canvas.SetTop(title, 38); canvas.Children.Add(title);
-            var count = new TextBlock { Text = bossLayer ? "Boss" : $"{group.Count()} / {MapPlacementBounds.MaxNodesPerLayer}", FontSize = 15, Foreground = Brush.Parse("#8FA4BE") };
+            var count = new TextBlock { Text = bossLayer ? "Boss" : $"{group.Count()} nodes", FontSize = 15, Foreground = Brush.Parse("#8FA4BE") };
             Canvas.SetLeft(count, x + MapNodePlacement.LaneWidth - 85); Canvas.SetTop(count, 40); canvas.Children.Add(count);
             var remove = new Button { Content = "×", Tag = "remove-layer:" + layer, Width = 28, Height = 28, MinWidth = 0, MinHeight = 0, Padding = new Thickness(0), FontSize = 20, CornerRadius = new CornerRadius(6), Background = Brushes.Transparent, Foreground = Brush.Parse("#9CAEC5"), IsEnabled = layer > 0 && !bossLayer };
             ToolTip.SetTip(remove, layer == 0 ? "Layer 1 stays in place" : bossLayer ? "Keep the final Boss layer" : "Remove this layer and its nodes");
@@ -637,7 +641,7 @@ public sealed class MapEditorView : UserControl
             Canvas.SetLeft(remove, x + MapNodePlacement.LaneWidth - 36); Canvas.SetTop(remove, 33); canvas.Children.Add(remove);
             if (!bossLayer)
             {
-                var plus = Action(group.Count() >= MapPlacementBounds.MaxNodesPerLayer ? $"{MapPlacementBounds.MaxNodesPerLayer} nodes - layer full" : "+ Add node", () => AddLayerNode(layer, false, ""));
+                var plus = Action("+ Add node", () => AddLayerNode(layer, false, ""));
                 plus.Tag = "layer-plus:" + layer; plus.Width = 228; plus.FontSize = 16; plus.IsEnabled = group.Count() < MapPlacementBounds.MaxNodesPerLayer;
                 plus.HorizontalContentAlignment = HorizontalAlignment.Center; plus.Background = Brush.Parse("#20364A"); plus.Foreground = Brush.Parse("#8FE0D3");
                 Canvas.SetLeft(plus, MapNodePlacement.LayerCenterLeft(layer)); Canvas.SetTop(plus, group.Max(n => NodePosition(n).Y) + MapNodePlacement.Height + 14); canvas.Children.Add(plus);

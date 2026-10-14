@@ -30,14 +30,15 @@ internal static class SavedPlayerNumberStyles
         }
         foreach (var config in new[] { team.LW, team.RW, team.C, team.LD, team.RD,
             team.L2_LW, team.L2_RW, team.L2_C, team.L2_LD, team.L2_RD }) Add(config);
-        for (int i = 0; i < Plugin.FreeAgentPoolList.Count; i++)
+        var freeAgents = SquadPoolRuntime.FreeAgents(team);
+        for (int i = 0; i < freeAgents.Count; i++)
         {
-            var config = Plugin.FreeAgentPoolList[i];
-            Add(config, CustomFreeAgentTemplates.IdPrefix + i + "_" + (config.Name ?? "").Replace(' ', '_'));
+            var config = freeAgents[i];
+            Add(config, CustomFreeAgentTemplates.PlayerId(team, i, config));
         }
-        foreach (var config in Plugin.SuperstarPoolList) Add(config);
-        string directory = Path.Combine(Plugin.ModFolder, "player_teams", "draft_pool");
-        var selected = SelectedPlayerPool.Read(directory);
+        foreach (var config in SquadPoolRuntime.Superstars(team)) Add(config);
+        string directory = SquadPoolRuntime.DirectoryPath(team, "draft_pool");
+        var selected = SquadPoolRuntime.Selected(team, "draft_pool");
         if (selected == null) foreach (var config in Plugin.DraftPoolConfigs.Values) Add(config);
         else foreach (string file in selected)
         {

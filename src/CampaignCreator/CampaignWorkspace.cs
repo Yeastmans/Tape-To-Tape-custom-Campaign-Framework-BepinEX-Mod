@@ -280,7 +280,7 @@ public sealed partial class CampaignWorkspace : UserControl
     }
     private Control FreeAgentsPage()
     {
-        var page = Page("Free agents", "Choose base-game players and add custom players to this campaign's pool. An empty pool uses the game's default free agents.");
+        var page = Page("Free agents", "Choose base-game players and add custom players to this campaign's pool. An explicitly saved empty pool offers no recruits.");
         page.Children.Add(GeneralManagerNote());
         freeAgentTalentWeights = new FreeAgentTalentWeightsEditor(root, settings.Get(FreeAgentTalentWeights.Key), settings);
         fields[FreeAgentTalentWeights.Key] = () => freeAgentTalentWeights.Value;

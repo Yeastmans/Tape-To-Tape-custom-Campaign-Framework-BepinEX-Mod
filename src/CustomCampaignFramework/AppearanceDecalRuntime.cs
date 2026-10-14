@@ -156,5 +156,9 @@ internal static class AppearanceDecalRuntime
     }
     internal static void Install(Harmony harmony) => harmony.Patch(
         AccessTools.Method(typeof(Skaters.SkinHelper), "GetSkinsForGoalie"),
+        prefix: new HarmonyMethod(typeof(AppearanceDecalRuntime), nameof(GoaliePrefix)),
         postfix: new HarmonyMethod(typeof(AppearanceDecalRuntime), nameof(GoaliePostfix)));
+
+    private static void GoaliePrefix(GoaltenderData data, bool useHomeUniform)
+        => CampaignAppearanceRuntime.ForKit(data, useHomeUniform);
 }

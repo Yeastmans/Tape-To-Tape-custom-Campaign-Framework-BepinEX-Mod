@@ -65,6 +65,8 @@ public static class FreeAgentContent
             doc.Set("Override Team Settings", "no"); doc.Save(file);
         }
         foreach (var item in existing.Where(p => !selected.Contains(p.doc.Get(Marker)))) File.Delete(item.file);
+        // Saving an empty selection is explicit; it must not become native fallback.
+        Directory.CreateDirectory(Path.Combine(campaign, "player_teams", "free_agents"));
         foreach (string directory in Directories(campaign))
         {
             var included = Directory.GetFiles(directory, "*.txt").Where(file => IsBaseGame(new CampaignDocument(File.ReadAllText(file)))

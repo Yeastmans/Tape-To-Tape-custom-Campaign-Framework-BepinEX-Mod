@@ -23,9 +23,10 @@ internal static class CampaignSquadSetup
     private static string Revision(string id)
     {
         var files = new List<string> { Path.Combine(Plugin.ModFolder, "campaign.txt") };
-        foreach (string folder in new[] { id.Substring(7), "draft_pool", "superstars" })
+        string squadPath = Plugin.PlayerTeamConfigs.TryGetValue(id.Substring(7), out var team)
+            ? Path.Combine(Plugin.ModFolder, team.IdentityKey) : Path.Combine(Plugin.ModFolder, "player_teams", id.Substring(7));
+        foreach (string path in new[] { squadPath, Path.Combine(Plugin.ModFolder, "player_teams", "draft_pool"), Path.Combine(Plugin.ModFolder, "player_teams", "superstars") })
         {
-            string path = Path.Combine(Plugin.ModFolder, "player_teams", folder);
             if (Directory.Exists(path)) files.AddRange(Directory.GetFiles(path, "*", SearchOption.AllDirectories));
         }
         files.Sort(StringComparer.OrdinalIgnoreCase);
@@ -62,12 +63,13 @@ internal static class CampaignSquadSetup
             squad.m_CustomSwapPool = new Il2CppSystem.Collections.Generic.List<ForwardData>();
             return;
         }
-        string dir = Path.Combine(Plugin.ModFolder, "player_teams", "draft_pool");
-        if(VanillaCopyData.PoolInherited(dir) && (team==null || team.Fields.Get(VanillaCopyData.SquadId).Length==0
+        string dir = SquadPoolRuntime.DirectoryPath(team, "draft_pool");
+        if(SquadPoolRuntime.Inherited(team, "draft_pool") && (team==null || team.Fields.Get(VanillaCopyData.SquadId).Length==0
             || SquadTemplatePolicy.RuntimeIdentity(team.SquadTemplate)==team.Fields.Get(VanillaCopyData.SquadId)))return;
-        var files = SelectedPlayerPool.Read(dir, VanillaCopyData.IsPool(dir)?int.MaxValue:9);
+        var files = SquadPoolRuntime.Selected(team, "draft_pool");
         if (files == null) return;
         var pool = new Il2CppSystem.Collections.Generic.List<ForwardData>();
+        squad.m_CustomSwapPool = pool; // Never retain donor candidates if a selected file fails to load.
         var sources = Resources.FindObjectsOfTypeAll<ForwardData>();
         foreach (string file in files)
         {

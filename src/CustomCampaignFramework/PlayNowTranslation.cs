@@ -139,20 +139,24 @@ internal static class PlayNowTranslation
     internal static bool PreviewAway(TeamColorsData colors, SkaterData skater)
         => TryKit(colors, out bool away) ? away : CampaignAppearanceRuntime.Away(skater);
 
-    // Campaign players: paint their campaign team's kit after the native merge (the team
-    // file is the source of truth), then put the player's own stick/skates back on top the
-    // way the merge does. Play Now players carry no kit colors: the native merge (their Play
-    // Now team's kit + their own stick/skates) is already the base-game result.
+    // Apply campaign team colors after the native merge, then explicit player
+    // piece overrides and personal stick/skates. Play Now keeps the native team's
+    // palette as its base and overlays only opted-in player pieces.
     // Copy before writing to avoid recoloring teammates.
     public static void ColorsPostfix(TeamColorsData colors, SkaterData skater, ref TeamColorsData __result)
     {
         if (skater == null || __result == null) return;
         try
         {
-            var doc = CampaignAppearanceRuntime.Read(skater); if (doc == null) return;
+            var doc = CampaignAppearanceRuntime.Read(skater);
+            var exported = doc == null ? ReadPlayer(skater) : null;
+            if (doc == null && exported == null) return;
             bool away = TryKit(colors, out bool a) ? a : CampaignAppearanceRuntime.Away(skater);
             var copy = TeamColorsData.CopyFrom(__result);
-            Paint(copy, doc, away);
+            Paint(copy, doc ?? PlayerKitColors.Palette(exported, away), away);
+            // Explicit piece colors win over team aliases such as Bicep Color.
+            var own = CampaignAppearanceRuntime.OwnPalette(skater, away);
+            if (own != null) Paint(copy, own, away);
             if (skater.HasCustomStickColor) copy.stickScheme = ColorScheme.CopyFrom(skater.StickColor);
             if (skater.HasCustomSkatesColor) copy.skatesScheme = ColorScheme.CopyFrom(skater.SkatesColor);
             __result = copy;

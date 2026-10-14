@@ -70,8 +70,8 @@ public static class AppearanceContract
         return changes;
     }
     public static bool IsColor(string key) => AppearanceFields.ColorKey(key).Length > 0 || key.StartsWith("Bicep ", StringComparison.OrdinalIgnoreCase) && key.EndsWith(" Color", StringComparison.OrdinalIgnoreCase);
-    // Keys a player file owns: every style and logo key, plus only the stick/skate colors.
-    public static IEnumerable<string> PlayerKeys(string role) => Keys(role).Where(k => !IsColor(k)).Concat(PlayerColorModel.PlayerKeys);
+    // Player styles, logos, native stick/skates and explicit per-piece palette overrides.
+    public static IEnumerable<string> PlayerKeys(string role) => Keys(role).Where(k => !IsColor(k)).Concat(PlayerColorModel.PlayerKeys).Concat(PlayerKitColors.Keys);
     public static bool Independent(CampaignDocument player, CampaignDocument team, string role)
         => AppearanceFields.OverridesTeam(player);
     // A logo is one shared player selection. Either premade kit makes that
@@ -106,14 +106,14 @@ public static class AppearanceContract
             string value;
             if (IsColor(key))
             {
-                // The game's model (PlayerColorModel): the kit is the team's; only the stick and
-                // skate colors can be the player's, one value for both kits, independent of the
-                // equipment-style toggle.
+                // Unmarked kit colors inherit the team. Explicit piece overrides have
+                // a home/away split; native personal stick/skates use one shared set.
                 string home = key.Replace(" Away", "");
                 string own = player.Get(home);
                 // Stick colors never come from the team: blank falls to the default stick colors below.
                 bool stick = PlayerColorModel.StickKeys.Contains(home, StringComparer.OrdinalIgnoreCase);
-                value = PlayerColorModel.IsPlayerColor(home) && own.Length > 0 ? own : stick ? "" : inherited;
+                value = PlayerKitColors.Owns(k => player.Get(k), key) && player.Get(key).Length > 0 ? player.Get(key)
+                    : PlayerColorModel.IsPlayerColor(home) && own.Length > 0 ? own : stick ? "" : inherited;
             }
             else if (key == "Stick" && role == "skater") value = player.Get("Stick"); // the player's own stick style, always
             else value = independent && key.Contains(" Away", StringComparison.OrdinalIgnoreCase)
@@ -145,7 +145,7 @@ public static class AppearanceContract
         foreach (bool away in new[] { false, true })
         {
             string bicep = result.Get(away ? "Bicep Away Color" : "Bicep Color");
-            if (bicep.Length > 0) result.Set(ColorKey("jersey", 1, away), bicep);
+            if (bicep.Length > 0 && !PlayerKitColors.Enabled(k => player.Get(k), "jersey", away)) result.Set(ColorKey("jersey", 1, away), bicep);
             foreach (string scheme in Schemes)
             for (int c = 0; c < 3; c++)
             {

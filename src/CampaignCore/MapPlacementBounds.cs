@@ -4,16 +4,16 @@ using System.Linq;
 
 namespace CampaignCore;
 
-/// <summary>Authored placement inside the native two-row vertical envelope.</summary>
+/// <summary>Authored rows fit inside the native vertical envelope.</summary>
 public static class MapPlacementBounds
 {
     // Preserve the native catalog's vertical range. Wider row spans can expose
     // scenery outside the native artwork and require a separately verified renderer.
     public const double MinY = 6.5, NativeMaxY = 14.2, MaxY = NativeMaxY;
     // Native catalog: 479 layers have one or two nodes. Its closest paired
-    // markers are 5.9 grid units apart. Keep that separation for both rows.
-    // This is an authoring policy. Runtime MapLayout still reads legacy graphs.
-    public const int MaxNodesPerLayer = 2;
+    // markers are 5.9 grid units apart. Keep that spacing for pairs and pack
+    // larger choice sets into the same envelope; runtime fits their artwork.
+    public const int MaxNodesPerLayer = int.MaxValue;
     public const double MinSeparation = 5.9, PairTopY = 7, PairBottomY = 13.5;
     public static bool Contains(double y) => !double.IsNaN(y) && !double.IsInfinity(y)
         && y >= MinY - .000001 && y <= MaxY + .000001;
@@ -37,13 +37,16 @@ public static class MapPlacementBounds
     public static bool HasCrowdedRows(IEnumerable<MapLayoutNode> nodes)
     {
         var heights = nodes.Select(n => n.Y).OrderBy(y => y).ToArray();
-        return heights.Zip(heights.Skip(1), (a, b) => b - a).Any(gap => gap < MinSeparation - .000001);
+        double minimum = Separation(heights.Length);
+        return heights.Zip(heights.Skip(1), (a, b) => b - a).Any(gap => gap < minimum - .000001);
     }
 
+    public static double Separation(int count) => count <= 2 ? MinSeparation : (PairBottomY - PairTopY) / (count - 1);
     public static double RowY(int count, int index) => count switch
     {
         1 => (MinY + NativeMaxY) / 2,
         2 => index == 0 ? PairTopY : PairBottomY,
+        > 2 => PairTopY + index * (PairBottomY - PairTopY) / (count - 1),
         _ => throw new ArgumentOutOfRangeException(nameof(count))
     };
 

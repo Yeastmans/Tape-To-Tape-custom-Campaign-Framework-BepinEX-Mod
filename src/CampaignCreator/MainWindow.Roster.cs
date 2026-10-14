@@ -44,7 +44,6 @@ public sealed partial class MainWindow
                 try
                 {
                     string playerName = CreatorContent.ValidateName(name.Text ?? "");
-                    CreatorContent.ValidatePlayerName(teamFile, playerName);
                     string target = CreatorContent.Create(root, "player", playerName, source,
                         CreatorContent.PlayerCampaign(teamFile), Path.GetDirectoryName(teamFile), initialPlayerPosition: position);
                     var player = new CampaignDocument(File.ReadAllText(target)); player.Set("Position", position);

@@ -46,11 +46,13 @@ internal sealed partial class TeamEditorView : UserControl
     private Action? validateSquadBehaviors;
     private Action? validateStartingRoster;
     private readonly HashSet<string> removedRosterPlayers = new(StringComparer.OrdinalIgnoreCase);
-    internal bool HasEquipmentChanges => goalieEquipment.HasChanges || removedRosterPlayers.Count > 0;
+    private SquadPoolsEditor? playerPools;
+    internal bool HasEquipmentChanges => goalieEquipment.HasChanges || removedRosterPlayers.Count > 0 || playerPools?.HasChanges == true;
     internal void SaveEquipment()
     {
         validateSquadBehaviors?.Invoke();
         validateStartingRoster?.Invoke();
+        playerPools?.Save();
         goalieEquipment.Save();
         foreach (string file in removedRosterPlayers.ToArray())
         {
@@ -182,6 +184,7 @@ internal sealed partial class TeamEditorView : UserControl
         reserved.Add("Starting Relics Mode");
         reserved.UnionWith(new[] {VanillaCopyData.OpponentId,VanillaCopyData.SquadId,"Vanilla Opponent Roles","Vanilla Starting Relics"});
         reserved.Add("Starting Bench Positions");
+        reserved.Add(SquadPlayerPools.ModeKey);
         reserved.UnionWith(SquadBehaviors.All.Select(b => b.Key));
         reserved.Add("Description");
         reserved.Add("Opponent Two Lines");
@@ -245,6 +248,11 @@ internal sealed partial class TeamEditorView : UserControl
         var rosterTab = new TabItem { Header = "Team roster", Content = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = roster, VerticalAlignment = VerticalAlignment.Top, HorizontalAlignment = HorizontalAlignment.Center } };
         var teamTabs = new List<TabItem> { lookTab, rosterTab };
         if (customSquad) teamTabs.Add(new TabItem { Header = "Squad behaviors", Content = BehaviorControls(file) });
+        if (customSquad)
+        {
+            playerPools = new SquadPoolsEditor(owner, root, Path.GetDirectoryName(file)!, doc, openPlayer, changed, Track);
+            teamTabs.Add(new TabItem { Header = "Player pools", Content = playerPools });
+        }
         if (!customSquad) teamTabs.Add(new TabItem { Header = "Opponent settings", Content = new OpponentSettingsView(doc, changed, Track) });
         if (customSquad) Place(GoalSoundControls(), 4, 0, 3);
         else settings.Children.Add(GoalSoundControls());

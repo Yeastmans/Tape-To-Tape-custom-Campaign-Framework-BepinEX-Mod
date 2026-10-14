@@ -57,8 +57,7 @@ public sealed partial class StartingPoolEditor
             dialog.Content = new StackPanel { Margin = new Thickness(24), Spacing = StudioTheme.SpaceLg, Children = { name, feedback, Button(import ? "Import player" : "Create player", () => {
                 try
                 {
-                    string label = CreatorContent.ValidateName(name.Text ?? "");
-                    CreatorContent.ValidatePlayerName(DirectoryPath, label);
+                    string label = CreatorContent.AvailablePlayerName(DirectoryPath, name.Text ?? "");
                     string key = "custom-" + Guid.NewGuid().ToString("N") + ".txt";
                     player.Set("Name", label); player.Set(BaseMarker, ""); player.Set(SourceMarker, "custom");
                     // New players start with team equipment. Imports keep their

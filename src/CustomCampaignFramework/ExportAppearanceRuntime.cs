@@ -71,7 +71,7 @@ internal static class ExportAppearanceRuntime
         {
             var forward = player.TryCast<ForwardData>();
             // Unset pieces show the Play Now team's kit; only own stick/skates are set.
-            forward.colorSchemes = CampaignAppearanceRuntime.PlayNowPalette(k => own.Get(k));
+            forward.colorSchemes = CampaignAppearanceRuntime.PlayNowPalette(k => own.Get(k), away);
             foreach (var pair in Extras) typeof(ForwardData).GetProperty(pair.Value).SetValue(forward, doc.Get(pair.Key));
             forward.sizeOffsetPercentage = float.TryParse(doc.Get("Size Offset"), NumberStyles.Float, CultureInfo.InvariantCulture, out float offset) ? offset : 1f;
             PatchPlayerTeamInit.HandleNoHelmetSentinel(forward);
@@ -79,7 +79,7 @@ internal static class ExportAppearanceRuntime
         else
         {
             var g = player.TryCast<GoaltenderData>();
-            g.colorSchemes = CampaignAppearanceRuntime.PlayNowPalette(k => own.Get(k));
+            g.colorSchemes = CampaignAppearanceRuntime.PlayNowPalette(k => own.Get(k), away);
             if (float.TryParse(doc.Get("Pass Read"), NumberStyles.Float, CultureInfo.InvariantCulture, out float passRead) && float.IsFinite(passRead)) g.passReadSkill = passRead;
         }
         if (AppearanceDecalRuntime.ClearIncompatibleLogo(player)) return;

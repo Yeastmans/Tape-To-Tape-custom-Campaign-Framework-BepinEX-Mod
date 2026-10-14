@@ -18,9 +18,11 @@ public sealed class UpgradeCleanup
         // These current controls include dynamically parsed squad keys and newer
         // opponent options which can postdate the generated release allow-list.
         fields["team"].UnionWith(SquadBehaviors.All.Select(b => b.Key));
+        fields["team"].Add(SquadPlayerPools.ModeKey);
         fields["team"].UnionWith(new[] { "Golf Fairway", "Tycoons Sponsors", "Canada Curses" });
         fields["team"].UnionWith(RelicOpponentInteractions.All.Select(i => i.SettingKey));
         fields["player"].Add(PlayerColorModel.VersionKey);
+        fields["player"].UnionWith(PlayerKitColors.ModeKeys);
         fields["player"].Add(PlayerBrawlOptions.PrinceKey);
         fields["player"].Add("Number Style");
         fields["campaign"].Add(FreeAgentTalentWeights.Key);
@@ -132,6 +134,7 @@ public sealed class UpgradeCleanup
     private string Value(string key, string value, string role)
     {
         if (value.Length == 0) return "";
+        if (PlayerKitColors.ModeKeys.Contains(key, IgnoreCase)) return In(value, "yes", "no") ? value : "";
         // Preserve unknown GUIDs and invalid input for the editor's visible validation.
         // A malformed multiplier must never silently become native/default or disabled.
         if (key.Equals(FreeAgentTalentWeights.Key, StringComparison.OrdinalIgnoreCase)

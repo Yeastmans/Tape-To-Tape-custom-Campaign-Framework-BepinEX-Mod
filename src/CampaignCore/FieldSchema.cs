@@ -57,6 +57,8 @@ public static class FieldSchema
     private static bool Has(IEnumerable<string> set, string key) => set.Contains(key, StringComparer.OrdinalIgnoreCase);
     public static FieldKind Kind(string key, string value = "")
     {
+        if (key.Equals(SquadPlayerPools.ModeKey, StringComparison.OrdinalIgnoreCase)) return FieldKind.Boolean;
+        if (Has(PlayerKitColors.ModeKeys, key)) return FieldKind.Boolean;
         if (key.Equals(PlayerBrawlOptions.PrinceKey, StringComparison.OrdinalIgnoreCase)) return FieldKind.Boolean;
         if (Has(RelicOpponentInteractions.All.Select(i => i.SettingKey), key)) return FieldKind.Choice;
         if (key.Equals("Skin Color", StringComparison.OrdinalIgnoreCase) || key.Equals("Size", StringComparison.OrdinalIgnoreCase)

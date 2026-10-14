@@ -118,13 +118,16 @@ public sealed class MapGamePreview : UserControl
         foreach (var node in layout.Nodes)
         {
             bool isBoss = node.Type == "Boss";
+            int choices = layout.Nodes.Count(n => n.Layer == node.Layer);
+            bool compact = !isBoss && choices >= 3;
+            double markerHeight = compact ? Math.Max(6, MapPlacementBounds.Separation(choices) * MapPlacementBounds.PreviewPixelsPerGridUnit - (choices <= 6 ? 30 : 4)) : isBoss ? 108 : 82;
             var point = points[node.Id];
             var image = artwork.Get(node, gameplayAct);
             var stack = new StackPanel { Width = 156, Spacing = 3, Tag = "preview-node:" + node.Id };
             if (image != null)
             {
                 var arena = new Grid();
-                arena.Children.Add(new Image { Source = image, Height = isBoss ? 108 : 82, Stretch = Stretch.Uniform });
+                arena.Children.Add(new Image { Source = image, Height = markerHeight, Stretch = Stretch.Uniform });
                 var logo = teamPreview?.Logo(node.Team);
                 if (logo != null) arena.Children.Add(new Image { Name = "PreviewTeamLogo", Tag = node.Team, Source = logo, Width = 42, Height = 42, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top });
                 stack.Children.Add(arena);
@@ -133,9 +136,9 @@ public sealed class MapGamePreview : UserControl
             string label = string.IsNullOrEmpty(node.Type) ? "Choose node type" : FieldControls.Friendly(node.Type);
             if (!string.IsNullOrEmpty(node.Team) && teams != null && teams.TryGetValue(node.Team, out var team)) label += "\n" + team;
             if (node.Type is "Elite" or "Boss" && string.IsNullOrEmpty(node.Stadium)) label += "\nArena decided in game";
-            stack.Children.Add(new Border { Background = Brush.Parse("#DC132234"), CornerRadius = new CornerRadius(7), Padding = new Thickness(7, 4), Child = new TextBlock { Text = label, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap, Foreground = isBoss ? Brush.Parse("#FFD68A") : Brushes.White, FontSize = 12 } });
+            stack.Children.Add(new Border { IsVisible = !compact || choices <= 6, Background = Brush.Parse("#DC132234"), CornerRadius = new CornerRadius(7), Padding = new Thickness(7, 4), Child = new TextBlock { Text = compact ? label.Replace('\n', ' ') : label, TextAlignment = TextAlignment.Center, TextWrapping = compact ? TextWrapping.NoWrap : TextWrapping.Wrap, TextTrimming = TextTrimming.CharacterEllipsis, Foreground = isBoss ? Brush.Parse("#FFD68A") : Brushes.White, FontSize = 12 } });
             ToolTip.SetTip(stack, $"Layer {node.Layer + 1} · {label}\n{teamPreview?.Description(node.Team)}");
-            Canvas.SetLeft(stack, point.X - 78); Canvas.SetTop(stack, point.Y - (image == null ? 16 : isBoss ? 82 : 62));
+            Canvas.SetLeft(stack, point.X - 78); Canvas.SetTop(stack, point.Y - (compact ? markerHeight / 2 : image == null ? 16 : isBoss ? 82 : 62));
             scene.Children.Add(stack); NodeCount++;
         }
         summary.Text = $"Act {SceneryAct} scenery  ·  {layout.Nodes.Select(n => n.Layer).Distinct().Count()} layers  ·  {HalfParts} middle section{(HalfParts == 1 ? "" : "s")}";

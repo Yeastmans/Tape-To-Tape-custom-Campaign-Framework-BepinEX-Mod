@@ -8,10 +8,10 @@ internal static class PlayerExport
 {
     internal static Dictionary<string, object> Convert(CampaignDocument d, GameData game, string role, string id)
     {
+        d = ExportPlayerResolver.Resolve(d, role);
         d = AppearanceContract.Resolve(d, new CampaignDocument(""), new CampaignDocument(""), role);
         string name = d.Get("Name").Trim();
         if (name.Length == 0) throw new ArgumentException("A player name is required for export.");
-        if (d.Get("Import Player").Length > 0) throw new ArgumentException("Import-only players must be resolved to a complete roster before exporting.");
         if (d.Get("Random Talents").Length > 0 && d.Get("Random Talents") != "0")
             throw new ArgumentException("Choose the player's exact talents before exporting; random talent rolls are campaign settings.");
         int Stat(string field, int fallback = 50)
@@ -91,6 +91,7 @@ internal static class PlayerExport
     internal static string Export(CampaignDocument d, GameData game, string root, string role)
     {
         string sourceRoot = root;
+        d = ExportPlayerResolver.Resolve(d, role);
         d = LogoExport.Snapshot(AppearanceContract.Resolve(d, new CampaignDocument(""), new CampaignDocument(""), role), root);
         root = ExportTranslation.RuntimeRoot(root);
         game = new GameData(root);

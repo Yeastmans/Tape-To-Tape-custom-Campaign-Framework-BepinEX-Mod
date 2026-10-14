@@ -1,4 +1,4 @@
-﻿using Avalonia.Controls;
+using Avalonia.Controls;
 using Avalonia.VisualTree;
 using CampaignCore;
 
@@ -43,7 +43,7 @@ public sealed partial class MainWindow
                     Add("Opponents", "The teams this campaign plays against. Each one shows its map node, or No map node in red. + New opponent creates one.", "CampaignOverviewSection1");
                     Add("Custom teams", "Click a team to edit it, or use + Add player team. Open superstar/bench options opens the shared starting pools. Each team controls its own starting screens in Squad behaviors. Opening or adding a player team saves the campaign's working changes first.", "CampaignOverviewSection3");
                     Add("Maps", "The campaign route. Each map shows how many match nodes have a campaign team; empty match nodes use the game's own opponents.", "CampaignOverviewSection2");
-                    Add("Free agents", "Players who can be recruited during a run. With nothing chosen, the game's default pool is used.", "CampaignOverviewSection4");
+                    Add("Free agents", "Shared players who can be recruited during a run. An explicitly saved empty pool offers no recruits. A squad can use separate choices from its Player pools tab.", "CampaignOverviewSection4");
                     Add("Reward pools", "Which relics, talents and abilities random rewards can offer. All means the full base-game pool.", "CampaignOverviewSection5");
                     Add("Game options", "Offside in every match turns on the game's own offside rule for the whole run without changing your saved settings. Offside penalty picks Whistle, Lose Puck or Knockout, or keeps the player's own setting. Tchel squad rules and Linesman retain their native Knockout precedence. Squad rules are in Custom teams → Squad behaviors; opponent and arena rules are in Opponent settings. Save campaign keeps it.", "CampaignOffside");
                     break;
@@ -58,7 +58,7 @@ public sealed partial class MainWindow
                     Add("Map intro", "Map name appears on the opening wipe. A blank name keeps the game's act name. ACT numbering follows campaign order, so map four shows ACT 4 with any scenery. The opening pan follows the resized map.", "MapName");
                     Add("Add a map", "+ Add map adds another stage; × on a map tab removes it.", "+ Add map");
                     Add("Import a map", "Replaces the selected map with a base-game layout or a map from another campaign. Undo reverts it.", "Import base-game map");
-                    Add("Node builder", "Click a node to set its type, team, stadium, rewards or random events; changes go into the map right away. Connect links a node to the next layer and each layer holds up to two nodes with space for native artwork. Every route must reach the final Boss.", "NodeBuilderViewport", "Node builder");
+                    Add("Node builder", "Click a node to set its type, team, stadium, rewards or random events; changes go into the map right away. Connect links a node to the next layer and layers support additional choices, with closer rows for three or more nodes. Every route must reach the final Boss.", "NodeBuilderViewport", "Node builder");
                     Add("Game preview", "Estimates the map using game artwork, team logos and stadiums. Native artwork bounds, decorations and animations resolve in game; this projection does not run the campaign.", "Game preview");
                     Add("Undo, redo and view", "Undo and Redo step through this map's edits, including team, stadium and node-type changes. Fit and zoom only change the view.", "Undo");
                     Add("Save maps", "Checks every route and writes the maps (Ctrl+S). Save campaign saves them too. Saved map changes apply to new runs.", "Save maps");
@@ -73,10 +73,10 @@ public sealed partial class MainWindow
                     Add("Starting superstars", PoolChoiceGuidance.Superstars + " Create or import a player into each card; Remove clears a card without deleting the player. Save campaign keeps both pools.", "StartingSuperstarPool");
                     break;
                 case 4:
-                    Add("Free-agent talent pool", "Each checkbox controls one talent level for random extras on new recruits and contracts. Unchecked levels cannot roll or appear through upgrades, including random talent lists in imported recruits. Fixed player talents stay intact. No checked talents gives no random extras; no checked recruitable players instead uses the native player pool. This pool and its multipliers are independent of Regular and Chaos rewards. Restore base talent pool checks the game's normal base and upgrade levels without resetting multipliers.", "FreeAgentTalentWeightsPanel");
+                    Add("Free-agent talent pool", "Each checkbox controls one talent level for random extras on new recruits and contracts. Unchecked levels cannot roll or appear through upgrades, including random talent lists in imported recruits. Fixed player talents stay intact. No checked talents gives no random extras; an explicitly empty recruit pool offers no players. This pool and its multipliers are independent of Regular and Chaos rewards. Restore base talent pool checks the game's normal base and upgrade levels without resetting multipliers.", "FreeAgentTalentWeightsPanel");
                     Add("Base-game free agents", "Check the base-game players who can be recruited during a run.", "BaseFreeAgents");
                     Add("Custom free agents", "Check each custom player who can be recruited. Unchecked players remain available to edit with Edit player. Import copies a player into this campaign; Make New creates one. Both start checked.", "CustomFreeAgents", "Import", "Make New");
-                    Add("Save selection", "Save campaign keeps both base-game and custom selections. With no player checked in either list, the game's default pool is used. General Manager nodes on your maps offer recruits.", "Save campaign");
+                    Add("Save selection", "Save campaign keeps both base-game and custom selections. An explicitly saved empty pool offers no recruits. General Manager nodes on your maps offer recruits.", "Save campaign");
                     break;
                 case 5:
                     Add("Reward categories", "Relics, regular talents, goalie talents, abilities and Chaos talents each have their own tab. Normal relic and talent offers have 3 choices. The wizard offers up to 2 Chaos talents; Fan #1 mixes up to 3 choices and single ability nodes roll 1. Each tab shows its offer size and selected count.", "RewardSections");
@@ -108,9 +108,9 @@ public sealed partial class MainWindow
                 Add("Home and away", "Switch the kit you preview. With Team equipment off, this also chooses which kit's styles you are editing.", "PlayerKitTabs");
                 Add("Front and back", "Changes only the preview angle.", "PlayerFacingTabs");
                 if (goalie)
-                    Add("Goalie equipment", "With Team equipment off, choose the mask, jersey, pants, pads, stick, catcher and blocker. With it on, the team's goalie gear is used.", "PlayerEquipment");
+                    Add("Goalie equipment", "With Team equipment off, choose the mask, jersey, pants, pads, stick, catcher and blocker. Choose Team, Custom or Premade for each kit piece; Custom colors have separate home and away values. With it on, the team's goalie gear is used.", "PlayerEquipment");
                 else
-                    Add("Head and equipment", "Choose the head; some heads have no selectable helmet variant. Team colors equips the ordinary native helmet without a talent or stat bonus. None removes that ordinary starting helmet; talent, transformation and reward helmets keep their native rules. Home Helmet controls physical starting equipment; Helmet Away does not independently equip, remove or replace the physical helmet. Loss, drops and restoration use native equipment state. Selecting the native Wing style equips its matching equipment without adding a talent; native Wing drop rules apply. Other special helmet artwork requires its native equipment source. With Team equipment off, choose helmet, jersey, sleeves, gloves, pants and socks. In Premade mode, Biceps / sleeves changes the sleeves separately; Same as jersey lets socks follow the jersey. The stick style is always the player's. Skates have no style.", "Face", "PlayerEquipment");
+                    Add("Head and equipment", "Choose the head; some heads have no selectable helmet variant. Team colors equips the ordinary native helmet without a talent or stat bonus. None removes that ordinary starting helmet; talent, transformation and reward helmets keep their native rules. Home Helmet controls physical starting equipment; Helmet Away does not independently equip, remove or replace the physical helmet. Loss, drops and restoration use native equipment state. Selecting the native Wing style equips its matching equipment without adding a talent; native Wing drop rules apply. Other special helmet artwork requires its native equipment source. With Team equipment off, choose helmet, jersey, sleeves, gloves, pants and socks. Each piece offers Team, Custom colors or Premade artwork; Custom colors are saved separately for home and away. In Premade mode, Biceps / sleeves changes the sleeves separately; Same as jersey lets socks follow the jersey. The stick style is always the player's. Skates have no style.", "Face", "PlayerEquipment");
                 Add("Player logo", "With Team equipment on, the player wears the team logo. With it off and team-color jerseys home and away, Choose player logo sets their own and Use team logo reverts. Premade jerseys have no player logo.", "PlayerLogo");
                 if (goalie)
                 {
@@ -123,7 +123,7 @@ public sealed partial class MainWindow
                     Add("Skate colors", "The player's own skate colors, one set for home and away. Blank follows the team kit.", "SkatesPlayerColors");
                 }
             }
-            Add("Export to Play Now", "Copies this player into the game's own custom content for Play Now. It uses the current fields but does not save them here, so save first. Restart the game to see it.", "Export to Play Now");
+            Add("Export to Play Now", "Copies this player into the game's own custom content for Play Now with a separate player ID. Numbered copy names are retained. It uses the current fields but does not save them here, so save first. Restart the game to see it.", "Export to Play Now");
             Add("Save player", "Saves this player. Fields listed under Needs attention must be filled first. Home and Back do not save: unsaved edits are discarded.", "Save changes");
         }
         else if (Content is TeamEditorView team)
@@ -156,6 +156,10 @@ public sealed partial class MainWindow
                     foreach (var behavior in SquadBehaviors.All.Where(b => b.Id != "no_injuries"))
                         Add(behavior.Name, behavior.Description + " Inherit follows this team's preset; On and Off explicitly override it. Save player team keeps the choice.", "Behavior_" + behavior.Id);
                     Add("Save behaviors", "Save player team validates dependencies and active starters. Save the campaign after adjusting its reward pools. Restart the game to load saved settings and start a new run to test roster and starting-screen changes.", "Save player team");
+                    break;
+                case "Player pools":
+                    Add("Use own pools", "Off uses shared campaign choices. On uses this squad's separate bench, superstar and free-agent selections. New own pools start empty; turning the checkbox off keeps them for later.", "UseOwnPlayerPools");
+                    Add("Choose players", "Choose a pool tab, then add or import players. Only selected candidates are offered. Empty starting pools skip their screen; an empty free-agent pool offers no recruits.", "SquadPoolKinds");
                     break;
                 case "Opponent settings":
                     Add("Formations", "Offensive and defensive formations for this opponent.", "OpponentOffense");

@@ -23,6 +23,9 @@ internal sealed class EquipmentStylePicker : StackPanel
     private readonly bool forceNoHelmet;
     private readonly bool teamPaletteOnly;
     private readonly string? emptyHint;
+    private readonly Func<bool>? customColors;
+    private readonly Action<bool>? selectCustomColors;
+    private readonly ComboBoxItem teamMode = new() { Content = "Team" };
     private readonly ComboBoxItem inheritedMode = new() { Content = "Team colors" };
 
     internal static bool IsCustom(string value)
@@ -46,13 +49,14 @@ internal sealed class EquipmentStylePicker : StackPanel
     }
 
     // emptyLabel names a blank value that is a real choice (socks: "Same as jersey") instead of "Nothing selected".
-    internal EquipmentStylePicker(IEnumerable<string> catalog, Func<string> read, Action<string> write, Button colours, bool canSelect = true, string customLabel = "Custom color", bool allowNoHelmet = false, string? disabledReason = null, bool inherited = false, bool teamPaletteOnly = false, string? emptyLabel = null, string? emptyHint = null)
+    internal EquipmentStylePicker(IEnumerable<string> catalog, Func<string> read, Action<string> write, Button colours, bool canSelect = true, string customLabel = "Custom color", bool allowNoHelmet = false, string? disabledReason = null, bool inherited = false, bool teamPaletteOnly = false, string? emptyLabel = null, string? emptyHint = null, Func<bool>? customColors = null, Action<bool>? selectCustomColors = null)
     {
         this.read = read; this.write = write; this.colours = colours;
         this.inherited = inherited;
         forceNoHelmet = !canSelect && allowNoHelmet;
         this.teamPaletteOnly = teamPaletteOnly;
         this.emptyHint = emptyHint;
+        this.customColors = customColors; this.selectCustomColors = selectCustomColors;
         Spacing = 3;
         var available = catalog.Where(s => !IsHidden(s)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         custom = available.FirstOrDefault(IsCustom);
@@ -65,6 +69,7 @@ internal sealed class EquipmentStylePicker : StackPanel
             : new TextBlock { Text = "Nothing selected", Foreground = FieldControls.EmptySelectionBrush } };
         noHelmetMode = allowNoHelmet ? new ComboBoxItem { Content = "No helmet" } : null;
         var modes = teamPaletteOnly ? new List<ComboBoxItem> { customMode, premadeMode } : new List<ComboBoxItem> { emptyMode, customMode, premadeMode };
+        if (customColors != null) { modes = new List<ComboBoxItem> { teamMode, customMode, premadeMode }; if (emptyLabel != null) modes.Insert(0, emptyMode); }
         if (inherited) modes.Add(inheritedMode);
         if (noHelmetMode != null) modes.Add(noHelmetMode);
         mode = new StableComboBox { ItemsSource = modes, HorizontalAlignment = HorizontalAlignment.Stretch, IsEnabled = canSelect };
@@ -79,7 +84,9 @@ internal sealed class EquipmentStylePicker : StackPanel
         };
         mode.SelectionChanged += (_, _) => {
             if (updating || inherited) return;
-            if (mode.SelectedItem == emptyMode) write("");
+            if (customColors != null) selectCustomColors?.Invoke(mode.SelectedItem == customMode);
+            if (mode.SelectedItem == teamMode) { if (custom != null) write(custom); }
+            else if (mode.SelectedItem == emptyMode) write("");
             else if (noHelmetMode != null && mode.SelectedItem == noHelmetMode) write("none");
             else if (mode.SelectedItem == customMode)
             {
@@ -158,8 +165,11 @@ internal sealed class EquipmentStylePicker : StackPanel
         if (choices.Length == 0) ToolTip.SetTip(premadeMode, "No premade styles are listed for this part in the game catalog.");
         styles.ItemsSource = choices;
         styles.SelectedItem = choices.FirstOrDefault(s => s.Equals(current, StringComparison.OrdinalIgnoreCase));
-        mode.SelectedItem = noHelmet ? noHelmetMode : current.Length == 0 ? teamPaletteOnly ? customMode : emptyMode : isCustom ? customMode : premadeMode;
+        mode.SelectedItem = noHelmet ? noHelmetMode : customColors != null && isCustom && !(current.Length == 0 && emptyHint != null)
+            ? customColors() ? customMode : teamMode
+            : current.Length == 0 ? teamPaletteOnly ? customMode : emptyMode : isCustom ? customMode : premadeMode;
         detail.Content = noHelmet ? new TextBlock { Text = "No helmet" }
+            : customColors != null && isCustom && !(current.Length == 0 && emptyHint != null) ? customColors() ? colours : new TextBlock { Text = "Uses the team's colors", FontSize = 11 }
             : teamPaletteOnly && (current.Length == 0 || isCustom) ? new TextBlock { Text = "Uses the team's colors", FontSize = 11 }
             : current.Length == 0 ? emptyHint != null ? new TextBlock { Text = emptyHint, FontSize = 11, TextWrapping = Avalonia.Media.TextWrapping.Wrap } : new TextBlock { Text = "Choose a style" }
             : isCustom ? colours : styles;

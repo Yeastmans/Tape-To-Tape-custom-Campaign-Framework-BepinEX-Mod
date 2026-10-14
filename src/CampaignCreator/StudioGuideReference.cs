@@ -1,4 +1,4 @@
-﻿using CampaignCore;
+using CampaignCore;
 
 namespace CampaignCreator;
 
@@ -63,7 +63,7 @@ internal static class StudioGuideReference
             new("Home", "Leave the player editor and discard unsaved edits."),
             new("Export to Play Now", "Write separate game content from the current fields. This does not save the Studio player.")],
         "appearance" => [
-            new("Team equipment", "On uses team styles. Off allows player styles. The skater stick style is always personal; kit colors still come from the team."),
+            new("Team equipment", "On uses team styles. Off allows player styles. The skater stick style is always personal; Each kit piece can use Team colors, Custom player colors or Premade artwork. Custom colors have separate home and away values."),
             new("Head / Goalie mask", "Skaters choose their own head. A goalie uses a mask, shared by the home and away kits. Some skater heads have no selectable helmet variant; physical equipment still follows native rules."),
             new("Helmet", "Team colors equips the ordinary native helmet without a talent or stat bonus. None removes that ordinary starting helmet; talent, transformation and reward helmets keep their native rules. Home Helmet controls physical starting equipment; Helmet Away does not independently equip, remove or replace the physical helmet. Loss, drops and restoration use native equipment state. Selecting the native Wing style equips its matching equipment without adding a talent; native Wing drop rules apply. Other special helmet artwork requires its native equipment source."),
             new("Jersey / Biceps / sleeves", "The jersey selects matching sleeves. Biceps / sleeves appears in Premade mode to change them separately."),
@@ -153,7 +153,7 @@ internal static class StudioGuideReference
             new("Map name / ACT number", "Name the map for its opening wipe. Leave the name blank to use the game's act name. The ACT number follows campaign order: the fourth map shows ACT 4, regardless of its scenery. Save maps keeps the name; the boss-to-start pan follows the map's resized scenery."),
             new("Import base-game map", "Choose a base-game layout or another campaign's map. Replaces this map and clears imported team assignments; Undo restores its prior layout."),
             new("Node builder", "Click nodes to configure them and drag cards to arrange them. The first layer and Boss keep their horizontal positions."),
-            new("+ Insert layer / +", "Insert a layer or add a node. Each layer holds at most two nodes, separated enough for native map artwork. Older layers with more nodes stay intact until you reduce or redistribute them."),
+            new("+ Insert layer / +", "Insert a layer or add a node. Layers support additional choices, with closer rows for three or more nodes. The game fits crowded arena artwork without deleting nodes."),
             new("Connect", "Choose a highlighted node in the next layer. Cancel, Escape or right-click cancels the pending connection."),
             new("Disconnect", "Cut all incoming paths to this node while keeping its outgoing paths."),
             new("Undo / Redo", "Restore or reapply edits to the selected map, including node settings."),
@@ -179,7 +179,7 @@ internal static class StudioGuideReference
             _ => "The game's " + MapEditorView.NodeName(type) + " event. Event behavior follows the game's rules."
         }))).Concat(NodeSettingsWindow.Stadiums.Select(s => new GuideEntry("Stadium: " + s.Name, "World-map artwork option."))).ToArray(),
         "agents" => [
-            new("Free-agent talent checkboxes", "Select exact levels for random extras and imported random recruit lists. Unchecked levels cannot be directly rolled or reached through upgrades. Fixed player talents stay intact. Empty talent selection gives no extras; empty PLAYER selection uses the native recruit pool."),
+            new("Free-agent talent checkboxes", "Select exact levels for random extras and imported random recruit lists. Unchecked levels cannot be directly rolled or reached through upgrades. Fixed player talents stay intact. Empty talent selection gives no extras; an explicitly empty player selection offers no recruits."),
             new("Talent multiplier / Reset to 1", "Multiply the native direct-roll weight. Zero prevents direct rolls; uncheck a level to prevent upgrade outcomes too. Reset to 1 removes that weight override. Native eligibility and extra-roll chances remain in force."),
             new("Restore base talent pool", "Restore the checked native base and upgrade levels without resetting multipliers. Regular and Chaos reward pools remain independent. Save campaign keeps the change."),
             new("Stored weights and imported IDs", "Advanced view of the saved talent-ID:multiplier entries. Unknown imported IDs are retained, but may not resolve in the current game. Prefer named controls; invalid entries must be corrected before saving."),

@@ -3104,23 +3104,12 @@ public static void PostfixMenu(Tape2Tape.Hockey.UI.ChooseMetaMenu __instance)
                     // the Basic squad's roster we cloned from. firstApply
                     // wipes stale talents/relics from the cloned objects.
                     try { PatchPlayerTeamInit.ApplyPlayerTeamConfig(teamClone, cfg, null, firstApply: true); }
-                    catch (Exception apEx) { Plugin.Log.LogWarning($"[CustomSquad] ApplyPlayerTeamConfig failed for '{key}': {apEx.Message}"); }
-                    if(!keepNativeSquad) {SquadBehaviorRoster.UpdateLines(teamClone, cfg);SquadBehaviorRoster.BenchChosenStarters(teamClone, cfg);}
+                    catch (Exception apEx) { Plugin.Log.LogError($"[CustomSquad] Skipping '{key}': its authored roster could not be applied: {apEx.Message}"); continue; }
+                    if(!keepNativeSquad) {CustomStartingRoster.RemoveTemplateStarters(teamClone, cfg);SquadBehaviorRoster.UpdateLines(teamClone, cfg);SquadBehaviorRoster.BenchChosenStarters(teamClone, cfg);}
 
-                    // Bug fix: NEVER let Basic's Angus McShaggy survive into a
-                    // custom squad. Basic's startingTeam keeps exactly ONE forward
-                    // (cat=Angus @ slot 3) that the draft flow seats as your
-                    // starter. If the user configured the LD slot (Angus's slot)
-                    // ApplyPlayerTeamConfig already overwrote him; if they
-                    // configured a DIFFERENT position their player landed in
-                    // another slot and McShaggy stayed at slot 3 → "McShaggy
-                    // auto-added". Seat the user's primary forward at the Angus
-                    // keep-slot, open its old slot (Basic's 1-forward shape), and
-                    // repoint the squad's angusPlayer so no angus-based mechanic
-                    // (Mark Bench's quest) re-introduces McShaggy.
+                    // The template supplies behavior, never unselected starters.
                     bool starterAtAngus = false;
-                    try { if (!keepNativeSquad && (teamClone.lines == null || teamClone.lines.Count < 2)) starterAtAngus = SeatUserStarterAtAngusSlot(teamClone, clone, cfg); }
-                    catch (Exception anEx) { Plugin.Log.LogWarning($"[CustomSquad] Angus keep-slot: {anEx.Message}"); }
+                    if (!keepNativeSquad) starterAtAngus = BindAuthoredLead(teamClone, clone);
                     if(!keepNativeSquad)CustomStartingRoster.LockAuthoredSkaters(teamClone, cfg);
 
                     clone.startingTeam = teamClone;
@@ -3144,9 +3133,8 @@ public static void PostfixMenu(Tape2Tape.Hockey.UI.ChooseMetaMenu __instance)
                         // override cleanly, so pick a forward whenever any
                         // is configured.
                         Tape2Tape.Customization.UI.ESkaterPosition? picked = null;
-                        // After SeatUserStarterAtAngusSlot the user's starter
-                        // always sits in the Angus keep-slot (LD); point the tile
-                        // head there so it never resolves to a now-empty donor slot.
+                        // The lead keeps its authored position. Use that slot's
+                        // head for the tile without moving the player's roster entry.
                         var positions = new[] { Tape2Tape.Customization.UI.ESkaterPosition.LW, Tape2Tape.Customization.UI.ESkaterPosition.RW,
                             Tape2Tape.Customization.UI.ESkaterPosition.C, Tape2Tape.Customization.UI.ESkaterPosition.LD, Tape2Tape.Customization.UI.ESkaterPosition.RD };
                         if (starterAtAngus && clone.angusPlayer != null)
@@ -3394,11 +3382,8 @@ public static void PostfixMenu(Tape2Tape.Hockey.UI.ChooseMetaMenu __instance)
         catch (Exception sx) { Plugin.Log.LogWarning($"[CustomSquad] SquadTeamData ensure: {sx.Message}"); }
     }
 
-    // Any forward slot (0=LW,1=RW,2=C,3=LD,4=RD) that the user's custom
-    // squad DOESN'T define a player file for gets reset to an empty-ish
-    // placeholder: no name, neutral stats, no talents/ability/skins, no
-    // logo skin. The menu still needs the slot to exist so the lineup
-    // preview isn't broken — we just make it visually empty.
+    // Authored names/imports and legacy player overrides identify selected slots.
+    // An untouched default config does not authorize retaining a template player.
     internal static bool SlotIsConfigured(PlayerConfig pc)
     {
         if (pc == null) return false;
@@ -3411,142 +3396,17 @@ public static void PostfixMenu(Tape2Tape.Hockey.UI.ChooseMetaMenu __instance)
             || pc.Accuracy != 50 || pc.Checking != 50;
     }
 
-    // Ensure a custom squad never starts with Basic's Angus McShaggy. Basic's
-    // startingTeam keeps ONE forward in the cat=Angus keep-slot (forward index 3
-    // / LD position) which the run's draft flow seats as the starter. Our clone
-    // inherits McShaggy there. If the user configured the LD slot, the per-slot
-    // apply already overwrote him. Otherwise their configured forward landed in a
-    // different slot and McShaggy survived at slot 3 → he shows up uninvited.
-    //
-    // Move the user's PRIMARY configured forward into the Angus keep-slot (so the
-    // kept starter is theirs), null the donor slot, and repoint the squad's
-    // angusPlayer field away from McShaggy so the angus mechanic (Mark Bench's
-    // quest) can't re-add him either.
-    // Returns true if a user forward now occupies the keep-slot.
-    //
-    // ── WHAT THIS DOES *NOT* DO (corrected 2026-07-31) ──────────────────────
-    // An earlier version of this comment claimed the null-out leaves the squad
-    // "with exactly one forward (Basic's proven shape)". It does not. The only
-    // forward this function ever removes is McShaggy:
-    //   * LD configured    → early branch, nothing is nulled (the per-slot apply
-    //                        already overwrote him in the keep-slot).
-    //   * LD unconfigured  → the primary is copied INTO the keep-slot and its
-    //                        donor slot is nulled, so the count drops by one —
-    //                        and that one is McShaggy, not a user player.
-    // Either way the clone ends up holding exactly as many forwards as the user
-    // configured. "Exactly one forward" is only true for a 1-forward config.
-    //
-    // Consequence, reported and ACCEPTED by the user (2026-07-31): a squad that
-    // configures all five forward slots starts with a full lineup, leaving the
-    // run-start superstar pick nowhere to sit, and the superstar screen does not
-    // appear. Configure four or fewer forwards and it comes back. The user chose
-    // to keep this behaviour rather than have the mod drop one of their
-    // configured players to make room — that is exactly the reshuffling they
-    // have rejected before. DO NOT "fix" this by nulling a configured slot.
-    // (The game-side gate itself was never proven — dump.cs is signatures-only
-    // here — so if you ever need certainty, probe the run-start flow at runtime.)
-    internal static bool SeatUserStarterAtAngusSlot(TeamData team, RunSquadScriptableObject clone, TeamConfig cfg)
+    // Point native lead-player mechanics at an authored active starter, without
+    // moving it, inventing a placeholder, or retaining a template donor.
+    internal static bool BindAuthoredLead(TeamData team, RunSquadScriptableObject clone)
     {
-        var fwds = team?.forwards;
-        if (fwds == null || fwds.Count == 0) return false;
-        // Explicitly benched starters stay on the bench, even if one originally
-        // occupied the preset's Angus slot. Select a lead from the active five
-        // positions without copying over or moving any authored player.
-        if (!string.IsNullOrWhiteSpace(cfg.StartingBenchPositions))
-        {
-            foreach (int position in new[] { 2, 0, 1, 3, 4 })
-                if (position < fwds.Count && fwds[position] != null)
-                { clone.angusPlayer = fwds[position]; return true; }
-            clone.angusPlayer = null;
-            return false;
-        }
-        // An unedited native preset retains its native lead player and powers.
-        if (SquadTemplatePolicy.Identity(cfg.SquadTemplate) != "noeffects"
-            && !new[] { cfg.LW, cfg.RW, cfg.C, cfg.LD, cfg.RD }.Any(SlotIsConfigured)) return false;
-
-        // FIND the keep-slot, do not assume it. This was hardcoded to 3 —
-        // Basic Squad's Angus sits at index 3 — and that assumption is exactly
-        // what broke the "Squad Template" setting: the General Manager squad
-        // keeps its Angus ("General McShaggy") at index 0, so nothing here ever
-        // saw him, he survived into the run, and the user's players were never
-        // seated. Measured in the log: forwards.Count=5 with fwd[0]=General
-        // McShaggy and 1-4 null.
-        int angusIdx = -1;
-        for (int i = 0; i < fwds.Count; i++)
-        {
-            Data.ForwardData f = null; try { f = fwds[i]; } catch { }
-            if (f == null) continue;
-            bool isAngus = false;
-            try { isAngus = f.skaterCategory.ToString().IndexOf("Angus", StringComparison.OrdinalIgnoreCase) >= 0; }
-            catch { }
-            if (isAngus) { angusIdx = i; break; }
-        }
-        if (angusIdx < 0)
-        {
-            // No Angus category: the keep-slot is whichever single forward the
-            // template ships with, which is the one the draft flow seats.
-            for (int i = 0; i < fwds.Count; i++)
-            {
-                Data.ForwardData f = null; try { f = fwds[i]; } catch { }
-                if (f == null) continue;
-                if (angusIdx >= 0) { angusIdx = -1; break; } // more than one — not a keep-slot shape
-                angusIdx = i;
-            }
-        }
-        if (angusIdx < 0) return false;
-        if (angusIdx != 3)
-            Plugin.Log.LogInfo($"[CustomSquad] Template keep-slot is forward index {angusIdx} (Basic's is 3)");
-
-        // forward index -> the config slot that owns it.
-        var slotForIndex = new[] { cfg?.LW, cfg?.RW, cfg?.C, cfg?.LD, cfg?.RD };
-
-        bool seated = false;
-        if (angusIdx < slotForIndex.Length && SlotIsConfigured(slotForIndex[angusIdx])
-            && fwds[angusIdx] != null)
-        {
-            // The keep-slot's own position is configured — ApplyPlayerTeamConfig
-            // already replaced the template's Angus with the user's player.
-            seated = true;
-        }
-        else
-        {
-            // Find the user's primary configured forward (priority C, LW, RW, RD),
-            // skipping the keep-slot itself.
-            var slots = new[] { cfg?.C, cfg?.LW, cfg?.RW, cfg?.LD, cfg?.RD };
-            var idxs  = new[] { 2, 0, 1, 3, 4 };
-            int primaryIdx = -1;
-            for (int k = 0; k < slots.Length; k++)
-                if (idxs[k] != angusIdx && SlotIsConfigured(slots[k])
-                    && idxs[k] < fwds.Count && fwds[idxs[k]] != null)
-                { primaryIdx = idxs[k]; break; }
-
-            if (primaryIdx >= 0)
-            {
-                if (fwds[angusIdx] == null)
-                    fwds[angusIdx] = fwds[primaryIdx];
-                else
-                    PatchBossLaunchMatch.CopyPlayerData(fwds[primaryIdx], fwds[angusIdx]);
-                fwds[primaryIdx] = null; // open the donor slot for the draft
-                seated = true;
-                Plugin.Log.LogInfo($"[CustomSquad] Seated '{fwds[angusIdx].firstName} {fwds[angusIdx].lastName}' at Angus keep-slot (from slot {primaryIdx}); McShaggy removed");
-            }
-            else if (fwds[angusIdx] != null)
-            {
-                // Goalie-only squad: strip McShaggy's identity so he doesn't show.
-                var a = fwds[angusIdx];
-                try { a.firstName = "Draft"; a.lastName = "Pick"; } catch {}
-                try { a.powerups = new Il2CppSystem.Collections.Generic.List<Rogue.Talent>(); } catch {}
-                try { a.ability = null; } catch {}
-                Plugin.Log.LogInfo("[CustomSquad] No configured forward — neutralized McShaggy keep-slot to a generic draft pick");
-            }
-        }
-
-        try { if (fwds[angusIdx] != null) clone.angusPlayer = fwds[angusIdx]; }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[CustomSquad] angusPlayer repoint: {ex.Message}"); }
-
-        return seated;
+        clone.angusPlayer = null;
+        if (team?.forwards == null) return false;
+        foreach (int index in new[] { 2, 0, 1, 3, 4 })
+            if (index < team.forwards.Count && team.forwards[index] != null)
+            { clone.angusPlayer = team.forwards[index]; return true; }
+        return false;
     }
-
     // Detach team.forwards from whatever it was sharing (Instantiate on
     // TeamData SHALLOW-copies list fields — the clone and the template point
     // at the same underlying List<ForwardData>), then Instantiate every
@@ -5035,8 +4895,10 @@ public static class PatchSuperstarPool
             var squad = SelectedSquad(__instance);
             var team = squad?.startingTeam;
             var teamConfig = SelectedTeamConfig(squad);
-            if(VanillaCampaignRuntime.InheritedSquad(teamConfig) && VanillaCampaignRuntime.InheritedPool("superstars"))return;
-            int N = Plugin.SuperstarPoolList?.Count ?? 0;
+            if(VanillaCampaignRuntime.InheritedSquad(teamConfig) && SquadPoolRuntime.Inherited(teamConfig, "superstars"))return;
+            var pool = SquadPoolRuntime.Superstars(teamConfig);
+            int N = pool.Count;
+            if (N == 0 && SquadStartingScreens.EmptyPool("superstars", teamConfig)) { __result.Clear(); return; }
             if (N == 0 && team == null && teamConfig == null) return;
             Plugin.Log.LogInfo($"[Superstar] Using selected player team's look: '{team?.teamName ?? squad?.squadName ?? "unknown"}'");
             // Sample the full authored pool; fixed i % N made every candidate
@@ -5051,7 +4913,7 @@ public static class PatchSuperstarPool
             {
                 var template = __result[i];
                 if (template == null) continue;
-                PlayerConfig cfg = N>0 ? Plugin.SuperstarPoolList[candidates[i % N]] : null;
+                PlayerConfig cfg = N>0 ? pool[candidates[i % N]] : null;
                 var clone = VanillaCampaignRuntime.CloneCandidate(cfg) ?? UnityEngine.Object.Instantiate(template);
                 if (teamConfig != null)
                 {
@@ -5072,7 +4934,7 @@ public static class PatchSuperstarPool
                 }
             }
         }
-        catch (Exception ex) { Plugin.Log.LogWarning($"[Superstar] postfix: {ex.Message}"); }
+        catch (Exception ex) { __result?.Clear(); Plugin.Log.LogError($"[Superstar] Could not load selected choices; native replacements suppressed: {ex.Message}"); }
     }
 }
 
@@ -5143,7 +5005,10 @@ public static class PatchInstantiateStartingTeam
 
             Plugin.Log.LogInfo($"[InstStartTeam] postfix: team='{__result.teamName}' squadId='{squadId}' fwds.Count={__result.forwards?.Count ?? -1}");
             if (Plugin.PlayerTeamConfigs.TryGetValue(squadId.Substring(7), out var config) && !VanillaCampaignRuntime.InheritedSquad(config))
+            {
+                CustomStartingRoster.RemoveUnselectedConstructedPlayers(__result, __0);
                 CampaignAppearanceRuntime.RestoreAuthoredEquipment(__result, config);
+            }
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[InstStartTeam] {ex.Message}"); }
     }
@@ -7214,7 +7079,7 @@ public static class PatchBossLaunchMatch
                 }
                 if (pool != null && pool.Count > 0)
                 {
-                    if (Plugin.FreeAgentPoolList.Contains(pc))
+                    if (SquadPoolRuntime.IsFreeAgent(pc))
                     {
                         // Imported recruitment templates can still contain legacy
                         // random fields. Every random recruit grant must respect
@@ -9264,7 +9129,7 @@ public static class PatchPlayerTeamInit
                     continue;
                 }
                 try { PatchBossLaunchMatch.ApplyPlayerConfig(forward, pc, cfg.Uniform); }
-                catch (Exception ex) { Plugin.Log.LogWarning($"[PlayerTeam] slot {slot} apply error: {ex.Message}"); }
+                catch (Exception ex) { fwds[index] = null; Plugin.Log.LogError($"[PlayerTeam] slot {slot} left empty because its selected player could not be applied: {ex.Message}"); continue; }
                 // Stat Scale (custom squads): multiply the configured player's
                 // freshly-set stats. ApplyPlayerConfig writes the config's
                 // ABSOLUTE stat values every apply, so scaling here is
@@ -9384,6 +9249,7 @@ public static class PatchPlayerTeamInit
 
     internal static void ApplyDraftPool()
     {
+        if (SquadPoolRuntime.Own(SquadPoolRuntime.Current())) return;
         // The new selected pool creates isolated players on each custom squad.
         // Legacy name-based mutation would alter shared base players as well.
         if (File.Exists(Path.Combine(Plugin.ModFolder, "player_teams", "draft_pool", CampaignCore.SelectedPlayerPool.Manifest))) return;
@@ -9444,6 +9310,8 @@ public static class PatchPlayerTeamInit
     //   separate from DraftPoolConfigs — existing bench players are not touched.
     internal static void ApplyFreeAgentPool()
     {
+        // Per-squad templates are installed directly; never use the shared legacy mapper.
+        if (SquadPoolRuntime.Own(SquadPoolRuntime.Current())) return;
         if (Plugin.FreeAgentPoolList == null || Plugin.FreeAgentPoolList.Count == 0) return;
         // The template swap already makes every free agent an authored one; name mapping would re-dress them.
         if (CustomFreeAgentTemplates.Active) return;

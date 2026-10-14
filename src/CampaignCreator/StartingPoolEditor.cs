@@ -32,7 +32,7 @@ public sealed partial class StartingPoolEditor : UserControl
     public bool HasChanges { get => changedState || nativePool?.HasChanges == true; private set => changedState=value; }
     private string DirectoryPath => Path.Combine(campaign(), "player_teams", folder);
     private bool Bench => folder == "draft_pool";
-    public StartingPoolEditor(Window owner, string root, Func<string> campaign, string folder, Action<string> edit, Action changed)
+    public StartingPoolEditor(Window owner, string root, Func<string> campaign, string folder, Action<string> edit, Action changed, bool emptyByDefault = false)
     {
         this.owner = owner; this.root = root; this.campaign = campaign; this.folder = folder; this.edit = edit; this.changed = changed;
         data = new GameData(root);
@@ -66,11 +66,11 @@ public sealed partial class StartingPoolEditor : UserControl
                 baseSources["base-" + Path.GetFileName(file)] = file;
             }
             int index = 0;
-            foreach (string key in baseSources.Keys.Take(9)) baseSlots[index++] = key;
+            if (!emptyByDefault) foreach (string key in baseSources.Keys.Take(9)) baseSlots[index++] = key;
             RestoreSlots("base-slots.list", baseSlots);
             bool nativeMode = File.Exists(Path.Combine(DirectoryPath, "source.mode"))
                 ? File.ReadAllText(Path.Combine(DirectoryPath, "source.mode")).Trim() == "base"
-                : custom.Length == 0 && (selected.Length > 0 || !File.Exists(Path.Combine(DirectoryPath, SelectedPlayerPool.Manifest)));
+                : !emptyByDefault && custom.Length == 0 && (selected.Length > 0 || !File.Exists(Path.Combine(DirectoryPath, SelectedPlayerPool.Manifest)));
             useBaseGame = new CheckBox { Name = "UseBaseGameBench", Content = "Use base-game bench", IsChecked = nativeMode };
             var customView = Frame(new StackPanel { Spacing = StudioTheme.SpaceMd, Children = { bulkImport, customCards } }); var baseView = Frame(baseCards);
             customView.IsVisible = !nativeMode; baseView.IsVisible = nativeMode;
@@ -86,7 +86,7 @@ public sealed partial class StartingPoolEditor : UserControl
         {
             panel.Children.Add(new TextBlock { Text = PoolChoiceGuidance.Superstars, TextWrapping = TextWrapping.Wrap });
             panel.Children.Add(count);
-            panel.Children.Add(new TextBlock { Text = "Kit colors come from the player team selected for the run; each superstar can choose its own stick and skate colors, and its own equipment styles with Team equipment off.", TextWrapping = TextWrapping.Wrap });
+            panel.Children.Add(new TextBlock { Text = "Team colors follow the squad selected for the run. With Team equipment off, each superstar can choose Team, Custom or Premade per kit piece, plus personal stick and skate colors.", TextWrapping = TextWrapping.Wrap });
             panel.Children.Add(bulkImport);
             panel.Children.Add(customCards);
             if (custom.Length > 3) panel.Children.Add(new TextBlock { Text = "This older pool has more than three choices. Saving changes uses the three shown here; other player files remain available to import.", TextWrapping = TextWrapping.Wrap });

@@ -12,7 +12,13 @@ internal static class HeadAppearanceRuntime
 {
     internal static void Install(Harmony harmony) => harmony.Patch(
         AccessTools.Method(typeof(Skaters.SkinHelper), "GetSkins"),
+        prefix: new HarmonyMethod(typeof(HeadAppearanceRuntime), nameof(BeforeSkins)),
         postfix: new HarmonyMethod(typeof(HeadAppearanceRuntime), nameof(AfterSkins)));
+
+    private static void BeforeSkins(bool isHome, bool headOnly, ForwardData forwardData)
+    {
+        if (!headOnly) CampaignAppearanceRuntime.ForKit(forwardData, isHome);
+    }
 
     internal static void Configure(ForwardData data)
     {

@@ -1,4 +1,4 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
@@ -44,6 +44,8 @@ internal sealed class PlayerEditorView : UserControl
         string folder = Path.GetDirectoryName(file)!;
         superstar = Path.GetFileName(folder).Equals("superstars", StringComparison.OrdinalIgnoreCase);
         string teamFile = Path.Combine(Path.GetDirectoryName(folder)!, "team.txt");
+        string ownPoolTeam = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(folder)!)!, "team.txt");
+        if (!File.Exists(teamFile) && File.Exists(ownPoolTeam)) teamFile = ownPoolTeam;
         var previewTeams = new List<string>();
         if (superstar)
         {
@@ -65,14 +67,14 @@ internal sealed class PlayerEditorView : UserControl
         // Files saved before the game-model split still carry kit colors; saving drops them.
         PlayerColorModel.Migrate(doc); AppearanceContract.PinSkates(doc);
         var assets = role == "goalie" ? FieldSchema.GoalieAssets : FieldSchema.SkaterAssets;
-        equipment = assets.Where(k => k != "Face").Concat(PlayerColorModel.PlayerKeys)
+        equipment = assets.Where(k => k != "Face").Concat(PlayerColorModel.PlayerKeys).Concat(PlayerKitColors.Keys)
             .Concat(new[] { "Logo From", "Logo Skin" }).ToHashSet(StringComparer.OrdinalIgnoreCase);
         values = doc.Fields;
         foreach (var key in equipment) values.TryAdd(key, "");
         bool custom = AppearanceContract.Independent(doc, team, role);
         inheritFromTeam = new ToggleSwitch { Name = "InheritFromTeam", Content = "Team equipment", IsChecked = !custom,
             OnContent = "On · team styles", OffContent = "Off · own styles", HorizontalAlignment = HorizontalAlignment.Stretch };
-        ToolTip.SetTip(inheritFromTeam, "Use the team's equipment styles. Colors always come from the team's home and away kit, as in the base game; only stick and skate colors can be the player's own.");
+        ToolTip.SetTip(inheritFromTeam, "Use the team's equipment styles. Turn off to choose Team, Custom colors, or Premade for each piece and kit.");
         foreach (var key in equipment) register(key, () => Independent && (key is "Logo From" or "Logo Skin") && !AppearanceContract.SupportsJerseyLogo(Effective(), role) ? "" : Independent && role == "skater" && (key is "Helmet" or "Helmet Away")
             && !HeadAppearance.CanWearHelmet(values.GetValueOrDefault("Face", "")) ? "none" : values[key]);
         register("Override Team Settings", () => Independent ? "yes" : "no");
@@ -114,7 +116,7 @@ internal sealed class PlayerEditorView : UserControl
         var teamContext = new StackPanel { Spacing = StudioTheme.SpaceXs, VerticalAlignment = VerticalAlignment.Center };
         if (superstar)
         {
-            teamContext.Children.Add(Label("Kit colors come from the player team chosen for the run. The preview shows one of them.", 11));
+            teamContext.Children.Add(Label("Team colors follow the squad chosen for the run. Custom colors override them for this player.", 11));
             if (previewTeams.Count > 1)
             {
                 var choices = previewTeams.Select(path => new TeamPreview(path, new CampaignDocument(File.ReadAllText(path)).Get("Team Name", Path.GetFileName(Path.GetDirectoryName(path)!)))).ToArray();
@@ -130,7 +132,7 @@ internal sealed class PlayerEditorView : UserControl
             }
             else teamContext.Children.Add(Label(hasTeam ? "Preview: " + team.Get("Team Name") : "No player team yet · the preview shows your default look.", 11));
         }
-        else teamContext.Children.Add(Label(hasTeam ? "Team: " + team.Get("Team Name") + " · kit colors come from the team" : "No team yet · the preview shows your default look until the player joins a team.",11));
+        else teamContext.Children.Add(Label(hasTeam ? "Team: " + team.Get("Team Name") + " · Team colors follow this kit; Custom colors are personal" : "No team yet · the preview shows your default look until the player joins a team.",11));
         Grid.SetRow(identity,1); shell.Children.Add(identity);
         var appearanceMode = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = StudioTheme.SpaceLg };
         appearanceMode.Children.Add(teamContext);
@@ -245,10 +247,10 @@ internal sealed class PlayerEditorView : UserControl
     internal void ApplyExportAppearance(CampaignDocument target)
     {
         var effective = Effective();
-        // The Play Now team supplies the kit; a player carries only styles and own stick/skate colors.
+        // The Play Now team supplies defaults; explicit per-piece colors travel with the player.
         foreach (var key in AppearanceContract.PlayerKeys(role))
             target.Set(key, AppearanceContract.IsColor(key) ? values.GetValueOrDefault(key, "") : effective.Get(key));
-        foreach (string key in target.Fields.Keys.Where(PlayerColorModel.IsTeamOnlyColor).ToArray()) target.Remove(key);
+        foreach (string key in target.Fields.Keys.Where(k => PlayerColorModel.IsTeamOnlyColor(k) && !PlayerKitColors.Owns(v => target.Get(v), k)).ToArray()) target.Remove(key);
         target.Set("Override Team Settings", "yes");
         if (!AppearanceContract.SupportsJerseyLogo(effective, role)) AppearanceContract.ClearJerseyLogo(target);
     }
@@ -258,25 +260,51 @@ internal sealed class PlayerEditorView : UserControl
     {
         left.Children.Clear(); right.Children.Clear(); stylePickers.Clear();
         string a=away ? " Away" : "";
-        // Base-game model: every kit color is the team's; a player owns only stick and skate colors.
         void Part(string title,string? skin,string[]? playerColors,StackPanel destination,bool teamPaletteOnly=false,bool ownStyle=false)
         {
             // ownStyle: the base game stores this style on the player (skater stick), whatever the team says.
             var panel=new StackPanel { Spacing=3, IsEnabled=Independent || ownStyle, Children={Label(title.ToUpperInvariant())} };
-            var colorButton=new Button { Content="Uses the team's kit colors", Padding=StudioTheme.ButtonPadding, HorizontalAlignment=HorizontalAlignment.Stretch, IsHitTestVisible=false, Opacity=0.8 };
+            string? scheme = playerColors != null ? null : title switch {
+                "Helmet" or "Goalie mask" or "Mask shell" => "helmet", "Jersey" or "Goalie jersey" => "jersey",
+                "Pants" => "pants", "Socks" or "Goalie pads" => "socks", "Name & numbers" => "number",
+                "Gloves" or "Catcher" => "gloves", _ => null };
+            string[] kitKeys = scheme == null ? [] : Enumerable.Range(0, 3).Select(c => AppearanceContract.ColorKey(scheme, c, away)).ToArray();
+            bool CustomColors() => scheme != null && PlayerKitColors.Enabled(k => values.GetValueOrDefault(k, ""), scheme, away);
+            void SelectCustomColors(bool enabled)
+            {
+                if (scheme == null) return;
+                if (enabled) foreach (string key in kitKeys) if (values.GetValueOrDefault(key, "").Length == 0) values[key] = Value(key);
+                values[PlayerKitColors.ModeKey(scheme, away)] = enabled ? "yes" : "no";
+                changed(); uniform.InvalidateVisual();
+            }
+            var colorButton=new Button { Content="Edit custom colors", Padding=StudioTheme.ButtonPadding, HorizontalAlignment=HorizontalAlignment.Stretch };
+            colorButton.Click += async (_, _) => {
+                if (scheme == null) return;
+                SelectCustomColors(true);
+                await AppearanceColorsDialog.Show(owner, title, kitKeys, away, k => values.GetValueOrDefault(k, ""),
+                    (key, value) => values[key] = value, () => { changed(); uniform.InvalidateVisual(); });
+            };
             // Own colors reach only the colorable style in game; a premade piece is fixed artwork.
             var colorSlot = playerColors != null ? new ContentControl() : null;
             Func<string>? style = null;
             void RefreshColors() { if (colorSlot != null) colorSlot.Content = PlayerColors(title, playerColors!, style != null && IsPremade(style())); }
-            if (skin==null) panel.Children.Add(new TextBlock { Text="Colors come from the team's " + (away ? "away" : "home") + " kit.", FontSize=11, Foreground=Muted, TextWrapping=TextWrapping.Wrap });
+            if (skin==null && scheme != null)
+            {
+                var paletteMode = new ComboBox { ItemsSource = new[] { "Team", "Custom" }, SelectedIndex = CustomColors() ? 1 : 0, Name = "Player" + title.Replace(" ", "").Replace("&", "") + "PaletteMode" };
+                colorButton.IsVisible = CustomColors();
+                paletteMode.SelectionChanged += (_, _) => { SelectCustomColors(paletteMode.SelectedIndex == 1); colorButton.IsVisible = CustomColors(); };
+                panel.Children.Add(paletteMode); panel.Children.Add(colorButton);
+            }
+            else if (skin==null) panel.Children.Add(new TextBlock { Text="Colors come from the team's " + (away ? "away" : "home") + " kit.", FontSize=11, Foreground=Muted, TextWrapping=TextWrapping.Wrap });
             else
             {
                 var catalog=data.Assets.Values(role,skin);
                 if (catalog.Count == 0 && skin.EndsWith(" Away")) catalog=data.Assets.Values(role,AppearanceContract.HomeKey(skin));
                 bool unsupportedHelmet = role == "skater" && (skin is "Helmet" or "Helmet Away") && !HeadAppearance.CanWearHelmet(values["Face"]);
                 style = ()=>unsupportedHelmet ? "none" : ownStyle ? (values[skin].Length > 0 ? values[skin] : Value(skin)) : SelectionValue(skin);
-                var picker = new EquipmentStylePicker(catalog,style,v=> { values[skin]=v; if(role=="skater" && skin is "Body" or "Body Away") { string sleeveKey=skin=="Body"?"Bicep":"Bicep Away"; string? sleeve=EquipmentStylePicker.MatchingSleeves(v,data.Assets.Values("skater",sleeveKey)); if(sleeve!=null) values[sleeveKey]=sleeve; } foreach(var other in stylePickers) other.Refresh(); RefreshLogo(); RefreshColors(); changed(); uniform.InvalidateVisual(); if(skin is "Helmet Skin" or "Helmet" or "Helmet Away") RefreshHead(); },colorButton, customLabel: "Team colors", canSelect: !unsupportedHelmet, allowNoHelmet: role == "skater" && skin is "Helmet" or "Helmet Away", disabledReason: "This head has no helmet-compatible version.", inherited: !Independent && !ownStyle, teamPaletteOnly: teamPaletteOnly,
-                    emptyLabel: skin is "Socks" or "Socks Away" ? "Same as jersey" : null, emptyHint: skin is "Socks" or "Socks Away" ? "Socks follow the jersey style." : null);
+                var picker = new EquipmentStylePicker(catalog,style,v=> { values[skin]=v; if(role=="skater" && skin is "Body" or "Body Away") { string sleeveKey=skin=="Body"?"Bicep":"Bicep Away"; string? sleeve=EquipmentStylePicker.MatchingSleeves(v,data.Assets.Values("skater",sleeveKey)); if(sleeve!=null) values[sleeveKey]=sleeve; } foreach(var other in stylePickers) other.Refresh(); RefreshLogo(); RefreshColors(); changed(); uniform.InvalidateVisual(); if(skin is "Helmet Skin" or "Helmet" or "Helmet Away") RefreshHead(); },colorButton, customLabel: scheme == null ? "Team colors" : "Custom", canSelect: !unsupportedHelmet, allowNoHelmet: role == "skater" && skin is "Helmet" or "Helmet Away", disabledReason: "This head has no helmet-compatible version.", inherited: !Independent && !ownStyle, teamPaletteOnly: teamPaletteOnly,
+                    emptyLabel: skin is "Socks" or "Socks Away" ? "Same as jersey" : null, emptyHint: skin is "Socks" or "Socks Away" ? "Socks follow the jersey style." : null,
+                    customColors: scheme == null ? null : CustomColors, selectCustomColors: scheme == null ? null : SelectCustomColors);
                 stylePickers.Add(picker); panel.Children.Add(picker);
                 if (role == "skater" && title == "Jersey")
                 {
@@ -300,7 +328,6 @@ internal sealed class PlayerEditorView : UserControl
             if (colorSlot != null) { RefreshColors(); destination.Children.Add(colorSlot); }
         }
         Part(role=="goalie" ? "Goalie mask" : "Helmet",role=="goalie" ? "Helmet Skin" : "Helmet"+a,null,right);
-        if (role=="goalie") Part("Mask shell",null,null,right);
         if (role == "goalie") right.Children.Add(head);
         RefreshHead();
         if (role != "goalie")
@@ -392,7 +419,7 @@ internal sealed class PlayerEditorView : UserControl
         if (token.StartsWith("bicep") && channel == 1)
         {
             string bicep = Value(away ? "Bicep Away Color" : "Bicep Color");
-            if (bicep.Length > 0) key = away ? "Bicep Away Color" : "Bicep Color";
+            if (bicep.Length > 0 && !PlayerKitColors.Enabled(k => values.GetValueOrDefault(k, ""), "jersey", away)) key = away ? "Bicep Away Color" : "Bicep Color";
         }
         return FieldSchema.TryRgb(Value(key), out byte r, out byte g, out byte b) ? $"#{r:X2}{g:X2}{b:X2}" : "";
     }

@@ -9,10 +9,9 @@ namespace EndlessMode;
 
 internal static class SquadStartingScreens
 {
-    internal static bool EmptyPool(string folder)
+    internal static bool EmptyPool(string folder, TeamConfig team)
     {
-        string path = Path.Combine(Plugin.ModFolder, "player_teams", folder);
-        var selected = SelectedPlayerPool.Read(path, folder == "draft_pool" ? 9 : int.MaxValue);
+        var selected = SquadPoolRuntime.Selected(team, folder);
         return selected != null && selected.Length == 0;
     }
     internal static bool Enabled(TeamConfig cfg, string screen)
@@ -38,8 +37,8 @@ internal static class SquadStartingScreens
             var squad = Tape2Tape.CampaignUtil.CampaignState?.GetCurrentSquad();
             if (Plugin.IsDefaultMode || Tape2Tape.CampaignUtil.CampaignState?.runData?.isTutorialRun == true || squad == null || !(squad.id ?? "").StartsWith("Custom_")
                 || !Plugin.PlayerTeamConfigs.TryGetValue(squad.id.Substring(7), out var cfg)) return usesIntro;
-            bool stars = Enabled(cfg, "superstar_screen") && !EmptyPool("superstars");
-            bool bench = Enabled(cfg, "bench_screen") && !EmptyPool("draft_pool");
+            bool stars = Enabled(cfg, "superstar_screen") && !EmptyPool("superstars", cfg);
+            bool bench = Enabled(cfg, "bench_screen") && !EmptyPool("draft_pool", cfg);
             bool oldschool = Marshal.ReadByte(state, 0x58) != 0 && stars;
             Marshal.WriteByte(state, 0x58, (byte)(oldschool ? 1 : 0));
             Marshal.WriteByte(state, 0x59, (byte)(bench ? 0 : 1));
@@ -61,7 +60,7 @@ internal static class StartingScreenAutoBench
         var squad = Tape2Tape.CampaignUtil.CampaignState?.GetCurrentSquad();
         if (Plugin.IsDefaultMode || squad == null || !(squad.id ?? "").StartsWith("Custom_")
             || !Plugin.PlayerTeamConfigs.TryGetValue(squad.id.Substring(7), out var cfg)) return true;
-        if (SquadStartingScreens.EmptyPool("draft_pool")) { __result = true; return false; }
+        if (SquadStartingScreens.EmptyPool("draft_pool", cfg)) { __result = true; return false; }
         if (SquadStartingScreens.Enabled(cfg, "bench_screen")) { __result = false; return false; }
         return true;
     }

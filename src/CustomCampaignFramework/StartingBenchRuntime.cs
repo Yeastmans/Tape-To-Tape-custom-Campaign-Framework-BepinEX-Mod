@@ -24,8 +24,9 @@ internal static class StartingBenchRuntime
         {
             var squad = __instance.m_CampaignState?.GetCurrentSquad();
             if (squad == null || !(squad.id ?? "").StartsWith("Custom_", StringComparison.Ordinal)) return;
+            var selected = SquadPoolRuntime.Selected(SquadPoolRuntime.Team(squad), "draft_pool");
+            SuppressNativePool = selected != null; // Fail closed if applying an authored pool throws.
             CampaignSquadSetup.ApplyBench(squad);
-            var selected = SelectedPlayerPool.Read(Path.Combine(Plugin.ModFolder, "player_teams", "draft_pool"), 9);
             SuppressNativePool = selected != null && selected.Length == 0;
         }
         catch (Exception ex) { Plugin.Log.LogError("[CustomSquad] Could not refresh starting bench: " + ex.Message); }

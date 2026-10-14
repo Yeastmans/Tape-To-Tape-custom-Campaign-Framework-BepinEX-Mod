@@ -119,9 +119,10 @@ internal static class CampaignAppearanceRuntime
     // Base game: the stick is the player's alone (no team stick colors in the team customizer);
     // a player who never chose stick colors has the customizer's default ones. Skates are on
     // both: the team kit, with an optional player override.
-    private static void Overlay(TeamColorsData palette, CampaignDocument own, CampaignDocument fallback)
+    private static void Overlay(TeamColorsData palette, CampaignDocument own, CampaignDocument fallback, bool away = false)
     {
         if (palette == null) return;
+        PlayNowTranslation.Paint(palette, PlayerKitColors.Palette(own, away, fallback), away);
         Func<string, string> read = k => own.Get(k);
         palette.stickScheme = PlayerColorModel.HasStick(read)
             ? Scheme(PlayerColorModel.StickKeys, read, null, DefaultStickColors())
@@ -151,12 +152,12 @@ internal static class CampaignAppearanceRuntime
             if (scheme != null) scheme.primaryColor = scheme.secondaryColor = scheme.tertiaryColor = new Color(0, 0, 0, 0);
         return palette;
     }
-    // Play Now players: the Play Now team's kit, plus their own stick/skates.
-    internal static TeamColorsData PlayNowPalette(Func<string, string> own)
+    // Play Now players: the team's kit, explicit piece overrides and personal stick/skates.
+    internal static TeamColorsData PlayNowPalette(Func<string, string> own, bool away = false)
     {
         var palette = Unset(); var doc = new CampaignDocument("");
-        foreach (string key in PlayerColorModel.PlayerKeys) if (own(key).Length > 0) doc.Set(key, own(key));
-        Overlay(palette, doc, null);
+        foreach (string key in PlayerColorModel.PlayerKeys.Concat(PlayerKitColors.Keys)) if (own(key).Length > 0) doc.Set(key, own(key));
+        Overlay(palette, doc, null, away);
         return palette;
     }
     private static ColorScheme Scheme(string[] keys, Func<string, string> own, CampaignDocument fallback, ColorScheme standard)
@@ -195,6 +196,22 @@ internal static class CampaignAppearanceRuntime
         => player != null && Bindings.TryGetValue(player.Pointer, out var value) && !value.Export ? value.Effective : null;
     internal static bool Away(SkaterData player)
         => player != null && Bindings.TryGetValue(player.Pointer, out var value) && value.Away;
+    internal static CampaignDocument OwnPalette(SkaterData player, bool away)
+        => player != null && Bindings.TryGetValue(player.Pointer, out var value) && !value.Export
+            ? PlayerKitColors.Palette(value.Own, away, value.Effective) : null;
+    internal static void ForKit(SkaterData player, bool home)
+    {
+        if (player == null) return;
+        if (Bindings.TryGetValue(player.Pointer, out var binding) && !binding.Export)
+        { binding.Away = !home; Paint(player, binding); return; }
+        var exported = PlayNowTranslation.ReadPlayer(player);
+        if (exported == null) return;
+        binding = Get(player); binding.Export = true; binding.Away = !home;
+        var palette = PlayNowPalette(k => exported.Get(k), !home);
+        var forward = player.TryCast<ForwardData>(); var goalie = player.TryCast<GoaltenderData>();
+        if (forward != null) forward.colorSchemes = palette;
+        else if (goalie != null) goalie.colorSchemes = palette;
+    }
     internal static void Copy(SkaterData source, SkaterData target)
     {
         if (Bindings.TryGetValue(source.Pointer, out var value))
@@ -207,10 +224,10 @@ internal static class CampaignAppearanceRuntime
         var forward = player.TryCast<ForwardData>(); var goalie = player.TryCast<GoaltenderData>();
         // Never start from the donor's own palette: a piece the player doesn't own must show
         // the team. With the team's palettes painted natively (Team), everything but the
-        // player's own stick/skates stays unset and the game picks the home/away side itself.
+        // player's explicit overrides stays unset and the game supplies the selected kit.
         var palette = Unset();
         if (!binding.TeamPainted) PlayNowTranslation.Paint(palette, binding.Effective, binding.Away);
-        Overlay(palette, binding.Own, binding.Effective);
+        Overlay(palette, binding.Own, binding.Effective, binding.Away);
         if (forward != null) forward.colorSchemes = palette;
         else if (goalie != null) goalie.colorSchemes = palette;
     }
@@ -219,13 +236,15 @@ internal static class CampaignAppearanceRuntime
         if (player == null || config == null) return;
         var value = Get(player); value.Away = away;
         value.Export = config.Fields.Get("Export Version").Length > 0;
-        // No per-player kit colors: the effective palette is the team's. Stick/skates go to
-        // the game's own player fields, whatever the equipment-style toggle says.
+        // Keep opted-in kit colors separate from team defaults. Stick/skates also use
+        // the game's personal color fields, independently of the style toggle.
         value.Player = new CampaignDocument("");
         Func<string, string> own = k => config.Fields.Get(k);
         value.OwnColors = PlayerColorModel.HasStick(own) || PlayerColorModel.HasSkates(own);
         value.Own = new CampaignDocument("");
-        foreach (string key in PlayerColorModel.PlayerKeys) if (own(key).Length > 0) value.Own.Set(key, own(key));
+        foreach (string key in PlayerColorModel.PlayerKeys.Concat(PlayerKitColors.Keys)) if (own(key).Length > 0) value.Own.Set(key, own(key));
+        foreach (string key in PlayerKitColors.Keys)
+            if (PlayerKitColors.Owns(own, key) && own(key).Length > 0) value.Player.Set(key, own(key));
         if (player.TryCast<GoaltenderData>() != null)
             foreach (string key in new[] { "Goalie Pants Skin", "Goalie Pants Away" })
                 if (config.Fields.Get(key).Length > 0) value.Player.Set(key, config.Fields.Get(key));

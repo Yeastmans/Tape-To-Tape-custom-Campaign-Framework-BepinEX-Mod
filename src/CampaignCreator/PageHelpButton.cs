@@ -151,7 +151,7 @@ internal static class PageHelpButton
         if (label is "Open outline guides" or "Open attachment data") return "Open this head project's " + (label == "Open outline guides" ? "placement-guide folder" : "attachment reference data") + " in the associated application.";
         if (c.Tag is string nodeId && Guid.TryParse(nodeId, out _) && c is Button && c.GetVisualAncestors().OfType<MapEditorView>().Any()) return "Open settings for this map node. While Connect is active, click a highlighted node in the next layer to complete a path instead. Node settings change the draft; Save maps keeps them.";
         if (c.Tag is string nodeChoice && nodeChoice.StartsWith("node-choice:")) return "Choose " + label + " for this map node. It enters the map draft; configure its settings and connections, then Save maps.";
-        if (label == "+ Add node") return "Add a node to this layer and choose its type. A layer holds up to two nodes, separated for native map artwork. Save maps keeps the change.";
+        if (label == "+ Add node") return "Add a node to this layer and choose its type. Three or more choices use closer rows. Save maps keeps the change.";
         if (label.StartsWith("Map ") && c is Button) return "Open this map in the campaign's sequence. Switching maps keeps draft edits but does not save them.";
         if (label == "Stat Scale") return "Multiply skater speed, shot power, accuracy and checking, and the goalie's numeric attributes except Pass Read. Blank or 1 leaves them unchanged. Save the team to keep the scale.";
         if (label == "Size Offset") return "Adjust the skater's body scale in addition to Size. Blank uses normal scale. Save changes keeps it; check the result in game.";
@@ -196,7 +196,7 @@ internal static class PageHelpButton
         if (label == "Import base-game map") return "Replace the current map with a base-game layout or another campaign's map. Imported team assignments are cleared; Undo restores the previous layout. Save maps keeps the replacement.";
         if (label == "Save maps") return "Validate and save all maps and their act sequence. Fix route errors first. Previous layouts are backed up and saved changes apply to new runs. Ctrl+S performs the same save.";
         if (label == "+ Add map") return "Append a new map to the campaign sequence. Save maps keeps it. At least one map must remain when removing tabs.";
-        if (label == "+ Insert layer") return "Insert a layer into this map draft. Each layer holds up to two nodes. Connect its nodes to complete the routes, then save maps.";
+        if (label == "+ Insert layer") return "Insert a layer into this map draft. Add its choices and connect their routes, then save maps.";
         if (c.Name == "CommunityCampaigns") return "Select a shared campaign to download. Download and install installs it locally; selection alone does not download or activate it.";
         if (c.Name == "DownloadCommunityCampaign") return "Download and install the selected community campaign. Existing names offer Keep both or Replace mine; replacement preserves the old campaign in campaign_backups. Select the imported campaign on Home to play it.";
         if (label == "Use base-game bench") return "Switch between the native and custom bench cards. Both sets retain their selections; only the visible set is active. Save campaign keeps the choice.";

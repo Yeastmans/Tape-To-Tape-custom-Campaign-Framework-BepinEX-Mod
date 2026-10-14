@@ -29,8 +29,15 @@ public static class CampaignNavigation
         {
             string file = Path.Combine(dir, "team.txt");
             var players = Path.Combine(dir, "players");
+            var children = Directory.Exists(players) ? Directory.GetFiles(players, "*.txt", SearchOption.AllDirectories).Order(StringComparer.OrdinalIgnoreCase).Select(Player).ToList() : [];
+            foreach (var (pool, title) in new[] { ("draft_pool", "Bench"), ("superstars", "Superstars"), ("free_agents", "Free agents") })
+            {
+                string path = Path.Combine(dir, "player_teams", pool);
+                if (Directory.Exists(path)) children.Add(new("Squad " + title, "Player pool", null,
+                    Directory.GetFiles(path, "*.txt").Order(StringComparer.OrdinalIgnoreCase).Select(Player).ToList()));
+            }
             return new(File.Exists(file) ? Label(file, true) : Path.GetFileName(dir).Replace('_', ' '), order > 0 ? $"Opponent {order}" : "Custom squad", File.Exists(file) ? file : null,
-                Directory.Exists(players) ? Directory.GetFiles(players, "*.txt", SearchOption.AllDirectories).Order(StringComparer.OrdinalIgnoreCase).Select(Player).ToList() : []);
+                children);
         }
         var nodes = new List<CampaignNode>();
         foreach (var file in Directory.GetFiles(root, "*.txt").Order(StringComparer.OrdinalIgnoreCase))

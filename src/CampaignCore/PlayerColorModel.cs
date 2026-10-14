@@ -61,6 +61,7 @@ public static class PlayerColorModel
         foreach (string key in player.Fields.Keys.ToArray())
         {
             if (IsPlayerColor(key)) continue;
+            if (PlayerKitColors.Owns(k => player.Get(k), key)) continue;
             string canonical = AppearanceFields.ColorKey(key);
             // Aliases such as "Stick Color 2" were folded into the canonical key above.
             if (IsPlayerColor(canonical)) { player.Remove(key); continue; }
