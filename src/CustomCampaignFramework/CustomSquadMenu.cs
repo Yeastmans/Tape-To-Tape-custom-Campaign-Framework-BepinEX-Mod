@@ -20,6 +20,14 @@ internal static class CustomSquadMenu
     private static readonly List<MetaTeamItem> custom = new();
     private static readonly List<MetaTeamItem> vanilla = new();
     private static readonly Dictionary<int, bool> originallyActive = new();
+    private static readonly Dictionary<int, BishopGames.UI.AbstractNavigable[]> nativeNeighbors = new();
+    private static readonly BishopGames.UI.AbstractNavigable.EDirection[] directions =
+    {
+        BishopGames.UI.AbstractNavigable.EDirection.Up,
+        BishopGames.UI.AbstractNavigable.EDirection.Right,
+        BishopGames.UI.AbstractNavigable.EDirection.Down,
+        BishopGames.UI.AbstractNavigable.EDirection.Left
+    };
     private static bool open;
     private static bool customOnly;
     private static int gatewayInputFrame = -1;
@@ -86,7 +94,7 @@ internal static class CustomSquadMenu
         try
         {
             foreach (var item in custom)
-                if (item != null && item.Navigable != null && !parent.HasChild(item.Navigable)) parent.RegisterChild(item.Navigable, true);
+                if (item != null && item.Navigable != null && !parent.HasChild(item.Navigable)) parent.RegisterChild(item.Navigable, false);
             // The native neighbor search does not connect these nested page tiles.
             // Link them in layout order, using the page grid's column count.
             var navs = new List<BishopGames.UI.AbstractNavigable>();
@@ -122,7 +130,7 @@ internal static class CustomSquadMenu
         nativeDefaultNavigable = menu.m_MetaTeamsParent?.m_DefaultNavigable;
         string campaignFile = Path.Combine(Plugin.ModFolder, "campaign.txt");
         customOnly = Plugin.PlayerTeamsEnabled && File.Exists(campaignFile) && new CampaignDocument(File.ReadAllText(campaignFile)).Get("Custom Squads Only").Equals("yes", StringComparison.OrdinalIgnoreCase);
-        custom.Clear(); vanilla.Clear(); originallyActive.Clear(); open = false;
+        custom.Clear(); vanilla.Clear(); originallyActive.Clear(); nativeNeighbors.Clear(); open = false;
         gatewayInputFrame = -1; openingGateway = false;
         if (menu.m_MetaItems == null) return;
         foreach (var item in menu.m_MetaItems)
@@ -148,9 +156,24 @@ internal static class CustomSquadMenu
                 if (menu.m_MetaDescription != null) menu.m_MetaDescription.text = configured
                     ? "Your campaign squads were found, but could not be loaded. Check their settings in Campaign Studio and the game log for details."
                     : "Add a custom squad to this campaign in Campaign Studio, then reopen squad selection.";
-                if (menu.m_MetaTeamsParent != null) menu.m_MetaTeamsParent.RegisterChildren(true);
+                if (menu.m_MetaTeamsParent != null) menu.m_MetaTeamsParent.RegisterChildren(false);
             }
             return;
+        }
+        // SetupMetas has already linked the native grid, including Gauntlet.
+        // Its cells overlap (negative spacing), so geometric neighbor searches
+        // reject adjacent cells and skip whole rows/columns. Preserve the game's
+        // explicit links before moving the campaign cards to a separate page.
+        foreach (var item in vanilla)
+        {
+            if (item.Navigable == null) continue;
+            var neighbors = new BishopGames.UI.AbstractNavigable[directions.Length];
+            for (int i = 0; i < directions.Length; i++)
+            {
+                var neighbor = item.Navigable.GetNeighbor(directions[i]);
+                neighbors[i] = TileFor(neighbor) == null ? neighbor : null;
+            }
+            nativeNeighbors[item.GetInstanceID()] = neighbors;
         }
         foreach (var item in custom) RemoveUnlockEffects(item);
         Canvas.ForceUpdateCanvases();
@@ -437,6 +460,7 @@ internal static class CustomSquadMenu
         if (menu.m_Title != null) menu.m_Title.text = open ? "CUSTOM SQUADS — " + Plugin.ActiveCampaign : title;
         Canvas.ForceUpdateCanvases();
         var grid = menu.m_MetaTeamsLayout;
+        MetaTeamItem gatewayAnchor = null;
         if (grid != null)
         {
             grid.enabled = open ? false : gridWasEnabled;
@@ -467,6 +491,7 @@ internal static class CustomSquadMenu
                 }
                 if (anchor != null)
                 {
+                    gatewayAnchor = anchor;
                     var rt = first.GetComponent<RectTransform>();
                     var source = anchor.GetComponent<RectTransform>();
                     rt.sizeDelta = source.sizeDelta;
@@ -478,14 +503,30 @@ internal static class CustomSquadMenu
         if (menu.m_MetaTeamsParent != null)
         {
             registeringPage = true;
-            try { menu.m_MetaTeamsParent.RegisterChildren(true); }
+            try { menu.m_MetaTeamsParent.RegisterChildren(false); }
             finally { registeringPage = false; }
         }
-        // TeamsGrid (NavigableParentGrid) registers only its direct children: the prefab has
-        // m_RegisterChildrenDeeply = 0. The page's tiles sit one level down, so without this only
-        // the programmatically highlighted first squad was reachable. Neighbors are found by
-        // position among the registered siblings.
+        // Nested page cards need explicit registration; neither page may use
+        // geometric neighbor search on the native overlapping card rectangles.
         if (open && menu.m_MetaTeamsParent != null) RegisterPageTiles();
+        if (!open) RestoreNativeNavigation(gatewayAnchor);
+    }
+    private static void RestoreNativeNavigation(MetaTeamItem gatewayAnchor)
+    {
+        foreach (var item in vanilla)
+        {
+            if (item == null || item.Navigable == null || !nativeNeighbors.TryGetValue(item.GetInstanceID(), out var neighbors)) continue;
+            for (int i = 0; i < directions.Length; i++) item.Navigable.SetNeighbor(directions[i], neighbors[i]);
+        }
+        var gateway = custom[0].Navigable;
+        if (gateway == null) return;
+        gateway.ClearNeighbors();
+        if (gatewayAnchor?.Navigable == null) return;
+        var anchor = gatewayAnchor.Navigable;
+        var previousDown = anchor.GetNeighbor(BishopGames.UI.AbstractNavigable.EDirection.Down);
+        anchor.SetNeighbor(BishopGames.UI.AbstractNavigable.EDirection.Down, gateway);
+        gateway.SetNeighbor(BishopGames.UI.AbstractNavigable.EDirection.Up, anchor);
+        gateway.SetNeighbor(BishopGames.UI.AbstractNavigable.EDirection.Down, previousDown);
     }
     private static void SetGatewayArt(bool gateway)
     {

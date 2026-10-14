@@ -160,7 +160,7 @@ internal static class PageHelpButton
         if (c.Name == "BugIncludeInfo") return "Include setup information and recent plugin warnings/errors in the report. Review the draft before opening GitHub; nothing is submitted until you submit the issue there.";
         if (c.Name == "BugOpenGitHub") return "Open the prepared issue in your browser. A short summary is required. Review and submit it yourself on GitHub.";
         if (label == "Open log folders") return "Open folders holding available plugin and player logs. You can attach them yourself to the GitHub issue.";
-        if (c.Name == "UploadCampaignConfirm") return "Upload the selected saved campaign and its referenced logos to the public community folder. Other users can download it; Studio cannot remove it afterwards.";
+        if (c.Name == "UploadCampaignConfirm") return "Upload the selected saved campaign with its referenced logos and custom head projects to the public community folder. Other users can download it; Studio cannot remove it afterwards.";
         if (c.Name == "UploadCampaignPicker") return "Choose the saved campaign to share. Selecting it does not upload anything; Upload performs the publish action.";
         if (label is "Keep both" or "Replace mine") return label == "Keep both" ? "Install the incoming campaign under a new name and keep your existing campaign." : "Move your existing campaign to campaign_backups, then install the incoming copy under its name.";
         if (c.Name?.StartsWith("Effect_") == true && c.Tag is string effectId && OpponentEffects.All.FirstOrDefault(e => e.Key == effectId) is { } effect)

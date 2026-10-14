@@ -209,7 +209,9 @@ For detailed requirements, see [Maps and editor](release/docs/MAPS_AND_EDITOR.md
 
 Use **Campaigns → Import** on Home for a campaign ZIP or a community download. If a name already exists, **Keep both** gives the import another name; **Replace mine** moves your current copy to `campaign_backups` first.
 
-Use **Campaigns → Upload** to share a saved campaign, including the logos it uses, in the public community folder. Review and save it first: uploads are public and cannot be removed from inside Studio. This is separate from exporting a team to Play Now.
+Use **Campaigns → Upload** to share a saved campaign with its custom logos and referenced custom head projects in the public community folder. Large campaigns upload in small chunks with progress shown, up to 512 MB. Review and save it first: uploads are public and cannot be removed from inside Studio. This is separate from exporting a team to Play Now.
+
+Downloaded heads are added to your head library. Identical heads are reused; a different head with the same name is imported under a new name and the campaign's references are updated. Existing head artwork is preserved. Restart the game after importing new heads.
 
 ## Content locations and backups
 

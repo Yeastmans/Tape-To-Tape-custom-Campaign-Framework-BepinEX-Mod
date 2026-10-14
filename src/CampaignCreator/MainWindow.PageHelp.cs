@@ -208,7 +208,7 @@ public sealed partial class MainWindow
             Add("Teams · Edit existing", "Choose a saved team to edit its settings, look and roster.", "HomeEditTeams");
             Add("Teams · Import", "Import an editable team copy. This does not grant native team/player identity checks; use Copy vanilla campaign for identity-preserving copies. Team imports also offer the Player team library tab.", "HomeImportTeams");
             Add("Import campaign", "Install a campaign zip from your computer or download one from the community list. If a name is taken, Keep both renames the new copy and Replace mine backs up the old one.", "HomeImportCampaigns");
-            Add("Upload campaign", "Publish a saved campaign and its logos to the public community folder. It cannot be removed from Studio. Review the upload dialog before sharing.", "HomeUploadCampaigns");
+            Add("Upload campaign", "Publish a saved campaign with its logos and custom heads to the public community folder. It cannot be removed from Studio. Review the upload dialog before sharing.", "HomeUploadCampaigns");
             Add("Campaign selection", "The campaign the game loads next launch; None (base game) turns campaigns off. It saves immediately. Restart the game after changing it.", "HomeSelectCampaign");
             Add("Default look", "The logo, kit colors, equipment, goalie gear and number style new teams start with. New players take its styles and stick, and players with no team preview in it.", "HomeSetDefault");
             Add("Head Editor", "Opens setup first. Name your head, select a native template or From scratch with a native layout, then Save head and show previews. You can also open an existing saved head. Cancel stays on Home.", "HomeHeadEditor");

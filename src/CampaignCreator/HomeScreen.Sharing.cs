@@ -39,7 +39,8 @@ public sealed partial class MainWindow
                 var result = CampaignSharing.Install(zip, root, folder);
                 string logos = result.LogosCopied + result.LogosKept == 0 ? "" : $" Logos: {result.LogosCopied} added" + (result.LogosKept > 0 ? $", {result.LogosKept} already in your CustomLogos folder (kept yours)." : ".");
                 ShowHome(); // refreshes Select campaign behind the dialog
-                feedback.Text = $"Imported {result.Folder}. Choose it under Select campaign to play it.{logos}";
+                string heads = result.HeadsCopied + result.HeadsKept == 0 ? "" : $" Custom heads: {result.HeadsCopied} added, {result.HeadsKept} already installed. Restart the game to load new heads.";
+                feedback.Text = $"Imported {result.Folder}. Choose it under Select campaign to play it.{logos}{heads}";
                 feedback.Foreground = Brush.Parse("#70DEA2");
             }
             finally { if (cleanup != null && File.Exists(cleanup)) File.Delete(cleanup); }
@@ -135,9 +136,10 @@ public sealed partial class MainWindow
             string zip = Path.Combine(Path.GetTempPath(), "t2t_" + campaign.Label.Replace(' ', '_') + ".zip");
             try
             {
-                int logos = await Task.Run(() => CampaignSharing.Zip(campaign.Path, zip));
-                feedback.Text = $"Uploading {FormatSize(new FileInfo(zip).Length)}" + (logos > 0 ? $" with {logos} logo{(logos == 1 ? "" : "s")}…" : "…");
-                string path = await CampaignSharing.UploadAsync(zip, campaign.Label + " - " + name, name, description.Text?.Trim() ?? "", campaign.Label);
+                var assets = await Task.Run(() => CampaignSharing.Zip(campaign.Path, zip, root));
+                feedback.Text = $"Uploading {FormatSize(new FileInfo(zip).Length)} with {assets.Logos} logos and {assets.Heads} custom heads…";
+                var progress = new Progress<double>(percent => feedback.Text = $"Uploading {campaign.Label}: {percent:0}%…");
+                string path = await CampaignSharing.UploadAsync(zip, campaign.Label + " - " + name, name, description.Text?.Trim() ?? "", campaign.Label, progress);
                 feedback.Text = $"Uploaded {campaign.Label}. It's now in the community list" + (path.Length > 0 ? " as " + path + "." : ".");
                 feedback.Foreground = Brush.Parse("#70DEA2"); upload.IsVisible = false; cancel.Content = "Close";
             }
@@ -147,7 +149,7 @@ public sealed partial class MainWindow
         upload.Name = "UploadCampaignConfirm"; StudioTheme.Primary(upload);
         dialog.Content = new ScrollViewer { Content = new StackPanel { Margin = new Thickness(24), Spacing = StudioTheme.SpaceMd, Children = {
             new TextBlock { Text = "Upload campaign", FontSize = 26, FontWeight = FontWeight.Bold },
-            new TextBlock { Text = "Share a campaign with the community. Logos it uses from your CustomLogos folder are included.", Foreground = StudioTheme.Muted, TextWrapping = TextWrapping.Wrap },
+            new TextBlock { Text = "Share a campaign with the community. Its custom logos and referenced custom head projects are included.", Foreground = StudioTheme.Muted, TextWrapping = TextWrapping.Wrap },
             new TextBlock { Text = "Campaign" }, picker,
             new TextBlock { Text = "Your name" }, author,
             new TextBlock { Text = "Description" }, description,

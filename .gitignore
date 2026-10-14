@@ -23,7 +23,8 @@ outputs/
 custom-heads/
 nhl-heads/
 wip/
-worker/
+worker/*
+!worker/t2t-campaigns-worker.js
 interop_backup/
 release/T2T_Dumps/
 release/Custom Campaigns Mod/

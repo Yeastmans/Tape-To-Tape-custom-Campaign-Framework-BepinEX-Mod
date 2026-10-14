@@ -32,9 +32,20 @@ public sealed class UnityGame : IDisposable
     public static bool LooksLikeGame(string root) =>
         File.Exists(Path.Combine(root, "Tape to Tape_Data", "data.unity3d")) && File.Exists(Path.Combine(root, "GameAssembly.dll"));
 
+    public static string? FolderError(string root)
+    {
+        if (LooksLikeGame(root)) return null;
+        if (File.Exists(Path.Combine(root, "Tape to Tape.exe")))
+            return "Tape to Tape was found, but Campaign Studio requires the roguelite beta. "
+                + "In Steam, open Tape to Tape → Properties → Betas, select roguelite, let the update finish, then try again. "
+                + "If roguelite is already selected, verify the game's installed files in Steam.";
+        return "Tape to Tape was not found in this folder. Choose the installation folder containing Tape to Tape.exe. "
+            + "You can find it in Steam → Tape to Tape → Properties → Installed Files → Browse.";
+    }
+
     public UnityGame(string root)
     {
-        if (!LooksLikeGame(root)) throw new DirectoryNotFoundException("Tape to Tape was not found in " + root);
+        if (FolderError(root) is { } error) throw new DirectoryNotFoundException(error);
         Root = root;
         try
         {

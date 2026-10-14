@@ -116,8 +116,22 @@ public sealed partial class MainWindow
             });
             string? folder = folders.FirstOrDefault()?.TryGetLocalPath();
             if (folder == null) return null;
-            if (UnityGame.LooksLikeGame(folder)) return folder;
-            status.Text = "That folder doesn't contain Tape to Tape. Choose the folder with Tape to Tape.exe.";
+            if (UnityGame.FolderError(folder) is not { } error) return folder;
+            status.Text = error;
+            var close = new Button { Content = "Close", Padding = StudioTheme.ButtonPadding };
+            var retry = new Button { Content = "Choose another folder", Padding = StudioTheme.ButtonPadding };
+            var dialog = new Window {
+                Title = "Tape to Tape setup", Width = 560, SizeToContent = SizeToContent.Height, CanResize = false,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = StudioTheme.Surface,
+                Content = new StackPanel { Margin = new Thickness(24), Spacing = StudioTheme.SpaceMd, Children = {
+                    new TextBlock { Text = error, TextWrapping = TextWrapping.Wrap },
+                    new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right,
+                        Spacing = StudioTheme.SpaceSm, Children = { close, retry } }
+                } }
+            };
+            close.Click += (_, _) => dialog.Close(false);
+            retry.Click += (_, _) => dialog.Close(true);
+            if (!await dialog.ShowDialog<bool>(this)) return null;
         }
     }
 }
