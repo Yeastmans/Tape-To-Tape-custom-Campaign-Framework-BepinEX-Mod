@@ -160,12 +160,14 @@ public sealed partial class MainWindow
         var readArt = Button("Read game artwork", async () => await EnsureGameArt(force: true)); readArt.Name = "HomeReadGameArt";
         var updateMod = Button("Update mod compatibility", async () => { if(!readingGameArt) await EnsureModCompatibility(force: true); }); updateMod.Name = "HomeUpdateModCompatibility";
         var updates = Button("Check for updates", async () => await CheckForStudioUpdates(manual: true)); updates.Name = "HomeCheckForUpdates";
+        var uninstall = Button("Uninstall", async () => await UninstallStudio()); uninstall.Name = "HomeUninstall";
+        ToolTip.SetTip(uninstall, "Open the Windows uninstaller for Campaign Studio and the mod. You will be asked to confirm.");
         ToolTip.SetTip(updates, "Check GitHub for a newer Studio and mod installer, including beta updates. Installation always asks first.");
         ToolTip.SetTip(readArt, "Rebuild heads, logos, equipment, stadiums and map pictures from your installed copy of Tape to Tape");
         ToolTip.SetTip(bug, "Open a pre-filled bug report on the mod's GitHub page");
         ToolTip.SetTip(discord, "Open the community Discord invite in your browser for help with the mod and Studio");
         ToolTip.SetTip(github, "Open the project's GitHub repository in your browser for downloads, documentation and issues");
-        foreach (var action in new[] { help, guide, bug, discord, github, readArt, updateMod, updates }) { action.Margin = new Thickness(0, 0, 12, 8); learning.Children.Add(action); }
+        foreach (var action in new[] { help, guide, bug, discord, github, readArt, updateMod, updates, uninstall }) { action.Margin = new Thickness(0, 0, 12, 8); learning.Children.Add(action); }
         compatibilityHomeStatus = new TextBlock { Name="HomeModCompatibilityStatus",Text=compatibilityStatus.Length>0?compatibilityStatus:"Game compatibility is checked using the installed mod. Check for updates downloads newer Studio and mod releases from GitHub.",TextWrapping=TextWrapping.Wrap,Foreground=StudioTheme.Muted };
         releaseHomeStatus = new TextBlock { Name="HomeReleaseUpdateStatus",Text=releaseStatus,TextWrapping=TextWrapping.Wrap,Foreground=StudioTheme.Muted };
         var bottom = new Border { BorderBrush = StudioTheme.Border, BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(0, 16, 0, 0), Child = new StackPanel { Spacing=StudioTheme.SpaceSm,Children={learning,linkStatus,releaseHomeStatus,compatibilityHomeStatus} } };

@@ -6089,6 +6089,13 @@ public static class PatchBossLaunchMatch
     internal static void SetPlayerAbility(ForwardData f, string abilityName)
     {
         if (f == null) return;
+        // Explicitly empty authored loadouts must clear a cloned native ability.
+        // "none" is an editor value, not an entry in the ability repository.
+        if (string.Equals(abilityName?.Trim(), "none", StringComparison.OrdinalIgnoreCase))
+        {
+            f.ability = null;
+            return;
+        }
         var ability = FindAbility(abilityName);
         if (ability == null) { Plugin.Log.LogWarning($"[Remix] Ability '{abilityName}' not found for {f.firstName}"); return; }
         f.ability = ability;

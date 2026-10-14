@@ -23,6 +23,7 @@ internal static class StudioGuideReference
             new("Join Discord for help", "Open the community Discord invite in your browser for help with the mod and Studio."),
             new("GitHub", "Open the project repository in your browser for downloads, documentation and issues."),
             new("Read game artwork", "Rebuild previews and base-game roster records from the installed game. If the game cannot be found, choose its installation folder. Later skips the startup prompt."),
+            new("Uninstall", "Save your edits and close Tape to Tape. Confirm to close Studio and open the Windows uninstaller for Studio and the bundled mod. Saved campaigns, players and custom heads are kept. Cancel leaves Studio open."),
             new("Report a bug", "Review the report and optional setup/log details, then open GitHub. You submit the issue yourself in the browser.")],
         "campaign" => [
             new("Name your campaign", "Names a new campaign's saved folder. An unnamed save keeps a working draft; an existing saved campaign has a fixed heading."),
