@@ -17,10 +17,22 @@ const UA = "T2T-CampaignCreator-Worker/1.0";
 // Per-upload sanity cap — rejects zips larger than this to prevent abuse.
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024; // 20 MB
 const MAX_CAMPAIGN_BYTES = 512 * 1024 * 1024;
-const CHUNK_BYTES = 8 * 1024 * 1024;
+// Keep each request below the free Worker's CPU budget. Studio reads this size
+// when starting a session, so this also repairs already-released clients.
+const CHUNK_BYTES = 1024 * 1024;
+const MAX_CHUNK_BYTES = 8 * 1024 * 1024; // Existing sessions may still send 8 MiB.
 
 async function boundedBody(req, maximum) {
-  if (Number(req.headers.get("Content-Length")) > maximum) throw new Error("Upload request is too large.");
+  const declared = req.headers.get("Content-Length");
+  if (declared !== null) {
+    const size = Number(declared);
+    if (!Number.isSafeInteger(size) || size < 0 || size > maximum) throw new Error("Upload request is too large.");
+    // The HTTP runtime enforces Content-Length. Read the bounded body natively
+    // instead of retaining every network fragment and copying it in JavaScript.
+    const bytes = new Uint8Array(await req.arrayBuffer());
+    if (bytes.length !== size) throw new Error("Upload request length does not match its body.");
+    return bytes;
+  }
   const reader = req.body?.getReader();
   const chunks = []; let size = 0;
   if (reader) while (true) {
@@ -78,7 +90,7 @@ async function startUpload(req, env) {
 async function appendUpload(req, url, env) {
   const ticket = await readTicket(req, env);
   const offset = Number(url.searchParams.get("offset"));
-  const body = await boundedBody(req, CHUNK_BYTES);
+  const body = await boundedBody(req, MAX_CHUNK_BYTES);
   if (!Number.isSafeInteger(offset) || offset < 0 || body.length === 0 || offset + body.length > ticket.size)
     return json({ error: "Invalid campaign upload offset or chunk size." }, 400);
   const next = offset + body.length;
