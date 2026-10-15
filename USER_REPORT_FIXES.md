@@ -6,9 +6,11 @@ Release label explicitly approved by the user. The changes below have technical 
 
 ### Cheese goalie export follow-up
 
-The reported error was `Unknown goalie Skin Away 'Body/Mid_Cheese'`. Native goalie records use that identity, but the bundled Spine equipment inventory omitted it. Without a local runtime skin dump, export rejected the goalie and could also block a whole-team export. Creator now includes this known goalie identity in its built-in jersey/pants choices for both kits and its export allow-list, preserving the selected value without a refresh. Unknown assets still fail validation.
+The reported error was `Unknown goalie Skin Away 'Body/Mid_Cheese'`. The captured runtime skin dump contains that legacy identity, but the bundled Spine equipment inventory does not. Export rejected the goalie and could also block a whole-team export. Creator now retains this reported goalie identity in its built-in jersey/pants choices for both kits and its export allow-list. Unknown assets still fail validation; accepting the identity does not establish that its artwork renders in the current game.
 
 Reproduced the exact error before the change. Fourteen Cheese-specific checks and 31 existing export checks pass, including complete team and individual goalie file writes, retained home/away skins and stats, sidecars, unchanged authored files, and rejection of unknown assets. Evidence: `artifacts/goalie-cheese-export-20261014`. Native rendering remains unconfirmed.
+
+The follow-up body audit compared 24 skater and 14 goalie identities across the bundled Spine inventory, captured native rosters and runtime dump. No other unintended catalog omissions were found in those sources. Chicago and Toronto goalie bodies each lack artwork in one goalie view and remain hidden. Shader support layers and Crusaders gameplay-effect armor also remain excluded. The audit caught a separate picker filter still hiding Cheese; that filter is now corrected. Thirteen actual picker checks cover all four home/away jersey/pants selectors, changing choices, writing and reopening selections, and retaining the exclusions. The 45 export checks also passed again (58 total). Evidence: `artifacts/body-catalog-audit-20261014`.
 
 After updating, reopen the reported goalie/team and retry Export to Play Now. The Cheese away skin must export without the error. Check the exported team and individual goalie in Play Now, including a home and away match; report any appearance mismatch. Keep the original campaign as the source rather than replacing it with an exported snapshot.
 
