@@ -4,6 +4,14 @@ Release label explicitly approved by the user. The changes below have technical 
 
 ## Confirmed causes and local changes
 
+### Cheese goalie export follow-up
+
+The reported error was `Unknown goalie Skin Away 'Body/Mid_Cheese'`. Native goalie records use that identity, but the bundled Spine equipment inventory omitted it. Without a local runtime skin dump, export rejected the goalie and could also block a whole-team export. Creator now includes this known goalie identity in its built-in jersey/pants choices for both kits and its export allow-list, preserving the selected value without a refresh. Unknown assets still fail validation.
+
+Reproduced the exact error before the change. Fourteen Cheese-specific checks and 31 existing export checks pass, including complete team and individual goalie file writes, retained home/away skins and stats, sidecars, unchanged authored files, and rejection of unknown assets. Evidence: `artifacts/goalie-cheese-export-20261014`. Native rendering remains unconfirmed.
+
+After updating, reopen the reported goalie/team and retry Export to Play Now. The Cheese away skin must export without the error. Check the exported team and individual goalie in Play Now, including a home and away match; report any appearance mismatch. Keep the original campaign as the source rather than replacing it with an exported snapshot.
+
 ### Skater position selection follow-up
 
 The user confirmed that line switching works, then reported that changing a skater's position on the team was unavailable. The roster cards had only a same-position line switch; there was no position chooser. The user explicitly requested swapping both skaters when the destination is occupied.

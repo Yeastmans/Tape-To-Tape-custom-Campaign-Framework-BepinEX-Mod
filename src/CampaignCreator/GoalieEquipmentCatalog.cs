@@ -32,6 +32,8 @@ internal static class GoalieEquipmentCatalog
             "Body/Golfers",
             "Body/HockeyFC",
             "Body/Knights",
+            // Native GoaltenderData uses this identity even though the Spine inventory omits it.
+            "Body/Mid_Cheese",
             "Body/Mountaineers",
             "Body/Princess",
             "Body/Prisoners",

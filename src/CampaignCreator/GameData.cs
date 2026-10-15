@@ -34,6 +34,11 @@ internal sealed class GameData
             };
             if (away != null) Assets.Add(p[0], away, p[2]);
         }
+        // Keep known native goalie preset identities available without a runtime dump.
+        // The Spine inventory alone omits some values retained by GoaltenderData.
+        foreach (string field in FieldSchema.GoalieAssets)
+            foreach (string value in GoalieEquipmentCatalog.Values(field))
+                Assets.Add("goalie", field, value);
         Root = root;
         foreach (var custom in CustomHeadCatalog.Load(root))
         {
