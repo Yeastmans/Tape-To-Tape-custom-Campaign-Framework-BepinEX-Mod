@@ -4,6 +4,22 @@ Release label explicitly approved by the user. The changes below have technical 
 
 ## Confirmed causes and local changes
 
+### Skater position selection follow-up
+
+The user confirmed that line switching works, then reported that changing a skater's position on the team was unavailable. The roster cards had only a same-position line switch; there was no position chooser. The user explicitly requested swapping both skaters when the destination is occupied.
+
+Each skater card now has **Position...** beside Edit player. It lists Center, Left Wing, Right Wing, Left Defense and Right Defense on the current line, previews both names for an occupied-position swap, and moves only the selected player into an empty position. These changes remain pending until Save opponent/Save player team. Start active follows each skater when changing positions on Line 1. Goalies and empty positions reserved for squad setup remain protected. The previously published roster-saving and Act 3 continuation repairs remain included.
+
+Technical evidence and screenshots: `artifacts/roster-position-picker-20261014`. The new position chooser has 30 passing editor checks, including both lines, save/reopen, cancelling, failed-save rollback, retained player fields, subsequent player-editor saves and active/bench choices. The existing 35 roster-save, 26 roster-creation/removal and 122 squad/validation checks also passed (213 total). Human confirmation applies to the earlier line switch only; the new position control and its in-game result still need a user retest.
+
+After installing this follow-up, use a disposable campaign copy:
+
+1. Open an opponent or custom squad with a Center and Left Wing. In Team roster, choose Position... on the Center, select Left Wing, and check that the preview names both skaters. Apply Swap players, then Save opponent/Save player team. Reopen the team: the two skaters must exchange positions on the same line, retaining their names, numbers, stats and equipment.
+2. Move a skater into an empty defense position and save. Only that skater moves. Try each of the five positions, then edit that player's stats and save again; the chosen position must remain. Repeat an occupied swap and an empty move on Line 2, then use the line switch and verify it uses the newly chosen position.
+3. In a single-line custom squad, turn Start active off for one skater, save, and swap that skater with an active teammate. The benched skater must stay benched and the active teammate active. Repeat a move into an empty slot. Position changes must not create players, add McShaggy or alter the goalie.
+4. Cancel a position choice and verify nothing moves. Apply a choice but leave the team without saving: reopening must restore its saved positions. Empty positions reserved for squad setup must remain unavailable.
+5. Start a fresh run or opponent match from the edited campaign and verify the actual starting positions match Studio. Existing saved runs retain their saved lineup; changing a campaign template does not rewrite them. Report the installed build ID with any mismatch.
+
 ### Roster saving and Act 3 continuation follow-up
 
 The follow-up release includes both repairs approved by the user. Other unfinished reward-editor changes are excluded from its source and build.

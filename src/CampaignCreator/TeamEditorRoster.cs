@@ -90,6 +90,39 @@ internal sealed partial class TeamEditorView
         bulkImport.Name = "BulkImportRosterPlayers";
         var bulkHint = new TextBlock { Name = "BulkRosterSlots", TextWrapping = TextWrapping.Wrap, FontSize = 12, Foreground = Muted };
         players.Children.Add(new StackPanel { Spacing = StudioTheme.SpaceSm, Children = { bulkImport, bulkHint } });
+        void MovePlayer(string playerFile, string target)
+        {
+            string source = linePositions[playerFile];
+            if (source.Equals(target, StringComparison.OrdinalIgnoreCase)) return;
+            var other = entries.FirstOrDefault(e => e.path != playerFile && !removedRosterPlayers.Contains(e.path)
+                && linePositions[e.path].Equals(target, StringComparison.OrdinalIgnoreCase));
+            linePositions[playerFile] = target; rosterPositionChanges[playerFile] = target;
+            if (other.path != null) { linePositions[other.path] = source; rosterPositionChanges[other.path] = source; }
+            // A position change on Line 1 keeps each skater's active/benched choice.
+            if (!source.StartsWith("Line 2 ", StringComparison.OrdinalIgnoreCase) && !target.StartsWith("Line 2 ", StringComparison.OrdinalIgnoreCase))
+            {
+                bool playerBenched = inactive.Contains(source), otherBenched = other.path != null && inactive.Contains(target);
+                inactive.Remove(source); inactive.Remove(target);
+                if (playerBenched) inactive.Add(target);
+                if (otherBenched) inactive.Add(source);
+            }
+            changed(); ShowLine(showingLineTwo);
+        }
+        async Task ChangePosition(string playerFile)
+        {
+            string current = linePositions[playerFile];
+            bool line2 = current.StartsWith("Line 2 ", StringComparison.OrdinalIgnoreCase);
+            var entry = entries.Single(e => e.path == playerFile);
+            var choices = RosterLines.Skaters.Select(position => {
+                string target = (line2 ? "Line 2 " : "") + position;
+                var other = entries.FirstOrDefault(e => !removedRosterPlayers.Contains(e.path)
+                    && linePositions[e.path].Equals(target, StringComparison.OrdinalIgnoreCase));
+                return new RosterPositionPicker.Choice(target, other.path == null ? null : other.player.Get("Name", Path.GetFileNameWithoutExtension(other.path)),
+                    line2 || other.path != null || !Locked(position));
+            }).ToArray();
+            string? target = await RosterPositionPicker.Show(owner, entry.player.Get("Name", Path.GetFileNameWithoutExtension(playerFile)), current, choices);
+            if (target != null) MovePlayer(playerFile, target);
+        }
         Button RemoveButton(string playerFile, string name)
         {
             var button = ActionButton("×", async () => {
@@ -192,17 +225,20 @@ internal sealed partial class TeamEditorView
                     var attributes = new StackPanel { Spacing = StudioTheme.SpaceSm, Children = { Label(goalie ? "Skill · " + entry.player.Get("Skill", "50") : "Ability · " + RewardCatalog.DisplayNames(data.Root, "Abilities", entry.player.Get("Ability")), 12), Label("Talents · " + RewardCatalog.DisplayNames(data.Root, goalie ? "Goalie Talents" : "Talents", entry.player.Get(goalie ? "Goalie Talents" : "Talents")), 12) } };
                     Grid.SetColumn(attributes, 1); details.Children.Add(attributes); Grid.SetRow(details, 1); body.Children.Add(details);
                     var actions = new StackPanel { Spacing = 4 };
-                    actions.Children.Add(ActionButton(goalie ? "Edit goalie" : "Edit player", () => openPlayer(entry.path)));
+                    var edit = ActionButton(goalie ? "Edit goalie" : "Edit player", () => openPlayer(entry.path));
+                    if (goalie) actions.Children.Add(edit);
                     if (!goalie)
                     {
+                        var editRow = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*"), ColumnSpacing = 4 };
+                        edit.Padding = new Thickness(6, 8); editRow.Children.Add(edit);
+                        var positionButton = ActionButton("Position…", async () => await ChangePosition(entry.path));
+                        positionButton.Name = "ChangeRosterPosition"; positionButton.Tag = entry.path; positionButton.Padding = new Thickness(6, 8);
+                        ToolTip.SetTip(positionButton, "Choose a position on this line. Occupied positions swap the two skaters. Save the team to apply.");
+                        Grid.SetColumn(positionButton, 1); editRow.Children.Add(positionButton); actions.Children.Add(editRow);
                         string target = line2 ? position : "Line 2 " + position;
                         var other = entries.FirstOrDefault(e => !removedRosterPlayers.Contains(e.path) && linePositions[e.path].Equals(target, StringComparison.OrdinalIgnoreCase));
                         bool swap = other.path != null;
-                        var move = ActionButton((swap ? "Swap with Line " : "Move to Line ") + (line2 ? "1" : "2"), () => {
-                            linePositions[entry.path] = target; rosterPositionChanges[entry.path] = target;
-                            if (other.path != null) { linePositions[other.path] = key; rosterPositionChanges[other.path] = key; }
-                            changed(); ShowLine(showingLineTwo);
-                        });
+                        var move = ActionButton((swap ? "Swap with Line " : "Move to Line ") + (line2 ? "1" : "2"), () => MovePlayer(entry.path, target));
                         move.Name = "MoveRosterPlayer"; move.Tag = entry.path;
                         move.IsEnabled = line2 ? swap || !Locked(position) : !IsCustomSquad(file) || authoringTwoLines || swap;
                         ToolTip.SetTip(move, (swap ? "Swap with " + other.player.Get("Name") : "Move into the empty matching position") + ". Save the team to apply.");
