@@ -4,6 +4,26 @@ Release label explicitly approved by the user. The changes below have technical 
 
 ## Confirmed causes and local changes
 
+### Roster saving and Act 3 continuation follow-up
+
+The follow-up release includes both repairs approved by the user. Other unfinished reward-editor changes are excluded from its source and build.
+
+- **Roster save:** A player without an explicit Position field appeared in the slot inferred from its filename, but saving the player defaulted that missing field to Center. The roster then treated duplicate Centers as Line 2 players. Player saving now retains the displayed roster assignment, including legacy filenames and nested roster folders.
+- **Line recovery:** Each skater card offers Move to Line 1/2 for the matching empty position, or Swap with Line 1/2 when occupied. Changes are pending until the team is saved. Existing Line 2 players remain accessible when two-line authoring is off. Setup-reserved empty slots and goalie roles remain protected. A failed swap write restores the other player instead of leaving a half-written swap.
+- **Game loading:** Explicit saved positions now take precedence over position-based filenames, using the same position reader as Studio. Legacy filenames remain a fallback and nested roster files are loaded.
+- **Act 3 to later authored maps:** The native game reset the run at its Act 3 boundary before the mod generated the next authored map. The continuation patch selects the next authored act before that reset branch, retaining the current run, squad and roster. Final campaign completion, failed/conceded runs and base-game mode are excluded. This prevents the reset; it does not recover a roster already lost in an older save.
+
+Release-source checks: 35 roster save/move checks, 26 roster creation/removal checks, 122 squad editor/validation checks, 38 managed transition checks and 87 source-linked completion checks passed. Roster layouts were inspected at 960 x 620 and 1320 x 860. These are technical checks; native gameplay and the reporting user's retest remain pending.
+
+To validate this follow-up after installing the new build:
+
+1. On a disposable campaign copy, open a team with a filled Center and a Line 1 winger. Edit the winger's name, number or stats, save, and return to Team roster. The winger must retain its original line and position. Repeat the edit/save and reopen Studio; check a defender and a Line 2 player as well.
+2. Open Line 2 for a team with existing reserves, even if two-line behavior is off. Use Move to Line 1 when its matching position is empty; use Swap with Line 1 when occupied. Before saving, leaving the team discards the pending choice. After Save opponent/Save player team and reopening, both players must occupy the selected lines, with their names, stats and equipment intact. Repeat a swap and save in the same editor session.
+3. Start a fresh run or opponent match from the disposable campaign and verify the authored starting line matches Studio. Repeat with a complete two-line roster and verify both lines. A single-line custom squad must not gain new unselected starters or reserves. Existing saved runs keep their saved lineup; they are not rewritten by editing a campaign template.
+4. For continuation, use a disposable campaign with at least four authored maps and native Act 3 followed by another authored map. Record the squad, recruited players and upgrades before winning the Act 3 boss. The next map must load with that roster and progress retained. Quit and Continue, then finish the final authored boss and verify ordinary campaign completion. Do not use an already damaged older save as evidence of recovery.
+
+Evidence: `artifacts/roster-line-save-20261014`. No live user campaigns or native saves are modified by these checks, and the installer is not run automatically.
+
 | Report | Cause | Local change |
 | --- | --- | --- |
 | McShaggy in an empty starter slot | Cloned squad templates retained donor players. Old cleanup skipped all-empty rosters and could rename a donor to Draft Pick instead of removing it. Native construction also accepted fills into unconfigured positions. | Remove unselected donor forwards, reserves and goalie from detached custom templates. Bind lead mechanics to an existing selected starter without moving it. During native new-run construction, accept only the captured selected source IDs, including explicitly benched starters. Save loading and subsequent lineup edits remain authoritative. Unmodified complete native squad copies retain their selected native roster. |

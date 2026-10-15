@@ -46,14 +46,17 @@ internal sealed partial class TeamEditorView : UserControl
     private Action? validateSquadBehaviors;
     private Action? validateStartingRoster;
     private readonly HashSet<string> removedRosterPlayers = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> rosterPositionChanges = new(StringComparer.OrdinalIgnoreCase);
     private SquadPoolsEditor? playerPools;
-    internal bool HasEquipmentChanges => goalieEquipment.HasChanges || removedRosterPlayers.Count > 0 || playerPools?.HasChanges == true;
+    internal bool HasEquipmentChanges => goalieEquipment.HasChanges || removedRosterPlayers.Count > 0 || rosterPositionChanges.Count > 0 || playerPools?.HasChanges == true;
     internal void SaveEquipment()
     {
         validateSquadBehaviors?.Invoke();
         validateStartingRoster?.Invoke();
         playerPools?.Save();
         goalieEquipment.Save();
+        RosterLines.SavePositions(rosterPositionChanges.Where(p => !removedRosterPlayers.Contains(p.Key)).ToDictionary(p => p.Key, p => p.Value));
+        rosterPositionChanges.Clear();
         foreach (string file in removedRosterPlayers.ToArray())
         {
             if (File.Exists(file))

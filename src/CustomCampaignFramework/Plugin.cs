@@ -870,28 +870,11 @@ public class Plugin : BasePlugin
             return null;
         }
 
-        // New format: any "*.txt" — position is determined by:
-        //   1) "Position - Name.txt" filename prefix (preferred)
-        //   2) "Position = X" key=value field inside the file
-        //   3) Plain "Position.txt" filename (legacy)
-        foreach (var file in Directory.GetFiles(playersDir, "*.txt"))
+        // Use the same saved-position precedence and legacy fallback as Studio.
+        foreach (var file in Directory.GetFiles(playersDir, "*.txt", SearchOption.AllDirectories).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
         {
-            string filename = Path.GetFileNameWithoutExtension(file);
-            string position = null;
-            // 1) Prefix split on " - "
-            int dashIdx = filename.IndexOf(" - ");
-            if (dashIdx > 0)
-                position = filename.Substring(0, dashIdx).Trim();
-            else
-                position = filename.Trim();
-            var slot = SlotFor(position);
-            // 2) Fall back to inside-file Position field
-            if (slot == null)
-            {
-                string posFromInside = null;
-                ParseKvFile(file, (k, v) => { if (k == "position" && posFromInside == null) posFromInside = v; });
-                if (posFromInside != null) slot = SlotFor(posFromInside);
-            }
+            var document = new CampaignCore.CampaignDocument(File.ReadAllText(file));
+            var slot = SlotFor(CampaignCore.RosterPosition.Read(file, playersDir, document));
             if (slot != null)
             {
                 LoadPlayerFile(file, slot);
@@ -1675,7 +1658,7 @@ public class Plugin : BasePlugin
     // silently re-anchor every node to 0.
     internal static int MapStartGamesPlayed = 0;
 
-    private static bool ProgressWritable = true;
+    internal static bool ProgressWritable = true;
 
     internal static void SaveProgress()
     {

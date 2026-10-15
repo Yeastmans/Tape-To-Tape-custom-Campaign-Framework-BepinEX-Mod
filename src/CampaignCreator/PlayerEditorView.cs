@@ -80,8 +80,9 @@ internal sealed class PlayerEditorView : UserControl
         register("Override Team Settings", () => Independent ? "yes" : "no");
         foreach (string key in doc.Fields.Keys.Where(k => k.StartsWith("Export Logo ", StringComparison.OrdinalIgnoreCase)))
             register(key, () => !Independent || AppearanceContract.SupportsJerseyLogo(Effective(), role) && SelectionValue("Logo From") == doc.Get("Logo From") ? doc.Get(key) : "");
-        // Position belongs to the roster slot; retain imports and default unassigned creations.
-        register("Position", () => string.IsNullOrWhiteSpace(doc.Get("Position")) ? (role == "goalie" ? "Goalie" : "Center") : doc.Get("Position"));
+        // Freeze the displayed roster slot before editing, including legacy filename positions.
+        string rosterPosition = RosterLines.PlayerPosition(file, doc, role);
+        register("Position", () => rosterPosition);
         Background = StudioTheme.Background; Foreground = Brushes.White;
         var shell = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto"), RowSpacing = StudioTheme.SpaceMd, Margin = new Thickness(20,12) };
         var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto,Auto"), ColumnSpacing = StudioTheme.SpaceMd }; StudioTheme.Header(header);

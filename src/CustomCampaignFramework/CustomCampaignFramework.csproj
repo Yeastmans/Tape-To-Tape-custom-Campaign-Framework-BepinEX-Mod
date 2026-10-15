@@ -40,6 +40,7 @@
     <!-- Compile the small platform-neutral contract into the plugin so existing
          one-DLL installs do not acquire an unresolved runtime dependency. -->
     <Compile Include="../CampaignCore/CampaignDocument.cs" Link="Core/CampaignDocument.cs" />
+    <Compile Include="../CampaignCore/RosterPosition.cs" Link="Core/RosterPosition.cs" />
     <Compile Include="../CampaignCore/SquadTemplatePolicy.cs" Link="Core/SquadTemplatePolicy.cs" />
     <Compile Include="../CampaignCore/RewardPoolSelection.cs" Link="Core/RewardPoolSelection.cs" />
     <Compile Include="../CampaignCore/SelectedPlayerPool.cs" Link="Core/SelectedPlayerPool.cs" />

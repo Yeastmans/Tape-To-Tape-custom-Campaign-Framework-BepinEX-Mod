@@ -124,8 +124,9 @@ internal sealed partial class TeamEditorView
                       : "Fill all five skater positions before play when starting superstars are off.")
                 : template.Name + " · editable starters: " + string.Join(", ", template.StartingPositions) + "\nRemaining positions follow the squad's setup steps.";
             prepareTwoLines.IsVisible = IsCustomSquad(file) && !twoLines;
-            if (template != null && !authoringTwoLines) line2 = false;
-            if (IsCustomSquad(file)) second.IsVisible = authoringTwoLines;
+            bool hasSecondLine = entries.Any(e => !removedRosterPlayers.Contains(e.path) && linePositions[e.path].StartsWith("Line 2 ", StringComparison.OrdinalIgnoreCase));
+            if (template != null && !authoringTwoLines && !hasSecondLine) line2 = false;
+            if (IsCustomSquad(file)) second.IsVisible = authoringTwoLines || hasSecondLine;
             rosterProblems.Text = string.Join("\n", RosterProblems());
             rosterProblems.IsVisible = !string.IsNullOrEmpty(rosterProblems.Text);
             showingLineTwo = line2;
@@ -155,7 +156,7 @@ internal sealed partial class TeamEditorView
                 slot.Children.Add(slotHeader);
                 var body = new Grid { Height = 210, RowDefinitions = new RowDefinitions("Auto,*,Auto") };
                 var card = RosterSelectionCard.Shell(body, entry.path == null);
-                bool locked = entry.path == null && Locked(position);
+                bool locked = entry.path == null && (line2 ? IsCustomSquad(file) && !authoringTwoLines : Locked(position));
                 if (locked)
                 {
                     var notice = new StackPanel { Spacing = StudioTheme.SpaceSm, VerticalAlignment = VerticalAlignment.Center };
@@ -190,7 +191,24 @@ internal sealed partial class TeamEditorView
                     details.Children.Add(RosterSelectionCard.Portrait(portrait));
                     var attributes = new StackPanel { Spacing = StudioTheme.SpaceSm, Children = { Label(goalie ? "Skill · " + entry.player.Get("Skill", "50") : "Ability · " + RewardCatalog.DisplayNames(data.Root, "Abilities", entry.player.Get("Ability")), 12), Label("Talents · " + RewardCatalog.DisplayNames(data.Root, goalie ? "Goalie Talents" : "Talents", entry.player.Get(goalie ? "Goalie Talents" : "Talents")), 12) } };
                     Grid.SetColumn(attributes, 1); details.Children.Add(attributes); Grid.SetRow(details, 1); body.Children.Add(details);
-                    var edit = ActionButton(goalie ? "Edit goalie" : "Edit player", () => openPlayer(entry.path)); Grid.SetRow(edit, 2); body.Children.Add(edit);
+                    var actions = new StackPanel { Spacing = 4 };
+                    actions.Children.Add(ActionButton(goalie ? "Edit goalie" : "Edit player", () => openPlayer(entry.path)));
+                    if (!goalie)
+                    {
+                        string target = line2 ? position : "Line 2 " + position;
+                        var other = entries.FirstOrDefault(e => !removedRosterPlayers.Contains(e.path) && linePositions[e.path].Equals(target, StringComparison.OrdinalIgnoreCase));
+                        bool swap = other.path != null;
+                        var move = ActionButton((swap ? "Swap with Line " : "Move to Line ") + (line2 ? "1" : "2"), () => {
+                            linePositions[entry.path] = target; rosterPositionChanges[entry.path] = target;
+                            if (other.path != null) { linePositions[other.path] = key; rosterPositionChanges[other.path] = key; }
+                            changed(); ShowLine(showingLineTwo);
+                        });
+                        move.Name = "MoveRosterPlayer"; move.Tag = entry.path;
+                        move.IsEnabled = line2 ? swap || !Locked(position) : !IsCustomSquad(file) || authoringTwoLines || swap;
+                        ToolTip.SetTip(move, (swap ? "Swap with " + other.player.Get("Name") : "Move into the empty matching position") + ". Save the team to apply.");
+                        actions.Children.Add(move);
+                    }
+                    Grid.SetRow(actions, 2); body.Children.Add(actions);
                 }
                 slot.Children.Add(card); Grid.SetColumn(slot, index % 3); Grid.SetRow(slot, index / 3); grid.Children.Add(slot);
             }
