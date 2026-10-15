@@ -4,9 +4,24 @@ Release label explicitly approved by the user. The changes below have technical 
 
 ## Confirmed causes and local changes
 
+### Unavailable export selections follow-up
+
+The glasses error came from looking up the literal `none` in the asset catalog; only helmets had an exception. Exports also aborted on any unknown appearance or reward ID. `none` is now accepted for no equipment, and unavailable appearance/equipment, talents, abilities and relics are omitted only from the exported copy. Valid entries in mixed lists, cross-role IDs, home/away styles and level-2 relic aliases remain intact. Missing logo files are omitted too; corrupt embedded PNGs still fail validation.
+
+Filtering happens after appearance inheritance and before writing both native models and sidecars, so copied settings cannot restore unavailable values. Library export snapshots receive the same filtered settings. The export success dialog lists each skipped selection and affected player/team. Authored files are unchanged. The exporter refreshes data from the selected content folder rather than switching catalogs to the runtime override destination.
+
+Validation: 38 new tolerant-export checks, 31 existing export checks and 14 Cheese export checks pass (83 total). The new checks invoke the built Studio's actual standalone skater, goalie and whole-team export entry points with an isolated game-save destination; produced override files are archived and removed by their returned unique IDs. Native gameplay and appearance are still pending human confirmation. Evidence: `artifacts/export-skip-20261014`.
+
+After installing this build:
+
+1. Retry the reported skater with Glasses set to None. Export must succeed without a missing-glasses notice. Reopen the authored player and verify its settings are unchanged.
+2. On a disposable copy, select or retain a missing appearance asset and a mix of valid and unavailable talents/abilities/relics. Export a skater, a goalie and a complete six-player team. Each export must succeed and list only the unavailable selections. Verify the exported library copy omits them and the original files retain them. Valid relics require team export because they belong to the team.
+3. Restart the game and open the new Play Now exports. Verify all six roster members, valid talents/abilities/relics, and both home and away appearances. Omitted appearance fields use whatever unset behavior the game supplies; no substitute character or equipment is selected by Studio. Report any missing-piece rendering with the build ID.
+4. Export a copy with an incomplete roster or invalid numeric stat. It must still explain the structural error and publish no partial team. Restore those values and retry; the success report must contain only the current export's omissions.
+
 ### Cheese goalie export follow-up
 
-The reported error was `Unknown goalie Skin Away 'Body/Mid_Cheese'`. The captured runtime skin dump contains that legacy identity, but the bundled Spine equipment inventory does not. Export rejected the goalie and could also block a whole-team export. Creator now retains this reported goalie identity in its built-in jersey/pants choices for both kits and its export allow-list. Unknown assets still fail validation; accepting the identity does not establish that its artwork renders in the current game.
+The reported error was `Unknown goalie Skin Away 'Body/Mid_Cheese'`. The captured runtime skin dump contains that legacy identity, but the bundled Spine equipment inventory does not. Export rejected the goalie and could also block a whole-team export. Creator now retains this reported goalie identity in its built-in jersey/pants choices for both kits and its export allow-list. That earlier build still rejected unknown assets; the unavailable-selection follow-up above supersedes that policy. Accepting the identity does not establish that its artwork renders in the current game.
 
 Reproduced the exact error before the change. Fourteen Cheese-specific checks and 31 existing export checks pass, including complete team and individual goalie file writes, retained home/away skins and stats, sidecars, unchanged authored files, and rejection of unknown assets. Evidence: `artifacts/goalie-cheese-export-20261014`. Native rendering remains unconfirmed.
 

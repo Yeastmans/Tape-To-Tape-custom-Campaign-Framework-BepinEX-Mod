@@ -12,7 +12,7 @@ internal static class ExportTranslation
         return UserContentPaths.EnsureRoot();
     }
 
-    internal static string[] Ids(GameData game, string values, bool relics)
+    internal static string[] Ids(GameData game, string values, bool relics, ExportReport? report = null, CampaignDocument? source = null, string? field = null)
     {
         var map = relics ? game.Relics : game.Talents;
         return values.Split(',', StringSplitOptions.RemoveEmptyEntries).Where(raw => !raw.Trim().Equals("none", StringComparison.OrdinalIgnoreCase)).Select(raw => {
@@ -27,8 +27,9 @@ internal static class ExportTranslation
                 var upgraded = RewardCatalog.ReadEntries(game.Root, "Relics").Values.Where(e => e.Level == 2 && (BaseName(e.Name).Equals(name[..^2].Trim(), StringComparison.OrdinalIgnoreCase) || BaseName(e.Asset).Equals(name[..^2].Trim(), StringComparison.OrdinalIgnoreCase))).ToArray();
                 if (upgraded.Length == 1) return upgraded[0].Id;
             }
-            throw new ArgumentException($"{(relics ? "Relic" : "Talent")} '{name}' has no game ID. Refresh game data before exporting.");
-        }).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            report?.Skip(source ?? new CampaignDocument(""), field ?? (relics ? "Relics" : "Talents"), name);
+            return "";
+        }).Where(id => id.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
     internal static CampaignDocument Player(CampaignDocument player, CampaignDocument team, CampaignDocument? goalieDefaults, string role)
@@ -79,9 +80,9 @@ internal static class ExportTranslation
     }
 
     internal sealed record Package(string TeamId, Dictionary<string, string> Saves, Dictionary<string, string> Overrides);
-    internal static Package BuildTeam(CampaignDocument team, string teamFile, GameData game, string? sourceRoot = null)
+    internal static Package BuildTeam(CampaignDocument team, string teamFile, GameData game, string? sourceRoot = null, ExportReport? report = null)
     {
-        team = LogoExport.Snapshot(team, sourceRoot ?? game.Root);
+        team = ExportSelections.Logo(team, sourceRoot ?? game.Root, report);
         if (team.Get("Team Name").Length == 0) throw new ArgumentException("Name the team before exporting.");
         if (team.Get("Import Team").Length > 0) throw new ArgumentException("Import the team's complete roster into the editor before exporting.");
         if (team.Get("Team Random Talents").Length > 0 && team.Get("Team Random Talents") != "0")
@@ -110,7 +111,10 @@ internal static class ExportTranslation
         model["tertiaryColorTransition"] = TeamColor(team, "Transition Tertiary", "Jersey Accent", "255,255,255");
         model["JerseyHomeNumberColor"] = TeamColor(team, "Number Color Home", "Number Color", "255,255,255");
         model["JerseyAwayNumberColor"] = TeamColor(team, "Number Color Away", "Number Color Home", "255,255,255");
-        var relics = new List<string>(Ids(game, team.Get("Team Relics") + "," + team.Get("Relics"), true));
+        var relics = new List<string>(Ids(game, team.Get("Team Relics"), true, report, team, "Team Relics")
+            .Concat(Ids(game, team.Get("Relics"), true, report, team, "Relics")));
+        string? benchHead = ExportSelections.Asset(game, "skater", "Face", (string)model["vanillaBenchPlayerHead"], team, report, "Bench Head");
+        if (benchHead == null) model.Remove("vanillaBenchPlayerHead"); else model["vanillaBenchPlayerHead"] = benchHead;
         foreach (string file in Directory.GetFiles(players, "*.txt", SearchOption.AllDirectories).Order(StringComparer.OrdinalIgnoreCase))
         {
             var raw = new CampaignDocument(File.ReadAllText(file));
@@ -121,17 +125,18 @@ internal static class ExportTranslation
             string role = index == 5 ? "goalie" : "skater", id = Guid.NewGuid().ToString();
             var doc = Player(ExportPlayerResolver.Resolve(raw, role), team, goalieDefaults, role);
             if (doc.Get("Logo From") == team.Get("Logo From")) LogoExport.Copy(team, doc);
-            doc = LogoExport.Snapshot(doc, sourceRoot ?? game.Root);
+            doc = ExportSelections.Logo(doc, sourceRoot ?? game.Root, report);
             if (statScale != 1) ApplyStatScale(doc, role, statScale);
-            var playerModel = PlayerExport.Convert(doc, game, role, id);
+            var playerModel = PlayerExport.Convert(doc, game, role, id, report);
             saves[(role == "goalie" ? "CustomGoalie-" : "CustomForward-") + id + ".json"] = JsonSerializer.Serialize(playerModel);
-            overrides[id + ".txt"] = PlayerExport.TranslationSidecar(doc, game, role, playerModel).ToString();
-            relics.AddRange(Ids(game, raw.Get("Relics") + "," + raw.Get("Team Relics"), true));
+            overrides[id + ".txt"] = PlayerExport.TranslationSidecar(doc, game, role, playerModel, report).ToString();
+            relics.AddRange(Ids(game, raw.Get("Relics"), true, report, raw, "Relics").Concat(Ids(game, raw.Get("Team Relics"), true, report, raw, "Team Relics")));
             model[slots[index]] = id;
         }
         if (slots.Any(s => !model.ContainsKey(s))) throw new ArgumentException("Export requires all five starting skaters and a goalie. Add missing positions first.");
         model["relics"] = relics.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-        var teamSidecar = new CampaignDocument(team.ToString());
+        var teamSidecar = ExportSelections.Sidecar(team, game, "skater", report);
+        if (benchHead == null) teamSidecar.Remove("Bench Head");
         teamSidecar.Set("Export Version", "3");
         teamSidecar.Set("Export Relic IDs", string.Join(",", (string[])model["relics"]));
         if (statScale != 1) teamSidecar.Set("Stat Scale", "1"); // already baked into the player stats
@@ -173,13 +178,13 @@ internal static class ExportTranslation
         return Path.Combine(save, "CustomTeam-" + package.TeamId + ".json");
     }
 
-    internal static string ExportTeam(CampaignDocument team, string file, GameData game, string root)
+    internal static string ExportTeam(CampaignDocument team, string file, GameData game, string root, ExportReport? report = null)
     {
         string sourceRoot = root;
-        team = LogoExport.Snapshot(team, root);
+        team = ExportSelections.Logo(team, root, report);
         root = RuntimeRoot(root);
-        game = new GameData(root);
-        var package = BuildTeam(team, file, game, sourceRoot);
+        game = new GameData(sourceRoot);
+        var package = BuildTeam(team, file, game, sourceRoot, report);
         string save = Path.Combine(GameSavePaths.Root, "TeamDataModels");
         return Write(package, save, Path.Combine(RuntimeRoot(root), "play_now_overrides"), sourceRoot);
     }

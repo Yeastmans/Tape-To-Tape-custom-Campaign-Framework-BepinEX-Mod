@@ -396,16 +396,19 @@ public sealed partial class MainWindow : Window
         {
         var exportDocument = ReadEditor();
         if (!ValidateEditor(exportDocument)) return;
+        var report = new ExportReport();
         if (editorShell is TeamEditorView teamView)
         {
             if (teamView.HasEquipmentChanges) { status.Text = "Save the team's equipment changes before exporting its roster."; return; }
-            var teamResult = ExportTranslation.ExportTeam(exportDocument, path!, data, root);
+            var teamResult = ExportTranslation.ExportTeam(exportDocument, path!, data, root, report);
             status.Text = "Exported team and roster · restart the game to load " + Path.GetFileName(teamResult);
+            ShowExportReport(report);
             return;
         }
         if (editorShell is PlayerEditorView playerView) playerView.ApplyExportAppearance(exportDocument);
-        var result = PlayerExport.Export(exportDocument, data, root, role);
+        var result = PlayerExport.Export(exportDocument, data, root, role, report);
         status.Text = "Exported " + Path.GetFileName(result) + " · restart the game to load it.";
+        ShowExportReport(report);
         }
         catch (Exception ex) { status.Text = "Export failed: " + ex.Message; }
     }
