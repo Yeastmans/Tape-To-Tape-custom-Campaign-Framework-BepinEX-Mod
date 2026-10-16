@@ -218,6 +218,9 @@ public sealed class UnityGame : IDisposable
 
     /// <summary>Every MonoBehaviour in data.unity3d whose script class is <paramref name="className"/>, fully deserialized.</summary>
     public IEnumerable<(AssetsFileInstance File, AssetFileInfo Info, AssetTypeValueField Value)> Behaviours(string className)
+        => Behaviours(new HashSet<string>(StringComparer.Ordinal) { className });
+
+    public IEnumerable<(AssetsFileInstance File, AssetFileInfo Info, AssetTypeValueField Value)> Behaviours(ISet<string> classNames)
     {
         var header = Header();
         var known = Scripts();
@@ -228,7 +231,7 @@ public sealed class UnityGame : IDisposable
                 var pointer = head["m_Script"];
                 int fileId = pointer["m_FileID"].AsInt;
                 string scriptFile = fileId == 0 ? file.name : Path.GetFileName(file.file.Metadata.Externals[fileId - 1].PathName);
-                if (!known.TryGetValue((scriptFile, pointer["m_PathID"].AsLong), out var script) || script.Class != className) continue;
+                if (!known.TryGetValue((scriptFile, pointer["m_PathID"].AsLong), out var script) || !classNames.Contains(script.Class)) continue;
                 yield return (file, info, BehaviourTemplate(script).MakeValue(file.file.Reader, info.GetAbsoluteByteOffset(file.file)));
             }
     }

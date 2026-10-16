@@ -8,6 +8,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>T2T Campaign Studio</AssemblyName>
     <ApplicationIcon>../../assets/branding/CampaignStudio.ico</ApplicationIcon>
+    <!-- Candidate builds may bundle an isolated runtime without replacing the
+         published release inputs used by ordinary Studio builds. -->
+    <StudioRuntimeBinary Condition="'$(StudioRuntimeBinary)' == ''">$(MSBuildThisFileDirectory)../../release/CustomCampaignFramework.dll</StudioRuntimeBinary>
+    <StudioRuntimeHash Condition="'$(StudioRuntimeHash)' == ''">$(MSBuildThisFileDirectory)../ModCompatibility/Assets/runtime-sha256.txt</StudioRuntimeHash>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="../../assets/branding/CampaignStudio.ico" LogicalName="CampaignStudioIcon" />
@@ -36,8 +40,8 @@
     <ProjectReference Include="../GameArt/GameArt.csproj" />
     <ProjectReference Include="../ModCompatibility/ModCompatibility.csproj" />
     <Content Include="../ModCompatibility/Assets/native-baseline.json" Link="mod-runtime/native-baseline.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="../../release/CustomCampaignFramework.dll" Link="mod-runtime/CustomCampaignFramework.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
-    <Content Include="../ModCompatibility/Assets/runtime-sha256.txt" Link="mod-runtime/runtime-sha256.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="$(StudioRuntimeBinary)" Link="mod-runtime/CustomCampaignFramework.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="$(StudioRuntimeHash)" Link="mod-runtime/runtime-sha256.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="../ModCompatibility/Assets/replaces-sha256.txt" Link="mod-runtime/replaces-sha256.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="../ModCompatibility/THIRD_PARTY_NOTICES.txt" Link="THIRD_PARTY_NOTICES-ModCompatibility.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />

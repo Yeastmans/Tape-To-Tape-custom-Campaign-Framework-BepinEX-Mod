@@ -7,18 +7,20 @@ namespace CampaignCreator;
 internal static partial class CampaignSharing
 {
     private const string HeadPrefix = "Faces/CustomHeads/";
+    private const string MaskPrefix = "Helmet/CustomMasks/";
 
     private static IEnumerable<string> CampaignDocuments(string campaign) =>
-        Directory.EnumerateFiles(campaign, "*.txt", SearchOption.AllDirectories).Where(file =>
+        Directory.EnumerateFiles(campaign, "*.txt", SearchOption.AllDirectories)
+            .Concat(Directory.EnumerateFiles(campaign, "goalie-equipment.cfg", SearchOption.AllDirectories)).Where(file =>
             !Path.GetRelativePath(campaign, file).Split(Path.DirectorySeparatorChar)
                 .Any(part => SkipFolders.Contains(part, StringComparer.OrdinalIgnoreCase))
             && !SkipFiles.Contains(Path.GetFileName(file), StringComparer.OrdinalIgnoreCase));
 
     private static string? HeadName(string value)
     {
+        if (value.StartsWith(MaskPrefix, StringComparison.OrdinalIgnoreCase)) return value;
         if (!value.StartsWith(HeadPrefix, StringComparison.OrdinalIgnoreCase)) return null;
-        string name = value[HeadPrefix.Length..];
-        return name.EndsWith("_Helmet", StringComparison.OrdinalIgnoreCase) ? name[..^7] : name;
+        return value.EndsWith("_Helmet", StringComparison.OrdinalIgnoreCase) ? value[..^7] : value;
     }
 
     private static List<CustomHeadDefinition> ReferencedHeads(string campaign, string contentRoot)
@@ -35,7 +37,12 @@ internal static partial class CampaignSharing
                 if (!File.Exists(manifest)) continue;
                 // Unrelated unfinished projects must not block sharing a campaign.
                 string? name;
-                try { name = JsonNode.Parse(File.ReadAllText(manifest))?["Name"]?.GetValue<string>(); }
+                try
+                {
+                    var json = JsonNode.Parse(File.ReadAllText(manifest));
+                    name = json?["Name"]?.GetValue<string>();
+                    if (name != null) name = (json?["IsGoalie"]?.GetValue<bool>() == true ? MaskPrefix : HeadPrefix) + name;
+                }
                 catch { continue; }
                 if (name == null || !needed.Contains(name)) continue;
                 result.Add(CustomHeadDefinition.Read(folder));
@@ -78,7 +85,7 @@ internal static partial class CampaignSharing
         int kept = 0;
         foreach (var head in incoming)
         {
-            var match = existing.FirstOrDefault(item => item.Name.Equals(head.Name, StringComparison.OrdinalIgnoreCase));
+            var match = existing.FirstOrDefault(item => item.Skin.Equals(head.Skin, StringComparison.OrdinalIgnoreCase));
             if (match != null && SameHead(head, match)) { kept++; continue; }
             string name = head.Name;
             for (int n = 2; Directory.Exists(Path.Combine(library, name)) || File.Exists(Path.Combine(library, name))
@@ -86,7 +93,7 @@ internal static partial class CampaignSharing
                 name = head.Name[..Math.Min(head.Name.Length, 65)] + " (import " + n + ")";
             if (name != head.Name)
             {
-                renamed[head.Name] = name;
+                renamed[head.Skin] = (head.IsGoalie ? MaskPrefix : HeadPrefix) + name;
                 string manifest = Path.Combine(head.Folder, "head-project.json");
                 var json = JsonNode.Parse(File.ReadAllText(manifest))!;
                 json["Name"] = name;
@@ -111,8 +118,9 @@ internal static partial class CampaignSharing
                 foreach (var field in document.Fields)
                     if (HeadName(field.Value) is { } name && renamed.TryGetValue(name, out var replacement))
                     {
-                        string suffix = field.Value.EndsWith("_Helmet", StringComparison.OrdinalIgnoreCase) ? "_Helmet" : "";
-                        document.Set(field.Key, HeadPrefix + replacement + suffix); changed = true;
+                        string suffix = field.Value.StartsWith(HeadPrefix, StringComparison.OrdinalIgnoreCase)
+                            && field.Value.EndsWith("_Helmet", StringComparison.OrdinalIgnoreCase) ? "_Helmet" : "";
+                        document.Set(field.Key, replacement + suffix); changed = true;
                     }
                 if (changed) document.Save(file);
             }

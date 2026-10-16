@@ -52,7 +52,7 @@ public static class EquipmentCompatibility
     {
         if (GameplayVisuals.Contains(value)) return "Gameplay effect artwork, not persistent equipment";
         if (Issues.TryGetValue(value, out string reason)) return reason;
-        if (value == "Numbers/Custom_Number" || value.StartsWith("Faces/CustomHeads/", StringComparison.Ordinal) || Regex.IsMatch(value, @"^Numbers/Number_\d{1,2}(LH)?$")) return "";
+        if (value == "Numbers/Custom_Number" || (value.StartsWith("Faces/CustomHeads/", StringComparison.Ordinal) || value.StartsWith("Helmet/CustomMasks/", StringComparison.Ordinal)) || Regex.IsMatch(value, @"^Numbers/Number_\d{1,2}(LH)?$")) return "";
         return "Not present in the current native equipment catalog";
     }
     public static bool IsSelectable(string value) => Issue(value).Length == 0;

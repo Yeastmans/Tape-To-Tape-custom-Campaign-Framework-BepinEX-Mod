@@ -21,6 +21,8 @@
     <ProjectReference Include="../CampaignCore/CampaignCore.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="../../assets/reward-pools/reward-families.tsv" LogicalName="GameArt.RewardFamilies.tsv" />
+    <EmbeddedResource Include="../../assets/reward-pools/reward_catalog.tsv" LogicalName="GameArt.RewardCatalog.tsv" />
     <!-- Geometry and name mappings from the game's Spine skeletons (numbers, no artwork), made by tools/export_game_art_maps.ps1. -->
     <EmbeddedResource Include="../../assets/game-art-maps/*.json" LogicalName="GameArt.Maps.%(Filename)%(Extension)" />
   </ItemGroup>

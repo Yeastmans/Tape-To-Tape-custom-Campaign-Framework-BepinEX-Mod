@@ -10,6 +10,7 @@ internal sealed class GameData
     public Dictionary<string, string> Talents { get; } = new(StringComparer.OrdinalIgnoreCase);
     public Dictionary<string, string> Abilities { get; } = new(StringComparer.OrdinalIgnoreCase);
     public Dictionary<string, string> Relics { get; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, CustomRewardDefinition> CustomRewards { get; } = new(StringComparer.OrdinalIgnoreCase);
     public List<string> Sizes { get; } = FieldSchema.Sizes.ToList();
     public string Root { get; }
     public GameData(string root)
@@ -42,6 +43,12 @@ internal sealed class GameData
         Root = root;
         foreach (var custom in CustomHeadCatalog.Load(root))
         {
+            if (custom.IsGoalie)
+            {
+                Assets.Add("goalie", "Helmet Skin", custom.Skin);
+                Previews["goalie:Helmet Skin:" + custom.Skin] = custom.Asset(custom.Images.Single(i => i.Group == "Portrait").File);
+                continue;
+            }
             Assets.Add("skater", "Face", custom.Skin);
             Previews["skater:Face:" + custom.Skin] = custom.Asset(custom.Images.Single(i => i.Group == "Portrait").File);
             if (custom.SupportsHelmet)
@@ -136,7 +143,55 @@ internal sealed class GameData
                 if (entry.Name.Length > 0) target.TryAdd(entry.Name, entry.Id);
             }
         }
+        LoadCustomRewards(null);
     }
+    internal void LoadCustomRewards(string? sourceFile)
+    {
+        foreach (var pair in Talents.Where(p => CustomRewards.ContainsKey(p.Value)).ToArray()) Talents.Remove(pair.Key);
+        foreach (var pair in Relics.Where(p => CustomRewards.ContainsKey(p.Value)).ToArray()) Relics.Remove(pair.Key);
+        CustomRewards.Clear();
+        foreach (var item in CustomRewardDefinition.LoadFolder(Path.Combine(Root, "library", "rewards"))) CustomRewards[item.Id] = item;
+        var embedded = new Dictionary<string, CustomRewardDefinition>(StringComparer.OrdinalIgnoreCase);
+        var authored = CustomRewardCatalog.CampaignFor(sourceFile) is { } campaign
+            ? CustomRewardDefinition.LoadFolder(Path.Combine(campaign, CustomRewardDefinition.Folder)).ToDictionary(d => d.Id, StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, CustomRewardDefinition>(StringComparer.OrdinalIgnoreCase);
+        void Embedded(string file) {
+            if (File.Exists(file)) foreach (var item in CustomRewardExport.Read(new CampaignDocument(File.ReadAllText(file))))
+                if (!authored.ContainsKey(item.Id)) CustomRewardExport.AddSnapshot(embedded, item);
+        }
+        if (sourceFile != null) {
+            var parent = Directory.GetParent(Path.GetDirectoryName(Path.GetFullPath(sourceFile))!);
+            string teamFile = parent == null ? "" : Path.Combine(parent.FullName, "team.txt");
+            Embedded(teamFile);
+            string players = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(sourceFile))!, "players");
+            if (Path.GetFileName(sourceFile).Equals("team.txt", StringComparison.OrdinalIgnoreCase) && Directory.Exists(players))
+                foreach (string player in Directory.EnumerateFiles(players, "*.txt", SearchOption.AllDirectories)) Embedded(player);
+            Embedded(sourceFile);
+        }
+        foreach (var item in embedded.Values) CustomRewards[item.Id] = item;
+        // Explicit campaign edits own that campaign's definitions. Portable
+        // snapshots only fill gaps and override the unrelated global library.
+        foreach (var item in authored.Values) CustomRewards[item.Id] = item;
+        foreach (var item in CustomRewards.Values.Where(d => !d.NeedsRedesign)) {
+            var target = item.IsRelic ? Relics : Talents;
+            target[item.Id] = item.Id;
+            // IDs are the authoritative selection; duplicate display names never
+            // silently replace native or other custom identities.
+            target.TryAdd(item.Name, item.Id);
+        }
+    }
+    internal void ValidateCustomLoadout(CampaignDocument document, bool? goalie = null)
+        => CustomRewardAssignments.Validate(document, CustomRewards, (value, relics) => {
+            var expected = relics ? Relics : Talents;
+            var other = relics ? Talents : Relics;
+            return expected.TryGetValue(value, out var id) || other.TryGetValue(value, out id) ? id : value;
+        }, goalie);
+
+    internal string InheritedTalents(string values, bool goalie) => string.Join(",", values.Split(',', StringSplitOptions.RemoveEmptyEntries)
+        .Where(value => {
+            string id = Talents.TryGetValue(value.Trim(), out var resolved) ? resolved : value.Trim();
+            return !CustomRewards.TryGetValue(id, out var item) || CustomRewardAssignments.FitsPlayer(item, goalie);
+        }));
     public string? HeadPreview(string role, string value)
     {
         string field = role == "goalie" ? "Helmet Skin" : "Face";

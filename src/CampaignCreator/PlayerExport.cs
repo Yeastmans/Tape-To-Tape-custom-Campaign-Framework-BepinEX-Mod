@@ -9,6 +9,7 @@ internal static class PlayerExport
     internal static Dictionary<string, object> Convert(CampaignDocument d, GameData game, string role, string id, ExportReport? report = null)
     {
         d = ExportPlayerResolver.Resolve(d, role);
+        game.ValidateCustomLoadout(d, role == "goalie");
         d = AppearanceContract.Resolve(d, new CampaignDocument(""), new CampaignDocument(""), role);
         d = ExportSelections.Logo(d, game.Root, report);
         string name = d.Get("Name").Trim();
@@ -93,19 +94,21 @@ internal static class PlayerExport
         }
         return obj;
     }
-    internal static string Export(CampaignDocument d, GameData game, string root, string role, ExportReport? report = null)
+    internal static string Export(CampaignDocument d, GameData game, string root, string role, string? sourceFile = null, ExportReport? report = null)
     {
         string sourceRoot = root;
         d = ExportPlayerResolver.Resolve(d, role);
         d = ExportSelections.Logo(AppearanceContract.Resolve(d, new CampaignDocument(""), new CampaignDocument(""), role), root, report);
         root = ExportTranslation.RuntimeRoot(root);
-        game = new GameData(sourceRoot);
+        game = new GameData(sourceRoot); game.LoadCustomRewards(sourceFile);
         if (ExportTranslation.Ids(game, d.Get("Relics"), true, report, d, "Relics").Length > 0
             || ExportTranslation.Ids(game, d.Get("Team Relics"), true, report, d, "Team Relics").Length > 0)
             throw new ArgumentException("Relics act on a team in Play Now. Export this player's team to carry its relics too.");
         string id = Guid.NewGuid().ToString();
         var obj = Convert(d, game, role, id, report);
+        var custom = new CustomRewardExportBundle(game); custom.Player(obj);
         var sidecar = TranslationSidecar(d, game, role, obj, report);
+        custom.EmbedPlayer(sidecar, obj);
         string save = Path.Combine(GameSavePaths.Root, "TeamDataModels");
         if (!Directory.Exists(save)) throw new DirectoryNotFoundException("Game save folder not found. Launch the game once before exporting.");
         string target = Path.Combine(save, (role == "goalie" ? "CustomGoalie-" : "CustomForward-") + id + ".json");

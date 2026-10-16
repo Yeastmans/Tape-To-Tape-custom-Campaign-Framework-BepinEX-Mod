@@ -2,7 +2,7 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 2](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r2) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 4](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r4-build-1792190143036) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
 **Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **`roguelite` branch, build 25917988**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
 
@@ -25,7 +25,7 @@
 | Players and goalies | Edit names, numbers, attributes, talents, supported abilities, heads and equipment. |
 | A team identity | Create home and away looks, logos, number styles, goalie gear and goal celebration audio. |
 | Different opponents | Configure formations, special effects, playing surfaces, puck or ball choices, and match rules. |
-| Custom rewards | Choose separate reward categories and recruitment pools, including free-agent talent weights. |
+| Custom rewards | Create Talents, Chaos Talents, Relics and Epic Relics with compatible triggers and separate native reward pools. |
 | Reusable content | Import independent copies, keep a player/team library, share campaign ZIPs, or export supported content to Play Now. |
 
 ## Install Studio
@@ -69,6 +69,8 @@ Pick the result you want from Home:
 | Make a playable squad | **Teams → Player team**. Import it into a campaign's **Custom teams** section when ready. |
 | Make a team to play against | Open a campaign's **Opponents** section and create or import an opponent. Assign it to a match node. |
 | Design custom head artwork | **Head Editor** on Home, after reading game artwork. |
+| Design goalie masks | **Goalie Mask Editor** on Home, after reading game artwork. |
+| Create talents and relics | **Custom Talents & Relics → Open Creator & library** on Home, or **Rewards → Creator** in a campaign. |
 
 **For a first project, copy a vanilla campaign and change one thing.** This gives you players, opponents, candidate pools and an editable map for each act. You can learn the save-and-play flow before building a whole season.
 

@@ -140,9 +140,9 @@ public sealed partial class CampaignWorkspace
             Muted("Players you can recruit during the campaign."), "Choose free agents");
 
         // Reward pools
-        var tiles = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*,*,*"), ColumnSpacing = StudioTheme.SpaceSm };
+        var tiles = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*,*,*,*"), ColumnSpacing = StudioTheme.SpaceSm };
         int customTotal = 0, column = 0;
-        foreach (var (kind, label) in new[] { ("Relics", "RELICS"), ("Talents", "REGULAR TALENTS"), ("Goalie Talents", "GOALIE TALENTS"), ("Abilities", "ABILITIES"), (RewardPoolDefinition.ChaosTalents, "CHAOS TALENTS") })
+        foreach (var (kind, label) in new[] { ("Relics", "RELICS"), ("Talents", "REGULAR TALENTS"), ("Goalie Talents", "GOALIE TALENTS"), ("Abilities", "ABILITIES"), (RewardPoolDefinition.ChaosTalents, "CHAOS TALENTS"), (RewardPoolDefinition.ChaosRelics, "CHAOS RELICS") })
         {
             var pool = rewardPools.TryGetValue(kind, out var edited) ? edited : RewardCatalog.ReadPool(root, rewards, kind);
             if (!pool.UseBaseGame) customTotal++;

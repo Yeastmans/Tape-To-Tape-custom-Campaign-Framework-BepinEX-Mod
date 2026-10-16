@@ -227,6 +227,7 @@ public sealed partial class MainWindow : Window
             teamTabs[Path.GetFullPath(path)] = previousTeam.SelectedTab;
         if (Path.GetFileName(file).Equals("campaign.txt", StringComparison.OrdinalIgnoreCase)) { OpenCampaignWorkspace(Path.GetDirectoryName(file)!); return; }
         path = file; document = new CampaignDocument(File.ReadAllText(file)); editors.Clear(); loading = true;
+        data.LoadCustomRewards(file);
         role = file.Contains("goalie", StringComparison.OrdinalIgnoreCase) || document.Get("Position").Equals("Goalie", StringComparison.OrdinalIgnoreCase) || document.Fields.ContainsKey("Catching") || document.Fields.ContainsKey("Goalie Skill") ? "goalie" : "skater";
         heading.Text = document.Get("Name", document.Get("Team Name", Path.GetFileNameWithoutExtension(file)));
         if (Path.GetFileName(file).Equals("team.txt", StringComparison.OrdinalIgnoreCase) || document.Fields.ContainsKey("Team Name"))
@@ -354,7 +355,9 @@ public sealed partial class MainWindow : Window
             try { teamView.SaveEquipment(); }
             catch (Exception ex) { status.Text = ex.Message; return; }
         }
-        next.Save(path); document = next;
+        try { CustomRewardCatalog.PreserveLoadout(data, next, path, editorShell is PlayerEditorView ? role == "goalie" : null); next.Save(path); }
+        catch (Exception ex) { status.Text = ex.Message; return; }
+        document = next;
         if (homeDraft is { } draft && draft.File == path)
         {
             if (draft.Kind is "squad" or "team" or "skater" or "goalie" or "player")
@@ -406,7 +409,7 @@ public sealed partial class MainWindow : Window
             return;
         }
         if (editorShell is PlayerEditorView playerView) playerView.ApplyExportAppearance(exportDocument);
-        var result = PlayerExport.Export(exportDocument, data, root, role, report);
+        var result = PlayerExport.Export(exportDocument, data, root, role, path, report);
         status.Text = "Exported " + Path.GetFileName(result) + " · restart the game to load it.";
         ShowExportReport(report);
         }

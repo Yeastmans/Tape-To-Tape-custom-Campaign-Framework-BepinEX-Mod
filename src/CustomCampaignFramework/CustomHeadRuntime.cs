@@ -22,6 +22,9 @@ internal static class CustomHeadRuntime
     {
         foreach (var head in CustomHeadCatalog.Load(Plugin.ModContentRoot, message => Plugin.Log.LogWarning("[CustomHeads] " + message))) Heads[head.Skin] = head;
         harmony.Patch(AccessTools.Method(typeof(Skaters.SkinHelper), "GetSkins"), prefix: new HarmonyMethod(typeof(CustomHeadRuntime), nameof(BeforeSkins)));
+        // Kit/preview prefixes can change helmetSkin. Register the final selected
+        // mask after those changes and before native skin lookup.
+        harmony.Patch(AccessTools.Method(typeof(Skaters.SkinHelper), "GetSkinsForGoalie"), prefix: new HarmonyMethod(typeof(CustomHeadRuntime), nameof(BeforeGoalieSkins)) { priority = Priority.Last });
         // UI head selection and portraits use a separate Unity Sprite repository.
         var ui = AccessTools.TypeByName("Tape2Tape.Customization.UI.SkaterUIHeadData");
         if (ui != null)
@@ -33,8 +36,8 @@ internal static class CustomHeadRuntime
     }
     private static void HeadOptions(Il2CppSystem.Collections.Generic.List<string> results, bool isGoalie)
     {
-        if (isGoalie || results == null) return;
-        foreach (string name in Heads.Keys) if (!results.Contains(name)) results.Add(name);
+        if (results == null) return;
+        foreach (var head in Heads.Values) if (head.IsGoalie == isGoalie && !results.Contains(head.Skin)) results.Add(head.Skin);
     }
     private static bool Portrait(string headSkin, ref Sprite __result)
     {
@@ -57,7 +60,7 @@ internal static class CustomHeadRuntime
     {
         if (skeletonData == null || forwardData == null) return;
         string key = HeadAppearance.Base(forwardData.headSkin);
-        if (!Heads.TryGetValue(key, out var head)) return;
+        if (!Heads.TryGetValue(key, out var head) || head.IsGoalie) return;
         try
         {
             if (skeletonData.FindSkin(key) == null)
@@ -73,16 +76,29 @@ internal static class CustomHeadRuntime
         }
         catch (Exception ex) { Warn(key, ex); }
     }
+    private static void BeforeGoalieSkins(SkeletonData skeletonData, GoaltenderData data)
+    {
+        if (skeletonData == null || data == null || !Heads.TryGetValue(data.helmetSkin ?? "", out var mask) || !mask.IsGoalie) return;
+        try
+        {
+            if (skeletonData.FindSkin(mask.Skin) != null) return;
+            var skin = Build(skeletonData, mask, false);
+            skeletonData.Skins.Add(skin);
+            Plugin.Log.LogInfo($"[CustomHeads] Registered goalie mask '{mask.Skin}' from '{mask.TemplateSkin}'");
+        }
+        catch (Exception ex) { Warn(mask.Skin, ex); }
+    }
     internal static Skin Build(SkeletonData data, CustomHeadDefinition head, bool helmet)
     {
-        string donorName = head.Version == 2 ? (helmet ? head.TemplateHelmetSkin : head.TemplateSkin)
+        string donorName = head.Version >= 2 ? (helmet ? head.TemplateHelmetSkin : head.TemplateSkin)
             : "Faces/Toronto/Mathieu" + (helmet ? "_Helmet" : "");
         var donor = data.FindSkin(donorName) ?? throw new InvalidOperationException("Native head template is unavailable: " + donorName);
         var skin = new Skin(head.Skin + (helmet ? "_Helmet" : ""));
         // AddSkin executes natively and preserves the donor's supporting hand entries.
         // Never marshal the unsafe boxed SkinEntry collection into managed code.
         skin.AddSkin(donor);
-        var bindings = head.Version == 2 ? head.Bindings.Where(b => b.Helmet == helmet)
+        string view = head.IsGoalie ? (data.FindAnimation("North/Standing_Idle_N") != null ? "North" : "South") : "";
+        var bindings = head.Version >= 2 ? head.Bindings.Where(b => b.Helmet == helmet && (!head.IsGoalie || b.View == view))
             : new[] { "S", "N", "W", "E", "NE", "NW", "SW", "SE", "N2" }.Select(token => new CustomHeadBinding {
                 Slot = "Helmet", Placeholder = token == "N2" ? "N-Helmet2" : token + "-Helmet",
                 File = head.Direction(token == "N2" ? "N" : token, helmet).File });
@@ -95,7 +111,7 @@ internal static class CustomHeadRuntime
             var sourceRegion = SequenceOf(original).Regions[0].TryCast<AtlasRegion>()
                 ?? throw new InvalidOperationException("Missing native atlas region.");
             var image = head.Images.Single(i => i.File == binding.File);
-            string direction = head.Version == 2 ? image.Direction : placeholder == "N-Helmet2" ? "N" : placeholder.Split('-')[0];
+            string direction = head.Version >= 2 ? image.Direction : placeholder == "N-Helmet2" ? "N" : placeholder.Split('-')[0];
             var texture = Texture(head.Asset(image.File));
             // T2T billboards skater vertices in its skeleton shader. A generic
             // sprite shader instead projects the head in world space, which puts
@@ -111,7 +127,7 @@ internal static class CustomHeadRuntime
             material.EnableKeyword("_STRAIGHT_ALPHA_INPUT");
             Keep(material);
             var page = new AtlasPage { name = head.Name + "-" + direction, width = 512, height = 512, rendererObject = material, pma = false };
-            var bounds = Bounds(texture, head.Version == 2);
+            var bounds = Bounds(texture, head.Version >= 2);
             var sampling = bounds.right > bounds.left ? HeadArtworkPlacement.Align(image, direction, bounds.left, bounds.top, bounds.right, bounds.bottom)
                 : new HeadArtworkPlacement.Sampling(image.Left, image.Top, image.ContentWidth, image.ContentHeight, 1, 0, 0);
             float top = sampling.Top / 512f, bottom = (sampling.Top + sampling.Height) / 512f;

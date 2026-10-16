@@ -704,6 +704,10 @@ public class Plugin : BasePlugin
             team.NoBenchBonus = (lv == "yes" || lv == "true" || lv == "1");
         }
         else if (key == "team random talents") team.TeamRandomTalents = ParseRandomInt(val);
+        else if (key == "team talents" || key == "talents")
+        {
+            team.TeamTalents = CampaignCore.CustomRewardAssignments.TeamTalents(team.Fields).ToList();
+        }
         else if (key == "team random pool")
         {
             string trp = val.Trim().ToLower();
@@ -1753,7 +1757,14 @@ public class Plugin : BasePlugin
         // Dumping mutates no game state, so vanilla play is still vanilla.
         if (IsDefaultMode)
         {
-            Log.LogInfo("[Campaign] DEFAULT MODE active — skipping gameplay patches. Game runs 100% vanilla.");
+            CustomRewardPlayNow.InstallForDefault();
+            CustomRewardGoalRules.Install();
+            CustomRewardCapabilities.Install();
+            CustomRewardDataCapabilities.Install();
+            CustomRewardTeamCapabilities.Install();
+                CustomRewardActionControllers.Install();
+            InitialMatchSurface.Install();
+            Log.LogInfo("[Campaign] DEFAULT MODE active — campaign gameplay patches disabled; exported player content remains available.");
             var dumpOnly = new Harmony("com.mods.customcampaign.dumponly");
             try
             {
@@ -1772,6 +1783,11 @@ public class Plugin : BasePlugin
 
         var harmony = new Harmony("com.mods.customcampaign");
         harmony.PatchAll();
+        CustomRewardGoalRules.Install();
+        CustomRewardCapabilities.Install();
+        CustomRewardDataCapabilities.Install();
+            CustomRewardTeamCapabilities.Install();
+                CustomRewardActionControllers.Install();
         OpponentEffectScope.Install(harmony);
         InitialMatchSurface.Install();
 
@@ -5429,6 +5445,8 @@ public static class PatchBossLaunchMatch
 
     internal static Rogue.Talent FindTalent(string name)
     {
+        var custom = CustomRewardRuntime.FindTalent(name, false);
+        if (custom != null) return custom;
         var found = FindTalentOnce(name);
         if (found != null) return found;
         // Miss: the cached repo may have been grabbed before the game filled
@@ -5584,6 +5602,8 @@ public static class PatchBossLaunchMatch
     internal static Rogue.Relic[] AllRelicCache;
     internal static Rogue.Relic FindRelic(string nameContains, int level = 1)
     {
+        var custom = CustomRewardRuntime.FindRelic(nameContains, false);
+        if (custom != null) return custom;
         var found = FindRelicOnce(nameContains, level);
         if (found != null) return found;
         // Miss: the cache may predate the game loading all relic assets
@@ -5971,6 +5991,10 @@ public static class PatchBossLaunchMatch
     internal static void GiveGoalieTalent(GoaltenderData g, string talentName)
     {
         if (g == null) return;
+        var talent = FindTalent(talentName);
+        if (talent == null) { Plugin.Log.LogWarning($"[Remix] Goalie talent '{talentName}' not found; loadout retained"); return; }
+        if (talent != null && CustomRewardRuntime.Definitions.TryGetValue(talent.id, out var custom))
+            CampaignCore.CustomRewardAssignments.ValidateField(custom, "Talents", true);
         string key = "G_" + (g.firstName ?? "") + (g.lastName ?? "");
         if (!_clearedPlayers.Contains(key))
         {
@@ -5988,8 +6012,6 @@ public static class PatchBossLaunchMatch
             try { g.ResetTalentCache(); } catch {}
             _clearedPlayers.Add(key);
         }
-        var talent = FindTalent(talentName);
-        if (talent == null) { Plugin.Log.LogWarning($"[Remix] Goalie talent '{talentName}' not found"); return; }
         g.powerups.Add(talent);
         try { g.ResetTalentCache(); } catch {}
         Plugin.Log.LogInfo($"  [Remix] Goalie {g.firstName} {g.lastName} got '{talentName}'");
@@ -5998,6 +6020,10 @@ public static class PatchBossLaunchMatch
     internal static void GiveTalentToPlayer(ForwardData f, string talentName)
     {
         if (f == null) return;
+        var talent = FindTalent(talentName);
+        if (talent == null) { Plugin.Log.LogWarning($"[Remix] Talent '{talentName}' not found for {f.firstName}; loadout retained"); return; }
+        if (talent != null && CustomRewardRuntime.Definitions.TryGetValue(talent.id, out var custom))
+            CampaignCore.CustomRewardAssignments.ValidateField(custom, "Talents", false);
         string key = "F_" + (f.firstName ?? "") + (f.lastName ?? "");
         if (!_clearedPlayers.Contains(key))
         {
@@ -6017,8 +6043,6 @@ public static class PatchBossLaunchMatch
             try { f.ResetTalentCache(); Plugin.Log.LogInfo($"  [Clear] {f.firstName} {f.lastName} talent cache reset"); } catch {}
             _clearedPlayers.Add(key);
         }
-        var talent = FindTalent(talentName);
-        if (talent == null) { Plugin.Log.LogWarning($"[Remix] Talent '{talentName}' not found for {f.firstName}"); return; }
         f.powerups.Add(talent);
         // Reset cache again after adding so the game picks up the new talent
         try { f.ResetTalentCache(); } catch {}
@@ -6308,6 +6332,7 @@ public static class PatchBossLaunchMatch
         CustomTeamRules.Prepare(team, cfg);
         ApplyTeamContents(team, cfg);
         OpponentLineBehavior.Apply(team, cfg);
+        CustomTeamTalentAssignments.Apply(team, cfg);
         OpponentMatch.Apply(team, cfg);
         CustomTeamRules.ExportLogo(team, cfg);
         team.ResetRelicCache();
@@ -9167,6 +9192,10 @@ public static class PatchPlayerTeamInit
             PatchBossLaunchMatch.ApplyTeamEquipmentColorsToGoalie(team.goalie, team, cfg);
         }
 
+        // Starting talents are player-owned, even when authored as a team default.
+        // Never regrant them into Continue or overwrite earned live-run loadouts.
+        if (!liveRun) CustomTeamTalentAssignments.Apply(team, cfg);
+
         // Apply relics (additive — adds starting relics). Only on firstApply:
         // subsequent re-applies during the same run (e.g. Spartan match init)
         // must not add duplicate copies of every starting relic.
@@ -9720,6 +9749,7 @@ public class TeamConfig
     public bool CustomStartingRelics = false;
     public bool NoEffectsSuperstars = false;
     public int TeamRandomTalents = 0;
+    public List<string> TeamTalents = new List<string>();
     public List<string> TeamRandomPool = new List<string>();
     public bool TeamRandomPoolAll = false;
     public PlayerConfig Goalie = new PlayerConfig();

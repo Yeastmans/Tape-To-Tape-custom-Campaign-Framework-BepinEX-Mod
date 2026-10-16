@@ -14,7 +14,7 @@ namespace GameArt;
 public static class ArtCache
 {
     // Bump when any extractor's output changes, so existing caches are rebuilt.
-    public const int FormatVersion = 5;
+    public const int FormatVersion = 7;
     private const string ManifestName = "manifest.json";
     private static readonly object BuildGate = new();
 

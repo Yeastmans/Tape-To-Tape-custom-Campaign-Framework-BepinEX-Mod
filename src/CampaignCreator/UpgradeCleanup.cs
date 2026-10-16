@@ -27,9 +27,10 @@ public sealed class UpgradeCleanup
         fields["player"].Add("Number Style");
         fields["campaign"].Add(FreeAgentTalentWeights.Key);
         fields["campaign"].UnionWith(new[] { FreeAgentTalentPool.ModeKey, FreeAgentTalentPool.SelectedKey });
-        foreach (string kind in RewardPoolDefinition.Kinds.Append("Goalie Abilities"))
+        foreach (string kind in RewardPoolDefinition.Kinds.Concat(CustomRewardDefinition.Kinds).Append("Goalie Abilities"))
             fields["campaign"].UnionWith(new[] { "Pool Mode " + kind, "Selected " + kind, "Included " + kind, "Excluded " + kind });
-        fields["campaign"].UnionWith(new[] { RewardPoolDefinition.IncludeChaosTalentsKey, RewardPoolDefinition.IncludeRegularTalentsKey });
+        fields["campaign"].UnionWith(new[] { RewardPoolDefinition.IncludeChaosTalentsKey, RewardPoolDefinition.IncludeRegularTalentsKey,
+            RewardPoolDefinition.IncludeChaosRelicsKey, RewardPoolDefinition.IncludeRegularRelicsKey });
         // A missing release catalog is a packaging error, not evidence every saved choice is invalid.
         if (RewardCatalog.ReadEntries(data.Root, "Talents").Count == 0 || data.Assets.Values("skater", "Body").Count == 0)
             throw new InvalidOperationException("The upgrade catalog is missing. User content was not cleaned.");
@@ -146,12 +147,16 @@ public sealed class UpgradeCleanup
         // project will be installed later; the head loader validates its assets.
         if ((k is "face" or "squad head" or "zamboni head" or "bench head")
             && value.StartsWith("Faces/CustomHeads/", StringComparison.OrdinalIgnoreCase)) return value;
+        if (k == "helmet skin" && role == "goalie"
+            && value.StartsWith("Helmet/CustomMasks/", StringComparison.OrdinalIgnoreCase)) return value;
         if (SquadBehaviors.All.Any(b => b.Key.Equals(key, StringComparison.OrdinalIgnoreCase)))
             return In(value, "Inherit", "On", "Off", "yes", "no", "true", "false") ? value : "";
         if (k.StartsWith("export ")) return value;
         if (k.StartsWith("pool mode ")) return In(value, "Base Game", "Custom") ? value : "";
         if (key.Equals(RewardPoolDefinition.IncludeChaosTalentsKey, StringComparison.OrdinalIgnoreCase)
-            || key.Equals(RewardPoolDefinition.IncludeRegularTalentsKey, StringComparison.OrdinalIgnoreCase))
+            || key.Equals(RewardPoolDefinition.IncludeRegularTalentsKey, StringComparison.OrdinalIgnoreCase)
+            || key.Equals(RewardPoolDefinition.IncludeChaosRelicsKey, StringComparison.OrdinalIgnoreCase)
+            || key.Equals(RewardPoolDefinition.IncludeRegularRelicsKey, StringComparison.OrdinalIgnoreCase))
             return In(value, "yes", "no", "true", "false", "1", "0") ? value : "";
         if (k.StartsWith("selected ") || k.StartsWith("included "))
             return string.Join(", ", value.Split(',').Select(s => s.Trim()).Where(s => s.Length > 0).Distinct(IgnoreCase));

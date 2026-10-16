@@ -30,6 +30,7 @@ internal sealed class EquipmentStylePicker : StackPanel
 
     internal static bool IsCustom(string value)
     {
+        if (value.StartsWith("Helmet/CustomMasks/", StringComparison.OrdinalIgnoreCase)) return false;
         string name = value.Split('/').Last().Replace('_', ' ').Trim().ToLowerInvariant();
         if (name is "helmet customization face" || IsIso(value)) return false;
         return name.Length == 0 || name.StartsWith("standard") || name is "custom" or "default" or "team colors" or "team colours" or "colored"
@@ -73,7 +74,7 @@ internal sealed class EquipmentStylePicker : StackPanel
         if (inherited) modes.Add(inheritedMode);
         if (noHelmetMode != null) modes.Add(noHelmetMode);
         mode = new StableComboBox { ItemsSource = modes, HorizontalAlignment = HorizontalAlignment.Stretch, IsEnabled = canSelect };
-        styles = new StableComboBox { HorizontalAlignment = HorizontalAlignment.Stretch, PlaceholderText = "Choose base-game style",
+        styles = new StableComboBox { HorizontalAlignment = HorizontalAlignment.Stretch, PlaceholderText = "Choose a style",
             ItemTemplate = new FuncDataTemplate<string>((style, _) => StyleLabel(style)) };
         detail = new ContentControl { HorizontalContentAlignment = HorizontalAlignment.Stretch };
         Children.Add(mode); Children.Add(detail);

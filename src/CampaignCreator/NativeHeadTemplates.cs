@@ -29,9 +29,9 @@ public sealed class NativeHeadTemplate
 
 public static class NativeHeadTemplates
 {
-    public static IReadOnlyList<NativeHeadTemplate> Read()
+    public static IReadOnlyList<NativeHeadTemplate> Read(bool goalie = false)
     {
-        if (StudioArt.Path("head-templates", "catalog.json") is not { } index) return [];
+        if (StudioArt.Path(goalie ? "mask-templates" : "head-templates", "catalog.json") is not { } index) return [];
         using var json = JsonDocument.Parse(System.IO.File.ReadAllText(index));
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         var rows = JsonSerializer.Deserialize<List<NativeHeadTemplate>>(json.RootElement.GetProperty("templates").GetRawText(), options)!;

@@ -11,6 +11,7 @@ namespace CampaignCore;
 public sealed class CustomHeadDefinition
 {
     public int Version { get; set; }
+    public bool IsGoalie { get; set; }
     public string Name { get; set; } = "";
     public bool SupportsHelmet { get; set; }
     public bool SeparateHelmetArtwork { get; set; }
@@ -19,7 +20,7 @@ public sealed class CustomHeadDefinition
     public List<CustomHeadBinding> Bindings { get; set; } = new();
     public List<CustomHeadImage> Images { get; set; } = new();
     [System.Text.Json.Serialization.JsonIgnore] public string Folder { get; set; } = "";
-    [System.Text.Json.Serialization.JsonIgnore] public string Skin => "Faces/CustomHeads/" + Name;
+    [System.Text.Json.Serialization.JsonIgnore] public string Skin => (IsGoalie ? "Helmet/CustomMasks/" : "Faces/CustomHeads/") + Name;
     public string Asset(string relative)
     {
         string full = Path.GetFullPath(Path.Combine(Folder, relative));
@@ -29,6 +30,11 @@ public sealed class CustomHeadDefinition
     }
     public CustomHeadImage Direction(string direction, bool helmet)
     {
+        if (IsGoalie)
+        {
+            var binding = Bindings.Single(b => b.Slot == "Helmet" && b.Direction == direction);
+            return Images.Single(i => i.File == binding.File);
+        }
         if (Version == 2)
         {
             string placeholder = direction == "N2" ? "N-Helmet2" : direction + "-Helmet";
@@ -45,23 +51,28 @@ public sealed class CustomHeadDefinition
         if (new FileInfo(manifest).Length > 256 * 1024) throw new InvalidDataException("Head manifest is too large.");
         var d = JsonSerializer.Deserialize<CustomHeadDefinition>(File.ReadAllText(manifest)) ?? throw new InvalidDataException("Invalid head project.");
         d.Folder = Path.GetFullPath(folder);
-        if ((d.Version != 1 && d.Version != 2) || string.IsNullOrWhiteSpace(d.Name) || d.Name.Length > 80 || d.Name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0
+        if ((d.IsGoalie ? d.Version != 3 : d.Version != 1 && d.Version != 2) || string.IsNullOrWhiteSpace(d.Name) || d.Name.Length > 80 || d.Name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0
             || d.Name.Contains('/') || d.Name.Contains('\\') || d.Name.EndsWith(".") || d.Name.EndsWith("_Helmet", StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("Invalid custom head name or version.");
-        foreach (string dir in d.Version == 2 ? new[] { "S", "N", "W", "E", "NE", "NW", "SW", "SE", "N2" } : new[] { "S", "N", "W", "NE", "SW" })
+        if (d.IsGoalie && (d.SupportsHelmet || d.SeparateHelmetArtwork || d.TemplateHelmetSkin.Length > 0))
+            throw new InvalidDataException("Goalie masks cannot have skater helmet variants.");
+        foreach (string dir in d.IsGoalie ? new[] { "S", "SE", "SW", "N", "NE", "NW" } : d.Version == 2 ? new[] { "S", "N", "W", "E", "NE", "NW", "SW", "SE", "N2" } : new[] { "S", "N", "W", "NE", "SW" })
         {
             Validate(d.Direction(dir, false));
             if (d.SupportsHelmet) Validate(d.Direction(dir, true));
         }
         Validate(d.Images.Single(i => i.Group == "Portrait"));
-        if (d.Version == 2)
+        if (d.Version >= 2)
         {
             if (!NativeSkin(d.TemplateSkin) || (d.SupportsHelmet && !NativeSkin(d.TemplateHelmetSkin)) || d.Bindings.Count > 128)
                 throw new InvalidDataException("Invalid native head template.");
-            if (d.Bindings.GroupBy(b => (b.Helmet, b.Slot, b.Placeholder)).Any(g => g.Count() != 1))
+            if (d.Bindings.GroupBy(b => (b.Helmet, b.View, b.Slot, b.Placeholder)).Any(g => g.Count() != 1))
                 throw new InvalidDataException("Duplicate native head attachment binding.");
             foreach (var binding in d.Bindings)
             {
+                if (d.IsGoalie && (binding.Helmet || (binding.View != "North" && binding.View != "South")
+                    || !(binding.View == "North" ? new[] { "N", "NE", "NW" } : new[] { "S", "SE", "SW" }).Contains(binding.Direction)))
+                    throw new InvalidDataException("Invalid goalie mask view or direction.");
                 if (binding.Slot != "Helmet" && binding.Slot != "Helmet_Top") throw new InvalidDataException("Invalid head attachment slot.");
                 if (string.IsNullOrWhiteSpace(binding.Placeholder) || binding.Placeholder.Length > 100)
                     throw new InvalidDataException("Invalid head attachment name.");
@@ -71,8 +82,8 @@ public sealed class CustomHeadDefinition
             }
         }
         return d;
-        bool NativeSkin(string skin) => skin != null && skin.StartsWith("Faces/", StringComparison.Ordinal)
-            && !skin.StartsWith("Faces/CustomHeads/", StringComparison.Ordinal) && !skin.Contains("..") && skin.Length <= 200;
+        bool NativeSkin(string skin) => skin != null && skin.StartsWith(d.IsGoalie ? "Helmet/" : "Faces/", StringComparison.Ordinal)
+            && !skin.StartsWith("Faces/CustomHeads/", StringComparison.Ordinal) && !skin.StartsWith("Helmet/CustomMasks/", StringComparison.Ordinal) && !skin.Contains("..") && skin.Length <= 200;
         void Validate(CustomHeadImage image)
         {
             if (image.Width != 512 || image.Height != 512 || image.NativeWidth < 1 || image.NativeHeight < 1 || image.NativeWidth > 2048 || image.NativeHeight > 2048
@@ -120,6 +131,8 @@ public sealed class CustomHeadImage
 
 public sealed class CustomHeadBinding
 {
+    public string View { get; set; } = "";
+    public string Direction { get; set; } = "";
     public string Slot { get; set; } = "";
     public string Placeholder { get; set; } = "";
     public string File { get; set; } = "";
@@ -204,7 +217,7 @@ public static class CustomHeadCatalog
             {
                 var head = CustomHeadDefinition.Read(folder);
                 if (result.Any(h => h.Skin.Equals(head.Skin, StringComparison.OrdinalIgnoreCase))) throw new InvalidDataException("Duplicate custom head name.");
-                result.Add(head); HeadAppearance.RegisterCustom(head.Skin, head.SupportsHelmet);
+                result.Add(head); if (!head.IsGoalie) HeadAppearance.RegisterCustom(head.Skin, head.SupportsHelmet);
             }
             catch (Exception ex) { warning?.Invoke(Path.GetFileName(folder) + ": " + ex.Message); }
         }

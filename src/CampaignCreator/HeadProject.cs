@@ -8,6 +8,7 @@ namespace CampaignCreator;
 public sealed class HeadProject
 {
     public int Version { get; set; } = 1;
+    public bool IsGoalie { get; set; }
     public string Name { get; set; } = "";
     public bool SupportsHelmet { get; set; } = true;
     public bool SeparateHelmetArtwork { get; set; }
@@ -78,7 +79,7 @@ public sealed class HeadProject
         var p = JsonSerializer.Deserialize<HeadProject>(File.ReadAllText(Path.Combine(folder, "head-project.json")), Json)
             ?? throw new InvalidDataException("Invalid head project.");
         p.Folder = Path.GetFullPath(folder);
-        if ((p.Version != 1 && p.Version != 2) || p.Images.Count == 0) throw new InvalidDataException("Unsupported or empty head project.");
+        if ((p.IsGoalie ? p.Version != 3 : p.Version != 1 && p.Version != 2) || p.Images.Count == 0) throw new InvalidDataException("Unsupported or empty head project.");
         foreach (var image in p.Images)
         {
             p.FilePath(image.File); p.FilePath(image.BoundsFile);
@@ -116,12 +117,12 @@ public sealed class HeadProject
         finally { if (Directory.Exists(stage)) Directory.Delete(stage, true); }
     }
 
-    public static HeadProject CreateFromTemplate(string parent, string name, string nativeSkin, bool fromScratch = false)
+    public static HeadProject CreateFromTemplate(string parent, string name, string nativeSkin, bool fromScratch = false, bool goalie = false)
     {
         name = CreatorContent.ValidateName(name);
         string destination = Path.Combine(parent, name);
         if (Directory.Exists(destination) || File.Exists(destination)) throw new IOException("A head with that name already exists.");
-        var catalog = NativeHeadTemplates.Read();
+        var catalog = NativeHeadTemplates.Read(goalie);
         var selected = catalog.SingleOrDefault(t => t.Skin == nativeSkin)
             ?? throw new IOException("Read game artwork on Home to load the native head templates.");
         var bare = catalog.Single(t => t.Skin == selected.BaseSkin);
@@ -131,7 +132,7 @@ public sealed class HeadProject
         string stage = Path.Combine(parent, ".head-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(stage);
         try
         {
-            var p = new HeadProject { Version = 2, Name = name, Folder = stage, TemplateSkin = bare.Skin,
+            var p = new HeadProject { Version = goalie ? 3 : 2, IsGoalie = goalie, Name = name, Folder = stage, TemplateSkin = bare.Skin,
                 TemplateHelmetSkin = fitted?.Skin ?? "", SupportsHelmet = fitted != null, SeparateHelmetArtwork = fitted != null,
                 StartedFromScratch = fromScratch };
             AddNative(bare, false); if (fitted != null) AddNative(fitted, true);
@@ -153,6 +154,11 @@ public sealed class HeadProject
                 + "Under-helmet artwork is separate. The game supplies the selectable helmet.\n"
                 + "Original native images, attachment data and eight body placement examples are under reference/Bare and reference/Helmet.\n"
                 + "The portrait is separate. Install with Add to player head options, then restart the game.\n");
+            if (goalie) File.WriteAllText(p.FilePath("README.txt"), "Goalie mask artwork project: " + name
+                + "\nNative mask: " + bare.Label + "\n\nEdit every 512 x 512 transparent PNG and the separate portrait. Preserve the native outlines and placement.\n"
+                + "Front, front diagonals, back and back diagonals use the game's separate goalie skeletons. Some directions share mirrored artwork; extra top layers are required when shown.\n"
+                + "Original artwork, attachment data and six placement examples are in reference/Bare.\n"
+                + "Use Add to goalie mask options, return Home, select Goalie mask > Premade in the goalie or team look editor, then restart the game.\n");
             p.Save(); CustomHeadDefinition.Read(stage);
             MoveNewProject(stage, destination); p.Folder = destination; return p;
             void AddNative(NativeHeadTemplate template, bool helmet)
@@ -175,6 +181,7 @@ public sealed class HeadProject
                 foreach (var binding in assets["bindings"]!.AsArray())
                     p.Bindings.Add(new CustomHeadBinding { Slot = binding!["slot"]!.GetValue<string>(),
                         Placeholder = binding["placeholder"]!.GetValue<string>(), Helmet = helmet,
+                        View = binding["view"]?.GetValue<string>() ?? "", Direction = binding["direction"]?.GetValue<string>() ?? "",
                         File = (helmet ? "helmet/" : "") + binding["file"]!.GetValue<string>(),
                         NativeWidth = binding["width"]!.GetValue<float>(), NativeHeight = binding["height"]!.GetValue<float>() });
             }
@@ -281,6 +288,14 @@ public sealed class HeadProject
     public HeadImage? SlotFor(string pngPath)
     {
         string stem = new string(Path.GetFileNameWithoutExtension(pngPath).ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
+        if (IsGoalie)
+        {
+            string direction = stem switch { "s" or "front" or "face" => "S", "n" or "back" => "N",
+                "ne" or "backright" => "NE", "nw" or "backleft" => "NW", "sw" or "frontleft" => "SW", "se" or "frontright" => "SE", _ => "" };
+            var binding = Bindings.FirstOrDefault(b => b.Slot == "Helmet" && b.Direction == direction);
+            if (binding != null) return Images.Single(i => i.File == binding.File);
+            return stem == "portrait" ? Images.Single(i => i.Group == "Portrait") : null;
+        }
         if (Version == 2)
         {
             string direction = stem switch { "s" or "front" or "face" => "S", "n" or "back" => "N",
@@ -317,7 +332,7 @@ public sealed class HeadProject
         }
         Save();
         string text = done.Count == 0 ? "No PNGs imported." : "Imported " + string.Join(", ", done) + ".";
-        if (skipped.Count > 0) text += " Skipped " + string.Join(", ", skipped) + " — name files Front, Back, Side, Back diagonal, Front diagonal or Portrait.";
+        if (skipped.Count > 0) text += " Skipped " + string.Join(", ", skipped) + (IsGoalie ? " — name files Front, Back, Front left, Front right, Back left, Back right or Portrait. Replace extra layers using their individual cards." : " — name files Front, Back, Side, Back diagonal, Front diagonal or Portrait.");
         return text;
     }
     void FitInto(HeadImage item, string source)

@@ -119,6 +119,18 @@ public sealed partial class MainWindow
             Grid.SetColumn(card, i); cards.Children.Add(card);
         }
         center.Children.Add(cards);
+        var customRewards = Button("Open Creator & library", async () => {
+            var dialog = new Window { Title = "Custom Talents & Relics", Width = 1240, Height = 820, MinWidth = 800, MinHeight = 560, WindowStartupLocation = WindowStartupLocation.CenterOwner };
+            var creator = new CustomRewardCreator(dialog, root, () => "", () => { }, libraryOnly: true);
+            dialog.Content = new Border { Padding = new Thickness(20), Child = creator };
+            dialog.Closing += (_, e) => { if (!creator.CanSwitch()) e.Cancel = true; };
+            await dialog.ShowDialog(this);
+        });
+        customRewards.Name = "HomeCustomRewards"; StudioTheme.Primary(customRewards);
+        center.Children.Add(new Border { Background = StudioTheme.Surface, BorderBrush = StudioTheme.Border, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Padding = new Thickness(16), Child = new StackPanel { Spacing = 10, Children = {
+            new TextBlock { Text = "Custom Talents & Relics", FontSize = 28, FontWeight = FontWeight.Bold },
+            new TextBlock { Text = "Create rewards with game triggers, stats and icons. Available in every campaign; disabled by default.", TextWrapping = TextWrapping.Wrap, Foreground = muted }, customRewards
+        } } });
         var defaults = Button("Set default · look for new players and teams", ShowDefaultLook);
         defaults.Name = "HomeSetDefault";
         defaults.FontSize = 18;
@@ -134,6 +146,14 @@ public sealed partial class MainWindow
         heads.FontSize = 18;
         heads.MinHeight = 48;
         center.Children.Add(heads);
+        var masks = Button("Goalie Mask Editor · create and edit mask PNGs", async () =>
+        {
+            var setup = new HeadProjectStartWindow(root, goalie: true);
+            if (await setup.ShowDialog<HeadProject?>(this) is { } project)
+                Content = new HeadEditorView(this, root, ShowHome, project);
+        });
+        masks.Name = "HomeGoalieMaskEditor"; masks.FontSize = 18; masks.MinHeight = 48;
+        center.Children.Add(masks);
         var scaled = new ScrollViewer { Content = center, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
         center.MaxWidth = 1000;
         Grid.SetRow(scaled, 1); shell.Children.Add(scaled);

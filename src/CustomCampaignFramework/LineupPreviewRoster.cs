@@ -7,18 +7,33 @@ namespace EndlessMode;
 
 // TeamRosterData limits its preview bench to TeamData.benchSize. A custom
 // two-line squad has no reserve slots, but its inactive line still has five
-// players. Supply those players to the read-only UI without adding reserves
-// or changing the native card locks / gameplay roster.
+// players. Initialize both editable and locked menus from that inactive line,
+// without adding reserves or changing native card locks / gameplay data.
+[HarmonyPatch(typeof(LineupMenu), "InitData")]
+internal static class LineupInitialRoster
+{
+    [HarmonyPostfix]
+    internal static void Postfix(LineupMenu __instance) => LineupPreviewRoster.FillInactiveLine(__instance);
+}
+
 [HarmonyPatch(typeof(LineupMenu), "LoadCurrentTeam")]
 internal static class LineupPreviewRoster
 {
     [HarmonyPrefix]
     internal static void Prefix(LineupMenu __instance)
     {
-        if (Plugin.IsDefaultMode || __instance == null || !__instance.m_AreSkatersLocked) return;
+        // A refresh of an editable menu must retain its pending swaps. InitData
+        // fills its newly constructed model once; only locked views resync here.
+        if (__instance == null || !__instance.m_AreSkatersLocked) return;
+        FillInactiveLine(__instance);
+    }
+
+    internal static void FillInactiveLine(LineupMenu menu)
+    {
+        if (Plugin.IsDefaultMode || menu == null) return;
         try
         {
-            var roster = __instance.Team;
+            var roster = menu.Team;
             var team = roster?.OriginalTeamData;
             if (!CustomTeamRules.IsCustom(team) || !team.isMultiLineup || roster.m_BenchForwards == null) return;
             var bench = roster.m_BenchForwards;

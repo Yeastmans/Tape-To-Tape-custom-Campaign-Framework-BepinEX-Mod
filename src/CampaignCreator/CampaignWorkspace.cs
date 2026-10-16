@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -40,6 +41,8 @@ public sealed partial class CampaignWorkspace : UserControl
     private MapEditorView? mapEditor;
     private readonly List<Action> refreshRosters = new();
     private readonly List<Action> refreshRewardCounts = new();
+    private readonly List<Action> refreshRewardRows = new();
+    private CustomRewardCreator? customRewardCreator;
     private IReadOnlyList<RewardBudget> RewardBudgets(IEnumerable<MapLayout>? layouts = null) => CampaignRewardBudget.Calculate(root, directory, rewardPools,
         layouts ?? mapEditor?.RewardLayouts, fields.TryGetValue("Act Sequence", out var sequence) ? sequence() : settings.Get("Act Sequence", "1,2,3"));
     private MapEditorView EnsureMapEditor()
@@ -51,7 +54,7 @@ public sealed partial class CampaignWorkspace : UserControl
         }
         return mapEditor;
     }
-    public bool HasUnsavedChanges => isNew || rewardDirty || freeAgentsDirty || nativeFreeAgents?.HasChanges == true || StartingPoolsDirty || mapEditor?.HasUnsavedChanges == true || fields.Any(f => f.Value() != settings.Get(f.Key));
+    public bool HasUnsavedChanges => isNew || rewardDirty || freeAgentsDirty || customRewardCreator?.HasChanges == true || nativeFreeAgents?.HasChanges == true || StartingPoolsDirty || mapEditor?.HasUnsavedChanges == true || fields.Any(f => f.Value() != settings.Get(f.Key));
     public bool CanLeave(bool withinCampaign = false)
     {
         if (isNew && withinCampaign) { SaveWorkingCopy(); return true; }
@@ -442,18 +445,25 @@ public sealed partial class CampaignWorkspace : UserControl
     {
         var page = Page("Reward pools", "Choose which rewards may appear. Uncheck Base game pool to customize a tab, including rewards not normally offered.");
         page.Spacing = StudioTheme.SpaceSm;
-        var sections = new TabControl { Name = "RewardSections" };
+        var sections = new TabControl { Name = "RewardSections", ItemsPanel = new FuncTemplate<Panel?>(() => new WrapPanel()) };
         var sectionTabs = new List<TabItem>();
+        var enableNativeChoices = new Dictionary<string, Action>();
+        var customItems = CustomRewardCatalog.Items(root, directory);
+        foreach (string customKind in CustomRewardDefinition.Kinds)
+            rewardPools[customKind] = CustomRewardPoolSelection.Read(rewards, customKind, customItems.Values);
         foreach (string kind in RewardPoolDefinition.Kinds)
         {
-            var entries = RewardCatalog.Load(root, kind);
+            var custom = CustomRewardCatalog.Items(root, directory);
+            var catalog = CustomRewardCatalog.Entries(root, directory, kind);
+            var entries = catalog.ToDictionary(e => e.Key, e => e.Value.Name);
             var definition = RewardCatalog.ReadPool(root, rewards, kind);
+            definition.Selected.RemoveWhere(id => custom.ContainsKey(id) && CustomRewardPoolSelection.ForNative(kind).Length > 0);
             var nativeDefaults=rewards.Fields.ContainsKey("Native Defaults "+kind)
                 ? rewards.Get("Native Defaults "+kind).Split(',',StringSplitOptions.RemoveEmptyEntries|StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase) : null;
             rewardPools[kind] = definition;
             var selected = definition.Selected;
             var available = entries.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var reminders = RewardCatalog.Descriptions(root, kind);
+            var reminders = catalog.ToDictionary(e => e.Key, e => e.Value.Description);
             foreach (string id in selected) entries.TryAdd(id, "Unavailable reward · " + id);
             bool hasExpansion = RewardPoolDefinition.CatalogExpansionKey(kind).Length > 0;
             var panel = new Grid { RowDefinitions = new RowDefinitions(hasExpansion ? "Auto,Auto,Auto,Auto,Auto,*" : "Auto,Auto,Auto,Auto,*"), RowSpacing = StudioTheme.SpaceXs };
@@ -481,7 +491,7 @@ public sealed partial class CampaignWorkspace : UserControl
             void UpdateCount()
             {
                 var budget = RewardBudgets().Single(b => b.Kind == kind);
-                count.Text = definition.UseBaseGame ? "Base game pool · native eligibility and upgrade rules" : budget.Summary;
+                count.Text = definition.UseBaseGame ? "Base game items enabled. Custom rewards are off; tick items in the Custom tabs to add them." : budget.Summary;
                 count.Foreground = budget.Errors.Count > 0 ? Brush.Parse("#F5BE65") : StudioTheme.Text;
             }
             refreshRewardCounts.Add(UpdateCount);
@@ -495,26 +505,39 @@ public sealed partial class CampaignWorkspace : UserControl
             CheckBox? includeOther = null;
             void Refresh()
             {
+                custom = CustomRewardCatalog.Items(root, directory);
+                catalog = CustomRewardCatalog.Entries(root, directory, kind);
+                entries = catalog.ToDictionary(e => e.Key, e => e.Value.Name);
+                reminders = catalog.ToDictionary(e => e.Key, e => e.Value.Description);
+                available = entries.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+                foreach (string id in selected) entries.TryAdd(id, "Unavailable reward · " + id);
                 items.Children.Clear();
-                foreach (var entry in entries.Where(e => RewardCatalog.BelongsToPool(kind, e.Key) || definition.IncludeOtherCategory || selected.Contains(e.Key))
+                foreach (var entry in entries.Where(e => !custom.ContainsKey(e.Key) && (CustomRewardCatalog.Belongs(kind, e.Key, custom) || definition.IncludeOtherCategory || selected.Contains(e.Key)))
                     .OrderBy(e => !RewardCatalog.OfferedInBasePool(kind, e.Key)).ThenBy(e => e.Value).Where(e => e.Value.Contains(search.Text ?? "", StringComparison.OrdinalIgnoreCase)))
                 {
-                    bool offered = nativeDefaults?.Contains(entry.Key) ?? RewardCatalog.OfferedInBasePool(kind, entry.Key);
+                    bool offered = !custom.ContainsKey(entry.Key) && (nativeDefaults?.Contains(entry.Key) ?? RewardCatalog.OfferedInBasePool(kind, entry.Key));
                     string reminder = reminders.TryGetValue(entry.Key, out var text) ? text : "No reminder text provided by the game.";
-                    if (!RewardCatalog.BelongsToPool(kind, entry.Key) && selected.Contains(entry.Key) && !definition.IncludeOtherCategory)
+                    if (!CustomRewardCatalog.Belongs(kind, entry.Key, custom) && selected.Contains(entry.Key) && !definition.IncludeOtherCategory)
                         reminder = "Saved custom selection from the other category · kept visible while catalog expansion is off. " + reminder;
                     var check = new CheckBox {
                         Content = RewardRow.Create(entry.Value, offered ? reminder : "Not normally offered · enable to add it to this campaign's pool. " + reminder),
                         Tag = entry.Key, IsChecked = definition.UseBaseGame ? offered : selected.Contains(entry.Key), IsEnabled = available.Contains(entry.Key) && basePool.IsChecked != true, FontSize = 13,
                         HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch
                     };
+                    if (custom.TryGetValue(entry.Key, out var customItem))
+                    {
+                        var customRow = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = 12 };
+                        customRow.Children.Add(CustomRewardIcon.Preview(customItem.Name, customItem.UsesNamedIcon ? null : Convert.FromBase64String(customItem.IconPng), 128, 64));
+                        var textRow = RewardRow.Create(entry.Value, "Custom reward · " + reminder); Grid.SetColumn(textRow, 1); customRow.Children.Add(textRow);
+                        check.Content = customRow;
+                    }
                     check.IsCheckedChanged += (_, _) =>
                     {
                         if (basePool.IsChecked == true) return;
                         if (check.IsChecked == true) selected.Add(entry.Key); else selected.Remove(entry.Key);
                         foreach (var refreshCount in refreshRewardCounts) refreshCount();
                         rewardDirty = true; message.Text = "Unsaved reward pool changes";
-                        if (check.IsChecked != true && !definition.IncludeOtherCategory && !RewardCatalog.BelongsToPool(kind, entry.Key)) Refresh();
+                        if (check.IsChecked != true && !definition.IncludeOtherCategory && !CustomRewardCatalog.Belongs(kind, entry.Key, custom)) Refresh();
                     };
                     items.Children.Add(check);
                 }
@@ -524,7 +547,7 @@ public sealed partial class CampaignWorkspace : UserControl
             void SetAll(bool enabled)
             {
                 if (definition.UseBaseGame) return;
-                if (enabled) selected.UnionWith(available.Where(id => RewardCatalog.BelongsToPool(kind, id) || definition.IncludeOtherCategory || selected.Contains(id)).ToArray());
+                if (enabled) selected.UnionWith(available.Where(id => !custom.ContainsKey(id) && (CustomRewardCatalog.Belongs(kind, id, custom) || definition.IncludeOtherCategory || selected.Contains(id))).ToArray());
                 else selected.Clear();
                 rewardDirty = true; message.Text = "Unsaved reward pool changes";
                 Refresh();
@@ -534,7 +557,8 @@ public sealed partial class CampaignWorkspace : UserControl
             deselectAll.Click += (_, _) => SetAll(false);
             if (hasExpansion)
             {
-                includeOther = new CheckBox { Name = "IncludeOtherRewardCategory", Content = kind == "Talents" ? "Include Chaos talents" : "Include regular talents",
+                includeOther = new CheckBox { Name = "IncludeOtherRewardCategory", Content = kind switch {
+                    "Talents" => "Include Chaos talents", "Relics" => "Include Chaos relics", "Chaos Relics" => "Include regular relics", _ => "Include regular talents" },
                     IsChecked = definition.IncludeOtherCategory, IsEnabled = !definition.UseBaseGame };
                 ToolTip.SetTip(includeOther, PoolChoiceGuidance.CatalogExpansion);
                 includeOther.IsCheckedChanged += (_, _) =>
@@ -548,6 +572,12 @@ public sealed partial class CampaignWorkspace : UserControl
             basePool.IsCheckedChanged += (_, _) =>
             {
                 definition.UseBaseGame = basePool.IsChecked == true;
+                string customKind = CustomRewardPoolSelection.ForNative(kind);
+                if (definition.UseBaseGame && customKind.Length > 0 && rewardPools.TryGetValue(customKind, out var customPool)) {
+                    customPool.UseBaseGame = true;
+                    customPool.Selected.Clear();
+                    foreach (var refresh in refreshRewardRows) refresh();
+                }
                 selectAll.IsEnabled = deselectAll.IsEnabled = !definition.UseBaseGame;
                 if (includeOther != null) includeOther.IsEnabled = !definition.UseBaseGame;
                 rewardDirty = true;
@@ -555,6 +585,15 @@ public sealed partial class CampaignWorkspace : UserControl
                 Refresh();
                 foreach (var refreshCount in refreshRewardCounts) refreshCount();
             };
+            enableNativeChoices[kind] = () => {
+                if (!definition.UseBaseGame) return;
+                // Keep the base game's current choices when the first custom
+                // item is ticked, then save an explicit combined allow-list.
+                selected.Clear();
+                selected.UnionWith(available.Where(id => !custom.ContainsKey(id) && (nativeDefaults?.Contains(id) ?? RewardCatalog.OfferedInBasePool(kind, id))));
+                basePool.IsChecked = false;
+            };
+            refreshRewardRows.Add(Refresh);
             search.TextChanged += (_, _) => Refresh(); Refresh();
             int searchRow = hasExpansion ? 3 : 2;
             Grid.SetRow(search, searchRow); panel.Children.Add(search);
@@ -562,12 +601,61 @@ public sealed partial class CampaignWorkspace : UserControl
             var list = RewardRow.ListBox(items); Grid.SetRow(list, searchRow + 2); panel.Children.Add(list);
             sectionTabs.Add(new TabItem { Header = label, Content = panel, Padding = new Thickness(10, 8), HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch });
         }
+        foreach (string customKind in CustomRewardDefinition.Kinds) {
+            var definition = rewardPools[customKind];
+            var panel = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,Auto,*"), RowSpacing = 10 };
+            panel.Children.Add(new TextBlock { Text = customKind, FontSize = 20, FontWeight = FontWeight.SemiBold });
+            string route = customKind == CustomRewardDefinition.CustomRelics ? "Relics" : customKind == CustomRewardDefinition.CustomGoalieTalents ? "Goalie Talents"
+                : customKind == CustomRewardDefinition.CustomChaosTalents ? "Chaos talents (Wizard)" : "Regular talents";
+            var help = new TextBlock { Text = "Off by default. Tick items to offer them in " + route + ". Selecting its Base game pool clears these custom selections.", TextWrapping = TextWrapping.Wrap };
+            Grid.SetRow(help, 1); panel.Children.Add(help);
+            var search = new TextBox { Watermark = "Search " + customKind.ToLowerInvariant() };
+            var rows = new StackPanel { Spacing = 8 };
+            void EnableChoices() {
+                foreach (var native in enableNativeChoices.Where(p => CustomRewardPoolSelection.ForNative(p.Key) == customKind)) native.Value();
+                definition.UseBaseGame = false;
+            }
+            var all = ActionButton("Select all", () => { EnableChoices(); definition.Selected.UnionWith(CustomRewardCatalog.Items(root, directory).Values.Where(d => d.Kind == customKind && !d.NeedsRedesign).Select(d => d.Id)); Changed(); });
+            all.Name = "SelectAllCustomRewards";
+            var none = ActionButton("Deselect all", () => { definition.Selected.Clear(); definition.UseBaseGame = true; Changed(); });
+            none.Name = "DeselectAllCustomRewards";
+            var actions = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"), ColumnSpacing = 8 };
+            actions.Children.Add(search); Grid.SetColumn(all, 1); actions.Children.Add(all); Grid.SetColumn(none, 2); actions.Children.Add(none); Grid.SetRow(actions, 2); panel.Children.Add(actions);
+            var list = RewardRow.ListBox(rows); Grid.SetRow(list, 3); panel.Children.Add(list);
+            void RefreshCustom() {
+                rows.Children.Clear();
+                foreach (var d in CustomRewardCatalog.Items(root, directory).Values.Where(d => d.Kind == customKind && d.Name.Contains(search.Text ?? "", StringComparison.OrdinalIgnoreCase)).OrderBy(d => d.Name)) {
+                    var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = 12 };
+                    row.Children.Add(CustomRewardIcon.Preview(d.Name, d.UsesNamedIcon ? null : Convert.FromBase64String(d.IconPng), 128, 64));
+                    var words = RewardRow.Create(d.Name, d.FullDescription); Grid.SetColumn(words, 1); row.Children.Add(words);
+                    var check = new CheckBox { Tag = d.Id, Content = row, IsEnabled = !d.NeedsRedesign, IsChecked = !d.NeedsRedesign && !definition.UseBaseGame && definition.Selected.Contains(d.Id), HorizontalContentAlignment = HorizontalAlignment.Stretch };
+                    check.IsCheckedChanged += (_, _) => {
+                        if (check.IsChecked == true) { EnableChoices(); definition.Selected.Add(d.Id); }
+                        else { definition.Selected.Remove(d.Id); if (definition.Selected.Count == 0) definition.UseBaseGame = true; }
+                        MarkChanged();
+                    };
+                    rows.Children.Add(check);
+                }
+                if (rows.Children.Count == 0) rows.Children.Add(new TextBlock { Text = "Create an item in the Creator tab, or copy one from your library.", TextWrapping = TextWrapping.Wrap });
+            }
+            void MarkChanged() { rewardDirty = true; message.Text = "Unsaved custom reward pool changes"; foreach (var refresh in refreshRewardCounts) refresh(); }
+            void Changed() { MarkChanged(); RefreshCustom(); }
+            search.TextChanged += (_, _) => RefreshCustom(); refreshRewardRows.Add(RefreshCustom); RefreshCustom();
+            sectionTabs.Add(new TabItem { Header = customKind, Content = panel, Padding = new Thickness(10, 8) });
+        }
+        customRewardCreator = new CustomRewardCreator(owner, root, () => directory, () => {
+            foreach (var refresh in refreshRewardRows) refresh();
+            message.Text = "Custom item saved. Choose which items to offer in each pool, then Save campaign.";
+        });
+        sectionTabs.Add(new TabItem { Header = "Creator", Content = customRewardCreator });
         sections.ItemsSource = sectionTabs; sections.SelectedIndex = 0;
+        sections.SelectionChanged += (_, _) => { page.IsVisible = sections.SelectedIndex < RewardPoolDefinition.Kinds.Count; };
         var layout = new Grid { RowDefinitions = new RowDefinitions("Auto,*"), RowSpacing = StudioTheme.SpaceMd };
         layout.Children.Add(page); Grid.SetRow(sections, 1); layout.Children.Add(sections); return layout;
     }
     private void SaveWorkingCopy()
     {
+        if (customRewardCreator?.HasChanges == true) throw new InvalidOperationException("Save your item in the Creator tab, or discard its draft, before saving the campaign.");
         freeAgentTalentWeights?.Validate();
         var rewardErrors = RewardBudgets().SelectMany(b => b.Errors).ToArray();
         if (rewardErrors.Length > 0) throw new InvalidOperationException(string.Join("\n", rewardErrors));
@@ -579,6 +667,7 @@ public sealed partial class CampaignWorkspace : UserControl
         }
         if (freeAgentsDirty) { FreeAgentContent.Save(root, directory, selectedBaseAgents, selectedCustomAgents); freeAgentsDirty = false; }
         var updated = new CampaignDocument(File.ReadAllText(Path.Combine(directory, "campaign.txt")));
+        CustomRewardCatalog.BundleLibrary(root, directory);
         foreach (var field in fields) if (field.Value() != settings.Get(field.Key)) updated.Set(field.Key, field.Value());
         if (!CampaignActSequence.TryParse(updated.Get("Act Sequence", CampaignActSequence.Default), out _))
             throw new ArgumentException(CampaignActSequence.ValidationMessage);

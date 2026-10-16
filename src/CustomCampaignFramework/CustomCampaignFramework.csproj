@@ -15,6 +15,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="../CampaignCore/CustomRewardDefinition.cs" Link="Core/CustomRewardDefinition.cs" />
+    <Compile Include="../CampaignCore/CustomRewardAssignments.cs" Link="Core/CustomRewardAssignments.cs" />
+    <Compile Include="../CampaignCore/CustomRewardEffects.cs" Link="Core/CustomRewardEffects.cs" />
+    <Compile Include="../CampaignCore/CustomRewardEffectKinds.cs" Link="Core/CustomRewardEffectKinds.cs" />
+    <Compile Include="../CampaignCore/CustomRewardFlowEffects.cs" Link="Core/CustomRewardFlowEffects.cs" />
+    <Compile Include="../CampaignCore/CustomRewardLifecycleEffects.cs" Link="Core/CustomRewardLifecycleEffects.cs" />
+    <Compile Include="../CampaignCore/CustomRewardExport.cs" Link="Core/CustomRewardExport.cs" />
+    <Compile Include="../CampaignCore/CustomRewardTriggers.cs" Link="Core/CustomRewardTriggers.cs" />
+    <Compile Include="../CampaignCore/CustomRewardPoolSelection.cs" Link="Core/CustomRewardPoolSelection.cs" />
+    <Compile Include="../CampaignCore/CustomRewardProgress.cs" Link="Core/CustomRewardProgress.cs" />
     <Compile Include="../CampaignCore/SquadBehaviors.cs" Link="Core/SquadBehaviors.cs" />
     <Compile Include="../CampaignCore/RewardPoolDefinition.cs" Link="Core/RewardPoolDefinition.cs" />
     <Compile Include="../CampaignCore/FreeAgentTalentWeights.cs" Link="Core/FreeAgentTalentWeights.cs" />
@@ -36,6 +46,7 @@
     <Compile Include="../CampaignCore/UserContentPaths.cs" Link="Core/UserContentPaths.cs" />
     <Compile Include="../CampaignCore/GoalSoundWave.cs" Link="Core/GoalSoundWave.cs" />
     <Reference Include="FMODUnity"><HintPath>$(InteropDir)/FMODUnity.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UniTask"><HintPath>$(InteropDir)/UniTask.dll</HintPath><Private>false</Private></Reference>
     <None Update="Assets/MapSeams/*.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" TargetPath="MapSeams/%(Filename)%(Extension)" />
     <!-- Compile the small platform-neutral contract into the plugin so existing
          one-DLL installs do not acquire an unresolved runtime dependency. -->
@@ -141,6 +152,10 @@
     </Reference>
     <Reference Include="BishopGames.Module">
       <HintPath>$(InteropDir)\BishopGames.Module.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BishopGames.Utils">
+      <HintPath>$(InteropDir)\BishopGames.Utils.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">

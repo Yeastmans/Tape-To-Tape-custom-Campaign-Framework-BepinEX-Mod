@@ -6,11 +6,12 @@ internal static class PoolChoiceGuidance
     // GoalieTalentsSubEvent, PrototypeRewardPoolSubEvent and ChaosEvent3Choice.
     internal static string RewardOffer(string kind) => kind switch
     {
-        "Relics" => "Normal offer: 3 choices. Custom selections replace the regular, boss and opening Coach relic pools.",
+        "Relics" => "Normal offer: 3 choices. Custom selections replace the regular, boss and opening Coach relic pools. Include Chaos relics lets you explicitly offer a Chaos relic through these existing reward menus. " + CatalogExpansion,
         "Talents" => "Normal offer: 3 skater-talent choices. Recruitment, Fan and stat rewards can use this pool. The wizard uses the separate Chaos talents pool. Include Chaos talents expands the selectable catalog. " + CatalogExpansion,
         "Goalie Talents" => "Goalie-talent event: 3 choices from the eligible goalie talents.",
         "Abilities" => "A single ability node rolls 1 ability. Fan #1 can include one new ability among up to 3 mixed choices when its selected player has no ability. Blademaster can offer new abilities to eligible players. Explicit upgrades of owned abilities use the game's upgrade rules.",
         "Chaos Talents" => "Wizard / Chaos event: up to 2 talent choices for its selected skater. Base game pool uses the native Chaos category. Include regular talents expands the selectable catalog. " + CatalogExpansion,
+        "Chaos Relics" => "Only applies when the game requests a Chaos relic. The current Wizard offers Chaos talents, so this pool does not add Wizard choices. To offer one through normal relic rewards, select it in Relics using Include Chaos relics. Creator items apply a team curse, then a lasting payoff; Spartan games do not count down the curse.",
         _ => throw new ArgumentException("Unknown reward pool", nameof(kind))
     };
     internal const string RewardEligibility = "Base game pool uses native rewards. Turn it off to draw random rewards only from checked entries. Custom pools keep the exact selected levels, respect owned rewards and skater/goalie roles, and never fall back to unchecked rewards. Explicit upgrades of owned rewards, such as Blademaster upgrades, use the game's upgrade rules separately from these random pools.";

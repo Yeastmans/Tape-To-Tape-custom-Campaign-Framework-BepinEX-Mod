@@ -57,7 +57,8 @@ internal static class FieldControls
         // Literal identity/description text is not a random expression. Keep the
         // same text exceptions as import cleanup so opening a saved field does
         // not erase a name such as "Captain Random".
-        if (UpgradeCleanup.RandomValue(value) && key is not ("Name" or "Team Name" or "Description" or "City" or "Abbreviation" or "Goal Sound" or "Goal Sound Data"
+        if (!value.StartsWith("Helmet/CustomMasks/", StringComparison.OrdinalIgnoreCase)
+            && UpgradeCleanup.RandomValue(value) && key is not ("Name" or "Team Name" or "Description" or "City" or "Abbreviation" or "Goal Sound" or "Goal Sound Data"
             or "Relics" or "Team Relics" or "Talents" or "Goalie Talents" or "Team Talents")) value = "";
         if (key == "Logo From") return LogoPicker.Create(data.Root, value, changed);
         var kind = FieldSchema.Kind(key, value);
@@ -177,6 +178,9 @@ internal static class FieldControls
 
             var catalog = entries.GroupBy(e => e.Id.Length > 0 ? e.Key : relics ? e.Name : e.Key, StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
+            foreach (var item in data.CustomRewards.Values.Where(d => !d.NeedsRedesign && d.IsRelic == relics && (relics || key == "Team Talents" || d.IsGoalie == (role == "goalie"))))
+                catalog[item.Id] = new RewardCatalog.Entry(item.Id, item.Name, item.FullDescription, 1, item.Id, item.Kind);
+
             var usualKeys = catalog.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             if (!relics)
@@ -187,7 +191,7 @@ internal static class FieldControls
 
             if (!relics)
 
-                foreach (var name in data.Talents.Keys.Where(name => !catalog.Values.Any(e => e.Asset == name || e.Id == name)))
+                foreach (var name in data.Talents.Keys.Where(name => !data.CustomRewards.ContainsKey(data.Talents[name]) && !catalog.Values.Any(e => e.Asset == name || e.Id == name)))
 
                     catalog.TryAdd(name, new RewardCatalog.Entry(name, Friendly(name), "Loaded game talent outside the usual position catalog.", 1));
 

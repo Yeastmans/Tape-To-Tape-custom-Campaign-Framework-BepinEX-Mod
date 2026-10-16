@@ -35,8 +35,18 @@ internal static class CustomRewardPools
         if (!File.Exists(file)) return null;
         try
         {
-            var pool = RewardPoolDefinition.Read(new CampaignDocument(File.ReadAllText(file)), kind,
-                normal.TryGetValue(kind, out var ids) ? ids : Array.Empty<string>());
+            var document = new CampaignDocument(File.ReadAllText(file));
+            var defaults = normal.TryGetValue(kind, out var ids) ? ids : Array.Empty<string>();
+            var pool = RewardPoolDefinition.Read(document, kind, defaults);
+            string customKind = CustomRewardPoolSelection.ForNative(kind);
+            if (customKind.Length > 0) {
+                CustomRewardRuntime.EnsureAssets();
+                var custom = CustomRewardPoolSelection.Read(document, customKind, CustomRewardRuntime.Definitions.Values);
+                pool = CustomRewardPoolSelection.Effective(kind, pool, custom, defaults, CustomRewardRuntime.Definitions.Keys);
+            }
+            CustomRewardRuntime.EnsureAssets();
+            pool.Selected.RemoveWhere(id => CustomRewardRuntime.Definitions.TryGetValue(id, out var item)
+                && (item.NeedsRedesign || item.NativePool != kind));
             return pool.UseBaseGame ? null : pool;
         }
         catch (Exception ex)
@@ -47,6 +57,7 @@ internal static class CustomRewardPools
     }
     internal static IEnumerable<T> Assets<T>(IEnumerable<string> selected, Func<T, string> id) where T : UnityEngine.Object
     {
+        CustomRewardRuntime.EnsureAssets();
         var assets = UnityEngine.Resources.FindObjectsOfTypeAll<T>();
         foreach (string key in selected)
         {
@@ -113,7 +124,9 @@ internal static class CustomRelicPool
     private static bool Prefix(RelicRepository __instance, RelicCategory __0, Il2CppSystem.Collections.Generic.List<Relic> __1,
         bool __2, int __3, ref Il2CppSystem.Collections.Generic.List<Relic> __result)
     {
-        var pool = CustomRewardPools.Read("Relics"); if (pool == null) return true;
+        CustomRewardRuntime.EnsureAssets();
+        string kind = (__0 & RelicCategory.Chaos) != 0 ? "Chaos Relics" : "Relics";
+        var pool = CustomRewardPools.Read(kind); if (pool == null) return true;
         // An invalid custom file must never silently fall back to native picks.
         __result = new Il2CppSystem.Collections.Generic.List<Relic>();
         try { __result = CustomRewardPools.Select("relic", __3, pool.Selected.Select(id => PatchBossLaunchMatch.FindRelic(id))

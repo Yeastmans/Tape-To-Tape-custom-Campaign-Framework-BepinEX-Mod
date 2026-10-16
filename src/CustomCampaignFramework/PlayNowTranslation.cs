@@ -35,6 +35,7 @@ internal static class PlayNowTranslation
         if (!File.Exists(file)) return null;
         var doc = new CampaignDocument(File.ReadAllText(file));
         if (doc.Get("Export Version") != "2" && doc.Get("Export Version") != "3") return null;
+        CustomRewardRuntime.RegisterExport(doc);
         Documents[key] = doc;
         return doc;
     }
@@ -42,11 +43,14 @@ internal static class PlayNowTranslation
     internal static void Player(SkaterData player, string id)
     {
         var doc = Read(id); if (doc == null || player == null) return;
+        CustomRewardRuntime.EnsureAssets();
         ExportAppearanceRuntime.Apply(player, doc);
         var talents = Resources.FindObjectsOfTypeAll<Rogue.Talent>();
         var resolved = new Il2CppSystem.Collections.Generic.List<Rogue.Talent>();
         foreach (string wanted in Split(doc.Get("Export Talent IDs")))
         {
+            if (CustomRewardRuntime.Definitions.TryGetValue(wanted, out var custom))
+                CustomRewardAssignments.ValidateField(custom, "Talents", player.TryCast<GoaltenderData>() != null);
             var talent = talents.FirstOrDefault(t => t != null && t.id == wanted);
             if (talent == null) throw new InvalidOperationException($"Export talent ID '{wanted}' is not loaded for {player.firstName}.");
             resolved.Add(talent);
@@ -87,6 +91,7 @@ internal static class PlayNowTranslation
             Register(__result.homeColors, false); Register(__result.awayColors, true);
             Register(__result.homeGoalieColors, false); Register(__result.awayGoalieColors, true);
             var doc = Read(model.Id, true); if (doc == null) return;
+            CustomRewardRuntime.EnsureAssets();
             ExportAppearanceRuntime.ApplyTeamLogo(__result, doc);
             TeamGoalSound.Register(__result.id, doc.Get("Goal Sound Data"), doc.Get("Goal Sound Volume", "100"));
             // The native adapter derives equipment colors from the jersey. Restore
@@ -102,6 +107,7 @@ internal static class PlayNowTranslation
             var relics = new Il2CppSystem.Collections.Generic.List<Rogue.Relic>();
             foreach (string id in Split(doc.Get("Export Relic IDs")))
             {
+                if (CustomRewardRuntime.Definitions.TryGetValue(id, out var custom)) CustomRewardAssignments.ValidateField(custom, "Relics");
                 var relic = all.FirstOrDefault(r => r != null && r.id == id);
                 if (relic == null) throw new InvalidOperationException($"Export relic ID '{id}' is not loaded.");
                 relics.Add(relic);

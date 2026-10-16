@@ -24,7 +24,7 @@ internal static class InitialMatchSurface
 
     internal static void Install()
     {
-        if (detour != null || Plugin.IsDefaultMode) return;
+        if (detour != null) return;
         try
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8)
@@ -53,13 +53,14 @@ internal static class InitialMatchSurface
         int selected = type;
         try
         {
-            if (instance != IntPtr.Zero && !Plugin.IsDefaultMode)
+            if (instance != IntPtr.Zero)
             {
                 var setup = new IceSetup(instance);
                 bool live = IceSetup._instance != null && IceSetup._instance.Pointer == instance;
-                selected = InitialSurfaceChoice.Resolve(type, Plugin.IsDefaultMode, live,
+                string custom = CustomRewardCampaignRules.Surface(setup._teamSelection?.homeTeam, setup._teamSelection?.visitorTeam);
+                selected = InitialSurfaceChoice.Resolve(type, Plugin.IsDefaultMode && custom.Length == 0, live,
                     setup._isInitialized, setup._isSwitchingIceType, (int)setup._currentIceType,
-                    OpponentMatch.Surface, Plugin.SoccerThisMatch);
+                    custom.Length > 0 ? custom : OpponentMatch.Surface, !Plugin.IsDefaultMode && Plugin.SoccerThisMatch);
                 if (live && !setup._isInitialized && !setup._isSwitchingIceType && (int)setup._currentIceType == 0)
                     Plugin.Log.LogInfo($"[Surface] Initial load: native={type}, selected={selected}, authored='{OpponentMatch.Surface}', current=0, initialized=False.");
             }

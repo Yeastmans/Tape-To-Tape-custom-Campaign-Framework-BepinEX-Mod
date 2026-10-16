@@ -19,7 +19,7 @@ internal static partial class CampaignSharing
     internal const string HeadBundle = "_heads";
     // Local-only folders: save state, Studio backups and removed teams never ship.
     private static readonly string[] SkipFiles = ["save.txt", "save.txt.bak"];
-    private static readonly string[] SkipFolders = [LogoBundle, HeadBundle, "map_backups", "_removed_opponents"];
+    private static readonly string[] SkipFolders = [LogoBundle, HeadBundle, "map_backups", "_removed_opponents", "custom_reward_progress"];
     private static readonly HttpClient http = CreateClient();
 
     internal sealed record CommunityItem(string Name, string Path, long Size, string Modified);
@@ -59,6 +59,8 @@ internal static partial class CampaignSharing
     /// <summary>Zips a campaign with its referenced logos and custom head projects.</summary>
     internal static PackageResult Zip(string campaign, string destination, string contentRoot)
     {
+        var customRewards = CustomRewardCatalog.PortableItems(contentRoot, campaign);
+        CustomRewardCatalog.ValidateCampaignLoadouts(contentRoot, campaign, customRewards);
         string top = Path.GetFileName(campaign.TrimEnd('\\', '/'));
         var logos = ReferencedLogos(campaign);
         var heads = ReferencedHeads(campaign, contentRoot);
@@ -69,6 +71,11 @@ internal static partial class CampaignSharing
             var parts = Path.GetRelativePath(campaign, file).Split(Path.DirectorySeparatorChar);
             if (parts[..^1].Any(p => SkipFolders.Contains(p, StringComparer.OrdinalIgnoreCase)) || SkipFiles.Contains(parts[^1], StringComparer.OrdinalIgnoreCase)) continue;
             zip.CreateEntryFromFile(file, top + "/" + string.Join('/', parts), CompressionLevel.Optimal);
+        }
+        foreach (var reward in customRewards.Values) {
+            if (File.Exists(Path.Combine(campaign, CustomRewardDefinition.Folder, reward.Id + CustomRewardDefinition.Extension))) continue;
+            using var writer = new StreamWriter(zip.CreateEntry($"{top}/{CustomRewardDefinition.Folder}/{reward.Id}{CustomRewardDefinition.Extension}", CompressionLevel.Optimal).Open());
+            writer.Write(reward.ToDocument().ToString());
         }
         foreach (string png in logos.Values.Distinct(StringComparer.OrdinalIgnoreCase).Order())
             zip.CreateEntryFromFile(png, $"{top}/{LogoBundle}/{Path.GetFileName(png)}", CompressionLevel.Optimal);
@@ -112,6 +119,7 @@ internal static partial class CampaignSharing
                     Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
                     entry.ExtractToFile(destination);
                 }
+            CustomRewardCatalog.ValidateCampaignLoadouts(contentRoot, staging, CustomRewardCatalog.PortableItems(contentRoot, staging));
             headsKept = InstallHeads(staging, contentRoot, addedHeads);
             Directory.CreateDirectory(campaigns);
             Directory.Move(staging, target);

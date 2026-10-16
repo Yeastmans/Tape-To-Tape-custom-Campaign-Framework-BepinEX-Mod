@@ -76,16 +76,18 @@ public static class RewardCatalog
     }
 
     public static bool OfferedInBasePool(string kind, string id) => kind == RewardPoolDefinition.ChaosTalents
-        ? CampaignRewardBudget.NativeChaosTalent(id) : BelongsToPool(kind, id) && OfferedInNormalRun(id);
+        ? CampaignRewardBudget.NativeChaosTalent(id) : kind == RewardPoolDefinition.ChaosRelics
+        ? CampaignRewardBudget.IsChaosRelic(id) : BelongsToPool(kind, id) && OfferedInNormalRun(id);
 
     public static bool BelongsToPool(string kind, string id) => kind == RewardPoolDefinition.ChaosTalents
-        ? CampaignRewardBudget.IsChaosTalent(id) : kind != "Talents" || !CampaignRewardBudget.IsChaosTalent(id);
+        ? CampaignRewardBudget.IsChaosTalent(id) : kind == RewardPoolDefinition.ChaosRelics ? CampaignRewardBudget.IsChaosRelic(id)
+        : kind == "Relics" ? !CampaignRewardBudget.IsChaosRelic(id) : kind != "Talents" || !CampaignRewardBudget.IsChaosTalent(id);
 
     public static RewardPoolDefinition ReadPool(string root, CampaignDocument document, string kind)
     {
         // Legacy ordinary pools included Chaos rewards. Preserve that authored
         // selection even though new regular-pool defaults now have their own category.
-        var normal = Load(root, kind).Keys.Where(id => kind == "Talents" ? OfferedInNormalRun(id) : OfferedInBasePool(kind, id));
+        var normal = Load(root, kind).Keys.Where(id => kind is "Talents" or "Relics" ? OfferedInNormalRun(id) : OfferedInBasePool(kind, id));
         var pool = RewardPoolDefinition.Read(document, kind, normal, id => ResolveKey(root, kind, id));
         bool existing = new[] { "Pool Mode ", "Selected ", "Included ", "Excluded " }.Any(prefix => document.Get(prefix + kind).Length > 0);
         if (!existing) pool.Selected.RemoveWhere(id => !BelongsToPool(kind, id));

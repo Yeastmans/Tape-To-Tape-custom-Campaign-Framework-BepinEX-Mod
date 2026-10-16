@@ -32,14 +32,16 @@ internal static class ExportTranslation
         }).Where(id => id.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
-    internal static CampaignDocument Player(CampaignDocument player, CampaignDocument team, CampaignDocument? goalieDefaults, string role)
+    internal static CampaignDocument Player(CampaignDocument player, CampaignDocument team, CampaignDocument? goalieDefaults, string role, GameData? game = null)
     {
         var result = AppearanceContract.Resolve(player, team, goalieDefaults ?? new CampaignDocument(""), role);
         // This is now a standalone export snapshot. Later conversion has no team
         // context, so it must retain the appearance we just inherited.
         result.Set("Override Team Settings", "yes");
         result.Set("Number Style", FieldSchema.EffectiveNumberStyle(player.Get("Number Style"), team.Get("Number Style", "Regular")));
-        result.Set("Talents", string.Join(",", new[] { player.Get("Talents"), team.Get("Talents"), team.Get("Team Talents") }.Where(s => s.Length > 0)));
+        string inherited = string.Join(",", CustomRewardAssignments.TeamTalents(team));
+        if (game != null) inherited = game.InheritedTalents(inherited, role == "goalie");
+        result.Set("Talents", string.Join(",", new[] { player.Get("Talents"), inherited }.Where(s => s.Length > 0)));
         return result;
     }
 
@@ -82,6 +84,9 @@ internal static class ExportTranslation
     internal sealed record Package(string TeamId, Dictionary<string, string> Saves, Dictionary<string, string> Overrides);
     internal static Package BuildTeam(CampaignDocument team, string teamFile, GameData game, string? sourceRoot = null, ExportReport? report = null)
     {
+        game.LoadCustomRewards(teamFile);
+        game.ValidateCustomLoadout(team);
+        var custom = new CustomRewardExportBundle(game);
         team = ExportSelections.Logo(team, sourceRoot ?? game.Root, report);
         if (team.Get("Team Name").Length == 0) throw new ArgumentException("Name the team before exporting.");
         if (team.Get("Import Team").Length > 0) throw new ArgumentException("Import the team's complete roster into the editor before exporting.");
@@ -123,22 +128,29 @@ internal static class ExportTranslation
             if (index < 0 || Path.GetRelativePath(players, file).Contains(Path.DirectorySeparatorChar) || model.ContainsKey(slots[index]))
                 throw new ArgumentException($"Play Now supports one player per starting position. '{Path.GetFileName(file)}' cannot be represented in that roster; nothing was exported.");
             string role = index == 5 ? "goalie" : "skater", id = Guid.NewGuid().ToString();
-            var doc = Player(ExportPlayerResolver.Resolve(raw, role), team, goalieDefaults, role);
+            var doc = Player(ExportPlayerResolver.Resolve(raw, role), team, goalieDefaults, role, game);
             if (doc.Get("Logo From") == team.Get("Logo From")) LogoExport.Copy(team, doc);
             doc = ExportSelections.Logo(doc, sourceRoot ?? game.Root, report);
             if (statScale != 1) ApplyStatScale(doc, role, statScale);
             var playerModel = PlayerExport.Convert(doc, game, role, id, report);
+            custom.Player(playerModel);
             saves[(role == "goalie" ? "CustomGoalie-" : "CustomForward-") + id + ".json"] = JsonSerializer.Serialize(playerModel);
-            overrides[id + ".txt"] = PlayerExport.TranslationSidecar(doc, game, role, playerModel, report).ToString();
+            var playerSidecar = PlayerExport.TranslationSidecar(doc, game, role, playerModel, report);
+            custom.EmbedPlayer(playerSidecar, playerModel);
+            overrides[id + ".txt"] = playerSidecar.ToString();
             relics.AddRange(Ids(game, raw.Get("Relics"), true, report, raw, "Relics").Concat(Ids(game, raw.Get("Team Relics"), true, report, raw, "Team Relics")));
             model[slots[index]] = id;
         }
         if (slots.Any(s => !model.ContainsKey(s))) throw new ArgumentException("Export requires all five starting skaters and a goalie. Add missing positions first.");
-        model["relics"] = relics.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        model["relics"] = custom.Map(relics.Distinct(StringComparer.OrdinalIgnoreCase));
         var teamSidecar = ExportSelections.Sidecar(team, game, "skater", report);
         if (benchHead == null) teamSidecar.Remove("Bench Head");
         teamSidecar.Set("Export Version", "3");
         teamSidecar.Set("Export Relic IDs", string.Join(",", (string[])model["relics"]));
+        teamSidecar.Set("Team Relics", string.Join(",", (string[])model["relics"])); teamSidecar.Set("Relics", "");
+        // Team talents have already been resolved onto each exported player.
+        teamSidecar.Set("Team Talents", ""); teamSidecar.Set("Talents", "");
+        CustomRewardExport.Embed(teamSidecar, custom.Items);
         if (statScale != 1) teamSidecar.Set("Stat Scale", "1"); // already baked into the player stats
         overrides[tid + ".team.txt"] = teamSidecar.ToString();
         saves["CustomTeam-" + tid + ".json"] = JsonSerializer.Serialize(model);

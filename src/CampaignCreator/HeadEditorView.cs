@@ -21,15 +21,15 @@ public sealed class HeadEditorView : UserControl
     public HeadEditorView(Window owner, string root, Action back, HeadProject savedProject)
     {
         this.owner = owner; library = Path.Combine(root, "custom-heads"); project = savedProject;
-        templates = NativeHeadTemplates.Read();
+        templates = NativeHeadTemplates.Read(savedProject.IsGoalie);
         var layout = new Grid { Margin = new Thickness(24), RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto"), RowSpacing = StudioTheme.SpaceLg };
         var navigation = new StackPanel { Orientation = Orientation.Horizontal, Spacing = StudioTheme.SpaceLg };
-        navigation.Children.Add(ActionButton("Home", back)); navigation.Children.Add(Text("Head Editor", 28)); navigation.Children.Add(PageHelpButton.Create(owner));
+        navigation.Children.Add(ActionButton("Home", back)); navigation.Children.Add(Text(project.IsGoalie ? "Goalie Mask Editor" : "Head Editor", 28)); navigation.Children.Add(PageHelpButton.Create(owner));
         layout.Children.Add(navigation);
         var tools = new WrapPanel { Orientation = Orientation.Horizontal };
-        tools.Children.Add(ActionButton("New head…", async () =>
+        tools.Children.Add(ActionButton(project.IsGoalie ? "New mask…" : "New head…", async () =>
         {
-            var setup = new HeadProjectStartWindow(root);
+            var setup = new HeadProjectStartWindow(root, project.IsGoalie);
             if (await setup.ShowDialog<HeadProject?>(owner) is { } saved)
             {
                 project = saved; Refresh(); feedback.Text = "Saved " + saved.Name + " · " + saved.Folder;
@@ -39,7 +39,7 @@ public sealed class HeadEditorView : UserControl
         {
             try
             {
-                var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Import head PNGs (name them Front, Back, Side, Back diagonal, Front diagonal, Portrait)", AllowMultiple = true, FileTypeFilter = [new FilePickerFileType("PNG image") { Patterns = ["*.png"] }] });
+                var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = project.IsGoalie ? "Import mask PNGs: Front, Back, Front left, Front right, Back left, Back right, Portrait" : "Import head PNGs (name them Front, Back, Side, Back diagonal, Front diagonal, Portrait)", AllowMultiple = true, FileTypeFilter = [new FilePickerFileType("PNG image") { Patterns = ["*.png"] }] });
                 var paths = files.Select(f => f.TryGetLocalPath()).OfType<string>().ToList(); if (paths.Count == 0) return;
                 ImportInto(paths);
             }
@@ -49,14 +49,14 @@ public sealed class HeadEditorView : UserControl
         {
             project.Save(); Refresh(); feedback.Text = "Saved " + project.Name + " · " + project.Folder;
         }), "SaveHead"));
-        tools.Children.Add(ActionButton("Open saved head…", async () =>
+        tools.Children.Add(ActionButton(project.IsGoalie ? "Open saved mask…" : "Open saved head…", async () =>
         {
             try
             {
                 var start = Directory.Exists(library) ? await owner.StorageProvider.TryGetFolderFromPathAsync(library) : null;
-                var folders = await owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = "Open a Head Editor project", AllowMultiple = false, SuggestedStartLocation = start });
+                var folders = await owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = project.IsGoalie ? "Open a goalie mask project" : "Open a Head Editor project", AllowMultiple = false, SuggestedStartLocation = start });
                 string? folder = folders.FirstOrDefault()?.TryGetLocalPath();
-                if (folder != null) { project = HeadProject.Open(folder); Refresh(); feedback.Text = "Opened " + folder; }
+                if (folder != null) { var opened = HeadProject.Open(folder); if (opened.IsGoalie != project.IsGoalie) throw new InvalidDataException("Open this project from the matching editor on Home."); project = opened; Refresh(); feedback.Text = "Opened " + folder; }
             }
             catch (Exception ex) { feedback.Text = ex.Message; }
         }, "OpenHeadProject"));
@@ -90,38 +90,38 @@ public sealed class HeadEditorView : UserControl
         body.Children.Add(Text("Native template: " + (templates.FirstOrDefault(t => t.Skin == p.TemplateSkin)?.Label ?? p.TemplateSkin)));
         body.Children.Add(Text("1. Edit your artwork · 512 × 512 transparent PNGs", 20));
         body.Children.Add(Text(p.StartedFromScratch
-            ? "This project started with blank PNGs. Use each native head outline to draw the head and neck in the original position, or import your artwork. Edit every direction, extra layer and portrait. Expand the native examples below to see the collar placement."
+            ? p.IsGoalie ? "This mask started with blank PNGs. Use the native outlines to draw or import each view and layer, then edit the separate portrait. Expand the native examples to check placement." : "This project started with blank PNGs. Use each native head outline to draw the head and neck in the original position, or import your artwork. Edit every direction, extra layer and portrait. Expand the native examples below to see the collar placement."
             : "Open each PNG in your image app or use Replace PNG / Import PNGs to add your own artwork. Edit every direction, extra layer and portrait."));
         body.Children.Add(Text("2. Check the previews · use Refresh PNGs after editing in another app. Imports and replacements save immediately and keep the previous PNG as a .bak file."));
-        body.Children.Add(new Border { Padding = new Thickness(12), CornerRadius = new CornerRadius(6), Background = Brush.Parse("#293749"), Child = Text("3. Add to player head options, then return Home and choose this head under Player > Head. Restart the game after installing or changing artwork. The outline follows the original head, including its neck edge. Check changed artwork and helmet fit in game.") });
+        body.Children.Add(new Border { Padding = new Thickness(12), CornerRadius = new CornerRadius(6), Background = Brush.Parse("#293749"), Child = Text(p.IsGoalie ? "3. Add to goalie mask options, return Home, then choose Goalie mask > Premade in a goalie or team look editor. Restart the game after installing or editing artwork. Check front, back and diagonal views in game." : "3. Add to player head options, then return Home and choose this head under Player > Head. Restart the game after installing or changing artwork. The outline follows the original head, including its neck edge. Check changed artwork and helmet fit in game.") });
         var actions = new WrapPanel();
-        actions.Children.Add(ActionButton("Add to player head options", () => Try(() =>
+        actions.Children.Add(ActionButton(p.IsGoalie ? "Add to goalie mask options" : "Add to player head options", () => Try(() =>
         {
             string installed = p.Install(CampaignCore.UserContentPaths.EnsureRoot());
             // Also register in a custom --content workspace when one is in use.
             string workspaceRoot = Path.GetDirectoryName(library)!;
             if (!Path.GetFullPath(workspaceRoot).Equals(Path.GetFullPath(CampaignCore.UserContentPaths.Root), StringComparison.OrdinalIgnoreCase)) p.Install(workspaceRoot);
-            feedback.Text = "Installed " + p.Name + ". Return Home to select it under Player > Head. Restart the game. " + installed;
+            feedback.Text = "Installed " + p.Name + (p.IsGoalie ? ". Return Home and select Goalie mask > Premade. Restart the game. " : ". Return Home to select it under Player > Head. Restart the game. ") + installed;
         }), "InstallCustomHead"));
         actions.Children.Add(ActionButton("Open project folder", () => OpenFile(p.Folder)));
         actions.Children.Add(ActionButton("Open outline guides", () => Try(() => OpenFile(p.ExportOutlineGuides()))));
-        actions.Children.Add(ActionButton("Open attachment data", () => OpenFile(p.FilePath(p.Version == 2 ? "reference/Bare/head-assets.json" : "reference/head-assets.json"))));
+        actions.Children.Add(ActionButton("Open attachment data", () => OpenFile(p.FilePath(p.Version >= 2 ? "reference/Bare/head-assets.json" : "reference/head-assets.json"))));
         body.Children.Add(actions);
-        AddGroup("Head", "Head directions · required"); AddGroup("Portrait", "Player portrait · required");
+        AddGroup("Head", p.IsGoalie ? "Mask views and layers · required" : "Head directions · required"); AddGroup("Portrait", "Player portrait · required");
         if (p.SupportsHelmet && p.SeparateHelmetArtwork) AddGroup("Helmet", "Head under helmet · required when using separate artwork");
-        if (p.Version == 2)
+        if (p.Version >= 2)
         {
             AddNativeExample(p.FilePath("reference/Bare/views"), p.Bindings.Count(b => !b.Helmet));
             if (p.TemplateHelmetSkin.Length > 0) AddNativeExample(p.FilePath("reference/Helmet/views"), p.Bindings.Count(b => b.Helmet), "under-helmet");
         }
         var helmet = new CheckBox { Name = "HeadSupportsHelmet", Content = "Supports a selectable helmet", IsChecked = p.SupportsHelmet,
             IsEnabled = p.Version == 1 || p.TemplateHelmetSkin.Length > 0 };
-        var separate = new CheckBox { Name = "HeadSeparateHelmetArtwork", Content = p.Version == 2 ? "Separate native artwork under helmets" : "Use separate artwork under helmets (for tucked hair, etc.)",
+        var separate = new CheckBox { Name = "HeadSeparateHelmetArtwork", Content = p.Version >= 2 ? "Separate native artwork under helmets" : "Use separate artwork under helmets (for tucked hair, etc.)",
             IsChecked = p.SeparateHelmetArtwork, IsEnabled = p.SupportsHelmet && p.Version == 1 };
         helmet.IsCheckedChanged += (_, _) => Try(() => { p.SupportsHelmet = helmet.IsChecked == true; p.Save(); Refresh(); });
         separate.IsCheckedChanged += (_, _) => Try(() => { if (separate.IsChecked == true) p.EnsureHelmetImages(); p.SeparateHelmetArtwork = separate.IsChecked == true; p.Save(); Refresh(); });
-        body.Children.Add(helmet); body.Children.Add(separate);
-        body.Children.Add(Text(!p.SupportsHelmet ? "Helmetless head: the project records that helmet selection should be disabled." : p.SeparateHelmetArtwork ? "Edit the fitted head artwork below. The game supplies the helmet itself." : "Both variants share these PNGs. The template has separate normal and helmet attachment layouts."));
+        if (!p.IsGoalie) { body.Children.Add(helmet); body.Children.Add(separate); }
+        if (!p.IsGoalie) body.Children.Add(Text(!p.SupportsHelmet ? "Helmetless head: the project records that helmet selection should be disabled." : p.SeparateHelmetArtwork ? "Edit the fitted head artwork below. The game supplies the helmet itself." : "Both variants share these PNGs. The template has separate normal and helmet attachment layouts."));
         if (p.Images.Any(i => i.Group == "Support"))
         {
             var support = new WrapPanel();
@@ -138,10 +138,11 @@ public sealed class HeadEditorView : UserControl
     }
     void AddNativeExample(string folder, int attachments, string kind = "head")
     {
+        if (project.IsGoalie) kind = "mask";
         var row = new StackPanel { Spacing = StudioTheme.SpaceSm };
-        row.Children.Add(Text($"Native placement and size example · {attachments} head attachments", 18));
-        row.Children.Add(Text("This example shows the original head against the body's collar. It keeps the same scale across all templates. The editable PNGs above have native outline guides; check changed artwork in game."));
-        var direction = new ComboBox { Name = kind == "head" ? "HeadExampleDirection" : "HeadHelmetExampleDirection", ItemsSource = new[] { "S", "N", "W", "E", "NE", "NW", "SW", "SE" }
+        row.Children.Add(Text($"Native placement and size example · {attachments} {kind} attachments", 18));
+        row.Children.Add(Text(project.IsGoalie ? "These original mask examples show placement on the goalie in all six views. Edit each required PNG and use the outline guides; check changed artwork in game." : "This example shows the original head against the body's collar. It keeps the same scale across all templates. The editable PNGs above have native outline guides; check changed artwork in game."));
+        var direction = new ComboBox { Name = kind != "under-helmet" ? "HeadExampleDirection" : "HeadHelmetExampleDirection", ItemsSource = (project.IsGoalie ? new[] { "S", "N", "NE", "NW", "SW", "SE" } : new[] { "S", "N", "W", "E", "NE", "NW", "SW", "SE" })
             .Select(d => new ExampleDirection(d, HeadProject.DirectionLabel(d))).ToArray(), SelectedIndex = 0, Width = 160 };
         var picture = new Image { Height = 330, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Left };
         void Show()
@@ -150,7 +151,7 @@ public sealed class HeadEditorView : UserControl
             catch { picture.Source = null; }
         }
         direction.SelectionChanged += (_, _) => Show(); Show(); row.Children.Add(direction); row.Children.Add(picture);
-        body.Children.Add(new Expander { Name = kind == "head" ? "HeadNativeReference" : "HeadHelmetNativeReference",
+        body.Children.Add(new Expander { Name = kind != "under-helmet" ? "HeadNativeReference" : "HeadHelmetNativeReference",
             Header = "See native " + kind + " size and collar placement", Content = row, IsExpanded = false });
     }
     sealed record ExampleDirection(string Id, string Label) { public override string ToString() => Label; }
@@ -180,7 +181,7 @@ public sealed class HeadEditorView : UserControl
         var images = new Grid { Background = Brush.Parse("#354358") }; images.Children.Add(picture); images.Children.Add(outline); panel.Children.Add(images);
         panel.Children.Add(Text(valid ? $"{item.Width} × {item.Height} · PNG" : "Missing or invalid image — replace PNG"));
         panel.Children.Add(Text($"Original game artwork: {item.NativeWidth} × {item.NativeHeight} px", 12));
-        if (p.Version == 2)
+        if (p.Version >= 2)
         {
             var binding = p.Bindings.FirstOrDefault(b => b.File == item.File);
             if (binding != null) panel.Children.Add(Text($"Native attachment: {binding.NativeWidth:0.#} × {binding.NativeHeight:0.#}", 12));

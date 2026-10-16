@@ -11,7 +11,7 @@ public sealed record RewardBudget(string Kind, int Selections, int Minimum, int 
 public static class CampaignRewardBudget
 {
     public static int MinimumChoices(string kind) => kind switch { "Abilities" => 1, RewardPoolDefinition.ChaosTalents => 2, _ => 3 };
-    public static string RewardName(string kind) => kind switch { "Relics" => "relics", "Abilities" => "abilities", "Goalie Talents" => "goalie talents", RewardPoolDefinition.ChaosTalents => "Chaos talents", _ => "talents" };
+    public static string RewardName(string kind) => kind switch { "Relics" => "relics", RewardPoolDefinition.ChaosRelics => "Chaos relics", "Abilities" => "abilities", "Goalie Talents" => "goalie talents", RewardPoolDefinition.ChaosTalents => "Chaos talents", _ => "talents" };
     private sealed record RewardInfo(string Kind, string Id, string Family, int Level, string Asset, long Category);
     private static readonly List<RewardInfo> Info = Load();
     private static readonly string[][] NativeStarting = LoadStarting();
@@ -31,6 +31,8 @@ public static class CampaignRewardBudget
     }
     public static bool IsChaosTalent(string token) => Info.Any(r => r.Kind == "Talents" && (r.Category & 16384) != 0
         && (r.Id.Equals(token, StringComparison.OrdinalIgnoreCase) || r.Asset.Equals(token, StringComparison.OrdinalIgnoreCase)));
+    public static bool IsChaosRelic(string token) => Info.Any(r => r.Kind == "Relics" && (r.Category & 128) != 0
+        && (r.Id.Equals(token, StringComparison.OrdinalIgnoreCase) || r.Asset.Equals(token, StringComparison.OrdinalIgnoreCase)));
     public static bool NativeChaosTalent(string token) => Info.Any(r => r.Kind == "Talents" && (r.Category & 16384) != 0 && r.Level == 1
         && (r.Id.Equals(token, StringComparison.OrdinalIgnoreCase) || r.Asset.Equals(token, StringComparison.OrdinalIgnoreCase)));
     public static string Family(string kind, string token) => Info.FirstOrDefault(r => r.Kind == RewardPoolDefinition.CatalogKind(kind) &&
@@ -48,8 +50,15 @@ public static class CampaignRewardBudget
         var records = Directory.Exists(teamsDir) ? Directory.GetFiles(teamsDir, "*.txt", SearchOption.AllDirectories)
             .Where(p => !p.Split(Path.DirectorySeparatorChar).Any(s => s.StartsWith('.'))).Select(ReadData).ToList() : [];
         var result = new List<RewardBudget>();
-        RewardPoolDefinition Pool(string kind) => edited != null && edited.TryGetValue(kind, out var p) ? p
-            : RewardCatalog.ReadPool(root, savedPools, kind);
+        var customRewards = CustomRewardCatalog.Items(root, campaign);
+        RewardPoolDefinition Pool(string kind) {
+            var native = edited != null && edited.TryGetValue(kind, out var p) ? p : RewardCatalog.ReadPool(root, savedPools, kind);
+            string customKind = CustomRewardPoolSelection.ForNative(kind);
+            if (customKind.Length == 0) return native;
+            var custom = edited != null && edited.TryGetValue(customKind, out var c) ? c : CustomRewardPoolSelection.Read(savedPools, customKind, customRewards.Values);
+            var defaults = RewardCatalog.ReadPool(root, new CampaignDocument(""), kind).Selected;
+            return CustomRewardPoolSelection.Effective(kind, native, custom, defaults, customRewards.Keys);
+        }
         var relics = Pool("Relics");
         bool doubles = relics.UseBaseGame || relics.Selected.Any(id => Family("Relics", id) == "Rogue.DoubleReward")
             || records.Any(d => Tokens(d.Get("Team Relics", d.Get("Relics"))).Any(id => Family("Relics", id) == "Rogue.DoubleReward"));
@@ -57,7 +66,7 @@ public static class CampaignRewardBudget
         {
             string catalogKind = RewardPoolDefinition.CatalogKind(kind);
             var pool = Pool(kind);
-            var entries = RewardCatalog.ReadEntries(root, kind);
+            var entries = CustomRewardCatalog.Entries(root, campaign, kind);
             var selected = pool.Selected.Where(entries.ContainsKey).Select(k => entries[k]).ToList();
             var families = selected.Select(e => Family(kind, e.Id.Length > 0 ? e.Id : e.Key)).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var starting = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -122,12 +131,12 @@ public static class CampaignRewardBudget
                 if (families.Count < minimum) errors.Add($"Select at least {minimum} different {RewardName(kind)} for a normal offer, or use Base game pool.");
                 bool statBonus = relics.Selected.Any(id => Family("Relics", id) == "Rogue.StatRewardRelic")
                     || records.Any(d => Tokens(d.Get("Team Relics", d.Get("Relics"))).Any(id => Family("Relics", RewardCatalog.ResolveKey(root, "Relics", id)) == "Rogue.StatRewardRelic"));
-                if (kind == "Talents" && statBonus && !selected.Any(e => Info.Any(i => i.Kind == kind && i.Id == e.Id && (i.Category & 65536) != 0)))
+                if (kind == "Talents" && statBonus && !selected.Any(e => customRewards.ContainsKey(e.Id) || Info.Any(i => i.Kind == kind && i.Id == e.Id && (i.Category & 65536) != 0)))
                     errors.Add("Talents: Stat Reward Relic needs at least one selected stat talent for its additional option.");
                 if ((kind == "Relics" || kind == "Talents") && teams.Any(t => SquadBehaviors.Enabled(t.Get("Squad Template", config.Get("Squad Template", "Basic Squad")), "stat_rewards", k => t.Get(k))))
                 {
                     long statFlag = kind == "Relics" ? 512 : 65536;
-                    int statFamilies = selected.Where(e => Info.Any(i => i.Kind == kind && i.Id == e.Id && (i.Category & statFlag) != 0))
+                    int statFamilies = selected.Where(e => customRewards.ContainsKey(e.Id) || Info.Any(i => i.Kind == kind && i.Id == e.Id && (i.Category & statFlag) != 0))
                         .Select(e => Family(kind, e.Id)).Distinct().Count();
                     if (statFamilies < minimum) errors.Add($"{kind}: Stats reward rules need at least {minimum} different selected stat rewards for a normal offer; {statFamilies} selected.");
                 }

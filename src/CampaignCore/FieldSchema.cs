@@ -65,7 +65,7 @@ public static class FieldSchema
             || key.Equals("Number Style", StringComparison.OrdinalIgnoreCase)) return FieldKind.Choice;
         if (key.IndexOf("Color", StringComparison.OrdinalIgnoreCase) >= 0 || Has(TeamColors, key) || key.StartsWith("Transition ", StringComparison.OrdinalIgnoreCase)) return FieldKind.Color;
         if (Has(SkaterAssets.Concat(GoalieAssets), key) || Has(new[] { "Ability", "Squad Template", "Logo From", "Position" }, key)) return FieldKind.Choice;
-        if (Has(new[] { "Talents", "Goalie Talents", "Team Relics", "Relics", "Random Pool", "Team Random Pool" }, key)) return FieldKind.Multiple;
+        if (Has(new[] { "Talents", "Goalie Talents", "Team Talents", "Team Relics", "Relics", "Random Pool", "Team Random Pool" }, key)) return FieldKind.Multiple;
         if (Has(new[] { "Left Handed", "Replace Challenges", "Replace Soccer Ball", "Replace Golf Ball", "Use Player Teams", "No Bench Bonus", "Disable Bench Bonus", "Golf Fairway", "Tycoons Sponsors", "Canada Curses" }, key)
             || Has(new[] { "yes", "no", "true", "false" }, value)) return FieldKind.Boolean;
         if (Has(Stats, key) || Has(new[] { "Number", "Bench Size", "Random Talents", "Team Random Talents", "Size Offset", "Pass Read", "Stat Scale" }, key)) return FieldKind.Number;

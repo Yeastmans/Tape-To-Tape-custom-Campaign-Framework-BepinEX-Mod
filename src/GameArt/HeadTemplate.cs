@@ -88,7 +88,7 @@ public sealed class HeadTemplate : IArtExtractor
     /// <summary>The Addressables texture of an atlas page: the page name plus the bundle hash, so "Player_Sprite" never matches "Player_Sprite_104".</summary>
     internal static SKBitmap PageTexture(UnityGame game, string page)
     {
-        string prefix = "skatersprites_assets_" + Path.GetFileNameWithoutExtension(page).ToLowerInvariant() + "_";
+        string prefix = (page.StartsWith("goalie", StringComparison.OrdinalIgnoreCase) ? "goaliesprites_assets_" : "skatersprites_assets_") + Path.GetFileNameWithoutExtension(page).ToLowerInvariant() + "_";
         string bundle = Directory.GetFiles(game.BundleFolder, prefix + "*.bundle")
             .Select(p => Path.GetFileNameWithoutExtension(p))
             .Where(n => Regex.IsMatch(n[prefix.Length..], "^[0-9a-f]{32}$"))
@@ -120,8 +120,15 @@ public sealed class HeadTemplate : IArtExtractor
         var templates = map["templates"]!.AsArray();
         // A renamed/removed head must not make every other native template unavailable.
         // Choose the matching atlas here and validate each template inside its own failure boundary.
-        var atlas = Atlas.Read(game, AtlasName, templates.SelectMany(t => t!["regions"]!.AsArray())
-            .Select(r => r!["name"]!.GetValue<string>()).Distinct(), allowMissing: true);
+        var needed = templates.SelectMany(t => t!["regions"]!.AsArray()).Select(r => r!["name"]!.GetValue<string>()).Distinct().ToArray();
+        bool goalie = map["role"]?.GetValue<string>() == "goalie";
+        var atlas = Atlas.Read(game, goalie ? "Goalie_South.atlas" : AtlasName, needed, allowMissing: true);
+        if (goalie)
+        {
+            var north = Atlas.Read(game, "Goalie_North.atlas", needed, allowMissing: true);
+            foreach (var page in north.Pages) atlas.Pages.TryAdd(page.Key, page.Value);
+            foreach (var region in north.Regions) atlas.Regions.TryAdd(region.Key, region.Value);
+        }
         // Do not retain all 106 atlas pages in memory while building the catalog.
         var pages = new Dictionary<string, SKBitmap>(StringComparer.OrdinalIgnoreCase);
         var queue = new Queue<string>();
@@ -182,7 +189,7 @@ public sealed class HeadTemplate : IArtExtractor
         finally { foreach (var page in pages.Values) page.Dispose(); }
         File.WriteAllText(Path.Combine(output, "catalog.json"), new JsonObject { ["version"] = 1, ["templates"] = catalog }.ToJsonString(Indented));
         if (!catalog.Any(c => c!["available"]!.GetValue<bool>())) throw new InvalidDataException("No native head templates could be read.");
-        progress?.Report($"{catalog.Count(c => c!["available"]!.GetValue<bool>())} native head templates with native sizes and eight placement examples");
+        progress?.Report($"{catalog.Count(c => c!["available"]!.GetValue<bool>())} native {(goalie ? "mask" : "head")} templates with native sizes and {(goalie ? "six" : "eight")} placement examples");
     }
 
     private static string SafePath(string root, string relative)

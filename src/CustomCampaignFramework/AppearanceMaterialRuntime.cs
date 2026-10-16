@@ -137,8 +137,25 @@ internal static class AppearanceMaterialRuntime
         maskCounts.TryGetValue(LegsBit, out int legMask); paintCounts.TryGetValue(LegsBit, out int legPaint);
         if (legMask > legPaint) value |= 2;
         else if (legPaint > legMask && !maskCounts.ContainsKey(2) && !paintCounts.ContainsKey(2)) value &= ~2;
+        // The native manifest probes Helmet_Custom, while authored finished
+        // artwork occupies Helmet. Inspect the composed mask directly so names
+        // containing "Custom" cannot select the palette-mask slot/material.
+        if (goalie && HasCustomMask(data, skin)) value &= ~1;
         var resolved = (Flags)value;
         return resolved;
+    }
+
+    private static bool HasCustomMask(SkeletonData data, Skin skin)
+    {
+        var slot = data.FindSlot("Helmet");
+        if (slot == null) return false;
+        foreach (string name in new[] { "S_Helmet", "SE_Helmet", "SW_Helmet", "Helmet", "Helmet_NE", "Helmet_NW" })
+        {
+            var attachment = skin.GetAttachment(slot.Index, name);
+            string path = attachment?.TryCast<RegionAttachment>()?.Path ?? attachment?.TryCast<MeshAttachment>()?.Path;
+            if (path != null && path.StartsWith("Helmet/CustomMasks/", StringComparison.Ordinal)) return true;
+        }
+        return false;
     }
 
     // Which side of the skater Torso group differs when the socks come from another jersey skin.

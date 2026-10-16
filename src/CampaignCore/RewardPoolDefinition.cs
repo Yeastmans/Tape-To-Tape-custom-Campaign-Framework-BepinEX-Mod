@@ -7,11 +7,15 @@ namespace CampaignCore;
 public sealed class RewardPoolDefinition
 {
     public const string ChaosTalents = "Chaos Talents";
+    public const string ChaosRelics = "Chaos Relics";
     public const string IncludeChaosTalentsKey = "Include Chaos Talents";
     public const string IncludeRegularTalentsKey = "Include Regular Talents";
-    public static IReadOnlyList<string> Kinds { get; } = Array.AsReadOnly(new[] { "Relics", "Talents", "Goalie Talents", "Abilities", ChaosTalents });
-    public static string CatalogKind(string kind) => kind == ChaosTalents ? "Talents" : kind;
-    public static string CatalogExpansionKey(string kind) => kind == "Talents" ? IncludeChaosTalentsKey : kind == ChaosTalents ? IncludeRegularTalentsKey : "";
+    public const string IncludeChaosRelicsKey = "Include Chaos Relics";
+    public const string IncludeRegularRelicsKey = "Include Regular Relics";
+    public static IReadOnlyList<string> Kinds { get; } = Array.AsReadOnly(new[] { "Relics", "Talents", "Goalie Talents", "Abilities", ChaosTalents, ChaosRelics });
+    public static string CatalogKind(string kind) => kind == ChaosTalents ? "Talents" : kind == ChaosRelics ? "Relics" : kind;
+    public static string CatalogExpansionKey(string kind) => kind == "Talents" ? IncludeChaosTalentsKey : kind == ChaosTalents ? IncludeRegularTalentsKey
+        : kind == "Relics" ? IncludeChaosRelicsKey : kind == ChaosRelics ? IncludeRegularRelicsKey : "";
     public bool UseBaseGame { get; set; }
     // Editor catalog visibility only; it never changes the saved allow-list.
     public bool IncludeOtherCategory { get; set; }

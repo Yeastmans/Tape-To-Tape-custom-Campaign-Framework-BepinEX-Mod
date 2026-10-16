@@ -79,9 +79,16 @@ public sealed partial class MainWindow
                     Add("Save selection", "Save campaign keeps both base-game and custom selections. An explicitly saved empty pool offers no recruits. General Manager nodes on your maps offer recruits.", "Save campaign");
                     break;
                 case 5:
-                    Add("Reward categories", "Relics, regular talents, goalie talents, abilities and Chaos talents each have their own tab. Normal relic and talent offers have 3 choices. The wizard offers up to 2 Chaos talents; Fan #1 mixes up to 3 choices and single ability nodes roll 1. Each tab shows its offer size and selected count.", "RewardSections");
+                    if (SelectedTab(campaign) == "Creator") {
+                        Add("Create an item", "Choose regular or Chaos talents or relics. Talents are owned by their reward recipient; relics by the team. Abilities and goalie talents are excluded from this creator.", "CustomRewardName", "CustomRewardKind");
+                        Add("Icon", "Choose a PNG up to 2048 pixels per side and 4 MB, or use the rectangle containing the item's name. The image travels with the campaign copy.", "Choose PNG…");
+                        Add("Rule", "Choose an existing gameplay event, the affected stat and recipient. Counts reset each match. Duration controls the triggered stat effect; the talent or relic stays owned. Chaos relics have a curse followed by a lasting payoff.", "CustomRewardTrigger", "CustomRewardRules");
+                        Add("Save and offer", "Save item creates a reusable library entry and an independent campaign copy. Enable the item in its pool and Save campaign. Current native Wizard choices are Chaos talents; the Chaos relic pool does not add Wizard offers.", "SaveCustomReward");
+                        break;
+                    }
+                    Add("Reward categories", "Relics, regular talents, goalie talents, abilities, Chaos talents and Chaos relics have separate tabs. The Creator tab makes custom talents and relics. Normal relic and talent offers have 3 choices; the Wizard offers up to 2 Chaos talents. The Chaos relic tab only controls native Chaos relic requests and adds no new Wizard choices.", "RewardSections");
                     Add("Base-game pool", "Checked: native eligibility for this reward type, including the wizard's native Chaos category. Unchecked: random offers draw only from your checked entries. Custom selections are retained when switching modes. Explicit upgrades of owned rewards use separate native upgrade rules.", "BaseGamePool");
-                    Add("Include the other talent category", PoolChoiceGuidance.CatalogExpansion, "IncludeOtherRewardCategory");
+                    Add("Include the other category", PoolChoiceGuidance.CatalogExpansion, "IncludeOtherRewardCategory");
                     Add("Pool size", "Choose enough different rewards for a normal offer: three relics or talents, two Chaos talents, or one ability. Upgrade levels of the same talent count together. Campaign length does not increase this minimum. Select all and Deselect all affect every entry in the current tab, including entries hidden by search.", "RewardPoolCount", "SelectAllRewards", "DeselectAllRewards");
                     Add("Reward choices", PoolChoiceGuidance.RewardEligibility + " Save campaign validates and keeps the choices.", "Save campaign");
                     break;
@@ -186,6 +193,17 @@ public sealed partial class MainWindow
             else
                 Add("Save team", "Saves the team's settings, look and roster changes. Import team opens a copy of another team instead. Export to Play Now copies the team into the game's own custom content; save first.", "Save player team", "Save opponent");
         }
+        else if (Content is HeadEditorView { Project.IsGoalie: true })
+        {
+            Add("New goalie mask", "Name a mask and choose a native template or blank artwork. Save first to open all required views, layers and a separate portrait.", "HeadNewProject");
+            Add("Import PNGs", "Name files Front, Back, Front left, Front right, Back left, Back right or Portrait. Imports fit the selected native layout and keep a backup. Importing Front without Portrait also updates the portrait. Use individual Replace PNG buttons for extra layers.", "ImportHeadPngs");
+            Add("Native placement", "Inspect the original mask against the goalie's body in six views. Mirrored directions share artwork where the game does. These original references do not update with your edits.", "HeadNativeReference", "HeadExampleDirection");
+            Add("Open or save a mask", "Open a saved goalie mask folder or save the current project metadata. Imports and replacements save immediately.", "OpenHeadProject", "SaveHead");
+            Add("Refresh PNGs", "Reload artwork after editing it in your image app.", "RefreshHeadPngs");
+            Add("Add to goalie mask options", "Installs the complete mask project. Return Home and choose Goalie mask > Premade in the goalie or team look editor. Restart the game after installing or changing artwork.", "InstallCustomHead");
+            Add("PNG artwork", "Replace PNG accepts a 512 × 512 transparent PNG and keeps the old one as .bak. Native outline guides preserve placement; hide guides before saving finished artwork. Edit every required layer and portrait, then inspect front, back and diagonals in game.", "Replace PNG…");
+            Add("Project files", "Open all artwork, outline guides and original attachment data for this mask.", "Open project folder");
+        }
         else if (Content is HeadEditorView)
         {
             Add("New head", "Open setup to name a new head and choose a native template or From scratch. Scratch projects use blank 512 × 512 PNGs with a selected native layout's size, native outlines and collar guides. Save the project before its previews open. Cancel keeps this head open.", "HeadNewProject");
@@ -217,6 +235,7 @@ public sealed partial class MainWindow
             Add("Campaign selection", "The campaign the game loads next launch; None (base game) turns campaigns off. It saves immediately. Restart the game after changing it.", "HomeSelectCampaign");
             Add("Default look", "The logo, kit colors, equipment, goalie gear and number style new teams start with. New players take its styles and stick, and players with no team preview in it.", "HomeSetDefault");
             Add("Head Editor", "Opens setup first. Name your head, select a native template or From scratch with a native layout, then Save head and show previews. You can also open an existing saved head. Cancel stays on Home.", "HomeHeadEditor");
+            Add("Goalie Mask Editor", "Create a custom goalie mask from native artwork or blank PNGs. Edit its views, extra layers and portrait, then add it to goalie mask options. Saved masks also travel with shared campaigns.", "HomeGoalieMaskEditor");
             Add("Read game artwork", "Build or rebuild the local pictures and base-game roster snapshot from your installed Tape to Tape. The game can be closed. Choose its folder if Studio cannot find it.", "HomeReadGameArt");
             Add("Check for updates", "Studio checks GitHub on every startup, after the beta notice, and before launching the game. This button checks again. Beta releases and newer builds of the same beta version are included. Studio asks before downloading and running the installer; save edits and close Tape to Tape first. Studio reopens after installation. Offline checks leave editing available.", "HomeCheckForUpdates");
             Add("Uninstall", "Save edits and close Tape to Tape first. After confirmation, Studio closes and opens the Windows uninstaller for Studio and the bundled mod. Saved campaigns, players and custom heads are kept. Cancel leaves Studio open.", "HomeUninstall");
