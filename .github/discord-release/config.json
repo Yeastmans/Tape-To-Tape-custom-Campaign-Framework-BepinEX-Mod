@@ -3,5 +3,6 @@
   "guild_id": "1559632629094154361",
   "channel_name": "release-patchnotes",
   "channel_id": "1560475604942585897",
+  "forum_channel": true,
   "installer_name": "T2T_Custom_Campaign_Framework_Setup.exe"
 }

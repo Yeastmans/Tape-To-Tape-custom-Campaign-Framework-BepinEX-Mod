@@ -10,6 +10,7 @@ import announce
 
 CONFIG = json.loads(Path(__file__).with_name('config.json').read_text(encoding='utf-8'))
 CONFIG['channel_id'] = '789'  # Fake channel used by the network doubles below.
+CONFIG['forum_channel'] = False
 RELEASE = {
     'id': 123, 'draft': False, 'prerelease': True,
     'name': 'Campaign Studio update', 'tag_name': 'beta-example',
@@ -92,6 +93,34 @@ class DeliveryChecks(unittest.TestCase):
     def test_unconfirmed_post_is_failure(self):
         def request(url, **kwargs):
             return {} if kwargs.get('method') == 'POST' else {'guild_id': CONFIG['guild_id'], 'channel_id': '789', 'type': 1}
+        with self.assertRaises(announce.AnnouncementError):
+            announce.deliver({}, WEBHOOK, CONFIG, request=request)
+
+    def test_forum_post_has_bounded_title_and_returns_new_thread_link(self):
+        config = dict(CONFIG, forum_channel=True)
+        payload = announce.make_payload(dict(RELEASE, name='🏒' * 100), config)
+        self.assertLessEqual(len(payload['thread_name'].encode('utf-16-le')) // 2, 100)
+        def request(url, **kwargs):
+            if kwargs.get('method') == 'POST':
+                self.assertEqual(kwargs['data'], payload)
+                return {'id': '456', 'channel_id': '999'}
+            return {'guild_id': config['guild_id'], 'channel_id': config['channel_id'], 'type': 1}
+        self.assertEqual(announce.deliver(payload, WEBHOOK, config, request=request),
+                         f"https://discord.com/channels/{config['guild_id']}/999/456")
+
+    def test_forum_without_title_never_posts(self):
+        calls = []
+        def request(url, **kwargs):
+            calls.append(kwargs.get('method', 'GET'))
+            return {'guild_id': CONFIG['guild_id'], 'channel_id': '789', 'type': 1}
+        with self.assertRaises(announce.AnnouncementError):
+            announce.deliver({}, WEBHOOK, dict(CONFIG, forum_channel=True), request=request)
+        self.assertEqual(calls, ['GET'])
+
+    def test_regular_channel_response_cannot_switch_to_another_channel(self):
+        def request(url, **kwargs):
+            if kwargs.get('method') == 'POST': return {'id': '456', 'channel_id': '999'}
+            return {'guild_id': CONFIG['guild_id'], 'channel_id': '789', 'type': 1}
         with self.assertRaises(announce.AnnouncementError):
             announce.deliver({}, WEBHOOK, CONFIG, request=request)
 

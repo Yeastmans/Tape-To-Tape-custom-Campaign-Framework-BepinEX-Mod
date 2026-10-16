@@ -91,7 +91,7 @@ def make_payload(release, config):
     description += f"\n\n[Full patch notes and downloads]({release_url})"
     if len(description.encode("utf-16-le")) > 4096 * 2:
         description = clip(notes or "See the release page for patch notes.", 3500)
-    return {
+    payload = {
         "allowed_mentions": {"parse": []},
         "embeds": [{
             "title": clip(release.get("name") or release.get("tag_name") or "Campaign Studio update", 256),
@@ -108,6 +108,10 @@ def make_payload(release, config):
             "timestamp": release["published_at"],
         }],
     }
+    if config.get("forum_channel"):
+        name = release.get("name") or "Campaign Studio update"
+        payload["thread_name"] = clip(f"{name} • {release.get('tag_name', '')}".strip(), 100)
+    return payload
 
 
 def validate_webhook(value):
@@ -131,8 +135,15 @@ def deliver(payload, webhook, config, request=request_json):
         raise AnnouncementError("Webhook belongs to a different Discord channel; nothing posted.")
     if metadata.get("type") != 1:
         raise AnnouncementError("Use an incoming webhook created in the release-patchnotes channel.")
+    if config.get("forum_channel") and not payload.get("thread_name"):
+        raise AnnouncementError("A forum announcement needs a post title; nothing posted.")
     result = request(webhook + "?wait=true", method="POST", data=payload)
-    if not result.get("id") or str(result.get("channel_id")) != str(metadata.get("channel_id")):
+    # Creating a forum post returns the new thread ID as the message's channel_id.
+    # Its parent is the webhook channel verified above. Regular channel sends must
+    # still match the parent channel exactly.
+    channel = str(result.get("channel_id", ""))
+    if (not result.get("id") or not channel.isdigit()
+            or (not config.get("forum_channel") and channel != str(metadata.get("channel_id")))):
         raise AnnouncementError("Discord did not confirm the expected message; check the channel before retrying.")
     return f"https://discord.com/channels/{config['guild_id']}/{result['channel_id']}/{result['id']}"
 

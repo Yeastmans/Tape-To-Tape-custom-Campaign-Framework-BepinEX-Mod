@@ -3,6 +3,8 @@
 Publishes the GitHub release title, tag, beta/stable label, patch notes and Windows
 installer link to **#release-patchnotes** in server **1559632629094154361**.
 Runs on GitHub Actions; no computer or Discord bot process needs to stay running.
+This destination is a **forum channel**. Each announcement creates a new forum
+post named after the release and tag, with its patch notes and installer link.
 
 ## Connect the channel
 
@@ -42,6 +44,8 @@ label, full-notes link and installer link. No users or roles should be pinged.
   if publication happens before asset upload. Upload assets while the release is a
   draft when possible. An absent installer fails the run without posting.
 - The webhook's name and avatar control the posting identity; change those in Discord.
+- `forum_channel: true` creates a titled forum post. Set it to `false` only when
+  moving the webhook to a normal text channel, and update the channel ID too.
 - A missing secret, wrong server, missing installer or failed API response fails the
   workflow visibly. Network failures and server errors are not automatically retried
   because Discord might already have accepted the message. Rate-limit rejections are
