@@ -9,6 +9,7 @@ import announce
 
 
 CONFIG = json.loads(Path(__file__).with_name('config.json').read_text(encoding='utf-8'))
+CONFIG['channel_id'] = '789'  # Fake channel used by the network doubles below.
 RELEASE = {
     'id': 123, 'draft': False, 'prerelease': True,
     'name': 'Campaign Studio update', 'tag_name': 'beta-example',
