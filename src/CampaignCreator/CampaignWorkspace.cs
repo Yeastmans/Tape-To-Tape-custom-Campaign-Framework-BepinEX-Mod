@@ -40,11 +40,16 @@ public sealed partial class CampaignWorkspace : UserControl
     internal int CurrentSection => currentSection;
     private MapEditorView? mapEditor;
     private readonly List<Action> refreshRosters = new();
-    private readonly List<Action> refreshRewardCounts = new();
+    private readonly List<Action<IReadOnlyList<RewardBudget>>> refreshRewardCounts = new();
     private readonly List<Action> refreshRewardRows = new();
     private CustomRewardCreator? customRewardCreator;
     private IReadOnlyList<RewardBudget> RewardBudgets(IEnumerable<MapLayout>? layouts = null) => CampaignRewardBudget.Calculate(root, directory, rewardPools,
         layouts ?? mapEditor?.RewardLayouts, fields.TryGetValue("Act Sequence", out var sequence) ? sequence() : settings.Get("Act Sequence", "1,2,3"));
+    private void RefreshRewardCounts()
+    {
+        var budgets = RewardBudgets();
+        foreach (var refresh in refreshRewardCounts) refresh(budgets);
+    }
     private MapEditorView EnsureMapEditor()
     {
         if (mapEditor == null)
@@ -111,7 +116,7 @@ public sealed partial class CampaignWorkspace : UserControl
     {
         navigation.Content = sections[index];
         currentSection = index;
-        if (index == RewardPoolsSection) foreach (var refresh in refreshRewardCounts) refresh();
+        if (index == RewardPoolsSection) RefreshRewardCounts();
     }
     private static ScrollViewer ScrollPage(Control body, bool reserveScrollbar = false) => new()
     {
@@ -168,7 +173,7 @@ public sealed partial class CampaignWorkspace : UserControl
                 {
                     var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"), ColumnSpacing = StudioTheme.SpaceMd };
                     string key = team.FilePath == null ? "" : Path.GetFileName(Path.GetDirectoryName(team.FilePath)!);
-                    bool nativeBound = team.FilePath != null && new CampaignDocument(File.ReadAllText(team.FilePath)).Get(VanillaCopyData.OpponentId).Length > 0;
+                    bool nativeBound = team.IsNativeOpponent;
                     bool assigned = assignments.TryGetValue(key, out var assignedNodes) && assignedNodes.Count > 0 || nativeBound;
                     var colour = Brush.Parse(assigned ? "#70DEA2" : "#FF9292");
                     // Picking a node puts this team on it (replacing whoever was there); saved with the maps.
@@ -488,9 +493,9 @@ public sealed partial class CampaignWorkspace : UserControl
             Grid.SetColumn(guidance, 2); heading.Children.Add(guidance);
             var count = new TextBlock { Name = "RewardPoolCount", TextWrapping = TextWrapping.Wrap, FontWeight = FontWeight.SemiBold };
             Grid.SetRow(count, 1); panel.Children.Add(count);
-            void UpdateCount()
+            void UpdateCount(IReadOnlyList<RewardBudget> budgets)
             {
-                var budget = RewardBudgets().Single(b => b.Kind == kind);
+                var budget = budgets.Single(b => b.Kind == kind);
                 count.Text = definition.UseBaseGame ? "Base game items enabled. Custom rewards are off; tick items in the Custom tabs to add them." : budget.Summary;
                 count.Foreground = budget.Errors.Count > 0 ? Brush.Parse("#F5BE65") : StudioTheme.Text;
             }
@@ -535,14 +540,13 @@ public sealed partial class CampaignWorkspace : UserControl
                     {
                         if (basePool.IsChecked == true) return;
                         if (check.IsChecked == true) selected.Add(entry.Key); else selected.Remove(entry.Key);
-                        foreach (var refreshCount in refreshRewardCounts) refreshCount();
+                        RefreshRewardCounts();
                         rewardDirty = true; message.Text = "Unsaved reward pool changes";
                         if (check.IsChecked != true && !definition.IncludeOtherCategory && !CustomRewardCatalog.Belongs(kind, entry.Key, custom)) Refresh();
                     };
                     items.Children.Add(check);
                 }
                 if (items.Children.Count == 0) items.Children.Add(new TextBlock { Text = entries.Count == 0 ? "No exported entries are available for this section." : "No matching rewards.", TextWrapping = TextWrapping.Wrap });
-                UpdateCount();
             }
             void SetAll(bool enabled)
             {
@@ -551,7 +555,7 @@ public sealed partial class CampaignWorkspace : UserControl
                 else selected.Clear();
                 rewardDirty = true; message.Text = "Unsaved reward pool changes";
                 Refresh();
-                foreach (var refreshCount in refreshRewardCounts) refreshCount();
+                RefreshRewardCounts();
             }
             selectAll.Click += (_, _) => SetAll(true);
             deselectAll.Click += (_, _) => SetAll(false);
@@ -583,7 +587,7 @@ public sealed partial class CampaignWorkspace : UserControl
                 rewardDirty = true;
                 message.Text = "Unsaved reward pool changes";
                 Refresh();
-                foreach (var refreshCount in refreshRewardCounts) refreshCount();
+                RefreshRewardCounts();
             };
             enableNativeChoices[kind] = () => {
                 if (!definition.UseBaseGame) return;
@@ -638,16 +642,18 @@ public sealed partial class CampaignWorkspace : UserControl
                 }
                 if (rows.Children.Count == 0) rows.Children.Add(new TextBlock { Text = "Create an item in the Creator tab, or copy one from your library.", TextWrapping = TextWrapping.Wrap });
             }
-            void MarkChanged() { rewardDirty = true; message.Text = "Unsaved custom reward pool changes"; foreach (var refresh in refreshRewardCounts) refresh(); }
+            void MarkChanged() { rewardDirty = true; message.Text = "Unsaved custom reward pool changes"; RefreshRewardCounts(); }
             void Changed() { MarkChanged(); RefreshCustom(); }
             search.TextChanged += (_, _) => RefreshCustom(); refreshRewardRows.Add(RefreshCustom); RefreshCustom();
             sectionTabs.Add(new TabItem { Header = customKind, Content = panel, Padding = new Thickness(10, 8) });
         }
         customRewardCreator = new CustomRewardCreator(owner, root, () => directory, () => {
             foreach (var refresh in refreshRewardRows) refresh();
+            RefreshRewardCounts();
             message.Text = "Custom item saved. Choose which items to offer in each pool, then Save campaign.";
         });
         sectionTabs.Add(new TabItem { Header = "Creator", Content = customRewardCreator });
+        RefreshRewardCounts();
         sections.ItemsSource = sectionTabs; sections.SelectedIndex = 0;
         sections.SelectionChanged += (_, _) => { page.IsVisible = sections.SelectedIndex < RewardPoolDefinition.Kinds.Count; };
         var layout = new Grid { RowDefinitions = new RowDefinitions("Auto,*"), RowSpacing = StudioTheme.SpaceMd };

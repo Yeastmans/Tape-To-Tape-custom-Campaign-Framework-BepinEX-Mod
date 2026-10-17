@@ -5,29 +5,47 @@ namespace CampaignCreator;
 public sealed record CampaignNode(string DisplayName, string Context, string? FilePath, List<CampaignNode> Children)
 {
     public bool IsExpanded { get; set; }
+    public bool IsNativeOpponent { get; init; }
     public IEnumerable<CampaignNode> Descendants() => new[] { this }.Concat(Children.SelectMany(c => c.Descendants()));
 }
 
 public static class CampaignNavigation
 {
+    private static readonly HashSet<string> SummaryFields = new(StringComparer.OrdinalIgnoreCase)
+        { "Name", "Team Name", "Import Player", "Import Team", "Position", VanillaCopyData.OpponentId };
+
+    private static CampaignDocument ReadSummary(string file)
+    {
+        // Embedded portraits/reward snapshots can dwarf the roster metadata.
+        // List navigation needs only these fields, not a parsed copy of every
+        // embedded value for every refresh. Keep duplicate-field semantics.
+        var lines = new List<string>();
+        foreach (string line in File.ReadLines(file))
+        {
+            int equals = line.IndexOf('=');
+            if (equals > 0 && SummaryFields.Contains(line[..equals].Replace('\t', ' ').Trim())) lines.Add(line);
+        }
+        return new CampaignDocument(string.Join('\n', lines));
+    }
+
     public static List<CampaignNode> Load(string root)
     {
         if (!Directory.Exists(root)) return [];
-        string Label(string file, bool team = false)
+        string Label(string file, CampaignDocument d, bool team = false)
         {
-            var d = new CampaignDocument(File.ReadAllText(file));
             var fallback = Path.GetFileNameWithoutExtension(file).Replace('_', ' ');
             return d.Get(team ? "Team Name" : "Name", d.Get(team ? "Import Team" : "Import Player", fallback));
         }
         CampaignNode Player(string file)
         {
-            var d = new CampaignDocument(File.ReadAllText(file));
+            var d = ReadSummary(file);
             var position = d.Get("Position", Path.GetFileNameWithoutExtension(file).Split(" - ")[0]);
-            return new(Label(file), position, file, []);
+            return new(Label(file, d), position, file, []);
         }
         CampaignNode Team(string dir, int order)
         {
             string file = Path.Combine(dir, "team.txt");
+            var summary = File.Exists(file) ? ReadSummary(file) : null;
             var players = Path.Combine(dir, "players");
             var children = Directory.Exists(players) ? Directory.GetFiles(players, "*.txt", SearchOption.AllDirectories).Order(StringComparer.OrdinalIgnoreCase).Select(Player).ToList() : [];
             foreach (var (pool, title) in new[] { ("draft_pool", "Bench"), ("superstars", "Superstars"), ("free_agents", "Free agents") })
@@ -36,8 +54,8 @@ public static class CampaignNavigation
                 if (Directory.Exists(path)) children.Add(new("Squad " + title, "Player pool", null,
                     Directory.GetFiles(path, "*.txt").Order(StringComparer.OrdinalIgnoreCase).Select(Player).ToList()));
             }
-            return new(File.Exists(file) ? Label(file, true) : Path.GetFileName(dir).Replace('_', ' '), order > 0 ? $"Opponent {order}" : "Custom squad", File.Exists(file) ? file : null,
-                children);
+            return new(summary != null ? Label(file, summary, true) : Path.GetFileName(dir).Replace('_', ' '), order > 0 ? $"Opponent {order}" : "Custom squad", summary != null ? file : null,
+                children) { IsNativeOpponent = summary?.Get(VanillaCopyData.OpponentId).Length > 0 };
         }
         var nodes = new List<CampaignNode>();
         foreach (var file in Directory.GetFiles(root, "*.txt").Order(StringComparer.OrdinalIgnoreCase))

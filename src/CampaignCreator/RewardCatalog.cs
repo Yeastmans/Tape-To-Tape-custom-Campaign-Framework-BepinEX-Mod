@@ -88,7 +88,11 @@ public static class RewardCatalog
         // Legacy ordinary pools included Chaos rewards. Preserve that authored
         // selection even though new regular-pool defaults now have their own category.
         var normal = Load(root, kind).Keys.Where(id => kind is "Talents" or "Relics" ? OfferedInNormalRun(id) : OfferedInBasePool(kind, id));
-        var pool = RewardPoolDefinition.Read(document, kind, normal, id => ResolveKey(root, kind, id));
+        // Resolve the whole saved selection against one catalog. Loading it for
+        // every ID makes a normal allow-list allocate hundreds of megabytes.
+        Dictionary<string, Entry>? entries = null;
+        var pool = RewardPoolDefinition.Read(document, kind, normal,
+            id => ResolveKey(entries ??= ReadEntries(root, kind), id));
         bool existing = new[] { "Pool Mode ", "Selected ", "Included ", "Excluded " }.Any(prefix => document.Get(prefix + kind).Length > 0);
         if (!existing) pool.Selected.RemoveWhere(id => !BelongsToPool(kind, id));
         return pool;
@@ -205,8 +209,10 @@ public static class RewardCatalog
     }
 
     public static string ResolveKey(string root, string kind, string value)
+        => ResolveKey(ReadEntries(root, kind), value);
+
+    internal static string ResolveKey(IReadOnlyDictionary<string, Entry> entries, string value)
     {
-        var entries = ReadEntries(root, kind);
         if (entries.ContainsKey(value)) return value;
         var matches = entries.Values.Where(e => e.Id.Equals(value, StringComparison.OrdinalIgnoreCase) || e.Asset.Equals(value, StringComparison.OrdinalIgnoreCase) || e.Name.Equals(value, StringComparison.OrdinalIgnoreCase)).ToArray();
         return matches.Length == 1 ? matches[0].Key : value;

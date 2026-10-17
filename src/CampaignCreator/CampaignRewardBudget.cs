@@ -51,13 +51,28 @@ public static class CampaignRewardBudget
             .Where(p => !p.Split(Path.DirectorySeparatorChar).Any(s => s.StartsWith('.'))).Select(ReadData).ToList() : [];
         var result = new List<RewardBudget>();
         var customRewards = CustomRewardCatalog.Items(root, campaign);
+        // These snapshots live only for this validation. Reuse them across
+        // recipients and reward kinds, then reread on the next edit/save.
+        var pools = new Dictionary<string, RewardPoolDefinition>();
+        var catalogs = new Dictionary<string, Dictionary<string, RewardCatalog.Entry>>();
+        string Resolve(string kind, string token)
+        {
+            string catalogKind = RewardPoolDefinition.CatalogKind(kind);
+            if (!catalogs.TryGetValue(catalogKind, out var catalog))
+                catalogs[catalogKind] = catalog = RewardCatalog.ReadEntries(root, catalogKind);
+            return RewardCatalog.ResolveKey(catalog, token);
+        }
+        var maps = layouts?.ToList();
+        List<MapLayout>? native = null;
+        var teamLayouts = new Dictionary<string, List<(int Map, int Act, MapLayout Layout)>>();
         RewardPoolDefinition Pool(string kind) {
+            if (pools.TryGetValue(kind, out var cached)) return cached;
             var native = edited != null && edited.TryGetValue(kind, out var p) ? p : RewardCatalog.ReadPool(root, savedPools, kind);
             string customKind = CustomRewardPoolSelection.ForNative(kind);
-            if (customKind.Length == 0) return native;
+            if (customKind.Length == 0) return pools[kind] = native;
             var custom = edited != null && edited.TryGetValue(customKind, out var c) ? c : CustomRewardPoolSelection.Read(savedPools, customKind, customRewards.Values);
             var defaults = RewardCatalog.ReadPool(root, new CampaignDocument(""), kind).Selected;
-            return CustomRewardPoolSelection.Effective(kind, native, custom, defaults, customRewards.Keys);
+            return pools[kind] = CustomRewardPoolSelection.Effective(kind, native, custom, defaults, customRewards.Keys);
         }
         var relics = Pool("Relics");
         bool doubles = relics.UseBaseGame || relics.Selected.Any(id => Family("Relics", id) == "Rogue.DoubleReward")
@@ -72,7 +87,7 @@ public static class CampaignRewardBudget
             var starting = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var doc in records)
                 foreach (string token in Tokens(doc.Get(kind == "Abilities" ? "Ability" : kind == "Relics" ? "Team Relics" : catalogKind, kind == "Relics" ? doc.Get("Relics") : "")))
-                    starting.Add(Family(kind, RewardCatalog.ResolveKey(root, kind, token)));
+                    starting.Add(Family(kind, Resolve(kind, token)));
             foreach (var team in teams)
             {
                 string template = team.Get("Squad Template", config.Get("Squad Template", "Basic Squad"));
@@ -92,7 +107,7 @@ public static class CampaignRewardBudget
                 bool On(string id) => SquadBehaviors.Enabled(template, id, k => team.Get(k));
                 bool rewardTalentAvailable = new[] { Pool("Talents"), Pool(RewardPoolDefinition.ChaosTalents) }
                     .Any(p => !p.UseBaseGame && p.Selected.Any(t => Family("Talents", t) == "Rogue.ButtRewardTalent"));
-                int forced = records.Count(d => Tokens(d.Get("Talents")).Any(t => Family("Talents", RewardCatalog.ResolveKey(root, "Talents", t)) == "Rogue.ButtRewardTalent"))
+                int forced = records.Count(d => Tokens(d.Get("Talents")).Any(t => Family("Talents", Resolve("Talents", t)) == "Rogue.ButtRewardTalent"))
                     + NativeStarting.Count(p => p[0] == SquadTemplatePolicy.Identity(template) && p[1] == "Talents" && Family("Talents", p[2]) == "Rogue.ButtRewardTalent");
                 if (rewardTalentAvailable) forced = Math.Max(forced, (On("two_lines") ? 10 : 5) + (int.TryParse(team.Get("Bench Size"), out int b) && b >= 0 ? b : 7));
                 int Cost(MapLayoutNode n)
@@ -107,15 +122,15 @@ public static class CampaignRewardBudget
                     }
                     return count;
                 }
-                var maps = layouts?.ToList();
-                var native = MapCatalog.LoadBaseMaps(Path.Combine(root, "_game_maps.txt"));
-                int NativeMaximum(MapLayout layout) => native.Where(v => SquadTemplatePolicy.Identity(v.BaseSquad) == SquadTemplatePolicy.Identity(layout.BaseSquad) && v.BaseMap == layout.BaseMap)
+                int NativeMaximum(MapLayout layout) => (native ??= MapCatalog.LoadBaseMaps(Path.Combine(root, "_game_maps.txt")))
+                    .Where(v => SquadTemplatePolicy.Identity(v.BaseSquad) == SquadTemplatePolicy.Identity(layout.BaseSquad) && v.BaseMap == layout.BaseMap)
                     .Select(v => RewardRouteBudget.Maximum(v, Cost)).DefaultIfEmpty(RewardRouteBudget.Maximum(layout, Cost)).Max();
                 int route;
                 if (maps != null) route = maps.Sum(m => RewardRouteBudget.Maximum(m, Cost));
                 else
                 {
-                    var loaded = OpponentAssignments.LoadLayouts(root, campaign, template, actSequence ?? config.Get("Act Sequence", "1,2,3"));
+                    if (!teamLayouts.TryGetValue(template, out var loaded))
+                        teamLayouts[template] = loaded = OpponentAssignments.LoadLayouts(root, campaign, template, actSequence ?? config.Get("Act Sequence", "1,2,3"));
                     route = loaded.Sum(m => File.Exists(Path.Combine(campaign, "map_layouts", $"map-{m.Map}.txt")) ? RewardRouteBudget.Maximum(m.Layout, Cost)
                         : NativeMaximum(m.Layout));
                 }
@@ -130,7 +145,7 @@ public static class CampaignRewardBudget
                 if (pool.Selected.Any(id => !entries.ContainsKey(id))) errors.Add(kind + ": remove or replace unavailable selected rewards.");
                 if (families.Count < minimum) errors.Add($"Select at least {minimum} different {RewardName(kind)} for a normal offer, or use Base game pool.");
                 bool statBonus = relics.Selected.Any(id => Family("Relics", id) == "Rogue.StatRewardRelic")
-                    || records.Any(d => Tokens(d.Get("Team Relics", d.Get("Relics"))).Any(id => Family("Relics", RewardCatalog.ResolveKey(root, "Relics", id)) == "Rogue.StatRewardRelic"));
+                    || records.Any(d => Tokens(d.Get("Team Relics", d.Get("Relics"))).Any(id => Family("Relics", Resolve("Relics", id)) == "Rogue.StatRewardRelic"));
                 if (kind == "Talents" && statBonus && !selected.Any(e => customRewards.ContainsKey(e.Id) || Info.Any(i => i.Kind == kind && i.Id == e.Id && (i.Category & 65536) != 0)))
                     errors.Add("Talents: Stat Reward Relic needs at least one selected stat talent for its additional option.");
                 if ((kind == "Relics" || kind == "Talents") && teams.Any(t => SquadBehaviors.Enabled(t.Get("Squad Template", config.Get("Squad Template", "Basic Squad")), "stat_rewards", k => t.Get(k))))

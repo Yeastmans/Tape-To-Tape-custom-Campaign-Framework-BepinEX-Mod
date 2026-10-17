@@ -52,7 +52,7 @@ public sealed partial class CampaignWorkspace
         var opponents = nav.Where(n => n.Context.StartsWith("Opponent ") && n.FilePath != null).ToList();
         var squads = nav.FirstOrDefault(n => n.DisplayName == "Custom Squads")?.Children.Where(n => n.FilePath != null).ToList() ?? [];
         static string Key(CampaignNode team) => Path.GetFileName(Path.GetDirectoryName(team.FilePath!)!);
-        static bool NativeBound(CampaignNode team) => new CampaignDocument(File.ReadAllText(team.FilePath!)).Get(VanillaCopyData.OpponentId).Length>0;
+        static bool NativeBound(CampaignNode team) => team.IsNativeOpponent;
         var teamKeys = opponents.Select(Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var assignments = mapEditor?.AssignedOpponents ?? OpponentAssignments.Load(directory);
         var nodes = CurrentMatchNodes();

@@ -2,7 +2,7 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 4](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r4-build-1792190143036) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 5](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r5-build-1792202217532) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
 **Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **`roguelite` branch, build 25917988**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
 
@@ -25,7 +25,8 @@
 | Players and goalies | Edit names, numbers, attributes, talents, supported abilities, heads and equipment. |
 | A team identity | Create home and away looks, logos, number styles, goalie gear and goal celebration audio. |
 | Different opponents | Configure formations, special effects, playing surfaces, puck or ball choices, and match rules. |
-| Custom rewards | Create Talents, Chaos Talents, Relics and Epic Relics with compatible triggers and separate native reward pools. |
+| Custom rewards | Create regular talents, Chaos talents, goalie talents and relics with compatible triggers, effects and icons, then choose their matching reward pools. Most combinations and effects are untested and may cause unpredictable results. |
+| Custom goalie masks | Open **Goalie Mask Editor** on Home, choose a native template or blank layout, edit PNG views and portraits, then add the mask to goalie equipment. |
 | Reusable content | Import independent copies, keep a player/team library, share campaign ZIPs, or export supported content to Play Now. |
 
 ## Install Studio
