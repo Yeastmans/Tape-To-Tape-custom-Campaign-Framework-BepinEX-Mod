@@ -81,11 +81,11 @@ internal static class CustomRewardTeamCapabilities
         try {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8) throw new PlatformNotSupportedException("Team queries require the audited Windows x64 build.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().First(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-            if (NativeCompatibility.Load(module.FileName).GameHash != "7B93D7F5B31CA164F7D5E35D1310A4F64007C8058C7B408061EDB928007D0EBA")
+            if (NativeCompatibility.Load(module.FileName).GameHash != "864DB76DF3B6F14D7F47AAB044B8F44E95EC111FA15D52F9D8E516AF31D9CE2F")
                 throw new InvalidOperationException("Team queries have not been audited for this game build.");
-            var direct = module.BaseAddress + 0xc80950;
+            var direct = module.BaseAddress + 0xc81960;
             Verify(direct, "48895C24104889742418574883EC20");
-            var live = module.BaseAddress + 0xc80cf0; var data = module.BaseAddress + 0xc80830;
+            var live = module.BaseAddress + 0xc81d00; var data = module.BaseAddress + 0xc81840;
             Verify(live, "40555741564883EC2048837A3800488B");
             Verify(data, "48895C240848896C2410488974241857");
             liveEffects.Add(Method(typeof(Team), typeof(SorestLoser), live), CustomRewardEffects.CelebrationInjuries);

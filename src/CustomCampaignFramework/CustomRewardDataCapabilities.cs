@@ -80,10 +80,10 @@ internal static class CustomRewardDataCapabilities
         try {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8) throw new PlatformNotSupportedException("Attribute queries require the audited Windows x64 build.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().First(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-            if (NativeCompatibility.Load(module.FileName).GameHash != "7B93D7F5B31CA164F7D5E35D1310A4F64007C8058C7B408061EDB928007D0EBA")
+            if (NativeCompatibility.Load(module.FileName).GameHash != "864DB76DF3B6F14D7F47AAB044B8F44E95EC111FA15D52F9D8E516AF31D9CE2F")
                 throw new InvalidOperationException("Attribute queries have not been audited for this game build.");
-            var cached = module.BaseAddress + 0xc40080; var get = module.BaseAddress + 0xc3ffe0;
-            var direct = module.BaseAddress + 0xc401a0;
+            var cached = module.BaseAddress + 0xc41090; var get = module.BaseAddress + 0xc40ff0;
+            var direct = module.BaseAddress + 0xc411b0;
             Verify(cached, "48895C240848896C2410488974241857");
             Verify(get, "48895C2408574883EC2048837A380048");
             Verify(direct, "48895C24104889742418574883EC20");
