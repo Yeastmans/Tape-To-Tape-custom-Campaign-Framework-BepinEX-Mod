@@ -56,12 +56,18 @@ internal static class CampaignSquadSetup
     internal static void ApplyBench(RunSquadScriptableObject squad)
     {
         if (squad == null || !(squad.id ?? "").StartsWith("Custom_")) return;
-        if (Plugin.PlayerTeamConfigs.TryGetValue(squad.id.Substring(7), out var team)
-            && SquadTemplatePolicy.Identity(team.SquadTemplate) == "noeffects" && !SquadStartingScreens.Enabled(team, "bench_screen"))
+        if (Plugin.PlayerTeamConfigs.TryGetValue(squad.id.Substring(7), out var team))
         {
-            squad.m_MaxBenchwarmersOnBench = 0;
-            squad.m_CustomSwapPool = new Il2CppSystem.Collections.Generic.List<ForwardData>();
-            return;
+            // StartNewRun reads this field directly. Keep the custom clone in
+            // sync even when the audited native comparison bridge is unavailable.
+            squad.m_UsesFreeAgentIntro = SquadStartingScreens.Enabled(team, "superstar_screen")
+                && !SquadStartingScreens.EmptyPool("superstars", team);
+            if (SquadTemplatePolicy.Identity(team.SquadTemplate) == "noeffects" && !SquadStartingScreens.Enabled(team, "bench_screen"))
+            {
+                squad.m_MaxBenchwarmersOnBench = 0;
+                squad.m_CustomSwapPool = new Il2CppSystem.Collections.Generic.List<ForwardData>();
+                return;
+            }
         }
         string dir = SquadPoolRuntime.DirectoryPath(team, "draft_pool");
         if(SquadPoolRuntime.Inherited(team, "draft_pool") && (team==null || team.Fields.Get(VanillaCopyData.SquadId).Length==0

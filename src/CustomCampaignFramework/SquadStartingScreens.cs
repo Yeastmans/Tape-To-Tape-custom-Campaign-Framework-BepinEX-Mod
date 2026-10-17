@@ -60,7 +60,10 @@ internal static class StartingScreenAutoBench
         var squad = Tape2Tape.CampaignUtil.CampaignState?.GetCurrentSquad();
         if (Plugin.IsDefaultMode || squad == null || !(squad.id ?? "").StartsWith("Custom_")
             || !Plugin.PlayerTeamConfigs.TryGetValue(squad.id.Substring(7), out var cfg)) return true;
-        if (SquadStartingScreens.EmptyPool("draft_pool", cfg)) { __result = true; return false; }
+        // Native startup interprets true as "bench is already handled". Do
+        // not let a disabled draft fall back to native squad-ID comparisons.
+        if (!SquadStartingScreens.Enabled(cfg, "bench_screen") || SquadStartingScreens.EmptyPool("draft_pool", cfg))
+        { __result = true; return false; }
         if (SquadStartingScreens.Enabled(cfg, "bench_screen")) { __result = false; return false; }
         return true;
     }

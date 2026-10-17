@@ -2,7 +2,7 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 5](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r5-build-1792202217532) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 6](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r6-build-1792204294033) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
 **Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **`roguelite` branch, build 25917988**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
 
