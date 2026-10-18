@@ -1,5 +1,18 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 9 — 2026-10-17
+
+- Fixed upgrade cleanup deleting **Act Sequence**, which stores the campaign's
+  map order and length. Authored sequences now survive cleanup in saved campaigns,
+  the library, drafts and staged content, including export/import afterward.
+- Corrected the cleanup-list generator to include the shared act-order parser.
+  Invalid sequences remain invalid; campaigns without an authored sequence retain
+  their existing default behavior.
+
+Validation: 61 upgrade-cleanup checks passed, including the regression that failed
+before the fix. The packaged Studio cleanup command was also checked against
+isolated campaign files. Revision 8's recruit options and runtime are retained.
+
 ## Beta 1.0 revision 8 — 2026-10-17
 
 - Added **Keep authored stats** on the Free agents page. New offers can preserve

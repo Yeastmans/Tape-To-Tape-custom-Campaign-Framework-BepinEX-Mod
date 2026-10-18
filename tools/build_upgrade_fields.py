@@ -11,8 +11,11 @@ sections = {
  'player': s.split('internal static void ApplyPlayerField',1)[1].split('private static void ParseKvFile',1)[0]
 }
 fields = {kind: sorted(set(re.findall(r'key == "([^"]+)"', text))) for kind,text in sections.items()}
+# LoadConfig reads the authored map order through CampaignActSequence.Read,
+# outside the inline key comparisons above. Keep it through upgrade cleanup.
+fields['campaign'] = sorted(set(fields['campaign']) | {'act sequence'})
 fields['player'] += ['position', 'override team settings', 'goalie skill', 'studio base free agent', 'studio base pool player', 'studio player source', 'logo from']
-fields['team'] += ['talents', 'team talents']
+fields['team'] += [key for key in ['talents', 'team talents'] if key not in fields['team']]
 # Export snapshots are current import-library data, not obsolete campaign options.
 export_fields = ['export version', 'export model', 'export role', 'export talent ids', 'export ability id', 'export relic ids', 'export logo mode', 'export logo sha256', 'export logo id', 'export logo png']
 fields['player'] += export_fields
