@@ -114,6 +114,11 @@ public sealed partial class MainWindow
                 ToolTip.SetTip(uploadCampaign, "Share a campaign in the community folder");
                 foreach (var b in new[] { importCampaign, uploadCampaign }) b.HorizontalContentAlignment = HorizontalAlignment.Center;
                 stack.Children.Add(new Grid { ColumnDefinitions = new ColumnDefinitions("*,*"), ColumnSpacing = StudioTheme.SpaceSm, Children = { importCampaign, WithColumn(uploadCampaign, 1) } });
+                var manageUploads = Button("Manage uploads", async () => await ShowCommunityManagement());
+                manageUploads.Name = "HomeManageCampaignUploads";
+                manageUploads.HorizontalContentAlignment = HorizontalAlignment.Center;
+                ToolTip.SetTip(manageUploads, "Replace or delete your posted Dropbox campaigns using saved access codes");
+                stack.Children.Add(manageUploads);
             }
             var card = new Border { Background = StudioTheme.Surface, BorderBrush = StudioTheme.Border, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Padding = new Thickness(16), Child = stack };
             Grid.SetColumn(card, i); cards.Children.Add(card);

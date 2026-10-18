@@ -1,5 +1,21 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 12 — 2026-10-17
+
+Update or delete your posted campaign from **Home → Campaigns → Manage uploads**. The matching community service is now deployed.
+
+- **Replace ZIP…** updates an existing post while keeping its identity. The previous download stays available until the replacement commits successfully.
+- **Delete from Dropbox…** asks for confirmation and removes the community post. Local campaigns and ZIPs remain intact.
+- Studio saves private management access automatically outside campaign folders. Older posts support a one-time administrator-issued code, verified and saved by Studio.
+- **Export to Play Now** now offers **Export as new** or **Update selected team**, with an explicit target, stable team identity, and protection for players shared with other teams.
+- Includes the revision 11 custom talent/relic loading repair and compatibility for Steam roguelite build **26019854**. The runtime DLL is unchanged from revision 11.
+
+Custom reward definitions and icons continue to travel with campaign ZIPs. Private management access does not. No NHL campaign ZIP is included in this release, and this update does not restore missing talents in existing saves.
+
+Validation: self-contained Windows Studio build and installer completed; 68 scoped client, ownership-store, worker and Play Now checks passed on the unchanged feature sources. Public service health advertises campaign management. Live replacement/deletion and human UI acceptance remain pending; no existing post was replaced or deleted for testing.
+
+Close the game and save Studio edits before installing **T2T_Custom_Campaign_Framework_Setup.exe**, or use Studio's **Check for updates** button.
+
 ## Beta 1.0 revision 11 — 2026-10-17
 
 Restores compatibility with Tape to Tape Steam roguelite build **26019854** and fixes custom campaign rewards that failed to load.

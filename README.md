@@ -2,9 +2,11 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 11](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r11-build-1792294782391) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 12](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r12-build-1792295488865) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
 **Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **`roguelite` branch, build 26019854**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
+
+Beta 1.0 revision 12 adds campaign upload replacement/deletion and an explicit Play Now team update choice. The matching Dropbox management service is deployed. It retains revision 11's custom reward repair and reviewed compatibility for **build 26019854**; see the [native audit](docs/NATIVE-26019854-REVIEW.md) and [community management setup](worker/COMMUNITY-MANAGEMENT.md).
 
 **This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. Reporting bugs on [Discord](https://discord.gg/hscxnYghb) or [GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues) helps immensely.
 
@@ -202,7 +204,8 @@ Save before leaving a player or team editor: Home/Back can discard unsaved edits
 1. Launch Tape to Tape at least once so its save folders exist, then close it.
 2. Save the source player or team, including edited roster players and team equipment.
 3. Click **Export to Play Now** in the player or team editor.
-4. Restart the game and select the exported content from its custom-content menus.
+4. For a team, choose **Export as new** or select an existing Studio export and choose **Update selected team**. Updating keeps that team's identity and refreshes its roster and settings. Shared players belonging to other teams are preserved.
+5. Restart the game and select the exported content from its custom-content menus.
 
 Play Now team exports use one player at **LW, C, RW, LD, RD and G**; extra lines are not exported. The mod restores supported settings that the game's native format cannot hold, including each exported player's effective number style, so keep it installed for those extras. Exporting does not assign content to a campaign or save the Studio source for you.
 
@@ -212,7 +215,11 @@ For detailed requirements, see [Maps and editor](release/docs/MAPS_AND_EDITOR.md
 
 Use **Campaigns → Import** on Home for a campaign ZIP or a community download. If a name already exists, **Keep both** gives the import another name; **Replace mine** moves your current copy to `campaign_backups` first.
 
-Use **Campaigns → Upload** to share a saved campaign with its custom logos and referenced custom head projects in the public community folder. Large campaigns upload in small chunks with progress shown, up to 512 MB. Review and save it first: uploads are public and cannot be removed from inside Studio. This is separate from exporting a team to Play Now.
+Use **Campaigns → Upload** to share a saved campaign with its custom logos and referenced custom head projects in the public community folder. Campaigns upload in small chunks with progress shown, up to 512 MB. Review and save it first: uploads are public. This is separate from exporting a team to Play Now.
+
+**Campaigns → Manage uploads** verifies each posted campaign against its private code saved automatically in `%LOCALAPPDATA%\T2T Campaign Studio\community-ownership.json`. No account or written-down code is needed. Choose **Replace ZIP…** to update that post, or **Delete from Dropbox…** to remove its community download. Both keep your local campaign and ZIP files. A failed replacement leaves the previous download available; refresh before retrying an uncertain request. Keep the AppData ownership file when moving to another computer—it grants control of your posts and is never included in campaign ZIPs.
+
+Older posts require a community administrator to assign a management code. Use **Add access for an older post…** once; Studio verifies and saves it. The matching worker is deployed and configured; these controls are included in revision 12. See [community management setup](worker/COMMUNITY-MANAGEMENT.md).
 
 Downloaded heads are added to your head library. Identical heads are reused; a different head with the same name is imported under a new name and the campaign's references are updated. Existing head artwork is preserved. Restart the game after importing new heads.
 

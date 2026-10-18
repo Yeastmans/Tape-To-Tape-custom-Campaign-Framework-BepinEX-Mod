@@ -185,96 +185,11 @@ internal static partial class CampaignSharing
         await response.Content.CopyToAsync(file);
     }
 
-    /// <summary>Uploads a campaign zip to the community folder. Returns its path there.</summary>
+    // Ownership is private application data, never campaign content or ZIP payload.
+    internal static CommunityCampaignClient Community { get; } = new(http, WorkerUrl,
+        new CommunityOwnershipStore(Path.Combine(UserContentPaths.Root, "community-ownership.json")));
+
+    /// <summary>Uploads a campaign and saves management access before sending its bytes.</summary>
     internal static async Task<string> UploadAsync(string zipPath, string displayName, string author, string description, string campaignName, IProgress<double>? progress = null)
-    {
-        if (new FileInfo(zipPath).Length > 20 * 1024 * 1024)
-            return await UploadChunksAsync(zipPath, displayName, progress);
-        using var form = new MultipartFormDataContent("----T2T" + Guid.NewGuid().ToString("N"));
-        AddPart(form, new StringContent(displayName), "name");
-        AddPart(form, new StringContent(JsonSerializer.Serialize(new Dictionary<string, string> {
-            ["author"] = author, ["description"] = description, ["campaign_name"] = campaignName })), "meta");
-        var file = new StreamContent(File.OpenRead(zipPath));
-        file.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
-        AddPart(form, file, "file", "campaign.zip");
-        using var response = await http.PostAsync(WorkerUrl + "/upload", form);
-        using var doc = await UploadResponse(response);
-        progress?.Report(100);
-        var rootElement = doc.RootElement;
-        return rootElement.TryGetProperty("path", out var path) ? path.GetString() ?? "" : "";
-    }
-
-    private static async Task<JsonDocument> UploadResponse(HttpResponseMessage response)
-    {
-        string body = await response.Content.ReadAsStringAsync();
-        JsonDocument doc;
-        try { doc = JsonDocument.Parse(body); }
-        catch (JsonException)
-        {
-            throw new InvalidOperationException(response.StatusCode == System.Net.HttpStatusCode.RequestEntityTooLarge
-                ? "The upload service rejected the campaign size. Check for a Studio update and try again."
-                : $"The upload service returned HTTP {(int)response.StatusCode}. Please try again shortly.");
-        }
-        var root = doc.RootElement;
-        if (!response.IsSuccessStatusCode || !root.TryGetProperty("ok", out var ok) || !ok.GetBoolean())
-        {
-            string error = root.TryGetProperty("error", out var message) ? message.GetString() ?? "Upload failed." : "Upload failed.";
-            doc.Dispose(); throw new InvalidOperationException(error);
-        }
-        return doc;
-    }
-
-    private static async Task<string> UploadChunksAsync(string zipPath, string displayName, IProgress<double>? progress)
-    {
-        await using var stream = File.OpenRead(zipPath);
-        if (stream.Length > 512L * 1024 * 1024) throw new InvalidOperationException("Campaign uploads support up to 512 MB.");
-        using var infoResponse = await http.GetAsync(WorkerUrl + "/health");
-        using var info = await UploadResponse(infoResponse);
-        if (!info.RootElement.TryGetProperty("chunkedUpload", out var enabled) || !enabled.GetBoolean())
-            throw new InvalidOperationException("The community upload service needs its large-campaign update. Please try again after that update is deployed.");
-        using var input = new StringContent(JsonSerializer.Serialize(new { name = displayName, size = stream.Length }), Encoding.UTF8, "application/json");
-        using var startResponse = await http.PostAsync(WorkerUrl + "/upload/start", input);
-        using var start = await UploadResponse(startResponse);
-        string ticket = start.RootElement.GetProperty("ticket").GetString() ?? throw new InvalidDataException("The upload session is missing.");
-        int chunkSize = start.RootElement.GetProperty("chunkBytes").GetInt32();
-        if (chunkSize < 1 || chunkSize > 8 * 1024 * 1024) throw new InvalidDataException("The upload chunk size is invalid.");
-        byte[] buffer = new byte[chunkSize]; long offset = 0;
-        while (offset < stream.Length)
-        {
-            int count = (int)Math.Min(buffer.Length, stream.Length - offset);
-            await stream.ReadExactlyAsync(buffer.AsMemory(0, count));
-            for (int attempt = 0; ; attempt++)
-            {
-                try
-                {
-                    using var request = new HttpRequestMessage(HttpMethod.Post, WorkerUrl + "/upload/chunk?offset=" + offset);
-                    request.Headers.Add("X-Campaign-Upload", ticket);
-                    request.Content = new ByteArrayContent(buffer, 0, count);
-                    request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                    using var response = await http.SendAsync(request);
-                    using var chunk = await UploadResponse(response);
-                    if (chunk.RootElement.GetProperty("offset").GetInt64() != offset + count) throw new InvalidDataException("The upload service returned an incorrect position.");
-                    break;
-                }
-                catch (Exception ex) when (attempt < 2 && ex is HttpRequestException or TaskCanceledException)
-                { await Task.Delay(1000 * (attempt + 1)); }
-            }
-            offset += count; progress?.Report(100.0 * offset / stream.Length);
-        }
-        using var finishRequest = new HttpRequestMessage(HttpMethod.Post, WorkerUrl + "/upload/finish");
-        finishRequest.Headers.Add("X-Campaign-Upload", ticket);
-        using var finishResponse = await http.SendAsync(finishRequest);
-        using var finish = await UploadResponse(finishResponse);
-        return finish.RootElement.GetProperty("path").GetString() ?? throw new InvalidDataException("The uploaded campaign path is missing.");
-    }
-
-    private static void AddPart(MultipartFormDataContent form, HttpContent part, string name, string? filename = null)
-    {
-        // The community worker requires quoted multipart parameter values. .NET's
-        // Add(content, name) omits quotes for tokens such as name/meta/file.
-        part.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data") {
-            Name = "\"" + name + "\"", FileName = filename == null ? null : "\"" + filename + "\""
-        };
-        form.Add(part);
-    }
+        => (await Community.UploadAsync(zipPath, displayName, progress)).Path;
 }

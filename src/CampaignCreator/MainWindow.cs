@@ -393,8 +393,9 @@ public sealed partial class MainWindow : Window
         if (data.Previews.TryGetValue(role + ":" + field + ":" + value, out var image) && File.Exists(image))
         { bitmap = new Bitmap(image); preview.Source = bitmap; }
     }
-    private void Export()
+    private async void Export()
     {
+        if (teamExportPending) return;
         try
         {
         var exportDocument = ReadEditor();
@@ -403,9 +404,25 @@ public sealed partial class MainWindow : Window
         if (editorShell is TeamEditorView teamView)
         {
             if (teamView.HasEquipmentChanges) { status.Text = "Save the team's equipment changes before exporting its roster."; return; }
-            var teamResult = ExportTranslation.ExportTeam(exportDocument, path!, data, root, report);
-            status.Text = "Exported team and roster · restart the game to load " + Path.GetFileName(teamResult);
-            ShowExportReport(report);
+            teamExportPending = true;
+            try
+            {
+                var choice = await ChoosePlayNowExport(exportDocument.Get("Team Name"));
+                if (choice == null) return;
+                string teamResult;
+                if (choice.Target == null)
+                    teamResult = ExportTranslation.ExportTeam(exportDocument, path!, data, root, report);
+                else
+                {
+                    var package = ExportTranslation.BuildTeam(exportDocument, path!, new GameData(root), root, report);
+                    teamResult = ExportTranslation.WriteUpdate(package, choice.Target,
+                        Path.Combine(GameSavePaths.Root, "TeamDataModels"),
+                        Path.Combine(ExportTranslation.RuntimeRoot(root), "play_now_overrides"), root);
+                }
+                status.Text = (choice.Target == null ? "Exported new team and roster" : "Updated selected team and roster") + " · restart the game to load " + Path.GetFileName(teamResult);
+                ShowExportReport(report);
+            }
+            finally { teamExportPending = false; }
             return;
         }
         if (editorShell is PlayerEditorView playerView) playerView.ApplyExportAppearance(exportDocument);

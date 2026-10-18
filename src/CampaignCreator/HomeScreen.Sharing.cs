@@ -123,7 +123,7 @@ public sealed partial class MainWindow
         var author = new TextBox { Name = "UploadAuthor", Watermark = "Your name or handle", MaxLength = 60 };
         var description = new TextBox { Name = "UploadDescription", Watermark = "One-line description (optional)", MaxLength = 200 };
         var feedback = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = StudioTheme.Muted,
-            Text = "Uploads go to the public community folder. Anyone using the mod can download it, and it can't be removed from Studio." };
+            Text = "Uploads are public. Studio automatically saves your management code in AppData so you can replace or delete the Dropbox copy later under Manage uploads." };
         bool busy = false;
         var cancel = Button("Cancel", () => dialog.Close());
         Button upload = null!;
@@ -133,7 +133,8 @@ public sealed partial class MainWindow
             if (picker.SelectedItem is not ContentChoice campaign) { feedback.Text = "Choose a campaign to upload."; feedback.Foreground = SharingWarn; return; }
             string name = string.IsNullOrWhiteSpace(author.Text) ? "Anonymous" : author.Text.Trim();
             busy = true; feedback.Foreground = StudioTheme.Muted; feedback.Text = "Zipping " + campaign.Label + "…";
-            string zip = Path.Combine(Path.GetTempPath(), "t2t_" + campaign.Label.Replace(' ', '_') + ".zip");
+            upload.IsEnabled = false; cancel.IsEnabled = false;
+            string zip = Path.Combine(Path.GetTempPath(), "t2t_" + Guid.NewGuid().ToString("N") + ".zip");
             try
             {
                 var assets = await Task.Run(() => CampaignSharing.Zip(campaign.Path, zip, root));
@@ -143,8 +144,8 @@ public sealed partial class MainWindow
                 feedback.Text = $"Uploaded {campaign.Label}. It's now in the community list" + (path.Length > 0 ? " as " + path + "." : ".");
                 feedback.Foreground = Brush.Parse("#70DEA2"); upload.IsVisible = false; cancel.Content = "Close";
             }
-            catch (Exception ex) { feedback.Text = "Upload failed: " + ex.Message; feedback.Foreground = SharingWarn; }
-            finally { busy = false; if (File.Exists(zip)) File.Delete(zip); }
+            catch (Exception ex) { feedback.Text = "Upload could not be confirmed: " + ex.Message + " Check Manage uploads before retrying; your access code is kept if one was reserved."; feedback.Foreground = SharingWarn; }
+            finally { busy = false; upload.IsEnabled = true; cancel.IsEnabled = true; if (File.Exists(zip)) File.Delete(zip); }
         });
         upload.Name = "UploadCampaignConfirm"; StudioTheme.Primary(upload);
         dialog.Content = new ScrollViewer { Content = new StackPanel { Margin = new Thickness(24), Spacing = StudioTheme.SpaceMd, Children = {
@@ -156,6 +157,7 @@ public sealed partial class MainWindow
             feedback,
             new StackPanel { Orientation = Orientation.Horizontal, Spacing = StudioTheme.SpaceMd, HorizontalAlignment = HorizontalAlignment.Right, Children = { cancel, upload } }
         } } };
+        dialog.Closing += (_, e) => { if (busy) e.Cancel = true; };
         await dialog.ShowDialog(this);
     }
 

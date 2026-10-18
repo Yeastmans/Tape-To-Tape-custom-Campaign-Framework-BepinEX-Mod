@@ -4,7 +4,7 @@ using CampaignCore;
 
 namespace CampaignCreator;
 
-internal static class ExportTranslation
+internal static partial class ExportTranslation
 {
     // A workspace content copy is not where the running plugin reads overrides.
     internal static string RuntimeRoot(string root)
