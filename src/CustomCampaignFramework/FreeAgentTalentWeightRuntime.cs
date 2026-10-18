@@ -97,7 +97,10 @@ internal static class FreeAgentTalentWeightRuntime
             string file = Path.Combine(scope.Campaign, "campaign.txt");
             var document = new CampaignDocument(File.Exists(file) ? File.ReadAllText(file) : "");
             scope.KeepStats = FreeAgentStats.Keep(document);
-            scope.Pool = FreeAgentTalentPool.Read(document);
+            // Use an empty recruitment pool only for this scope. Saved choices
+            // remain intact for editing and for turning random extras back on.
+            scope.Pool = FreeAgentTalentPool.ExtrasDisabled(document)
+                ? new FreeAgentTalentPool() : FreeAgentTalentPool.Read(document);
             string text = document.Get(FreeAgentTalentWeights.Key);
             if (!FreeAgentTalentWeights.TryParse(text, out var policy, out string error)) scope.Error = error;
             else scope.Policy = policy;

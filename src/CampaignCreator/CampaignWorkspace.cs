@@ -302,6 +302,18 @@ public sealed partial class CampaignWorkspace : UserControl
             keepStats,
             new TextBlock { Text = "Keep the source player's Speed, Shot Accuracy, Shot Power and Checking for all new free-agent offers. Off lets the GM adjust stats to your team. Talents use the pool below. Already recruited players are unchanged.", TextWrapping = TextWrapping.Wrap }
         } }, "FreeAgentStatsPanel"));
+        string disableExtrasValue = settings.Get(FreeAgentTalentPool.DisableExtrasKey);
+        var disableExtras = new CheckBox { Name = "DisableExtraRecruitTalents", Content = "Disable extra recruit talents",
+            IsChecked = FreeAgentTalentPool.ExtrasDisabled(settings) };
+        disableExtras.IsCheckedChanged += (_, _) => {
+            disableExtrasValue = disableExtras.IsChecked == true ? "yes" : "no";
+            message.Text = "Unsaved free-agent settings";
+        };
+        fields[FreeAgentTalentPool.DisableExtrasKey] = () => disableExtrasValue;
+        page.Children.Add(InsetPoolPanel.Frame(new StackPanel { Spacing = 8, Children = {
+            disableExtras,
+            new TextBlock { Text = "New free-agent offers receive no random extra talents, including extras cached in the current run. Fixed player talents and already signed players stay unchanged. Turn this off to use your saved talent choices and weights below.", TextWrapping = TextWrapping.Wrap }
+        } }, "FreeAgentExtraTalentsPanel"));
         freeAgentTalentWeights = new FreeAgentTalentWeightsEditor(root, settings.Get(FreeAgentTalentWeights.Key), settings);
         fields[FreeAgentTalentWeights.Key] = () => freeAgentTalentWeights.Value;
         fields[FreeAgentTalentPool.ModeKey] = () => freeAgentTalentWeights.PoolMode;

@@ -8,8 +8,17 @@ public sealed class FreeAgentTalentPool
 {
     public const string ModeKey = "Free Agent Talent Pool Mode";
     public const string SelectedKey = "Free Agent Selected Talents";
+    public const string DisableExtrasKey = "Disable Extra Recruit Talents";
     public bool UseBaseGame { get; private set; }
     public HashSet<string> Selected { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    public static bool ExtrasDisabled(CampaignDocument document)
+    {
+        string value = document.Get(DisableExtrasKey).Trim();
+        return value.Equals("yes", StringComparison.OrdinalIgnoreCase)
+            || value.Equals("true", StringComparison.OrdinalIgnoreCase)
+            || value.Equals("on", StringComparison.OrdinalIgnoreCase) || value == "1";
+    }
 
     public static FreeAgentTalentPool Read(CampaignDocument document)
     {

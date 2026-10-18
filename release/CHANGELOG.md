@@ -1,5 +1,29 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 8 — 2026-10-17
+
+- Added **Keep authored stats** on the Free agents page. New offers can preserve
+  their source player's Speed, Shot Accuracy, Shot Power and Checking instead
+  of native GM scaling. Applies to custom and base-game recruits; defaults off.
+- Added **Disable extra recruit talents**. Blocks fresh and cached random extras
+  on new offers while preserving fixed talents, contract rules, abilities and
+  already signed players. Turning it off restores the saved pool choices and
+  weights. Both options survive saving and campaign export/import.
+- Cached extra talents now respect the current free-agent talent pool when a
+  new GM offer is created, including an explicitly empty pool.
+- Fixed opponent substitutions leaving stale lineup IDs and hiding the second
+  line in custom or owned native-copy teams.
+- Updated native compatibility coverage for Steam build **26001062**.
+
+Validation: 190 runtime assertions, 17 editor/save/import checks and 16 native
+offer cases passed for the final recruit-options candidate. Earlier checks
+covered keep-stats off/on, opponent line switching and contract badges. These
+are technical checks; human acceptance remains pending.
+
+Known issues: the existing upgrade-cleanup path can remove Act Sequence; earlier
+popup/startup-reset reports remain unexplained. Missing contract labels were
+not reproduced in the tested roster views, so no display fix is claimed.
+
 ## Beta 1.0 revision 2 — 2026-10-13
 
 - Preserve custom-head assignments when upgrading or importing content. Custom
