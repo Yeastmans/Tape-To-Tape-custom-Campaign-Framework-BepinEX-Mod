@@ -2,11 +2,11 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 14](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r14-build-1792335672981) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 15](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r15-build-1792351582996) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
 **Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **`roguelite` branch, build 26020247**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
 
-Beta 1.0 revision 14 fixes opening existing squads after entering a campaign. Squad names now open from the Squads page and campaign overview without running an unrelated campaign save; genuine unsaved edits still require saving first. It retains the revision 13 runtime and reviewed compatibility for **build 26020247**, plus campaign upload management and the Play Now update choice. See the [changelog](release/CHANGELOG.md) and [native audit](docs/NATIVE-26020247-REVIEW.md).
+Beta 1.0 revision 15 adds **Disable recruit abilities** under each campaign's **Free agents** settings. Enable it and save the campaign to remove all abilities, including YoYo and Yeet, from newly created recruitment offers. It defaults off and leaves talents and already recruited players unchanged. The squad editing fix, campaign upload management, Play Now update choice and reviewed compatibility for **build 26020247** remain included. See the [changelog](release/CHANGELOG.md) and [native audit](docs/NATIVE-26020247-REVIEW.md).
 
 **This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. Reporting bugs on [Discord](https://discord.gg/hscxnYghb) or [GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues) helps immensely.
 

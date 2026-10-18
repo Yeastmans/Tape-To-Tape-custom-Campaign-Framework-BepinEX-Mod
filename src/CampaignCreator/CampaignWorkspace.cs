@@ -322,6 +322,18 @@ public sealed partial class CampaignWorkspace : UserControl
             disableExtras,
             new TextBlock { Text = "New free-agent offers receive no random extra talents, including extras cached in the current run. Fixed player talents and already signed players stay unchanged. Turn this off to use your saved talent choices and weights below.", TextWrapping = TextWrapping.Wrap }
         } }, "FreeAgentExtraTalentsPanel"));
+        string disableAbilitiesValue = settings.Get(FreeAgentAbilities.DisableKey);
+        var disableAbilities = new CheckBox { Name = "DisableRecruitAbilities", Content = "Disable recruit abilities",
+            IsChecked = FreeAgentAbilities.Disabled(settings) };
+        disableAbilities.IsCheckedChanged += (_, _) => {
+            disableAbilitiesValue = disableAbilities.IsChecked == true ? "yes" : "no";
+            message.Text = "Unsaved free-agent settings";
+        };
+        fields[FreeAgentAbilities.DisableKey] = () => disableAbilitiesValue;
+        page.Children.Add(InsetPoolPanel.Frame(new StackPanel { Spacing = 8, Children = {
+            disableAbilities,
+            new TextBlock { Text = "New free-agent offers have no abilities, including abilities assigned in Studio. Talents and already recruited players stay unchanged. Turn this off to allow abilities on new offers again.", TextWrapping = TextWrapping.Wrap }
+        } }, "FreeAgentAbilitiesPanel"));
         freeAgentTalentWeights = new FreeAgentTalentWeightsEditor(root, settings.Get(FreeAgentTalentWeights.Key), settings);
         fields[FreeAgentTalentWeights.Key] = () => freeAgentTalentWeights.Value;
         fields[FreeAgentTalentPool.ModeKey] = () => freeAgentTalentWeights.PoolMode;

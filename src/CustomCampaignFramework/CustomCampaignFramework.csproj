@@ -30,6 +30,7 @@
     <Compile Include="../CampaignCore/FreeAgentTalentWeights.cs" Link="Core/FreeAgentTalentWeights.cs" />
     <Compile Include="../CampaignCore/FreeAgentTalentPool.cs" Link="Core/FreeAgentTalentPool.cs" />
     <Compile Include="../CampaignCore/FreeAgentStats.cs" Link="Core/FreeAgentStats.cs" />
+    <Compile Include="../CampaignCore/FreeAgentAbilities.cs" Link="Core/FreeAgentAbilities.cs" />
     <EmbeddedResource Include="../../assets/reward-pools/normal_run_pool.tsv" LogicalName="NormalRewardPools.tsv" />
     <EmbeddedResource Include="Assets/squad-behavior-sites.tsv" LogicalName="SquadBehaviorSites.tsv" />
     <EmbeddedResource Include="Assets/native-compatibility.json" LogicalName="NativeCompatibility.json" />

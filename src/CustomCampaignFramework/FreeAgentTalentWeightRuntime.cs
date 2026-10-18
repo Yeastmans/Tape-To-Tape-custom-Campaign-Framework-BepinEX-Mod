@@ -15,8 +15,8 @@ using NativeTalents = Il2CppSystem.Collections.Generic.List<Rogue.Talent>;
 namespace EndlessMode;
 
 // Synchronous recruitment scopes only. Native extra-roll probabilities, contract
-// generation and fixed talents remain in the original methods. Stat scaling is
-// independently optional for the specific template in a GM offer.
+// generation and fixed talents remain in the original methods. Stat scaling and
+// ability removal are independently optional for the newly created GM offer.
 internal static class FreeAgentTalentWeightRuntime
 {
     internal sealed class Scope : IDisposable
@@ -26,12 +26,13 @@ internal static class FreeAgentTalentWeightRuntime
         internal FreeAgentTalentWeights Policy;
         internal FreeAgentTalentPool Pool;
         internal IntPtr State, Run;
-        internal bool KeepStats;
-        internal IntPtr StatsTemplate;
+        internal bool KeepStats, DisableAbilities;
+        internal IntPtr OfferTemplate;
         internal int OfferCount, Speed, Accuracy, Power, Checking;
         internal Rogue.FreeAgents.PreGeneratedFreeAgentData StoredAgent;
         internal Il2CppSystem.Collections.Generic.List<string> StoredTalents;
         private bool disposed;
+        internal bool IsDisposed => disposed;
         public void Dispose()
         {
             if (disposed) return;
@@ -74,10 +75,10 @@ internal static class FreeAgentTalentWeightRuntime
     [ThreadStatic] private static bool readingNativeWeights;
     internal static bool ReadingNativeWeights => readingNativeWeights;
     internal static bool InRecruitmentScope => current?.Campaign != null && !Plugin.IsDefaultMode && !RewardPoolPicks.Probing;
-    internal static bool KeepStats(ForwardData template, Scope scope)
+    internal static bool IsCurrentOffer(ForwardData template, Scope scope)
     {
-        if (!ReferenceEquals(current, scope) || !InRecruitmentScope || scope?.KeepStats != true || template == null
-            || scope.StatsTemplate == IntPtr.Zero || scope.StatsTemplate != template.Pointer) return false;
+        if (scope == null || scope.IsDisposed || !ReferenceEquals(current, scope) || !InRecruitmentScope || template == null
+            || scope.OfferTemplate == IntPtr.Zero || scope.OfferTemplate != template.Pointer) return false;
         var state = CampaignUtil.CampaignState;
         return state != null && state.Pointer == scope.State && state.runData != null
             && state.runData.Pointer == scope.Run && !string.IsNullOrWhiteSpace(Plugin.ModFolder)
@@ -97,6 +98,7 @@ internal static class FreeAgentTalentWeightRuntime
             string file = Path.Combine(scope.Campaign, "campaign.txt");
             var document = new CampaignDocument(File.Exists(file) ? File.ReadAllText(file) : "");
             scope.KeepStats = FreeAgentStats.Keep(document);
+            scope.DisableAbilities = FreeAgentAbilities.Disabled(document);
             // Use an empty recruitment pool only for this scope. Saved choices
             // remain intact for editing and for turning random extras back on.
             scope.Pool = FreeAgentTalentPool.ExtrasDisabled(document)
@@ -302,7 +304,7 @@ internal static class FreeAgentChoiceWeightScope
         out FreeAgentTalentWeightRuntime.Scope __state)
     {
         __state = FreeAgentTalentWeightRuntime.Enter("recruit/contract replacement");
-        __state.StatsTemplate = __0?.Pointer ?? IntPtr.Zero;
+        __state.OfferTemplate = __0?.Pointer ?? IntPtr.Zero;
         __state.OfferCount = __instance.eventChoices?.Count ?? 0;
         if (__state.KeepStats && __0 != null)
         {
@@ -317,17 +319,24 @@ internal static class FreeAgentChoiceWeightScope
     private static void Postfix(Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent __instance, ForwardData __0,
         FreeAgentTalentWeightRuntime.Scope __state)
     {
-        if (!FreeAgentTalentWeightRuntime.KeepStats(__0, __state)
+        if (!FreeAgentTalentWeightRuntime.IsCurrentOffer(__0, __state)
+            || (!__state.KeepStats && !__state.DisableAbilities)
             || __instance.eventChoices == null || __instance.eventChoices.Count != __state.OfferCount + 1) return;
         var player = __instance.eventChoices[__state.OfferCount]?.Skater?.TryCast<ForwardData>();
-        if (player == null || player.Pointer == __state.StatsTemplate) return;
+        if (player == null || player.Pointer == __state.OfferTemplate) return;
         // Complete the native offer first, then restore only its four base stats.
         // Detouring AdjustPlayerStatsToMatchTeam (which takes Nullable<float>)
         // crashes native GM calls on build 26001062, even with keep-stats off.
-        player.speed = __state.Speed;
-        player.shotAccuracy = __state.Accuracy;
-        player.shotPower = __state.Power;
-        player.checking = __state.Checking;
+        if (__state.KeepStats)
+        {
+            player.speed = __state.Speed;
+            player.shotAccuracy = __state.Accuracy;
+            player.shotPower = __state.Power;
+            player.checking = __state.Checking;
+        }
+        // The native hire callback retains this offered clone. Clear its slot
+        // after all native/squad assignments, leaving templates and signed players intact.
+        if (__state.DisableAbilities) player.ability = null;
     }
     [HarmonyFinalizer]
     private static Exception Finalizer(FreeAgentTalentWeightRuntime.Scope __state, Exception __exception)

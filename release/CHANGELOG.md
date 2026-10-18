@@ -1,5 +1,21 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 15 — 2026-10-18
+
+Adds a per-campaign setting to stop new free-agent offers receiving abilities such as YoYo and Yeet.
+
+- Open your campaign, select **Free agents**, enable **Disable recruit abilities**, then **Save campaign**.
+- Enabled removes every ability from newly created GM recruitment offers, including abilities explicitly assigned in Studio. It also applies when a new offer is created from a cached recruit.
+- The setting defaults **off**. Turning it off allows abilities on future offers again.
+- Talents, source player templates and already recruited players stay unchanged. Existing offer cards are not rewritten; check a newly generated recruitment offer.
+- The choice survives saving, upgrading, exporting and importing the campaign, independently of the stat and extra-talent switches.
+
+Includes the revision 14 squad editing fix and targets Steam roguelite build **26020247**.
+
+Validation: 385 focused managed runtime assertions and 29 Studio save/reopen, upgrade and ZIP checks passed. The packaged Studio and revision-14 update path are checked before publication. Native gameplay confirmation remains pending.
+
+Save Studio edits and close the game before installing **T2T_Custom_Campaign_Framework_Setup.exe**, or use Studio's **Check for updates**. After enabling the setting, verify a newly generated offer and its hired player have no ability, including after save/reload.
+
 ## Beta 1.0 revision 14 — 2026-10-18
 
 Fixes existing squad names doing nothing after opening a campaign, even though editing from the main menu worked.
