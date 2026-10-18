@@ -35,7 +35,8 @@ internal static class LineupPreviewRoster
         {
             var roster = menu.Team;
             var team = roster?.OriginalTeamData;
-            if (!CustomTeamRules.IsCustom(team) || !team.isMultiLineup || roster.m_BenchForwards == null) return;
+            if (team == null || (!CustomTeamRules.IsCustom(team) && !VanillaCampaignRuntime.Owns(team)) ||
+                !team.isMultiLineup || roster.m_BenchForwards == null) return;
             var bench = roster.m_BenchForwards;
             var inactive = team.benchPlayers;
             if (inactive == null || inactive.Count != 5) return;

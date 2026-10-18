@@ -15,7 +15,8 @@ using NativeTalents = Il2CppSystem.Collections.Generic.List<Rogue.Talent>;
 namespace EndlessMode;
 
 // Synchronous recruitment scopes only. Native extra-roll probabilities, contract
-// generation, fixed/stored talents and stat generation remain in the original methods.
+// generation and fixed talents remain in the original methods. Stat scaling is
+// independently optional for the specific template in a GM offer.
 internal static class FreeAgentTalentWeightRuntime
 {
     internal sealed class Scope : IDisposable
@@ -25,18 +26,63 @@ internal static class FreeAgentTalentWeightRuntime
         internal FreeAgentTalentWeights Policy;
         internal FreeAgentTalentPool Pool;
         internal IntPtr State, Run;
+        internal bool KeepStats;
+        internal IntPtr StatsTemplate;
+        internal int OfferCount, Speed, Accuracy, Power, Checking;
+        internal Rogue.FreeAgents.PreGeneratedFreeAgentData StoredAgent;
+        internal Il2CppSystem.Collections.Generic.List<string> StoredTalents;
         private bool disposed;
         public void Dispose()
         {
             if (disposed) return;
             disposed = true;
-            current = Previous;
+            try
+            {
+                if (StoredAgent != null) StoredAgent.talentIds = StoredTalents;
+            }
+            finally { current = Previous; }
+        }
+
+        internal void FilterStoredTalents(ForwardData template)
+        {
+            if (Campaign == null || template == null || Pool?.UseBaseGame == true) return;
+            var agents = CampaignUtil.CampaignState?.runData?.preGeneratedFreeAgents;
+            if (agents == null) return;
+            var fixedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (template.powerups != null)
+                foreach (var talent in template.powerups)
+                    if (talent != null) fixedIds.Add(talent.id);
+            foreach (var agent in agents)
+            {
+                if (agent == null || agent.templateFullName != template.FullName) continue;
+                // CreatePlayerChoice inlines this lookup and loads stored IDs
+                // without asking GetRandomTalents. Filter only this offer's
+                // temporary view; never rewrite saved or already signed players.
+                if (agent.talentIds == null) return;
+                var filtered = new Il2CppSystem.Collections.Generic.List<string>();
+                foreach (string id in agent.talentIds)
+                    if (fixedIds.Contains(id) || Pool?.Selected.Contains(id) == true) filtered.Add(id);
+                if (filtered.Count == agent.talentIds.Count) return;
+                StoredAgent = agent;
+                StoredTalents = agent.talentIds;
+                agent.talentIds = filtered;
+                return; // Match the native first-name-match lookup.
+            }
         }
     }
     [ThreadStatic] private static Scope current;
     [ThreadStatic] private static bool readingNativeWeights;
     internal static bool ReadingNativeWeights => readingNativeWeights;
     internal static bool InRecruitmentScope => current?.Campaign != null && !Plugin.IsDefaultMode && !RewardPoolPicks.Probing;
+    internal static bool KeepStats(ForwardData template, Scope scope)
+    {
+        if (!ReferenceEquals(current, scope) || !InRecruitmentScope || scope?.KeepStats != true || template == null
+            || scope.StatsTemplate == IntPtr.Zero || scope.StatsTemplate != template.Pointer) return false;
+        var state = CampaignUtil.CampaignState;
+        return state != null && state.Pointer == scope.State && state.runData != null
+            && state.runData.Pointer == scope.Run && !string.IsNullOrWhiteSpace(Plugin.ModFolder)
+            && string.Equals(scope.Campaign, Path.GetFullPath(Plugin.ModFolder), StringComparison.OrdinalIgnoreCase);
+    }
     internal static Scope Enter(string purpose)
     {
         var scope = new Scope { Previous = current, Purpose = purpose };
@@ -50,6 +96,7 @@ internal static class FreeAgentTalentWeightRuntime
             scope.Run = state?.runData?.Pointer ?? IntPtr.Zero;
             string file = Path.Combine(scope.Campaign, "campaign.txt");
             var document = new CampaignDocument(File.Exists(file) ? File.ReadAllText(file) : "");
+            scope.KeepStats = FreeAgentStats.Keep(document);
             scope.Pool = FreeAgentTalentPool.Read(document);
             string text = document.Get(FreeAgentTalentWeights.Key);
             if (!FreeAgentTalentWeights.TryParse(text, out var policy, out string error)) scope.Error = error;
@@ -248,7 +295,37 @@ internal static class FreeAgentTalentWeightRuntime
 internal static class FreeAgentChoiceWeightScope
 {
     [HarmonyPrefix, HarmonyPriority(Priority.First)]
-    private static void Prefix(out FreeAgentTalentWeightRuntime.Scope __state) => __state = FreeAgentTalentWeightRuntime.Enter("recruit/contract replacement");
+    private static void Prefix(Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent __instance, ForwardData __0,
+        out FreeAgentTalentWeightRuntime.Scope __state)
+    {
+        __state = FreeAgentTalentWeightRuntime.Enter("recruit/contract replacement");
+        __state.StatsTemplate = __0?.Pointer ?? IntPtr.Zero;
+        __state.OfferCount = __instance.eventChoices?.Count ?? 0;
+        if (__state.KeepStats && __0 != null)
+        {
+            __state.Speed = __0.speed;
+            __state.Accuracy = __0.shotAccuracy;
+            __state.Power = __0.shotPower;
+            __state.Checking = __0.checking;
+        }
+        __state.FilterStoredTalents(__0);
+    }
+    [HarmonyPostfix]
+    private static void Postfix(Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent __instance, ForwardData __0,
+        FreeAgentTalentWeightRuntime.Scope __state)
+    {
+        if (!FreeAgentTalentWeightRuntime.KeepStats(__0, __state)
+            || __instance.eventChoices == null || __instance.eventChoices.Count != __state.OfferCount + 1) return;
+        var player = __instance.eventChoices[__state.OfferCount]?.Skater?.TryCast<ForwardData>();
+        if (player == null || player.Pointer == __state.StatsTemplate) return;
+        // Complete the native offer first, then restore only its four base stats.
+        // Detouring AdjustPlayerStatsToMatchTeam (which takes Nullable<float>)
+        // crashes native GM calls on build 26001062, even with keep-stats off.
+        player.speed = __state.Speed;
+        player.shotAccuracy = __state.Accuracy;
+        player.shotPower = __state.Power;
+        player.checking = __state.Checking;
+    }
     [HarmonyFinalizer]
     private static Exception Finalizer(FreeAgentTalentWeightRuntime.Scope __state, Exception __exception)
     { __state?.Dispose(); return __exception; }

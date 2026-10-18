@@ -26,6 +26,7 @@ public sealed class UpgradeCleanup
         fields["player"].Add(PlayerBrawlOptions.PrinceKey);
         fields["player"].Add("Number Style");
         fields["campaign"].Add(FreeAgentTalentWeights.Key);
+        fields["campaign"].Add(FreeAgentStats.KeepKey);
         fields["campaign"].UnionWith(new[] { FreeAgentTalentPool.ModeKey, FreeAgentTalentPool.SelectedKey });
         foreach (string kind in RewardPoolDefinition.Kinds.Concat(CustomRewardDefinition.Kinds).Append("Goalie Abilities"))
             fields["campaign"].UnionWith(new[] { "Pool Mode " + kind, "Selected " + kind, "Included " + kind, "Excluded " + kind });
@@ -135,6 +136,8 @@ public sealed class UpgradeCleanup
     private string Value(string key, string value, string role)
     {
         if (value.Length == 0) return "";
+        if (key.Equals(FreeAgentStats.KeepKey, StringComparison.OrdinalIgnoreCase))
+            return In(value, "yes", "no", "true", "false", "1", "0", "On", "Off") ? value : "";
         if (PlayerKitColors.ModeKeys.Contains(key, IgnoreCase)) return In(value, "yes", "no") ? value : "";
         // Preserve unknown GUIDs and invalid input for the editor's visible validation.
         // A malformed multiplier must never silently become native/default or disabled.

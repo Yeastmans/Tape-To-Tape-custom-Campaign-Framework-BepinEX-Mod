@@ -290,6 +290,18 @@ public sealed partial class CampaignWorkspace : UserControl
     {
         var page = Page("Free agents", "Choose base-game players and add custom players to this campaign's pool. An explicitly saved empty pool offers no recruits.");
         page.Children.Add(GeneralManagerNote());
+        string keepStatsValue = settings.Get(FreeAgentStats.KeepKey);
+        var keepStats = new CheckBox { Name = "KeepFreeAgentStats", Content = "Keep authored stats",
+            IsChecked = FreeAgentStats.Keep(settings) };
+        keepStats.IsCheckedChanged += (_, _) => {
+            keepStatsValue = keepStats.IsChecked == true ? "yes" : "no";
+            message.Text = "Unsaved free-agent settings";
+        };
+        fields[FreeAgentStats.KeepKey] = () => keepStatsValue;
+        page.Children.Add(InsetPoolPanel.Frame(new StackPanel { Spacing = 8, Children = {
+            keepStats,
+            new TextBlock { Text = "Keep the source player's Speed, Shot Accuracy, Shot Power and Checking for all new free-agent offers. Off lets the GM adjust stats to your team. Talents use the pool below. Already recruited players are unchanged.", TextWrapping = TextWrapping.Wrap }
+        } }, "FreeAgentStatsPanel"));
         freeAgentTalentWeights = new FreeAgentTalentWeightsEditor(root, settings.Get(FreeAgentTalentWeights.Key), settings);
         fields[FreeAgentTalentWeights.Key] = () => freeAgentTalentWeights.Value;
         fields[FreeAgentTalentPool.ModeKey] = () => freeAgentTalentWeights.PoolMode;

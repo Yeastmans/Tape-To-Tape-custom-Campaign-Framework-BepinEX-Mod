@@ -58,10 +58,19 @@ public sealed class CompatibilityBaseline
         // The read-only custom two-line preview relies on the native roster's
         // inactive-line ordering and its presentation list. An address-only
         // game update may move these methods, but must not change that contract.
-        foreach (string name in new[] { "Tape2Tape.Hockey.UI.LineupMenu$$LoadCurrentTeam", "Tape2Tape.Customization.UI.TeamRosterData$$.ctor", "Data.TeamData$$GetBench" })
+        foreach (string name in new[] { "Tape2Tape.Hockey.UI.LineupMenu$$LoadCurrentTeam", "Tape2Tape.Customization.UI.TeamRosterData$$.ctor", "Data.TeamData$$GetBench",
+            "STS.Map.MatchMapNode$$AssignSubstitute", "STS.Map.MatchMapNode$$ReplaceForwardWithSubstitute", "Data.Lineup$$UpdateLineWithNewID" })
         {
             var method = image.Resolve(name);
             if (image.SharedMethodCount(method.Rva) != 1) throw new InvalidDataException("Shared lineup preview target: " + name);
+            protectedMethods.Add(image.Identity(method));
+        }
+        // Pin native offer construction and its stat-adjustment contract. The
+        // optional policy restores the completed offer's stats before display.
+        foreach (string name in new[] { "Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent$$CreatePlayerChoice", "Data.ForwardData$$AdjustPlayerStatsToMatchTeam" })
+        {
+            var method = image.Resolve(name);
+            if (image.SharedMethodCount(method.Rva) != 1) throw new InvalidDataException("Shared recruitment stats target: " + name);
             protectedMethods.Add(image.Identity(method));
         }
         // Custom ability pools may return fewer cards than the native fallback

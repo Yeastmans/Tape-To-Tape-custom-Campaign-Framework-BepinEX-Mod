@@ -1,8 +1,8 @@
 {
-  "Id": "F69B2B835DFA465D508AE20D735AD30199D1654FB641DF3B94E7C0113509C462",
+  "Id": "8597EAAF6D443F7A0758712750A492458C86F27D3F179E0E4D5F91BAEC88EB4D",
   "Profile": {
     "RuntimeContract": "t2t-native-v1-20261008",
-    "BaselineId": "F69B2B835DFA465D508AE20D735AD30199D1654FB641DF3B94E7C0113509C462",
+    "BaselineId": "8597EAAF6D443F7A0758712750A492458C86F27D3F179E0E4D5F91BAEC88EB4D",
     "Build": "26001062",
     "GameHash": "864DB76DF3B6F14D7F47AAB044B8F44E95EC111FA15D52F9D8E516AF31D9CE2F",
     "MetadataHash": "08563F2DB54CCC926C310229B8043AEB8D295BC1A024EBE1D41510E67A769525",
@@ -1458,6 +1458,16 @@
       "BodyHash": "37DB4B16FC4F704EADAE19AB2FB47BCA34B9133B3E050659D4A16697B866CBF3"
     },
     {
+      "Name": "Data.ForwardData$$AdjustPlayerStatsToMatchTeam::System.Void AdjustPlayerStatsToMatchTeam(Data.ForwardData template, Data.TeamData team, System.Single assumedBaseAverage = 50, System.Nullable\u00601\u003CSystem.Single\u003E overrideTeamAverage = null)",
+      "Signature": "System.Void AdjustPlayerStatsToMatchTeam(Data.ForwardData template, Data.TeamData team, System.Single assumedBaseAverage = 50, System.Nullable\u00601\u003CSystem.Single\u003E overrideTeamAverage = null)",
+      "BodyHash": "21C75E9D778EE3D94D343C10916BB4B4119918E55FCF4900FF4F142E2C019561"
+    },
+    {
+      "Name": "Data.Lineup$$UpdateLineWithNewID::System.Void UpdateLineWithNewID(System.String oldId, System.String newId)",
+      "Signature": "System.Void UpdateLineWithNewID(System.String oldId, System.String newId)",
+      "BodyHash": "191661FCC21598715F2FE0B06830BD382E95DBFDCB8F34E71B1450C05B523A05"
+    },
+    {
       "Name": "Data.SkaterData$$GetColors::Data.TeamColorsData GetColors()",
       "Signature": "Data.TeamColorsData GetColors()",
       "BodyHash": "D95FB131F8D868B332F9F85A9A704D27D412EAE501C71EA451B45904DA96E875"
@@ -2256,6 +2266,16 @@
       "Name": "STS.Map.MapObject$$SetOpponents::System.Void SetOpponents(System.Int32 act)",
       "Signature": "System.Void SetOpponents(System.Int32 act)",
       "BodyHash": "48E03E38DBA605DAD722FFC58AF3174EBD50753304CFE6371634FE118391EB5A"
+    },
+    {
+      "Name": "STS.Map.MatchMapNode$$AssignSubstitute::System.Void AssignSubstitute()",
+      "Signature": "System.Void AssignSubstitute()",
+      "BodyHash": "FFECB581C2C4EFE050898E8E3700AEC59EAB4DBF1A77B7C9603C497A3AE49774"
+    },
+    {
+      "Name": "STS.Map.MatchMapNode$$ReplaceForwardWithSubstitute::System.Void ReplaceForwardWithSubstitute(Data.ForwardData forwardToReplace, Data.ForwardData substituteTemplate)",
+      "Signature": "System.Void ReplaceForwardWithSubstitute(Data.ForwardData forwardToReplace, Data.ForwardData substituteTemplate)",
+      "BodyHash": "BE3BCA1ECE849DD8F25CEC61E73A567B960DEC60EFA1C257BB66F8980A0170FC"
     },
     {
       "Name": "STS.Map.ScrollNonUI$$SetTargetX::System.Void SetTargetX(System.Single x)",
