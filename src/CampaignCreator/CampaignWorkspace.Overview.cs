@@ -106,7 +106,7 @@ public sealed partial class CampaignWorkspace
         var squadList = new StackPanel { Name = "CampaignListCustomTeams", Spacing = StudioTheme.SpaceSm };
         foreach (var squad in squads)
             squadList.Children.Add(ItemButton(squad.DisplayName, Plural(squad.Children.Count, "player"), StudioTheme.Text, StudioTheme.Input, null,
-                () => { try { SaveWorkingCopy(); open(squad.FilePath!); } catch (Exception ex) { message.Text = ex.Message; } }));
+                () => { try { if (CanLeave(true)) open(squad.FilePath!); } catch (Exception ex) { message.Text = ex.Message; } }));
         if (squads.Count == 0) squadList.Children.Add(Muted("No custom teams yet. Players will pick from the base-game squads."));
         var squadCard = OverviewCard(CustomSquadsSection, "Custom teams", Plural(squads.Count, "squad"),
             Scroll(squadList), "Open superstar/bench options", MintButton("+ Add player team", AddPlayerTeam));

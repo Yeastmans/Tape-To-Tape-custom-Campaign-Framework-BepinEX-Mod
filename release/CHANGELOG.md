@@ -1,5 +1,20 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 14 — 2026-10-18
+
+Fixes existing squad names doing nothing after opening a campaign, even though editing from the main menu worked.
+
+- Squad names on the **Squads page** and **campaign overview** open the editor without first saving and validating the entire campaign.
+- Older campaigns with missing default settings no longer appear edited immediately after opening.
+- Genuine unsaved edits still require **Save campaign** before leaving. Explicit saves retain validation and preserve edits when validation fails.
+- Opening a saved squad leaves authored campaign files unchanged.
+
+The game runtime is unchanged from revision 13 and targets Steam roguelite build **26020247**. Campaign upload management and Play Now updates remain included.
+
+Validation: pointer-driven headless Studio checks cover both campaign entry points, main-menu editing, legacy defaults, invalid saved act/reward settings, file preservation, and successful/failed saves. Related squad and opponent navigation checks passed; the Windows Studio build and installer completed. A desktop retry of the reported campaign remains pending.
+
+Save Studio edits and close the game before installing **T2T_Custom_Campaign_Framework_Setup.exe**, or use Studio's **Check for updates**.
+
 ## Beta 1.0 revision 13 — 2026-10-17
 
 Repairs the native crash during match loading and updates compatibility for Steam **roguelite build 26020247**.

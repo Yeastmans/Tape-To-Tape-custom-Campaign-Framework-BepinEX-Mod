@@ -26,6 +26,7 @@ public sealed partial class CampaignWorkspace : UserControl
     private readonly Action back;
     private readonly TextBlock message = new() { TextWrapping = TextWrapping.Wrap };
     private readonly Dictionary<string, Func<string>> fields = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> savedFieldValues = new(StringComparer.OrdinalIgnoreCase);
     private CampaignDocument settings, rewards;
     private readonly Dictionary<string, RewardPoolDefinition> rewardPools = new();
     private bool rewardDirty;
@@ -59,7 +60,13 @@ public sealed partial class CampaignWorkspace : UserControl
         }
         return mapEditor;
     }
-    public bool HasUnsavedChanges => isNew || rewardDirty || freeAgentsDirty || customRewardCreator?.HasChanges == true || nativeFreeAgents?.HasChanges == true || StartingPoolsDirty || mapEditor?.HasUnsavedChanges == true || fields.Any(f => f.Value() != settings.Get(f.Key));
+    public bool HasUnsavedChanges => isNew || rewardDirty || freeAgentsDirty || customRewardCreator?.HasChanges == true || nativeFreeAgents?.HasChanges == true || StartingPoolsDirty || mapEditor?.HasUnsavedChanges == true || fields.Any(f => !savedFieldValues.TryGetValue(f.Key, out var saved) || f.Value() != saved);
+    private void CaptureSavedFieldValues()
+    {
+        // Defaults displayed for older campaigns are not user edits.
+        savedFieldValues.Clear();
+        foreach (var field in fields) savedFieldValues[field.Key] = field.Value();
+    }
     public bool CanLeave(bool withinCampaign = false)
     {
         if (isNew && withinCampaign) { SaveWorkingCopy(); return true; }
@@ -111,6 +118,7 @@ public sealed partial class CampaignWorkspace : UserControl
         Grid.SetColumn(deleteCampaign, 1); footer.Children.Add(deleteCampaign);
         var save = ActionButton("Save campaign", Save); StudioTheme.Primary(save);
         Grid.SetColumn(save, 2); footer.Children.Add(save); Grid.SetRow(footer, 2); shell.Children.Add(footer); Content = shell;
+        CaptureSavedFieldValues();
     }
     private void ShowSection(int index)
     {
@@ -244,7 +252,7 @@ public sealed partial class CampaignWorkspace : UserControl
                 }
                 var editTeam = ActionButton(team.DisplayName, () => {
                     if (team.FilePath is not string teamFile) return;
-                    try { SaveWorkingCopy(); open(teamFile); }
+                    try { if (CanLeave(true)) open(teamFile); }
                     catch (Exception ex) { message.Text = ex.Message; }
                 });
                 editTeam.Tag = team.FilePath;
@@ -709,6 +717,7 @@ public sealed partial class CampaignWorkspace : UserControl
             foreach (var pair in rewardPools) pair.Value.Write(changed, pair.Key);
             changed.Save(Path.Combine(directory, "reward_pools.txt")); rewards = changed; rewardDirty = false;
         }
+        CaptureSavedFieldValues();
     }
     private void Save()
     {

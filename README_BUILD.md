@@ -77,7 +77,7 @@ Replace the example game path with your own installation. Supply the release's
 exact tag when preparing a publishable build:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Build-CampaignStudio.ps1 -GameDirectory 'D:\SteamLibrary\steamapps\common\Tape to Tape' -ReleaseTag 'beta-1.0-r13-build-1792303538783'
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Build-CampaignStudio.ps1 -GameDirectory 'D:\SteamLibrary\steamapps\common\Tape to Tape' -ReleaseTag 'beta-1.0-r14-build-1792335672981'
 ```
 
 The wrapper's unchanged `-ReleaseTag` default is `beta-1.0-r2`; override it for
