@@ -27,9 +27,9 @@ internal static class CustomRewardGoalRules
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8)
                 throw new PlatformNotSupportedException("Goal verification requires the audited Windows x64 build.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().First(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-            if (NativeCompatibility.Load(module.FileName).GameHash != "64E1F43F4E83CCBAE5F02CC301C6018E2756D1B5D2E0C337A382F06AF3D980FB")
+            if (NativeCompatibility.Load(module.FileName).GameHash != "3E8BF7879BF160C0DBCDDE2E12069E1E12689D3D8B327BFAE165DCE607FE294E")
                 throw new InvalidOperationException("Goal verification has not been audited for this game build.");
-            var address = module.BaseAddress + 0x3600B00;
+            var address = module.BaseAddress + 0x3607960;
             byte[] expected = Convert.FromHexString("48895C24084889742410574883EC30"), actual = new byte[15];
             Marshal.Copy(address, actual, 0, actual.Length);
             if (!actual.SequenceEqual(expected)) throw new InvalidOperationException("The native goal constructor was changed by another patch.");

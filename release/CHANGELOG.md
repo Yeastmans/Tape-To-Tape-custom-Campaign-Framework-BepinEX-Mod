@@ -1,5 +1,18 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 13 — 2026-10-17
+
+Repairs the native crash during match loading and updates compatibility for Steam **roguelite build 26020247**.
+
+- Removes the unsafe `ForwardStats.GetOverall` interception that crashed while initializing a team. Random shot power/accuracy rules retain their existing caller scopes and pre-shot roll behavior.
+- Custom boosts pass an empty native nullable value when no forced direction is requested. Recovery checks skip actors that do not yet have a team.
+- Updates the reviewed native baseline and hook addresses, preserving exact game, method and instruction guards. The updater accepts only the exact known previous runtime DLLs in its replacement list and preserves unknown runtimes.
+- Retains revision 12's campaign upload replacement/deletion and explicit **Export as new / Update selected team** choice for Play Now.
+
+Validation: 21 random-shot scope, six boost and eight recovery regressions; 53 compatibility checks; eight isolated updater checks; and 530 compiled callback bindings with zero binding issues. The [native audit](../docs/NATIVE-26020247-REVIEW.md) records the build and ABI evidence. Human confirmation of the Winnipeg match transition and gameplay remains pending. No FPS improvement is claimed.
+
+No NHL campaign ZIP is included. Close the game and save Studio edits before installing **T2T_Custom_Campaign_Framework_Setup.exe**, or use Studio's **Check for updates** button.
+
 ## Beta 1.0 revision 12 — 2026-10-17
 
 Update or delete your posted campaign from **Home → Campaigns → Manage uploads**. The matching community service is now deployed.

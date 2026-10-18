@@ -2,11 +2,11 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 12](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r12-build-1792295488865) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 13](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r13-build-1792303538783) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
-**Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **`roguelite` branch, build 26019854**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
+**Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **`roguelite` branch, build 26020247**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
 
-Beta 1.0 revision 12 adds campaign upload replacement/deletion and an explicit Play Now team update choice. The matching Dropbox management service is deployed. It retains revision 11's custom reward repair and reviewed compatibility for **build 26019854**; see the [native audit](docs/NATIVE-26019854-REVIEW.md) and [community management setup](worker/COMMUNITY-MANAGEMENT.md).
+Beta 1.0 revision 13 repairs the match-loading crash and custom boost/recovery errors, with reviewed compatibility for **build 26020247**. It retains campaign upload replacement/deletion and the explicit Play Now team update choice from revision 12. Human confirmation of the Winnipeg match transition and gameplay is still pending; see the [native audit](docs/NATIVE-26020247-REVIEW.md), [changelog](release/CHANGELOG.md) and [community management setup](worker/COMMUNITY-MANAGEMENT.md).
 
 **This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. Reporting bugs on [Discord](https://discord.gg/hscxnYghb) or [GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues) helps immensely.
 
@@ -35,7 +35,7 @@ Beta 1.0 revision 12 adds campaign upload replacement/deletion and an explicit P
 
 ### Windows
 
-**You need:** Windows x64, your own Steam copy of Tape to Tape, and access to its **`roguelite` branch**. Beta 1.0 targets **game build 26019854**. The Windows installer includes the editor runtime and the required BepInEx 6 IL2CPP loader; Python and a separate .NET installation are not needed to use it.
+**You need:** Windows x64, your own Steam copy of Tape to Tape, and access to its **`roguelite` branch**. Beta 1.0 targets **game build 26020247**. The Windows installer includes the editor runtime and the required BepInEx 6 IL2CPP loader; Python and a separate .NET installation are not needed to use it.
 
 1. In Steam, right-click **Tape to Tape → Properties → Betas** and select **`roguelite`**. If it is unavailable, you need branch access before continuing. Let Steam finish updating.
 2. Launch the game once, then quit it. Close any old creator or Studio window.

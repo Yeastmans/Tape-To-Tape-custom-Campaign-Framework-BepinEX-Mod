@@ -106,9 +106,9 @@ internal static class CustomRewardCapabilities
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8)
                 throw new PlatformNotSupportedException("Native capability rules require the audited Windows x64 build.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().First(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-            if (NativeCompatibility.Load(module.FileName).GameHash != "64E1F43F4E83CCBAE5F02CC301C6018E2756D1B5D2E0C337A382F06AF3D980FB")
+            if (NativeCompatibility.Load(module.FileName).GameHash != "3E8BF7879BF160C0DBCDDE2E12069E1E12689D3D8B327BFAE165DCE607FE294E")
                 throw new InvalidOperationException("Native capability queries have not been audited for this game build.");
-            var cached = module.BaseAddress + 0xc41360; var direct = module.BaseAddress + 0xc414c0; var get = module.BaseAddress + 0xc411d0;
+            var cached = module.BaseAddress + 0xC42360; var direct = module.BaseAddress + 0xC424C0; var get = module.BaseAddress + 0xC421D0;
             Verify(cached, "48895C2418564883EC2048837A3800");
             Verify(direct, "48895C2408574883EC2048837A3800");
             Verify(get, "48895C2408574883EC2048837A3800");
@@ -212,8 +212,13 @@ internal static class CustomRewardAnchorAttackScope
 internal static class CustomRewardRecovery
 {
     [HarmonyPostfix] private static void Postfix(KnockoutState __instance) => CustomRewardRuntime.Safe(() => {
-        if (__instance._isBrawlFinisher || __instance.HasQuickerRecovery() || __instance.HasInstantRecovery()) return;
-        if (CustomRewardCapabilities.Active(__instance.forward, CustomRewardEffects.QuickRecovery)) __instance._timeKnockout *= .5f;
+        var forward = __instance.forward;
+        // Native OnEnter skips recovery relic queries for teamless actors.
+        // The standalone helpers assume both teams exist, including referees.
+        if (__instance._isBrawlFinisher || forward?.Team == null || forward.Team.otherTeam == null
+            || !CustomRewardCapabilities.Active(forward, CustomRewardEffects.QuickRecovery)) return;
+        if (__instance.HasQuickerRecovery() || __instance.HasInstantRecovery()) return;
+        __instance._timeKnockout *= .5f;
     });
 }
 

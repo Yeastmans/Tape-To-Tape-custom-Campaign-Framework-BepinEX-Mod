@@ -139,7 +139,10 @@ internal static class CustomRewardNativeEffects
             var backwards = -flight.shotDirection; backwards.y = 0;
             if (backwards.sqrMagnitude <= .001f) return false;
             boost.StartBoost(new Il2CppSystem.Nullable<Vector3>(backwards));
-        } else boost.StartBoost(default);
+        } else {
+            // Interop nullable values are reference wrappers; null cannot be unboxed.
+            boost.StartBoost(new Il2CppSystem.Nullable<Vector3>());
+        }
         return boost.IsBoosting;
     }
     internal static bool Sonic(CustomRewardDefinition d, Skater actor)

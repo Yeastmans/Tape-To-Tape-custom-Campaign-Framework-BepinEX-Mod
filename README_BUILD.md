@@ -19,7 +19,7 @@ The old `_build_studio_installer.ps1` and `_sync_github.ps1` are not required.
 - [7-Zip](https://www.7-zip.org/) for the pinned FFmpeg archive. Put `7z.exe` on
   PATH, install it to the standard Program Files location, or use `-SevenZipPath`.
 - Your own Steam installation of **Tape to Tape, roguelite branch, build
-  25917988**, with **current BepInEx-generated IL2CPP interop assemblies** in
+  26020247**, with **current BepInEx-generated IL2CPP interop assemblies** in
   `BepInEx/interop`. Run your game once with the pinned BepInEx loader to
   generate them, then close it. The build wrapper does not install a loader
   into your game or generate interop by launching it.
@@ -73,13 +73,15 @@ notices when distributing their binaries. The BepInEx manifest records all
 
 ## Build
 
-Replace the example game path with your own installation:
+Replace the example game path with your own installation. Supply the release's
+exact tag when preparing a publishable build:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Build-CampaignStudio.ps1 -GameDirectory 'D:\SteamLibrary\steamapps\common\Tape to Tape'
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Build-CampaignStudio.ps1 -GameDirectory 'D:\SteamLibrary\steamapps\common\Tape to Tape' -ReleaseTag 'beta-1.0-r13-build-1792303538783'
 ```
 
-Optional parameters are `-ReleaseTag` (default `beta-1.0-r2`), `-DotnetPath`, `-PythonPath`, `-IsccPath`,
+The wrapper's unchanged `-ReleaseTag` default is `beta-1.0-r2`; override it for
+each new release. Other optional parameters are `-DotnetPath`, `-PythonPath`, `-IsccPath`,
 `-SevenZipPath` and `-StageName`. Tool paths must name executables. The wrapper
 passes the supplied game's interop directory to MSBuild; it does not depend
 on the historical default path inside the mod project.
@@ -113,9 +115,10 @@ the official repository's release list (including prereleases), compares build
 numbers and verifies GitHub's SHA-256 digests, the manifest and the downloaded
 installer before opening Setup. Keep the manifest paired with its exact installer;
 a partial or mismatched upload is reported as unavailable, never as up to date.
-Existing releases without an update manifest remain manual downloads. Rebuilt
-Beta 1.0 revision 2 installers must link their exact source commit in the release
-description because the original tag's source archive remains unchanged.
+Existing releases without an update manifest remain manual downloads. Every
+published installer should identify its exact source commit and build number.
+If an asset on an existing release is rebuilt, link its exact source commit in
+the description: the existing tag's source archive still reflects the tagged commit.
 
 Package validation is technical evidence. It does not confirm live gameplay,
 native trigger timing, successful installer migration or save/Continue behavior.

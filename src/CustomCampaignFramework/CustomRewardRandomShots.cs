@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using CampaignCore;
-using Data;
 using HarmonyLib;
 using Rogue;
 using Rogue.Powerups.Controllers.Talents;
@@ -43,6 +42,10 @@ internal static class CustomRewardRandomShots
         controllers.Clear(); Stat = null;
     }
 }
+// Keep scopes on these scalar-signature callers. Native GetOverall receives
+// Nullable<BasicStats> packed by value; the generated Harmony bridge treats it
+// as a pointer and crashes in Memmove. Native GetOverall already excludes
+// checking/speed from Gambler queries, so it does not need its own scope hook.
 [HarmonyPatch(typeof(ForwardStats), "GetAccuracy")]
 internal static class CustomRewardRandomAccuracyScope
 {
@@ -53,16 +56,6 @@ internal static class CustomRewardRandomAccuracyScope
 internal static class CustomRewardRandomPowerScope
 {
     [HarmonyPrefix] private static void Prefix(out string __state) { __state = CustomRewardRandomShots.Stat; CustomRewardRandomShots.Stat = "Power"; }
-    [HarmonyFinalizer] private static void Finalizer(string __state) => CustomRewardRandomShots.Stat = __state;
-}
-[HarmonyPatch(typeof(ForwardStats), "GetOverall")]
-internal static class CustomRewardRandomOverallScope
-{
-    [HarmonyPrefix] private static void Prefix(Il2CppSystem.Nullable<BasicStats> __0, out string __state)
-    {
-        __state = CustomRewardRandomShots.Stat;
-        CustomRewardRandomShots.Stat = !__0.HasValue ? "Other" : __0.Value == BasicStats.ShotPower ? "Power" : __0.Value == BasicStats.ShotAccuracy ? "Accuracy" : "Other";
-    }
     [HarmonyFinalizer] private static void Finalizer(string __state) => CustomRewardRandomShots.Stat = __state;
 }
 [HarmonyPatch(typeof(GamblerController), "GenerateAccuracy")]
