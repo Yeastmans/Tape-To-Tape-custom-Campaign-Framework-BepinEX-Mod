@@ -106,7 +106,7 @@ internal static class CustomRewardCapabilities
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8)
                 throw new PlatformNotSupportedException("Native capability rules require the audited Windows x64 build.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().First(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-            if (NativeCompatibility.Load(module.FileName).GameHash != "864DB76DF3B6F14D7F47AAB044B8F44E95EC111FA15D52F9D8E516AF31D9CE2F")
+            if (NativeCompatibility.Load(module.FileName).GameHash != "2A6EB5B74057D101BD17D2E19F8A924E62FAEE1C02F17FDF975A53C744A6932E")
                 throw new InvalidOperationException("Native capability queries have not been audited for this game build.");
             var cached = module.BaseAddress + 0xc419a0; var direct = module.BaseAddress + 0xc41b00; var get = module.BaseAddress + 0xc41810;
             Verify(cached, "48895C2418564883EC2048837A3800");

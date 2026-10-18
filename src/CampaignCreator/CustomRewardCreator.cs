@@ -126,7 +126,9 @@ internal sealed class CustomRewardCreator : UserControl
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto });
         var save = Button(libraryOnly ? "Save item to library" : "Save item to library + campaign", Save); save.Name = "SaveCustomReward"; StudioTheme.Primary(save);
-        Grid.SetRow(save, 1); right.Children.Add(save); Grid.SetRow(status, 2); right.Children.Add(status);
+        var discard = Button("Discard draft", () => Load(new())); discard.Name = "DiscardCustomReward"; discard.Classes.Add("danger");
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = StudioTheme.SpaceMd, Children = { save, discard } };
+        Grid.SetRow(actions, 1); right.Children.Add(actions); Grid.SetRow(status, 2); right.Children.Add(status);
         Grid.SetColumn(right, 1); shell.Children.Add(right); Content = shell;
         title.TextChanged += (_, _) => Changed(); description.TextChanged += (_, _) => Changed();
         foreach (var box in new[] { kind, trigger, effect, stat, target, duration, resetOn, amountBasis }) box.SelectionChanged += (_, _) => Changed();
@@ -299,7 +301,6 @@ internal sealed class CustomRewardCreator : UserControl
     {
         library.Children.Clear();
         foreach (var image in libraryImages) image.Dispose(); libraryImages.Clear();
-        library.Children.Add(Button("Discard draft", () => Load(new())));
         try {
             var local = libraryOnly ? new Dictionary<string, CustomRewardDefinition>() : CustomRewardDefinition.LoadFolder(Path.Combine(campaign(), CustomRewardDefinition.Folder)).ToDictionary(d => d.Id);
             var all = CustomRewardDefinition.LoadFolder(Path.Combine(root, "library", "rewards")).ToDictionary(d => d.Id);

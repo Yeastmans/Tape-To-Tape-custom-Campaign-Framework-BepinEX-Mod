@@ -1,5 +1,20 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 10 — 2026-10-17
+
+Restores compatibility with Tape to Tape Steam **roguelite build 26015379**.
+
+- Updated the reviewed native compatibility data and relocated the four changed squad-behavior patches.
+- Restored the custom-reward hook groups, including the moved goal-event constructor. Game-version, method-pointer and instruction checks remain enforced.
+- Retains **Keep authored stats**, **Disable extra recruit talents**, the opponent lineup repair, and the Act Sequence cleanup fix.
+- Moved **Discard draft** beside Save in the talent/relic creator and made it red.
+
+This revision also clears the compatibility error that prevented revision 9's **Launch Tape to Tape** button from starting the updated game. Install the new Studio package to replace the older compatibility data.
+
+Validation: 32 native recruit-offer cases, eight moved-patch callback cases, reward-hook installation and native fallback checks, match startup, player and opponent line changes, and roster contract badges. Source regression and packaged Studio checks also passed.
+
+Install **T2T_Custom_Campaign_Framework_Setup.exe**, or use Studio's built-in update checker.
+
 ## Beta 1.0 revision 9 — 2026-10-17
 
 - Fixed upgrade cleanup deleting **Act Sequence**, which stores the campaign's

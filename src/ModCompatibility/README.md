@@ -12,7 +12,7 @@ A version mismatch alone does not block custom squad creation or selection. Cust
 
 ## Reviewed baseline
 
-`Assets/native-baseline.json` currently describes Steam build **26001062**, with **266 protected methods, 142 comparison sites and 110 native squad query calls**. The matching runtime profile is `../CustomCampaignFramework/Assets/native-compatibility.json`. Protected contracts include squad routing, lineup previews and opponent substitutions, free-agent stat scaling, reward selection, authored periods, opponent consumers, map presentation and appearance integration. Their presence is technical compatibility evidence, not a live gameplay pass.
+`Assets/native-baseline.json` currently describes Steam build **26015379**, with **266 protected methods, 142 comparison sites and 110 native squad query calls**. The matching runtime profile is `../CustomCampaignFramework/Assets/native-compatibility.json`. Protected contracts include squad routing, lineup previews and opponent substitutions, free-agent stat scaling, reward selection, authored periods, opponent consumers, map presentation and appearance integration. Their presence is technical compatibility evidence, not a live gameplay pass.
 
 ## Build maintenance
 

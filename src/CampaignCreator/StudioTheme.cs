@@ -44,6 +44,8 @@ internal static class StudioTheme
             new Setter(ContentControl.HorizontalContentAlignmentProperty, HorizontalAlignment.Center));
         Add(s => s.OfType<Button>().Class("primary"), new Setter(TemplatedControl.BackgroundProperty, Accent),
             new Setter(TemplatedControl.ForegroundProperty, OnAccent), new Setter(TemplatedControl.FontWeightProperty, FontWeight.SemiBold));
+        Add(s => s.OfType<Button>().Class("danger"), new Setter(TemplatedControl.BackgroundProperty, Danger),
+            new Setter(TemplatedControl.ForegroundProperty, OnAccent), new Setter(TemplatedControl.FontWeightProperty, FontWeight.SemiBold));
         // Fluent paints pointer states on the presenter, so style that layer as well.
         Add(s => s.OfType<Button>().Class(":pointerover").Template().OfType<ContentPresenter>().Name("PART_ContentPresenter"),
             new Setter(ContentPresenter.BackgroundProperty, Hover), new Setter(ContentPresenter.ForegroundProperty, Text));
@@ -51,6 +53,10 @@ internal static class StudioTheme
             new Setter(ContentPresenter.BackgroundProperty, AccentHover), new Setter(ContentPresenter.ForegroundProperty, OnAccent));
         Add(s => s.OfType<Button>().Class(":pressed").Template().OfType<ContentPresenter>().Name("PART_ContentPresenter"),
             new Setter(ContentPresenter.BackgroundProperty, Selected), new Setter(ContentPresenter.ForegroundProperty, Text));
+        Add(s => s.OfType<Button>().Class("danger").Class(":pointerover").Template().OfType<ContentPresenter>().Name("PART_ContentPresenter"),
+            new Setter(ContentPresenter.BackgroundProperty, Brush.Parse("#FFA3A3")), new Setter(ContentPresenter.ForegroundProperty, OnAccent));
+        Add(s => s.OfType<Button>().Class("danger").Class(":pressed").Template().OfType<ContentPresenter>().Name("PART_ContentPresenter"),
+            new Setter(ContentPresenter.BackgroundProperty, Brush.Parse("#DC6F79")), new Setter(ContentPresenter.ForegroundProperty, OnAccent));
         foreach (var type in new[] { typeof(TextBox), typeof(ComboBox), typeof(NumericUpDown) })
             Add(s => s.Is(type), new Setter(TemplatedControl.BackgroundProperty, Input), new Setter(TemplatedControl.BorderBrushProperty, Border),
                 new Setter(TemplatedControl.CornerRadiusProperty, Radius), new Setter(TemplatedControl.MinHeightProperty, 32d));
