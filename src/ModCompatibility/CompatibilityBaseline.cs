@@ -55,6 +55,17 @@ public sealed class CompatibilityBaseline
         baseline.FlowIndex=Array.FindIndex(image.Instructions(image.Resolve(baseline.FlowMethod).Rva),i=>i.IP==(ulong)flow);
         if(baseline.FlowIndex<0) throw new InvalidDataException("Unknown starting-flow boundary.");
         protectedMethods.UnionWith(new[]{baseline.FlowMethod,"Arena.IceSetup$$SwitchIceType","Tape2Tape.CampaignUtil$$IsPlayingSquad","System.String$$op_Equality","System.String$$op_Inequality"});
+        // The custom Check/Checked bridge observes the native match-wide hit
+        // consumer instead of converting its non-blittable value-type event to
+        // a managed delegate. Keep its ABI and balanced subscription lifecycle
+        // under the same strict review gate as the other native integrations.
+        foreach (string name in new[] { "GameStats$$OnHit::System.Void OnHit(Events.SkaterCheckEventArgs args)",
+            "GameStats$$Awake::System.Void Awake()", "GameStats$$OnDestroy::System.Void OnDestroy()" })
+        {
+            var method = image.Resolve(name);
+            if (image.SharedMethodCount(method.Rva) != 1) throw new InvalidDataException("Shared custom check-event target: " + name);
+            protectedMethods.Add(image.Identity(method));
+        }
         // The read-only custom two-line preview relies on the native roster's
         // inactive-line ordering and its presentation list. An address-only
         // game update may move these methods, but must not change that contract.

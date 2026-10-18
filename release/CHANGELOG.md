@@ -1,5 +1,20 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 11 — 2026-10-17
+
+Restores compatibility with Tape to Tape Steam roguelite build **26019854** and fixes custom campaign rewards that failed to load.
+
+- Custom talents and neutral relics register without waiting for a base-game donor asset to be loaded.
+- Check/Checked custom effects use the game's match-wide hit callback, fixing the unsupported event-delegate error that stopped reward event setup.
+- Updates the reviewed native hook addresses and compatibility data while preserving game-version and instruction guards.
+- Removes the repeated global donor-asset searches from reward lookups. FPS improvement has not yet been measured.
+
+The existing Studio interface and upload behavior are retained. Campaigns and saves are not rewritten by the runtime fix; missing starting talents in existing saves are not retroactively granted. Campaign ZIPs continue to include custom reward definitions and icons. No NHL campaign ZIP is included in this release.
+
+Validation: successful runtime build; 86 managed reward checks, 53 compatibility checks, eight isolated updater checks, and compiled callback-binding review passed. In-game reward behavior and performance still need human confirmation on this build.
+
+Install **T2T_Custom_Campaign_Framework_Setup.exe**, or use Studio's built-in update checker.
+
 ## Beta 1.0 revision 10 — 2026-10-17
 
 Restores compatibility with Tape to Tape Steam **roguelite build 26015379**.

@@ -4848,10 +4848,7 @@ public static class PatchSuperstarPool
         // stale states left loaded during a screen transition.
         try
         {
-            var field = AccessTools.Field(typeof(Tape2Tape.Hockey.UI.OldSquadMenu), "m_CampaignState")
-                ?? AccessTools.Field(typeof(Tape2Tape.Hockey.UI.OldSquadMenu), "_campaignState");
-            var state = field?.GetValue(menu) as State.CampaignState;
-            var selected = state?.GetCurrentSquad();
+            var selected = menu?.m_CampaignState?.GetCurrentSquad();
             if (selected != null) return selected;
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[Superstar] Menu squad lookup: {ex.Message}"); }
@@ -7645,15 +7642,12 @@ public static class LogRepositories
         return slash >= 0 ? path.Substring(slash + 1) : path;
     }
 
-    // Helper: pull private Il2Cpp List<string> field via reflection into a HashSet
-    private static void AddReflectedList(object obj, string fieldName, HashSet<string> target)
+    // Generated interop exposes native cached lists as properties, not managed
+    // fields. Typed access keeps these names checked when game interop changes.
+    private static void AddSkinOptions(Il2CppSystem.Collections.Generic.List<string> list, HashSet<string> target)
     {
         try
         {
-            var field = obj.GetType().GetField(fieldName,
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (field == null) return;
-            var list = field.GetValue(obj) as Il2CppSystem.Collections.Generic.List<string>;
             if (list != null)
                 for (int i = 0; i < list.Count; i++)
                     if (!string.IsNullOrEmpty(list[i])) target.Add(list[i]);
@@ -7817,10 +7811,10 @@ public static class LogRepositories
             try { if (!string.IsNullOrEmpty(f.pantsAwaySkin))pt2.Add(f.pantsAwaySkin);} catch {}
             try { if (!string.IsNullOrEmpty(f.skateSkin))    sk.Add(f.skateSkin); }    catch {}
             try { if (!string.IsNullOrEmpty(f.skateAwaySkin))sk.Add(f.skateAwaySkin); } catch {}
-            AddReflectedList(f, "_headSkins",   hd);
-            AddReflectedList(f, "_bodySkins",   bd);
-            AddReflectedList(f, "_helmetSkins", hm);
-            AddReflectedList(f, "_stickSkins",  st);
+            AddSkinOptions(f._headSkins, hd);
+            AddSkinOptions(f._bodySkins, bd);
+            AddSkinOptions(f._helmetSkins, hm);
+            AddSkinOptions(f._stickSkins, st);
         }
 
         var ghd = new HashSet<string>(); // goalie face
@@ -7845,17 +7839,11 @@ public static class LogRepositories
             try { if (!string.IsNullOrEmpty(g.awayPadsSkin))    gpd.Add(g.awayPadsSkin); }    catch {}
             try { if (!string.IsNullOrEmpty(g.stickSkin))       gst.Add(g.stickSkin); }       catch {}
             try { if (!string.IsNullOrEmpty(g.awayStickSkin))   gst.Add(g.awayStickSkin); }   catch {}
-            AddReflectedList(g, "_headSkins",        ghd);
-            AddReflectedList(g, "_bodySkins",        gbd);
-            AddReflectedList(g, "_helmetSkins",      ghm);
-            AddReflectedList(g, "_gloveSkins",       ggv);
-            AddReflectedList(g, "_awayGloveSkins",   ggv);
-            AddReflectedList(g, "_blockerSkins",     gbl);
-            AddReflectedList(g, "_awayBlockerSkins", gbl);
-            AddReflectedList(g, "_padsSkins",        gpd);
-            AddReflectedList(g, "_awayPadsSkins",    gpd);
-            AddReflectedList(g, "_stickSkins",       gst);
-            AddReflectedList(g, "_awayStickSkins",   gst);
+            AddSkinOptions(g._helmetSkins, ghm);
+            AddSkinOptions(g._gloveSkins, ggv);
+            AddSkinOptions(g._blockerSkins, gbl);
+            AddSkinOptions(g._padSkins, gpd);
+            AddSkinOptions(g._stickSkins, gst);
         }
 
         // ── Helper: write one skin file ───────────────────────────────────

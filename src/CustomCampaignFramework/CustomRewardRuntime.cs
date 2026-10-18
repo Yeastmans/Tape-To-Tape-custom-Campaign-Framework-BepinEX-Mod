@@ -110,11 +110,9 @@ internal static class CustomRewardRuntime
                 loaded = true;
             }
             if (Definitions.Count == 0) return;
-            var talentTemplate = Resources.FindObjectsOfTypeAll<BasicStatsBonus>().FirstOrDefault(t => t != null && !IsCustom(t.id));
-            var relicTemplate = Resources.FindObjectsOfTypeAll<CornDog>().FirstOrDefault(r => r != null && !IsCustom(r.id));
             bool added = false;
             foreach (var d in Definitions.Values) {
-                if (d.IsRelic && !relics.ContainsKey(d.Id) && relicTemplate != null) {
+                if (d.IsRelic && !relics.ContainsKey(d.Id)) {
                     Relic r;
                     if (d.Trigger == "Puck fart timer") {
                         r = CustomRewardFartTimers.CreateRelic(d); if (r == null) continue;
@@ -141,13 +139,18 @@ internal static class CustomRewardRuntime
                         var template = Resources.FindObjectsOfTypeAll<HotPotato>().FirstOrDefault(v => v != null && !IsCustom(v.id));
                         if (template == null) continue;
                         r = Object.Instantiate(template);
-                    } else { var neutral = Object.Instantiate(relicTemplate); neutral.statBonus = neutral.upgradedStatBonus = 0; r = neutral; }
+                    } else {
+                        // A neutral carrier has no asset dependencies. The game's
+                        // current scene need not contain a CornDog donor asset.
+                        var neutral = ScriptableObject.CreateInstance<CornDog>();
+                        neutral.statBonus = neutral.upgradedStatBonus = 0; r = neutral;
+                    }
                     r.id = d.Id; r.name = "CCF_Reward_" + d.Id; r.level = d.Effect == CustomRewardEffects.BreakawayShotFall ? 2 : CustomRewardEffects.IsCategoryGrant(d.Effect) ? d.Amount : 1;
                     r.relicName = d.Name; r.description = d.FullDescription; r.upgradedDescription = ""; r.statBonusDescription = "";
                     r.sprite = Icon(d); r.hasUpgradeText = false; r.isHidden = false;
                     r.category = d.Effect == CustomRewardEffects.StatChange ? RelicCategory.OnlyStats : (RelicCategory)0;
                     r.hideFlags = HideFlags.DontUnloadUnusedAsset; relics.Add(d.Id, r); added = true;
-                } else if (!d.IsRelic && !talents.ContainsKey(d.Id) && talentTemplate != null) {
+                } else if (!d.IsRelic && !talents.ContainsKey(d.Id)) {
                     Talent t;
                     if (CustomRewardEffects.IsLifecycleEffect(d.Effect)) {
                         t = CustomRewardLifecycle.CreateTalent(d); if (t == null) continue;
@@ -175,7 +178,11 @@ internal static class CustomRewardRuntime
                             var contract = Object.Instantiate(template); contract.numOfGames = d.Amount; t = contract;
                         }
                     } else {
-                        var neutral = Object.Instantiate(talentTemplate); neutral.delta = 0; t = neutral;
+                        // BasicStatsBonus is a native ScriptableObject type, but
+                        // no instance is guaranteed to be loaded at the title or
+                        // squad screen. Build our own neutral carrier so custom
+                        // talents resolve before player previews/deserialization.
+                        var neutral = ScriptableObject.CreateInstance<BasicStatsBonus>(); neutral.delta = 0; t = neutral;
                     }
                     t.id = d.Id; t.name = "CCF_Reward_" + d.Id; t.level = d.Effect == CustomRewardEffects.CenterDefenderChecks ? d.Amount : 1;
                     t.powerupName = d.Name; t.description = d.FullDescription; t.upgradedDescription = ""; t.statBonusDescription = "";
@@ -188,7 +195,10 @@ internal static class CustomRewardRuntime
             }
             // Assets resolve by ID for native deserialization; they are deliberately
             // not appended to the base-game random pools.
-            if (added) PatchBossLaunchMatch.AllRelicCache = null;
+            if (added) {
+                PatchBossLaunchMatch.AllRelicCache = null;
+                Plugin.Log.LogInfo($"[CustomRewards] Registered {talents.Count} custom talents and {relics.Count} custom relics ({Definitions.Count} definitions).");
+            }
         } catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Loading definitions: " + ex); }
         finally { creating = false; }
     }
@@ -751,7 +761,10 @@ internal static class CustomRewardRuntime
             var scorer = CustomRewardGoalConfirmation.CurrentScorer;
             CustomRewardGoalConfirmation.Defer(() => Signal(s?.TryCast<NativeGoalie>() != null ? "Goalie assist" : "Assist", s, other: scorer));
         });
-        Listen(GameplayEvents.SkaterCheck, (SkaterCheckEventArgs a) => { Signal("Check", a.Skater, other: a.Hitted); Signal("Checked", a.Hitted, other: a.Skater); });
+        // GameStats.OnHit supplies Check/Checked through CustomRewardCheckEvent.
+        // Il2CppInterop cannot convert Action<SkaterCheckEventArgs>: this native
+        // value type contains object references. Subscribing here would abort
+        // registration of every following gameplay event.
         Listen(GameplayEvents.BlockedShot, (Forward f) => Signal("Blocked shot", f));
         Listen(GameplayEvents.Knockout, (KnockoutArgs a) => {
             if (a.knockedBy?.Team != null && a.playerKnocked?.Team != null && a.knockedBy.Team != a.playerKnocked.Team) teamsWithOpposingKnockouts.Add(a.knockedBy.Team.Pointer);
