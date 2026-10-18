@@ -17,8 +17,7 @@
 
 Validation: 190 runtime assertions, 17 editor/save/import checks and 16 native
 offer cases passed for the final recruit-options candidate. Earlier checks
-covered keep-stats off/on, opponent line switching and contract badges. These
-are technical checks; human acceptance remains pending.
+covered keep-stats off/on, opponent line switching and contract badges.
 
 Known issues: the existing upgrade-cleanup path can remove Act Sequence; earlier
 popup/startup-reset reports remain unexplained. Missing contract labels were
