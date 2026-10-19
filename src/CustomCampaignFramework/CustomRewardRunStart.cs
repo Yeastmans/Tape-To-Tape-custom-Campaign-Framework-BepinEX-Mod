@@ -7,7 +7,11 @@ namespace EndlessMode;
 [HarmonyPatch(typeof(State.CampaignState), "ApplyNewRunStartEffects")]
 internal static class CustomRewardRunStart
 {
-    [HarmonyPostfix] private static void Postfix(State.CampaignState __instance) => CustomRewardRuntime.Safe(() => Apply(__instance));
+    [HarmonyPostfix] private static void Postfix(State.CampaignState __instance)
+    {
+        CustomRewardRuntime.Safe(() => Apply(__instance));
+        PlayerContractRuntime.Safe(() => PlayerContractRuntime.CompleteStarting(__instance));
+    }
     private static void Apply(State.CampaignState state)
     {
         if (Plugin.IsDefaultMode || state?.runData?.teamData is not { } team) return;

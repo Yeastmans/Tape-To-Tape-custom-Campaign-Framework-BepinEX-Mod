@@ -437,6 +437,7 @@ public class Plugin : BasePlugin
         ExcludedRewardRelicIds.Clear();
         ExcludedRewardTalentIds.Clear();
         ExcludedRewardAbilityIds.Clear();
+        CampaignRefereeAppearance.Reset();
         if (IsDefaultMode) return;
         try
         {
@@ -450,6 +451,7 @@ public class Plugin : BasePlugin
                 // strict sequence as Studio before enabling any campaign data;
                 // invalid/empty values must not silently invent a third map.
                 ActSequence = CampaignActSequence.Read(new CampaignDocument(File.ReadAllText(ConfigPath)));
+                CampaignRefereeAppearance.Configure(new CampaignDocument(File.ReadAllText(ConfigPath)));
                 Log.LogInfo($"[Config] Act Sequence: [{string.Join(", ", ActSequence)}] ({TotalMaps} maps)");
                 ParseKvFile(ConfigPath, (key, val) =>
                 {
@@ -3736,6 +3738,7 @@ public static class PatchNewRunStart
         try
         {
             // This hook is TitleScreen.NewRun only; Continue never resets counters.
+            PlayerContractRuntime.CancelStarting();
             Plugin.ResetProgressForNewRun();
             CustomMapLayout.ResetForNewRun();
             Plugin.DraftPoolApplied = false;
@@ -4924,6 +4927,7 @@ public static class PatchSuperstarPool
                     else PatchPlayerTeamInit.ApplyConfigToForward(clone, cfg, applyName: true);
                 }
                 __result[i] = clone;
+                PlayerContractRuntime.StartingCandidate(squad, clone);
                 if (cfg != null)
                 {
                     Plugin.Log.LogInfo($"[Superstar] Slot {i} → '{cfg.Name}' (cycled {i % N + 1}/{N})");
@@ -4993,6 +4997,7 @@ public static class PatchInstantiateStartingTeam
         try
         {
             if (__result == null) return;
+            PlayerContractRuntime.StartingTeam(__0, __result);
             string squadId = "";
             try { squadId = __0?.id ?? ""; } catch { }
             bool isCustom = squadId.StartsWith("Custom_", StringComparison.Ordinal);
@@ -6930,6 +6935,7 @@ public static class PatchBossLaunchMatch
     internal static void ApplyPlayerConfig(ForwardData f, PlayerConfig pc, UniformConfig uniform)
     {
         if (f == null || pc == null) return;
+        PlayerContractRuntime.Bind(f, pc);
         if (uniform == null) uniform = new UniformConfig();
 
         try
@@ -9092,6 +9098,7 @@ public static class PatchPlayerTeamInit
                     PatchBossLaunchMatch.ApplyPlayerLookOnly(forward, pc);
                     continue;
                 }
+                PlayerContractRuntime.Bind(forward, pc);
                 // Skip slots with no real data — LoadPlayersFolder leaves
                 // untouched slots at their default empty PlayerConfig.
                 bool hasAny = !string.IsNullOrEmpty(pc.Name) || !string.IsNullOrEmpty(pc.ImportPlayer)
@@ -9478,6 +9485,7 @@ public static class PatchPlayerTeamInit
 
     internal static void ApplyConfigToForward(ForwardData f, PlayerConfig pc, bool applyName = false)
     {
+        PlayerContractRuntime.Bind(f, pc);
         // NAME: applied only when applyName=true (bench rename + signed free
         // agents). The match key (draft_pool filename / FA templateFullName)
         // stays the vanilla name, so renaming the ForwardData's display name

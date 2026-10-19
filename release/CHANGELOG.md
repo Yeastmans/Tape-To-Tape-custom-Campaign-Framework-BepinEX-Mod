@@ -1,5 +1,22 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 16 — 2026-10-18
+
+Set contract durations for individual skaters, choose referee heads per campaign, and identify community campaigns with readable names, descriptions and custom PNG icons.
+
+- **Player editor → Details & attributes → Custom contract duration**: enable it for any skater and choose a positive whole number of matches played. It works for starting players, selected bench players, superstars and future recruits, including non-GM campaigns. Off uses normal game rules; matches spent on the bench do not count.
+- Contract changes affect **new runs and future recruits only**. Existing signed players retain their saved duration and progress. Recruitment offers display the duration they will sign with. Native effects that prevent departures still apply, and two-line squads preserve vacancies and surviving positions.
+- **Campaign → Game options → Referee head**: choose a native or installed custom skater head independently for each campaign. **Game default** restores the normal choice. Saving and sharing preserve the selection.
+- The community browser displays readable campaign names. Selecting a campaign shows its title, author, icon and multiline description in the sidebar.
+- **Upload campaign** includes **Choose PNG…**, preview and **Remove**. Custom PNG files are the only accepted icons. Studio preserves transparency, proportions and the original image; the icon is optional.
+- Existing uploads retain their ZIP identities and ownership controls. Older entries use readable names and placeholders where metadata was never supplied. Replacing a ZIP preserves its description and icon. The matching metadata backend has been deployed and verified.
+
+Includes revision 15's recruit-ability setting and targets Steam roguelite build **26020247**.
+
+Validation: focused editor, sharing, PNG, backend, contract lifecycle, recruitment and two-line regression checks passed. Native contract bodies and save consumers were reviewed on the exact supported game build. The final installer and copied-fixture upgrade are verified before publication. **Human gameplay acceptance remains pending**, including contract counting/departures and referee rendering.
+
+Save Studio edits and close the game before installing **T2T_Custom_Campaign_Framework_Setup.exe**, or use Studio's **Check for updates**. The [contract guide](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/blob/main/docs/PLAYER-CONTRACTS.md) includes the gameplay checks for bench matches, Continue, future recruitment and both lines.
+
 ## Beta 1.0 revision 15 — 2026-10-18
 
 Adds a per-campaign setting to stop new free-agent offers receiving abilities such as YoYo and Yeet.

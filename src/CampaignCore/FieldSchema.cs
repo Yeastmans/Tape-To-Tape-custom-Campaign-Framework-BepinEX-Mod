@@ -10,6 +10,7 @@ public enum FieldKind { Text, Color, Choice, Boolean, Number, Multiple }
 /// <summary>Legacy file semantics shared by the editor, export and runtime catalog.</summary>
 public static class FieldSchema
 {
+    public const string RefereeHeadKey = "Referee Head";
     public static readonly string[] Sizes = { "ExtraSmall", "Small", "Medium", "Big", "ExtraBig", "ExtraExtraBig" };
     public static readonly string[] Stats = { "Speed", "Shot Power", "Accuracy", "Checking", "Skill", "Catching", "Glove", "Blocker", "Five Hole", "Standing Speed", "Stand Speed", "Butterfly Speed", "Control", "Recovery", "Pass Power", "Poke Check", "Pokecheck", "Depth" };
     public static readonly string[] TeamColors = { "Jersey Primary", "Jersey Secondary", "Jersey Accent", "Away Primary", "Away Secondary", "Away Accent", "Number Color Home", "Number Color Away" };
@@ -60,11 +61,13 @@ public static class FieldSchema
         if (key.Equals(SquadPlayerPools.ModeKey, StringComparison.OrdinalIgnoreCase)) return FieldKind.Boolean;
         if (Has(PlayerKitColors.ModeKeys, key)) return FieldKind.Boolean;
         if (key.Equals(PlayerBrawlOptions.PrinceKey, StringComparison.OrdinalIgnoreCase)) return FieldKind.Boolean;
+        if (key.Equals(PlayerContractOptions.EnabledKey, StringComparison.OrdinalIgnoreCase)) return FieldKind.Boolean;
+        if (key.Equals(PlayerContractOptions.MatchesKey, StringComparison.OrdinalIgnoreCase)) return FieldKind.Number;
         if (Has(RelicOpponentInteractions.All.Select(i => i.SettingKey), key)) return FieldKind.Choice;
         if (key.Equals("Skin Color", StringComparison.OrdinalIgnoreCase) || key.Equals("Size", StringComparison.OrdinalIgnoreCase)
             || key.Equals("Number Style", StringComparison.OrdinalIgnoreCase)) return FieldKind.Choice;
         if (key.IndexOf("Color", StringComparison.OrdinalIgnoreCase) >= 0 || Has(TeamColors, key) || key.StartsWith("Transition ", StringComparison.OrdinalIgnoreCase)) return FieldKind.Color;
-        if (Has(SkaterAssets.Concat(GoalieAssets), key) || Has(new[] { "Ability", "Squad Template", "Logo From", "Position" }, key)) return FieldKind.Choice;
+        if (Has(SkaterAssets.Concat(GoalieAssets), key) || Has(new[] { "Ability", "Squad Template", "Logo From", "Position", RefereeHeadKey }, key)) return FieldKind.Choice;
         if (Has(new[] { "Talents", "Goalie Talents", "Team Talents", "Team Relics", "Relics", "Random Pool", "Team Random Pool" }, key)) return FieldKind.Multiple;
         if (Has(new[] { "Left Handed", "Replace Challenges", "Replace Soccer Ball", "Replace Golf Ball", "Use Player Teams", "No Bench Bonus", "Disable Bench Bonus", "Golf Fairway", "Tycoons Sponsors", "Canada Curses" }, key)
             || Has(new[] { "yes", "no", "true", "false" }, value)) return FieldKind.Boolean;

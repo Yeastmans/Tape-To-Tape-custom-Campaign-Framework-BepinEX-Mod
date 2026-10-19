@@ -15,14 +15,20 @@ public sealed partial class MainWindow
 
     private async Task ShowCampaignImport()
     {
-        var dialog = new Window { Title = "Import campaign", Width = 640, Height = 600, MinWidth = 520, MinHeight = 460, WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = Background };
+        var dialog = new Window { Title = "Import campaign", Width = 1000, Height = 680, MinWidth = 760, MinHeight = 500, WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = Background };
         var feedback = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = StudioTheme.Muted };
+        using var details = new CommunityCampaignDetails();
         var list = new ListBox { Name = "CommunityCampaigns", Background = StudioTheme.Input, MinHeight = 200,
             ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<CampaignSharing.CommunityItem>((item, _) => item == null ? new TextBlock() : new Grid {
-                ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = StudioTheme.SpaceMd, Children = {
+                RowDefinitions = new RowDefinitions("Auto,Auto"), RowSpacing = 4, Children = {
                     new TextBlock { Text = item.Name, TextTrimming = TextTrimming.CharacterEllipsis },
-                    WithColumn(new TextBlock { Text = FormatSize(item.Size) + (item.Modified.Length >= 10 ? " · " + item.Modified[..10] : ""), Foreground = StudioTheme.Muted, FontSize = 12, VerticalAlignment = VerticalAlignment.Center }, 1)
+                    WithRow(new TextBlock { Text = FormatSize(item.Size) + (item.Modified.Length >= 10 ? " · " + item.Modified[..10] : ""), Foreground = StudioTheme.Muted, FontSize = 12 }, 1)
                 } }) };
+        list.SelectionChanged += (_, _) =>
+        {
+            var item = list.SelectedItem as CampaignSharing.CommunityItem;
+            details.Show(item?.Name, item?.Presentation);
+        };
         bool busy = false;
         async Task Install(string zip, string? cleanup = null)
         {
@@ -63,7 +69,10 @@ public sealed partial class MainWindow
             try
             {
                 var items = await CampaignSharing.ListAsync();
+                string? selectedPath = (list.SelectedItem as CampaignSharing.CommunityItem)?.Path;
                 list.ItemsSource = items.OrderByDescending(i => i.Modified).ToList();
+                list.SelectedItem = items.FirstOrDefault(i => i.Path == selectedPath);
+                if (list.SelectedItem == null) details.Show(null, null);
                 feedback.Text = items.Count == 0 ? "No community campaigns yet. Upload yours to be the first." : $"{items.Count} community {(items.Count == 1 ? "campaign" : "campaigns")}.";
             }
             catch (Exception ex) { feedback.Text = "Couldn't load community campaigns: " + ex.Message; feedback.Foreground = SharingWarn; }
@@ -87,7 +96,8 @@ public sealed partial class MainWindow
         layout.Children.Add(WithRow(new TextBlock { Text = "Install a campaign zip from your computer, or download one shared by the community.", Foreground = StudioTheme.Muted, TextWrapping = TextWrapping.Wrap }, 1));
         layout.Children.Add(WithRow(fromFile, 2));
         layout.Children.Add(WithRow(new TextBlock { Text = "Community campaigns", FontSize = 20, FontWeight = FontWeight.SemiBold, Margin = new Thickness(0, StudioTheme.SpaceSm, 0, 0) }, 3));
-        layout.Children.Add(WithRow(list, 4));
+        layout.Children.Add(WithRow(new Grid { ColumnDefinitions = new("3*,2*"), ColumnSpacing = StudioTheme.SpaceLg,
+            Children = { list, WithColumn(details, 1) } }, 4));
         layout.Children.Add(WithRow(communityActions, 5));
         layout.Children.Add(WithRow(feedback, 6));
         var close = Button("Close", () => dialog.Close()); close.HorizontalAlignment = HorizontalAlignment.Right;
@@ -116,12 +126,21 @@ public sealed partial class MainWindow
     private async Task ShowCampaignUpload()
     {
         var campaignsList = CampaignChoices();
-        var dialog = new Window { Title = "Upload campaign", Width = 560, Height = 500, MinWidth = 480, MinHeight = 440, WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = Background };
+        var dialog = new Window { Title = "Upload campaign", Width = 620, Height = 740, MinWidth = 480, MinHeight = 440, WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = Background };
         var picker = new ComboBox { Name = "UploadCampaignPicker", ItemsSource = campaignsList, HorizontalAlignment = HorizontalAlignment.Stretch, PlaceholderText = "Choose a campaign" };
         if (campaigns.SelectedItem is string current) picker.SelectedItem = campaignsList.FirstOrDefault(c => c.Label == current);
         picker.SelectedItem ??= campaignsList.FirstOrDefault();
         var author = new TextBox { Name = "UploadAuthor", Watermark = "Your name or handle", MaxLength = 60 };
-        var description = new TextBox { Name = "UploadDescription", Watermark = "One-line description (optional)", MaxLength = 200 };
+        var description = new TextBox { Name = "UploadDescription", Watermark = "Tell players about this campaign (optional)", MaxLength = 2000,
+            AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 96 };
+        using var iconPicker = new CommunityIconPicker(async () =>
+        {
+            var picked = await dialog.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {
+                Title = "Choose your campaign icon", AllowMultiple = false,
+                FileTypeFilter = [new FilePickerFileType("PNG image") { Patterns = ["*.png"], MimeTypes = ["image/png"] }]
+            });
+            return picked.FirstOrDefault()?.TryGetLocalPath();
+        });
         var feedback = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = StudioTheme.Muted,
             Text = "Uploads are public. Studio automatically saves your management code in AppData so you can replace or delete the Dropbox copy later under Manage uploads." };
         bool busy = false;
@@ -129,35 +148,48 @@ public sealed partial class MainWindow
         Button upload = null!;
         upload = Button("Upload", async () =>
         {
-            if (busy) return;
+            if (busy || iconPicker.IsBusy) return;
             if (picker.SelectedItem is not ContentChoice campaign) { feedback.Text = "Choose a campaign to upload."; feedback.Foreground = SharingWarn; return; }
             string name = string.IsNullOrWhiteSpace(author.Text) ? "Anonymous" : author.Text.Trim();
+            string uploadDescription = description.Text?.Trim() ?? "", uploadIcon = iconPicker.Icon;
             busy = true; feedback.Foreground = StudioTheme.Muted; feedback.Text = "Zipping " + campaign.Label + "…";
             upload.IsEnabled = false; cancel.IsEnabled = false;
+            picker.IsEnabled = author.IsEnabled = description.IsEnabled = iconPicker.IsEnabled = false;
             string zip = Path.Combine(Path.GetTempPath(), "t2t_" + Guid.NewGuid().ToString("N") + ".zip");
             try
             {
                 var assets = await Task.Run(() => CampaignSharing.Zip(campaign.Path, zip, root));
                 feedback.Text = $"Uploading {FormatSize(new FileInfo(zip).Length)} with {assets.Logos} logos and {assets.Heads} custom heads…";
                 var progress = new Progress<double>(percent => feedback.Text = $"Uploading {campaign.Label}: {percent:0}%…");
-                string path = await CampaignSharing.UploadAsync(zip, campaign.Label + " - " + name, name, description.Text?.Trim() ?? "", campaign.Label, progress);
-                feedback.Text = $"Uploaded {campaign.Label}. It's now in the community list" + (path.Length > 0 ? " as " + path + "." : ".");
-                feedback.Foreground = Brush.Parse("#70DEA2"); upload.IsVisible = false; cancel.Content = "Close";
+                var posted = await CampaignSharing.UploadAsync(zip, campaign.Label + " - " + name, name, uploadDescription, campaign.Label, progress, uploadIcon);
+                feedback.Text = $"Uploaded {campaign.Label}. It's now in the community list." +
+                    (posted.MetadataWarning.Length > 0 ? " " + posted.MetadataWarning : "");
+                feedback.Foreground = posted.MetadataWarning.Length > 0 ? SharingWarn : Brush.Parse("#70DEA2"); upload.IsVisible = false; cancel.Content = "Close";
             }
             catch (Exception ex) { feedback.Text = "Upload could not be confirmed: " + ex.Message + " Check Manage uploads before retrying; your access code is kept if one was reserved."; feedback.Foreground = SharingWarn; }
-            finally { busy = false; upload.IsEnabled = true; cancel.IsEnabled = true; if (File.Exists(zip)) File.Delete(zip); }
+            finally
+            {
+                busy = false; upload.IsEnabled = true; cancel.IsEnabled = true;
+                picker.IsEnabled = author.IsEnabled = description.IsEnabled = iconPicker.IsEnabled = upload.IsVisible;
+                if (File.Exists(zip)) File.Delete(zip);
+            }
         });
         upload.Name = "UploadCampaignConfirm"; StudioTheme.Primary(upload);
-        dialog.Content = new ScrollViewer { Content = new StackPanel { Margin = new Thickness(24), Spacing = StudioTheme.SpaceMd, Children = {
+        iconPicker.BusyChanged += () => { upload.IsEnabled = cancel.IsEnabled = !iconPicker.IsBusy && !busy; };
+        var form = new StackPanel { Spacing = StudioTheme.SpaceMd, Children = {
             new TextBlock { Text = "Upload campaign", FontSize = 26, FontWeight = FontWeight.Bold },
             new TextBlock { Text = "Share a campaign with the community. Its custom logos and referenced custom head projects are included.", Foreground = StudioTheme.Muted, TextWrapping = TextWrapping.Wrap },
             new TextBlock { Text = "Campaign" }, picker,
             new TextBlock { Text = "Your name" }, author,
             new TextBlock { Text = "Description" }, description,
-            feedback,
-            new StackPanel { Orientation = Orientation.Horizontal, Spacing = StudioTheme.SpaceMd, HorizontalAlignment = HorizontalAlignment.Right, Children = { cancel, upload } }
-        } } };
-        dialog.Closing += (_, e) => { if (busy) e.Cancel = true; };
+            iconPicker
+        } };
+        dialog.Content = new Grid { Margin = new Thickness(24), RowDefinitions = new("*,Auto,Auto"), RowSpacing = StudioTheme.SpaceMd, Children = {
+            new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Content = form },
+            WithRow(feedback, 1),
+            WithRow(new StackPanel { Orientation = Orientation.Horizontal, Spacing = StudioTheme.SpaceMd, HorizontalAlignment = HorizontalAlignment.Right, Children = { cancel, upload } }, 2)
+        } };
+        dialog.Closing += (_, e) => { if (busy || iconPicker.IsBusy) e.Cancel = true; };
         await dialog.ShowDialog(this);
     }
 

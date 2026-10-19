@@ -22,7 +22,7 @@ internal static partial class CampaignSharing
     private static readonly string[] SkipFolders = [LogoBundle, HeadBundle, "map_backups", "_removed_opponents", "custom_reward_progress"];
     private static readonly HttpClient http = CreateClient();
 
-    internal sealed record CommunityItem(string Name, string Path, long Size, string Modified);
+    internal sealed record CommunityItem(string Name, string Path, long Size, string Modified, CommunityPresentation? Presentation = null);
     internal sealed record InstallResult(string Folder, int LogosCopied, int LogosKept, int HeadsCopied, int HeadsKept);
     internal sealed record PackageResult(int Logos, int Heads);
 
@@ -171,9 +171,13 @@ internal static partial class CampaignSharing
         var items = new List<CommunityItem>();
         if (rootElement.TryGetProperty("items", out var list))
             foreach (var item in list.EnumerateArray())
-                items.Add(new CommunityItem(item.GetProperty("name").GetString() ?? "", item.GetProperty("path").GetString() ?? "",
+            {
+                string storedName = item.GetProperty("name").GetString() ?? "";
+                var presentation = CommunityPresentation.Parse(item, storedName);
+                items.Add(new CommunityItem(presentation.DisplayName, item.GetProperty("path").GetString() ?? "",
                     item.TryGetProperty("size", out var size) && size.TryGetInt64(out long bytes) ? bytes : 0,
-                    item.TryGetProperty("modified", out var modified) ? modified.GetString() ?? "" : ""));
+                    item.TryGetProperty("modified", out var modified) ? modified.GetString() ?? "" : "", presentation));
+            }
         return items;
     }
 
@@ -190,6 +194,7 @@ internal static partial class CampaignSharing
         new CommunityOwnershipStore(Path.Combine(UserContentPaths.Root, "community-ownership.json")));
 
     /// <summary>Uploads a campaign and saves management access before sending its bytes.</summary>
-    internal static async Task<string> UploadAsync(string zipPath, string displayName, string author, string description, string campaignName, IProgress<double>? progress = null)
-        => (await Community.UploadAsync(zipPath, displayName, progress)).Path;
+    internal static async Task<CommunityCampaignPost> UploadAsync(string zipPath, string displayName, string author, string description, string campaignName, IProgress<double>? progress = null, string icon = "")
+        => await Community.UploadAsync(zipPath, displayName, progress,
+            metadata: new CommunityPresentation(campaignName, author, description, icon, displayName));
 }

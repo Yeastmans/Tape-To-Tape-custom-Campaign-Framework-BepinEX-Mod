@@ -58,10 +58,11 @@ public sealed partial class MainWindow
                 if (file == null) return;
                 CampaignSharing.TopFolder(file);
                 var progress = new Progress<double>(value => feedback.Text = $"Replacing {selected.Post.Name}: {value:0}%…");
-                await CampaignSharing.Community.UploadAsync(file, selected.Ownership.Name, progress, selected);
+                var posted = await CampaignSharing.Community.UploadAsync(file, selected.Ownership.Name, progress, selected);
                 await Refresh(false);
-                feedback.Text = "Updated the posted campaign. The new ZIP is now available from the community list.";
-                feedback.Foreground = Brush.Parse("#70DEA2");
+                feedback.Text = "Updated the posted campaign. The new ZIP is now available from the community list." +
+                    (posted.MetadataWarning.Length > 0 ? " " + posted.MetadataWarning : "");
+                feedback.Foreground = posted.MetadataWarning.Length > 0 ? SharingWarn : Brush.Parse("#70DEA2");
             });
         });
         replace.Name = "ReplaceCommunityCampaign"; StudioTheme.Primary(replace);

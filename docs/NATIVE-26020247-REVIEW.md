@@ -106,3 +106,15 @@ reset for this repair. Human acceptance must repeat entry into Winnipeg from the
 existing run, then check match completion and return to the map. Recovery and boost
 effects also need observed gameplay. Static ABI review, compilation and copied-file
 update checks do not establish performance or every reward's runtime behavior.
+
+## Revision 16 per-skater contracts
+
+The same game and metadata fingerprints were rechecked for the new contract feature. Nine additional method bodies are now protected by compatibility baseline `C00990D6D9A263A669889A6DFCB4CF4D02ACC57F3DEB0F42DBADBA679DB1DD4D`. Every prior method contract, native address, comparison site and squad query remains unchanged.
+
+The new Harmony hook is `CampaignState.ResetRunData(): void`, a unique reference-instance method with no value-type parameters or return value. It marks the actual new run; the existing `ApplyNewRunStartEffects` postfix consumes that marker once after starting selections. Deserialization cancels it. Starting clones retain their source IDs; candidate matching is limited to the selected squad, while recruitment uses the exact source template and offered clone already available in `CreatePlayerChoice`.
+
+`FreeAgentManager.OnCampaignMatchEnded` gates on Rogue game type and calls `HasForwardPlayedThisMatch(id)` before `FreeAgent.AddMatch`. `MaxGamesCondition` owns the integer `maxMatches` and `matches` fields. These native conditions stay in `RunData.freeAgents`; the native serializer/deserializer retain them. The departure method matches roster IDs and honors Handcuffs; its Angus exclusion exists in automatic registration, not in explicit contract expiry. Thus an opted-in starting skater can use a finite contract without changing the normal registration rule for other players.
+
+The existing GM callback places the offered skater, then registers GM conditions when enabled. The adapter preserves that callback and applies the authored condition only after verifying that the exact offered clone joined the same run's team. Offer display and signing share the captured duration. The native `EventChoice` is a value type, so card writes use the existing unboxed-list helper. No new match-end countdown or save format was added.
+
+Fresh native evidence and method-body exports are under `artifacts/player-contracts-20261018/native-evidence-v6`; the original baseline/profile are retained beside `added-native-contracts.json`. Native gameplay acceptance remains pending; see [the contract validation guide](PLAYER-CONTRACTS.md).

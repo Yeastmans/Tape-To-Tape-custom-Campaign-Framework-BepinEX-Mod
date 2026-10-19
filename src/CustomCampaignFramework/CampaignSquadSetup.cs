@@ -98,6 +98,7 @@ internal static class CampaignSquadSetup
             player.id = doc.Get("Studio Base Pool Player").Length > 0 || doc.Get(VanillaCopyData.PlayerId).Length>0 ? source.id
                 : SelectedPlayerPool.PlayerId(dir, Path.GetFileName(file));
             ApplyFreshPlayerConfig(player, config);
+            PlayerContractRuntime.StartingCandidate(squad, player);
             pool.Add(player);
         }
         squad.m_CustomSwapPool = pool;

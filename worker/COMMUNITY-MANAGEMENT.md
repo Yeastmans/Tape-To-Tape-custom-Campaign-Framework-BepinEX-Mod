@@ -10,7 +10,7 @@ URLs, logs or screenshots. Deleting the Dropbox copy does not delete local files
 
 The worker at `https://t2tcampaings.shaespring14.workers.dev` is deployed as version
 `52aa7134-c402-4ab9-96b7-477cf22e646d` with management enabled. Downloaded production
-source exactly matches `t2t-campaigns-worker.js`, SHA-256
+source matched the then-current `t2t-campaigns-worker.js`, SHA-256
 `6A1ACEE550F0AAF2ADA6D6D97C7B8049AA09237AB1888D91597D1E129EBBBB23`.
 The existing settings and three Dropbox secrets were preserved. Separate management
 and administrator secrets are encrypted in Cloudflare, with a Windows DPAPI backup
@@ -22,6 +22,24 @@ uploaded, replaced or deleted by deployment verification. The matching Studio
 interface is prepared for revision 12; human feature acceptance remains pending.
 See `../HANDOFF_COMMUNITY_MANAGEMENT_2026-10-17.md` and the local evidence under
 `artifacts/community-management-20261017/deployment/`.
+
+## Campaign details deployment — 2026-10-18
+
+Version `df46b418-7ae7-4a5a-84cb-1684db46e6c5` adds readable campaign titles,
+descriptions and icons. Downloaded production source is byte-identical to the
+reviewed source, SHA-256
+`8B485F5AA09E8A94D0BD8FE3F6447DD8AB41E55C01BE9741843CD76757A91F32`.
+Health advertises `campaignMetadata: true`. Existing runtime settings, routes and
+all five encrypted secret bindings were preserved. The three existing public
+ZIPs retained their IDs, paths, revisions, sizes and content hashes. Verification
+sent no upload, replacement or deletion requests. Receipts are under
+`artifacts/referee-community-20261018/deployment/` in the development workspace.
+
+Studio revision 16 accepts uploader-selected **PNG files only**, shows a preview
+and remove control, and sends a bounded thumbnail with the description. It
+preserves the original PNG, its proportions and transparency. Icons are optional;
+Studio does not automatically select a team logo. Local client/browser and
+simulated-storage checks cover this flow; a human end-to-end upload remains pending.
 
 ## Worker setup
 
@@ -59,8 +77,13 @@ are sent in the `X-Campaign-Manage` header, never a URL. JSON responses use
 3. `/upload/chunk?offset=0`, with `X-Campaign-Upload: <ticket>` and raw bytes,
    returns the acknowledged offset. No management code is needed for a chunk.
 4. `/upload/finish` requires both the upload ticket and management header for
-   managed uploads. The response is `{ ok, id, name, path, rev, size, modified,
-   contentHash }`. Only successful commit makes the ZIP public.
+   managed uploads. An absent or zero-byte request body remains supported. A new
+   client may send `{ "metadata": { "displayName": "Campaign - Author",
+   "campaignName": "Campaign", "author": "Author", "description": "About this
+   campaign", "icon": "data:image/png;base64,..." } }`. The public response is
+   `{ ok, id, name, campaignName, author, description, icon, path, rev, size,
+   modified, contentHash }`, with metadata status fields described below. Only a
+   successful ZIP commit makes the ZIP public.
 5. `/manage/status`, with management header, returns
    `{ ok, exists: true, path, item }`, where item contains the public fields above
    without `ok`. Before first upload or after deletion it returns
@@ -79,6 +102,52 @@ are sent in the `X-Campaign-Manage` header, never a URL. JSON responses use
 including `id`, `rev`, `contentHash` and existing metadata fields. It never returns
 management codes. Downloads accept only those public ZIP paths; folders, private
 subdirectories, arbitrary IDs and traversal paths are rejected.
+
+## Public campaign presentation
+
+Clients check `/health` for `campaignMetadata: true` before uploading presentation
+metadata. The field is independent of `campaignManagement`, which must also be
+enabled for managed uploads. Metadata is supplied only to `/upload/finish`; icons
+and descriptions are never embedded in management codes or upload tickets.
+
+The supported text limits are 240 characters for `displayName`, 160 for
+`campaignName`, 60 for `author`, and 2,000 for `description`. Newlines are allowed
+in descriptions. An icon is empty or a strict `data:image/png;base64,` string of
+at most **350,000 characters**, with PNG signature and IHDR dimensions from 1 to
+512 pixels in each direction. Input is bounded before parsing and validated
+before the ZIP is committed. The request cap accommodates JSON unicode escapes;
+stored sidecar reads have a smaller 384 KiB bound.
+
+Omitting the metadata object preserves existing metadata during replacement.
+Providing it replaces the complete presentation: missing string fields become
+empty. Empty display names fall back to the readable storage name; empty campaign
+names fall back to the display name. Old public entries get readable names by
+removing only the recognized managed UUID, storage timestamp and `.zip` suffix.
+Their exact download paths, IDs, revisions, sizes and content hashes are retained.
+Descriptions previously discarded by older clients are not recoverable from the
+service. Existing posts have no icon or description until a metadata upload.
+
+Presentation is stored in Dropbox at `/.campaign-metadata/<SHA-256(file.id)>.json`.
+This namespace is excluded from public listing and direct download; only validated,
+whitelisted presentation fields are included in public campaign records. No
+management credential enters a sidecar. Metadata follows the stable ZIP file ID,
+so replacing a ZIP keeps its presentation and a different file at an old path
+cannot inherit it. Sidecars for deleted ZIPs are inert and are not automatically
+deleted in this update. Optional metadata read failures fall back to a readable
+title rather than failing an entire listing. Preview reads run at most four at a
+time and share one OAuth token within that listing.
+
+ZIP and sidecar are separate atomic Dropbox writes. After committing the ZIP,
+the worker snapshots the sidecar revision, verifies that the ZIP still has the
+just-committed revision, and conditionally adds or updates the sidecar. A stale
+finish cannot overwrite newer metadata. Failed conditional writes are not retried
+blindly. Successful persistence returns `metadataSaved: true`. A post-commit
+failure returns **`ok: true, metadataSaved: false, metadataWarning: "..."`**, along
+with the exact identity of the ZIP that committed. Clients must display this
+warning rather than report the ZIP upload as failed or automatically publish a
+second copy. A rejected write leaves the preceding sidecar intact; a lost write
+response can mean the old or the complete new sidecar exists. Refresh to resolve
+that uncertainty. Metadata is validated again when read from storage.
 
 Authorization errors return 403, malformed inputs 400, missing posts 404,
 revision conflicts 409, missing management configuration 503, and upstream
@@ -134,6 +203,10 @@ The test harness runs the actual Worker and HMAC code with only Dropbox HTTP
 replaced by an in-memory fixture. It never accesses real Dropbox. It covers
 ownership, lost responses, revision races, replacement preservation, deletion,
 legacy assignment, privacy filtering, pagination and old-client compatibility.
+The current suite contains 32 worker/helper checks, including readable legacy
+names, presentation round trips, exact field/icon limits, metadata preservation,
+partial success, delayed writes, lost metadata responses, poisoned metadata,
+bounded concurrent reads, bounded error bodies and JSON escaping at the limit.
 The helper tests write only temporary files and use a local request substitute.
 The preserved pre-change Worker and initial failing test output are in
 `tests/CommunityWorkerChecks/evidence/`. Live deployment and real ZIP replacement

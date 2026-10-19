@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace CampaignCreator;
 
 internal sealed record CommunityCampaignPost(string Name, string Path, long Size, string Modified,
-    string Id, string Revision, string ContentHash);
+    string Id, string Revision, string ContentHash, CommunityPresentation? Presentation = null, string MetadataWarning = "");
 internal sealed record ManagedCampaign(CommunityOwnership Ownership, CommunityCampaignPost? Post, string AccessError = "")
 {
     public override string ToString() => (Post?.Name ?? Ownership.Name) + (Post == null ? " (not posted)" : "");
@@ -39,15 +39,24 @@ internal sealed class CommunityCampaignClient(HttpClient http, string workerUrl,
     }
 
     private static string Text(JsonElement item, string field) => item.TryGetProperty(field, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : "";
-    private static CommunityCampaignPost ReadPost(JsonElement item) => new(Text(item, "name"), Text(item, "path"),
-        item.TryGetProperty("size", out var size) && size.TryGetInt64(out long bytes) ? bytes : 0,
-        Text(item, "modified"), Text(item, "id"), Text(item, "rev"), Text(item, "contentHash"));
+    private static CommunityCampaignPost ReadPost(JsonElement item)
+    {
+        var presentation = CommunityPresentation.Parse(item, Text(item, "name"));
+        string warning = Text(item, "metadataWarning");
+        if (warning.Length == 0 && item.TryGetProperty("metadataSaved", out var saved) && saved.ValueKind == JsonValueKind.False)
+            warning = "The campaign ZIP was uploaded, but its description and icon could not be saved.";
+        return new(presentation.DisplayName, Text(item, "path"),
+            item.TryGetProperty("size", out var size) && size.TryGetInt64(out long bytes) ? bytes : 0,
+            Text(item, "modified"), Text(item, "id"), Text(item, "rev"), Text(item, "contentHash"), presentation, warning);
+    }
 
-    private async Task EnsureManagementAsync()
+    private async Task EnsureManagementAsync(bool requireMetadata = false)
     {
         using var health = await SendAsync("/health");
         if (!health.RootElement.TryGetProperty("campaignManagement", out var supported) || supported.ValueKind != JsonValueKind.True)
             throw new InvalidOperationException("The community service needs its campaign-management update before you can upload, replace or delete campaigns.");
+        if (requireMetadata && (!health.RootElement.TryGetProperty("campaignMetadata", out var metadata) || metadata.ValueKind != JsonValueKind.True))
+            throw new InvalidOperationException("The community service needs its campaign-details update before you can upload campaign descriptions and icons.");
     }
 
     internal async Task<IReadOnlyList<ManagedCampaign>> OwnedAsync()
@@ -95,12 +104,14 @@ internal sealed class CommunityCampaignClient(HttpClient http, string workerUrl,
         return saved;
     }
 
-    internal async Task<CommunityCampaignPost> UploadAsync(string zipPath, string name, IProgress<double>? progress = null, ManagedCampaign? replacement = null)
+    internal async Task<CommunityCampaignPost> UploadAsync(string zipPath, string name, IProgress<double>? progress = null, ManagedCampaign? replacement = null,
+        CommunityPresentation? metadata = null)
     {
+        metadata = metadata?.ValidateForUpload(name); // Reject invalid details before reserving ownership or uploading bytes.
         await using var stream = File.OpenRead(zipPath);
         if (stream.Length <= 0 || stream.Length > MaximumBytes) throw new InvalidOperationException("Campaign ZIPs must be between 1 byte and 512 MB.");
         ownership.Load(); // Validate persistence before reserving an upload.
-        await EnsureManagementAsync();
+        await EnsureManagementAsync(metadata != null);
         CommunityOwnership saved;
         if (replacement == null)
         {
@@ -143,6 +154,7 @@ internal sealed class CommunityCampaignClient(HttpClient http, string workerUrl,
         using var finishRequest = new HttpRequestMessage(HttpMethod.Post, workerUrl + "/upload/finish");
         finishRequest.Headers.Add("X-Campaign-Upload", ticket);
         finishRequest.Headers.Add("X-Campaign-Manage", saved.Code);
+        if (metadata != null) finishRequest.Content = JsonContent.Create(new { metadata });
         using var finishResponse = await http.SendAsync(finishRequest);
         using var finish = await ReadResponse(finishResponse);
         var posted = ReadPost(finish.RootElement);

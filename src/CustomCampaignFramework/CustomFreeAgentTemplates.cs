@@ -119,8 +119,11 @@ internal static class RandomFreeAgentTemplates
 internal static class SavedSquadFreeAgentTemplates
 {
     // The asynchronous LoadRunData prefix runs before the saved squad is known.
-    [HarmonyPrefix] private static void Prefix(RunDataModelV2 __1) =>
+    [HarmonyPrefix] private static void Prefix(RunDataModelV2 __1)
+    {
+        PlayerContractRuntime.CancelStarting();
         CustomFreeAgentTemplates.Ensure(Tape2Tape.CampaignUtil.CampaignState, SquadPoolRuntime.Team(__1?.squadId));
+    }
 }
 
 [HarmonyPatch(typeof(CampaignState), "LoadRunData")]

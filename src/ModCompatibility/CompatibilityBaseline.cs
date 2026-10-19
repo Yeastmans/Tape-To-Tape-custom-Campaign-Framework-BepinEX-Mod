@@ -84,6 +84,20 @@ public sealed class CompatibilityBaseline
             if (image.SharedMethodCount(method.Rva) != 1) throw new InvalidDataException("Shared recruitment stats target: " + name);
             protectedMethods.Add(image.Identity(method));
         }
+        // Authored skater durations use the native played-match counter and
+        // save format. Pin the fresh-run boundary, hire callback, expiry and
+        // persistence consumers before accepting a future game update.
+        foreach (string name in new[] { "State.CampaignState$$ResetRunData", "State.CampaignState$$ApplyNewRunStartEffects",
+            "State.CampaignState$$InstantiateStartingTeam", "Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent.<>c__DisplayClass#$$<CreatePlayerChoice>b__0",
+            "Rogue.FreeAgents.FreeAgentManager$$OnCampaignMatchEnded", "Rogue.FreeAgents.FreeAgentManager$$HandleFreeAgentsLeaving",
+            "Rogue.FreeAgents.FreeAgent$$AddMatch", "Rogue.FreeAgents.MaxGamesCondition$$Check",
+            "State.SerializerV2$$SerializeToModel::State.RunDataModelV2 SerializeToModel(Data.RunData input)",
+            "State.DeserializerV2$$DeserializeFromModel" })
+        {
+            var method = image.Resolve(name);
+            if (image.SharedMethodCount(method.Rva) != 1) throw new InvalidDataException("Shared player-contract target: " + name);
+            protectedMethods.Add(image.Identity(method));
+        }
         // Custom ability pools may return fewer cards than the native fallback
         // requests. Its bounded adapter mirrors this event's card construction
         // and selection callback, so changed native logic requires review.

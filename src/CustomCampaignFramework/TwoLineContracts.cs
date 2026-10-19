@@ -15,12 +15,28 @@ namespace EndlessMode;
 internal static class TwoLineContracts
 {
     internal static bool Applies(TeamData team)
+        => UsesTwoLines(team) && (SquadBehaviorRuntime.Enabled(Tape2Tape.CampaignUtil.CampaignState.runData.squadId, "gm_contracts", false)
+            || Tape2Tape.CampaignUtil.CampaignState.runData.freeAgents?.Count > 0 || HasVacancy(team));
+
+    internal static bool UsesTwoLines(TeamData team)
     {
         var run = Tape2Tape.CampaignUtil.CampaignState?.runData;
         return team != null && run?.teamData != null && team.Pointer == run.teamData.Pointer
             && team.lines?.Count == 2
-            && SquadBehaviorRuntime.Enabled(run.squadId, "two_lines", false)
-            && SquadBehaviorRuntime.Enabled(run.squadId, "gm_contracts", false);
+            && SquadBehaviorRuntime.Enabled(run.squadId, "two_lines", false);
+    }
+
+    private static bool HasVacancy(TeamData team)
+    {
+        for (int slot = 0; slot < 10; slot++)
+        {
+            string id = SlotId(team, slot);
+            bool present = false;
+            if (team.forwards != null) foreach (var player in team.forwards)
+                if (player != null && player.id == id) { present = true; break; }
+            if (!present) return true;
+        }
+        return false;
     }
 
     internal static string SlotId(TeamData team, int slot)
@@ -244,7 +260,9 @@ internal static class TwoLineContractExpiry
     [HarmonyPostfix] internal static void Postfix()
     {
         var team = Tape2Tape.CampaignUtil.CampaignState?.runData?.teamData;
-        if (TwoLineContracts.Applies(team)) TwoLineContracts.Reconcile(team);
+        // The final custom contract may just have been removed, so the roster
+        // shape (not the remaining contract count) controls expiry repair.
+        if (TwoLineContracts.UsesTwoLines(team)) TwoLineContracts.Reconcile(team);
     }
 }
 

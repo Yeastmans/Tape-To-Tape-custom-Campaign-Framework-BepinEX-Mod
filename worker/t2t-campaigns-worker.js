@@ -25,6 +25,10 @@ const MAX_CAMPAIGN_BYTES = 512 * 1024 * 1024;
 // when starting a session, so this also repairs already-released clients.
 const CHUNK_BYTES = 1024 * 1024;
 const MAX_CHUNK_BYTES = 8 * 1024 * 1024; // Existing sessions may still send 8 MiB.
+const MAX_ICON_CHARACTERS = 350000;
+const MAX_METADATA_BYTES = 384 * 1024;
+// JSON callers may encode each character as \uXXXX; the stored sidecar is compact.
+const MAX_PRESENTATION_REQUEST_BYTES = 6 * (MAX_ICON_CHARACTERS + 240 + 160 + 60 + 2000) + 4096;
 
 class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -37,15 +41,86 @@ function isManagedPath(path) {
   return typeof path === "string" && /^\/managed\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} - [^/\\\x00-\x1f]+\.zip$/i.test(path);
 }
 function isPublicPath(path) { return isLegacyPath(path) || isManagedPath(path); }
-function publicFile(file) {
-  return { id: file.id, name: file.name, path: file.path_display || file.path_lower, rev: file.rev,
+function displayName(file) {
+  let name = file.name || "";
+  if (isManagedPath(file.path_display || file.path_lower)) name = name.replace(/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12} - /i, "");
+  return name.replace(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z - /, "").replace(/\.zip$/i, "").trim() || "Campaign";
+}
+function publicFile(file, presentation) {
+  const name = presentation?.displayName || displayName(file);
+  return { id: file.id, name, campaignName: presentation?.campaignName || name,
+    author: presentation?.author || "", description: presentation?.description || "", icon: presentation?.icon || "",
+    path: file.path_display || file.path_lower, rev: file.rev,
     size: file.size, modified: file.server_modified || file.client_modified, contentHash: file.content_hash || "" };
 }
-async function inputJson(req) {
-  try { const value = JSON.parse(new TextDecoder().decode(await boundedBody(req, 16384)));
+function presentationInput(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) fail(400, "Campaign metadata must be an object.");
+  const text = (key, maximum) => {
+    if (value[key] === undefined) return "";
+    if (typeof value[key] !== "string" || value[key].length > maximum || /[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(value[key]))
+      fail(400, "Invalid campaign " + key + ".");
+    return value[key].trim();
+  };
+  const result = { displayName: text("displayName", 240), campaignName: text("campaignName", 160),
+    author: text("author", 60), description: text("description", 2000), icon: text("icon", MAX_ICON_CHARACTERS) };
+  if (result.icon) {
+    const match = /^data:image\/png;base64,([A-Za-z0-9+/]+={0,2})$/.exec(result.icon);
+    let bytes;
+    try { if (!match || match[1].length % 4 !== 0) throw new Error(); bytes = unbase64(match[1]); }
+    catch { fail(400, "Campaign icon must be a small PNG image."); }
+    if (bytes.length < 33 || ![137,80,78,71,13,10,26,10].every((v, i) => bytes[i] === v) ||
+      ![0,0,0,13,73,72,68,82].every((v, i) => bytes[i + 8] === v)) fail(400, "Campaign icon must be a PNG image.");
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength), width = view.getUint32(16), height = view.getUint32(20);
+    if (width < 1 || height < 1 || width > 512 || height > 512) fail(400, "Campaign icon must be no larger than 512 by 512 pixels.");
+  }
+  return result;
+}
+async function inputJson(req, maximum = 16384, allowEmpty = false) {
+  try {
+    const bytes = await boundedBody(req, maximum);
+    if (allowEmpty && bytes.length === 0) return {};
+    const value = JSON.parse(new TextDecoder().decode(bytes));
     if (value && typeof value === "object" && !Array.isArray(value)) return value;
   } catch { /* Public errors must not include submitted credentials. */ }
   fail(400, "Expected a small JSON object.");
+}
+async function presentationPath(id) {
+  const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(id)));
+  return "/.campaign-metadata/" + Array.from(hash, x => x.toString(16).padStart(2, "0")).join("") + ".json";
+}
+async function readPresentation(file, env, token) {
+  token ??= await getAccessToken(env);
+  const path = await presentationPath(file.id);
+  const response = await fetch("https://content.dropboxapi.com/2/files/download", { method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Dropbox-API-Arg": JSON.stringify({ path }), "User-Agent": UA } });
+  if (!response.ok) {
+    let error; try { error = JSON.parse(new TextDecoder().decode(await boundedBody(response, 16384))).error; } catch { /* generic failure below */ }
+    if (response.status === 409 && error?.[".tag"] === "path" && error.path?.[".tag"] === "not_found") return null;
+    fail(502, "Campaign details could not be read.");
+  }
+  const stored = JSON.parse(new TextDecoder().decode(await boundedBody(response, MAX_METADATA_BYTES)));
+  const details = JSON.parse(response.headers.get("Dropbox-API-Result") || "{}");
+  if (stored.v !== 1 || stored.id !== file.id || typeof details.rev !== "string" || !details.rev)
+    fail(502, "Campaign details could not be verified.");
+  return { path, revision: details.rev, presentation: presentationInput(stored.metadata) };
+}
+async function presentFile(file, env, token) {
+  try { return publicFile(file, (await readPresentation(file, env, token))?.presentation); }
+  catch { return publicFile(file); } // A missing/corrupt/unavailable preview never hides a public ZIP.
+}
+async function savePresentation(file, presentation, env) {
+  const token = await getAccessToken(env), prior = await readPresentation(file, env, token);
+  // Read the sidecar revision BEFORE checking the ZIP revision. Conditional write
+  // then prevents an older finish racing a newer finish from replacing its details.
+  const current = await metadata(env, file.id);
+  if (!current || current.id !== file.id || current.rev !== file.rev) fail(409, "Campaign changed while saving its details.");
+  const path = prior?.path || await presentationPath(file.id);
+  const response = await fetch("https://content.dropboxapi.com/2/files/upload", { method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/octet-stream", "User-Agent": UA,
+      "Dropbox-API-Arg": JSON.stringify({ path, mode: prior ? { ".tag": "update", update: prior.revision } : "add",
+        autorename: false, mute: true, strict_conflict: true }) },
+    body: JSON.stringify({ v: 1, id: file.id, zipRevision: file.rev, metadata: presentation }) });
+  if (!response.ok) fail(502, "Campaign details could not be saved.");
 }
 function requireRevision(value) {
   if (typeof value !== "string" || !/^[0-9a-f]{9,}$/i.test(value)) fail(400, "The current campaign revision is required. Refresh the community list.");
@@ -106,7 +181,7 @@ async function prepareManagement(req, env) {
 }
 async function managementStatus(req, env) {
   const capability = await readManagement(req, env), file = await managedFile(capability, env);
-  return json(file ? { ok: true, exists: true, path: file.path_display || file.path_lower, item: publicFile(file) } :
+  return json(file ? { ok: true, exists: true, path: file.path_display || file.path_lower, item: await presentFile(file, env) } :
     { ok: true, exists: false, path: capability.path || "" });
 }
 async function deleteManaged(req, env) {
@@ -132,7 +207,7 @@ async function claimLegacy(req, env) {
   if (!file) fail(404, "This campaign is no longer posted.");
   if (file[".tag"] !== "file" || !isLegacyPath(file.path_display || file.path_lower)) fail(400, "Select one legacy campaign ZIP.");
   const managementCode = await signManagement({ v: 1, type: "legacy", id: file.id }, env);
-  return json({ ok: true, managementCode, ...publicFile(file) });
+  return json({ ok: true, managementCode, ...await presentFile(file, env) });
 }
 
 async function boundedBody(req, maximum) {
@@ -244,6 +319,9 @@ async function appendUpload(req, url, env) {
 }
 async function finishUpload(req, env) {
   const ticket = await readTicket(req, env);
+  const input = await inputJson(req, MAX_PRESENTATION_REQUEST_BYTES, true);
+  const presentation = input.metadata === undefined ? undefined : presentationInput(input.metadata);
+  if (presentation !== undefined && !ticket.managed) fail(403, "Campaign details require verified campaign management access.");
   let mode = "add";
   if (ticket.managed) {
     const capability = await readManagement(req, env);
@@ -263,7 +341,18 @@ async function finishUpload(req, env) {
   });
   if (!response.ok) return json({ error: "The community storage could not finish the upload. Refresh the community list before retrying." }, response.status === 409 ? 409 : 502);
   const file = await response.json();
-  return json({ ok: true, ...publicFile(file) });
+  if (presentation !== undefined) {
+    try {
+      await savePresentation(file, presentation, env);
+      return json({ ok: true, ...publicFile(file, presentation), metadataSaved: true });
+    } catch {
+      // ZIP and JSON are separate atomic Dropbox commits. Never turn a successful
+      // ZIP commit into a generic upload error that encourages a duplicate upload.
+      return json({ ok: true, ...await presentFile(file, env), metadataSaved: false,
+        metadataWarning: "The campaign ZIP was uploaded, but its title, description and icon could not be confirmed saved. Refresh the community list before trying again." });
+    }
+  }
+  return json({ ok: true, ...await presentFile(file, env) });
 }
 
 // -- Dropbox OAuth: exchange refresh token for short-lived access token.
@@ -333,16 +422,24 @@ async function handleUpload(req, env) {
 
 // -- GET /list: returns [{ name, path, size, modified }, ...]
 async function handleList(env) {
-  const items = []; let cursor;
+  const files = []; let cursor;
   do {
     const response = await dropboxJson(env, cursor ? "list_folder/continue" : "list_folder", cursor ? { cursor } :
       { path: "", recursive: true, include_media_info: false });
     if (!response.ok) fail(502, "Community storage could not list campaigns.");
     const page = await response.json();
     for (const file of page.entries || [])
-      if (file[".tag"] === "file" && isPublicPath(file.path_display || file.path_lower)) items.push(publicFile(file));
+      if (file[".tag"] === "file" && isPublicPath(file.path_display || file.path_lower)) files.push(file);
     cursor = page.has_more ? page.cursor : null;
   } while (cursor);
+  let token; try { token = await getAccessToken(env); } catch { /* previews are optional */ }
+  const items = new Array(files.length); let next = 0;
+  await Promise.all(Array.from({ length: Math.min(4, files.length) }, async () => {
+    while (next < files.length) {
+      const index = next++;
+      items[index] = token ? await presentFile(files[index], env, token) : publicFile(files[index]);
+    }
+  }));
   items.sort((a, b) => (b.modified || "").localeCompare(a.modified || ""));
   return json({ ok: true, count: items.length, items });
 }
@@ -406,6 +503,7 @@ export default {
       if (url.pathname === "/" || url.pathname === "/health") {
         return json({ ok: true, service: "t2t-campaigns", chunkedUpload: true, maxCampaignBytes: MAX_CAMPAIGN_BYTES,
           campaignManagement: typeof env.CAMPAIGN_MANAGEMENT_SECRET === "string" && env.CAMPAIGN_MANAGEMENT_SECRET.length >= 32,
+          campaignMetadata: true,
           chunkBytes: CHUNK_BYTES, endpoints: ["/upload", "/upload/start", "/upload/chunk", "/upload/finish", "/list", "/download?path=...",
             "/manage/prepare", "/manage/status", "/manage/delete", "/manage/claim"] });
       }

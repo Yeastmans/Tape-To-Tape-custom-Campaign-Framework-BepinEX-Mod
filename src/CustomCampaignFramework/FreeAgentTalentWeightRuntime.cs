@@ -316,11 +316,10 @@ internal static class FreeAgentChoiceWeightScope
         __state.FilterStoredTalents(__0);
     }
     [HarmonyPostfix]
-    private static void Postfix(Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent __instance, ForwardData __0,
+    private static void Postfix(Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent __instance, ForwardData __0, TeamData __1,
         FreeAgentTalentWeightRuntime.Scope __state)
     {
         if (!FreeAgentTalentWeightRuntime.IsCurrentOffer(__0, __state)
-            || (!__state.KeepStats && !__state.DisableAbilities)
             || __instance.eventChoices == null || __instance.eventChoices.Count != __state.OfferCount + 1) return;
         var player = __instance.eventChoices[__state.OfferCount]?.Skater?.TryCast<ForwardData>();
         if (player == null || player.Pointer == __state.OfferTemplate) return;
@@ -337,6 +336,7 @@ internal static class FreeAgentChoiceWeightScope
         // The native hire callback retains this offered clone. Clear its slot
         // after all native/squad assignments, leaving templates and signed players intact.
         if (__state.DisableAbilities) player.ability = null;
+        PlayerContractRuntime.Safe(() => PlayerContractRuntime.ConfigureOffer(__instance, __0, __1, __state.OfferCount));
     }
     [HarmonyFinalizer]
     private static Exception Finalizer(FreeAgentTalentWeightRuntime.Scope __state, Exception __exception)

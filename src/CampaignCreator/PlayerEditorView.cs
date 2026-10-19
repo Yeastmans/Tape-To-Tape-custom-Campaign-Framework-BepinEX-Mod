@@ -187,6 +187,7 @@ internal sealed class PlayerEditorView : UserControl
         }
         else
         {
+            details.Children.Add(new PlayerContractEditor(doc, register, changed));
             var prince = new CheckBox { Name = "CrusaderBrawlPrince", Content = "Counts as Prince for Crusader brawls",
                 IsChecked = PlayerBrawlOptions.CountsAsPrince(doc) };
             register(PlayerBrawlOptions.PrinceKey, () => prince.IsChecked == true ? "yes" : "no");

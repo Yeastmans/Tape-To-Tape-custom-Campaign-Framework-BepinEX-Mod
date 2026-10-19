@@ -24,11 +24,13 @@ public sealed class UpgradeCleanup
         fields["player"].Add(PlayerColorModel.VersionKey);
         fields["player"].UnionWith(PlayerKitColors.ModeKeys);
         fields["player"].Add(PlayerBrawlOptions.PrinceKey);
+        fields["player"].UnionWith(new[] { PlayerContractOptions.EnabledKey, PlayerContractOptions.MatchesKey });
         fields["player"].Add("Number Style");
         fields["campaign"].Add(FreeAgentTalentWeights.Key);
         fields["campaign"].Add(FreeAgentStats.KeepKey);
         fields["campaign"].Add(FreeAgentTalentPool.DisableExtrasKey);
         fields["campaign"].Add(FreeAgentAbilities.DisableKey);
+        fields["campaign"].Add(FieldSchema.RefereeHeadKey);
         fields["campaign"].UnionWith(new[] { FreeAgentTalentPool.ModeKey, FreeAgentTalentPool.SelectedKey });
         foreach (string kind in RewardPoolDefinition.Kinds.Concat(CustomRewardDefinition.Kinds).Append("Goalie Abilities"))
             fields["campaign"].UnionWith(new[] { "Pool Mode " + kind, "Selected " + kind, "Included " + kind, "Excluded " + kind });
@@ -152,7 +154,7 @@ public sealed class UpgradeCleanup
         // Authored heads are not in the shipped native upgrade catalog. Preserve
         // their identities during upgrades and imports, including when the head
         // project will be installed later; the head loader validates its assets.
-        if ((k is "face" or "squad head" or "zamboni head" or "bench head")
+        if ((k is "face" or "squad head" or "zamboni head" or "bench head" or "referee head")
             && value.StartsWith("Faces/CustomHeads/", StringComparison.OrdinalIgnoreCase)) return value;
         if (k == "helmet skin" && role == "goalie"
             && value.StartsWith("Helmet/CustomMasks/", StringComparison.OrdinalIgnoreCase)) return value;
@@ -180,6 +182,8 @@ public sealed class UpgradeCleanup
         if (k is "replace challenges" or "replace soccer ball" or "replace golf ball" or "use player teams" or "custom player teams" or "gauntlet map" or "dump data" or "offside" or "offsides" or "no bench bonus" or "disable bench bonus" or "override team settings")
             return In(value, "yes", "no", "true", "false", "1", "0") ? value : "";
         if (k == "left handed") return In(value, "yes", "no", "true", "false") ? value : "";
+        if (key.Equals(PlayerContractOptions.EnabledKey, StringComparison.OrdinalIgnoreCase)) return In(value, "yes", "no", "true", "false", "on", "off", "1", "0") ? value : "";
+        if (key.Equals(PlayerContractOptions.MatchesKey, StringComparison.OrdinalIgnoreCase)) return PlayerContractOptions.TryMatches(value.Trim(), out _) ? value : "";
         if (k == "skin color") return In(value, "light", "dark") ? value : "";
         if (k == "size") return FieldSchema.Sizes.Contains(value, IgnoreCase) ? value : "";
         if (k == "number style") return FieldSchema.NumberStyles.Contains(value, IgnoreCase) || In(value, FieldSchema.InheritNumberStyle, "RomanNumerals", "Roman") ? value : "";
@@ -207,8 +211,8 @@ public sealed class UpgradeCleanup
         if (k == "goalie skill" || FieldSchema.Kind(key) == FieldKind.Number)
             return Number(value, k == "size offset" ? -100 : 0, k == "number" ? 99 : 999, k is not ("size offset" or "pass read" or "stat scale")) ? value : "";
         if (FieldSchema.Kind(key) == FieldKind.Color) return Color(value) ? value : "";
-        string assetKey = k is "squad head" or "zamboni head" or "bench head" ? "Face" : key;
-        string assetRole = k is "squad head" or "zamboni head" or "bench head" ? "skater" : role;
+        string assetKey = k is "squad head" or "zamboni head" or "bench head" or "referee head" ? "Face" : key;
+        string assetRole = k is "squad head" or "zamboni head" or "bench head" or "referee head" ? "skater" : role;
         var assets = data.Assets.Values(assetRole, assetKey);
         if (assets.Count > 0 || FieldSchema.SkaterAssets.Concat(FieldSchema.GoalieAssets).Contains(key, IgnoreCase))
         {

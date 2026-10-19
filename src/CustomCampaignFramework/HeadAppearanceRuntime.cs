@@ -36,11 +36,16 @@ internal static class HeadAppearanceRuntime
         data.headSkin = head;
     }
 
-    private static void AfterSkins(SkeletonData skeletonData, bool isHome, bool headOnly, ForwardData forwardData,
+    private static void AfterSkins(SkeletonData skeletonData, Skaters.SkaterType skType, bool isHome, bool headOnly, ForwardData forwardData,
         Skaters.IEquipmentOwner equipmentOwner,
         Il2CppSystem.Collections.Generic.List<Skin> __result)
     {
         if (forwardData == null || skeletonData == null || __result == null) return;
+        if (skType == Skaters.SkaterType.Referee)
+        {
+            CampaignRefereeAppearance.Apply(skeletonData, forwardData, __result);
+            return; // Preserve the referee decal/logo exclusion, including head-only renders.
+        }
         if (!headOnly) AppearanceDecalRuntime.Forward(skeletonData, forwardData, __result, isHome);
         // Native GetSkins constructs a ForwardDataEquipmentOwner when callers
         // omit one. Preserve its complete head/helmet result in previews too:

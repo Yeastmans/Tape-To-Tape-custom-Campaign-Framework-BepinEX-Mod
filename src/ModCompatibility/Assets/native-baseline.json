@@ -1,8 +1,8 @@
 {
-  "Id": "7C18016D8A4FC55279AC44FF0F0836F5753D9428E15B1003D90D80818FBB62F6",
+  "Id": "C00990D6D9A263A669889A6DFCB4CF4D02ACC57F3DEB0F42DBADBA679DB1DD4D",
   "Profile": {
     "RuntimeContract": "t2t-native-v1-20261008",
-    "BaselineId": "7C18016D8A4FC55279AC44FF0F0836F5753D9428E15B1003D90D80818FBB62F6",
+    "BaselineId": "C00990D6D9A263A669889A6DFCB4CF4D02ACC57F3DEB0F42DBADBA679DB1DD4D",
     "Build": "26020247",
     "GameHash": "3E8BF7879BF160C0DBCDDE2E12069E1E12689D3D8B327BFAE165DCE607FE294E",
     "MetadataHash": "9C2B05393B2B0E603F7F55751AA3638937F31F1D4A21D0AFE36FB5328F7A979A",
@@ -1768,6 +1768,26 @@
       "BodyHash": "737E676588EA60CC0FFA32C096AB48FC1359D889B6575CB94F2B6B1EFD1E36B9"
     },
     {
+      "Name": "Rogue.FreeAgents.FreeAgent$$AddMatch::System.Void AddMatch()",
+      "Signature": "System.Void AddMatch()",
+      "BodyHash": "BB65E4DF290D2F1BFA0465A234BBE75CAE2D2D3084239BF2F99D674B540E47BE"
+    },
+    {
+      "Name": "Rogue.FreeAgents.FreeAgentManager$$HandleFreeAgentsLeaving::System.Void HandleFreeAgentsLeaving()",
+      "Signature": "System.Void HandleFreeAgentsLeaving()",
+      "BodyHash": "815587A9A3745F9A1031497DFC3CC9C3A0D961DC2710E731AC31D87F0781CDC9"
+    },
+    {
+      "Name": "Rogue.FreeAgents.FreeAgentManager$$OnCampaignMatchEnded::System.Void OnCampaignMatchEnded()",
+      "Signature": "System.Void OnCampaignMatchEnded()",
+      "BodyHash": "448ABBA0FF7D436CE0F66C1824CEBF561163F53387B6C7577621E3F376099830"
+    },
+    {
+      "Name": "Rogue.FreeAgents.MaxGamesCondition$$Check::System.Boolean Check()",
+      "Signature": "System.Boolean Check()",
+      "BodyHash": "60C97BE2063D82683C82F7BBD5377C258EA6A8F49C955A9B4875E9F8B43DBC46"
+    },
+    {
       "Name": "Rogue.GauntletStackBonusScaler$$get_IsGauntletActive::System.Boolean get_IsGauntletActive()",
       "Signature": "System.Boolean get_IsGauntletActive()",
       "BodyHash": "4AD88DC228662CA587DFA3B96583E77ECA394AD9CD83FC9A7696271D59D0C80A"
@@ -1816,6 +1836,11 @@
       "Name": "Rogue.NPC.FanNumber1NPC.FanNumber1Event$$Initialize::System.Void Initialize()",
       "Signature": "System.Void Initialize()",
       "BodyHash": "8F5AD481425B4F2674E0E6EEAC4507CCFCB49222ACCFD336340DFC1E0B97D242"
+    },
+    {
+      "Name": "Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent.\u003C\u003Ec__DisplayClass#$$\u003CCreatePlayerChoice\u003Eb__0::System.Void \u003CCreatePlayerChoice\u003Eb__0()",
+      "Signature": "System.Void \u003CCreatePlayerChoice\u003Eb__0()",
+      "BodyHash": "B6A19ABEE46B9B92C7B77B2522959C0AFE90A19DC261218E8C60C0EA27A6B8D7"
     },
     {
       "Name": "Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent$$CreatePlayerChoice::System.Void CreatePlayerChoice(Data.ForwardData template, Data.TeamData teamData)",
@@ -2123,6 +2148,11 @@
       "BodyHash": "8CD0FE550791BBC3D476CDDB20D7FC8D138DD52959F81C81C296337C28DAE484"
     },
     {
+      "Name": "State.CampaignState$$ApplyNewRunStartEffects::System.Void ApplyNewRunStartEffects()",
+      "Signature": "System.Void ApplyNewRunStartEffects()",
+      "BodyHash": "D17624C4D9742350476A6B456446EF78EEE0325EB1C839674D720096FCDAF46D"
+    },
+    {
       "Name": "State.CampaignState$$InstantiateStartingTeam::Data.TeamData InstantiateStartingTeam(State.RunSquadScriptableObject squad)",
       "Signature": "Data.TeamData InstantiateStartingTeam(State.RunSquadScriptableObject squad)",
       "BodyHash": "D48D508816588FF4AB028BD5C37E8A4D61D8D7DCFC5F40DF7FCB216894E57344"
@@ -2138,9 +2168,19 @@
       "BodyHash": "0DA932610EEA1342C7ED871A3FFF14D58285D6214537BCAB8A79D0E019C85022"
     },
     {
+      "Name": "State.CampaignState$$ResetRunData::System.Void ResetRunData()",
+      "Signature": "System.Void ResetRunData()",
+      "BodyHash": "BD2062395F12C4DC9F8AD784AE560A99B9A13E6B46E04F8384E98C23E9444D69"
+    },
+    {
       "Name": "State.CampaignState$$SetCurrentNode::System.Void SetCurrentNode(STS.Map.MapNode mapNode)",
       "Signature": "System.Void SetCurrentNode(STS.Map.MapNode mapNode)",
       "BodyHash": "FE1528A72FD5D769B9D1DB41B2C93A048D9ECF2BE6204AB7F02B13C40BDCB1C2"
+    },
+    {
+      "Name": "State.DeserializerV2$$DeserializeFromModel::System.Void DeserializeFromModel(Data.RunData runData, State.RunDataModelV2 runDataModel)",
+      "Signature": "System.Void DeserializeFromModel(Data.RunData runData, State.RunDataModelV2 runDataModel)",
+      "BodyHash": "E12F5FFD9E3898C0394ECA29165A66D70D93191115B001F80B7E906B20BC87A0"
     },
     {
       "Name": "State.EndConditions.MaxGoal$$CampaignGoalTarget::System.Int32 CampaignGoalTarget(STS.Map.NodeType nodeType, Data.TeamData opponent, System.Int32 defaultTarget)",
@@ -2246,6 +2286,11 @@
       "Name": "State.RunSquadScriptableObject$$IsAngus::System.Boolean IsAngus(System.String skaterId)",
       "Signature": "System.Boolean IsAngus(System.String skaterId)",
       "BodyHash": "9344A7275F33B03DCBBC46AA513DC489275DBD20D2E11684955A5B5015FA4243"
+    },
+    {
+      "Name": "State.SerializerV2$$SerializeToModel::State.RunDataModelV2 SerializeToModel(Data.RunData input)",
+      "Signature": "State.RunDataModelV2 SerializeToModel(Data.RunData input)",
+      "BodyHash": "2F79BEB1D627EAEFC7A157834CBE7B223A2167027A23CD2ABE98889AEB43C0B9"
     },
     {
       "Name": "STS.Map.BlademasterMapNode$$CreateNodeReward::STS.NodeRewards.INodeReward CreateNodeReward()",

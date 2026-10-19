@@ -48,6 +48,7 @@ public sealed partial class CampaignWorkspace
         penalty.SelectionChanged += (_, _) => Changed();
         var body = new StackPanel { Spacing = StudioTheme.SpaceSm, Children = {
             new TextBlock { Text = "Game options", FontSize = 20, FontWeight = FontWeight.SemiBold, Foreground = StudioTheme.Accent },
+            RefereeHeadPicker(),
             offside,
             new TextBlock { Text = "Uses the game's own offside rule, the one Play Now has in Advanced Settings, for every match of a run. Your saved settings are not changed.", Foreground = StudioTheme.Muted, TextWrapping = TextWrapping.Wrap },
             new TextBlock { Text = "Offside penalty" }, penalty,

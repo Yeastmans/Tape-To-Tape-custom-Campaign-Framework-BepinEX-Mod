@@ -76,6 +76,17 @@ internal static class CustomHeadRuntime
         }
         catch (Exception ex) { Warn(key, ex); }
     }
+    // Referee composition borrows only head attachments from this standalone
+    // skin. Do not register it into shared SkeletonData or change ForwardData.
+    internal static Skin RefereeHead(SkeletonData skeletonData, string key)
+    {
+        var native = skeletonData.FindSkin(key);
+        if (native != null) return native;
+        if (!Heads.TryGetValue(key, out var head) || head.IsGoalie) return null;
+        try { return Build(skeletonData, head, false); }
+        catch (Exception ex) { Warn(key, ex); return null; }
+    }
+
     private static void BeforeGoalieSkins(SkeletonData skeletonData, GoaltenderData data)
     {
         if (skeletonData == null || data == null || !Heads.TryGetValue(data.helmetSkin ?? "", out var mask) || !mask.IsGoalie) return;

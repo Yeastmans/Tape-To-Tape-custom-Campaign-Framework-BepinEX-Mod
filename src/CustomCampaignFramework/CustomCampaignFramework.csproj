@@ -40,6 +40,7 @@
     <Compile Include="../CampaignCore/LogoFiles.cs" Link="Core/LogoFiles.cs" />
     <Compile Include="../CampaignCore/HeadAppearance.cs" Link="Core/HeadAppearance.cs" />
     <Compile Include="../CampaignCore/PlayerBrawlOptions.cs" Link="Core/PlayerBrawlOptions.cs" />
+    <Compile Include="../CampaignCore/PlayerContractOptions.cs" Link="Core/PlayerContractOptions.cs" />
     <EmbeddedResource Include="../../assets/head-families.tsv" LogicalName="HeadFamilies.tsv" />
     <EmbeddedResource Include="../../assets/native-appearance-slots.tsv" LogicalName="NativeAppearanceSlots.tsv" />
     <Compile Include="../CampaignCore/CampaignProgress.cs" Link="Core/CampaignProgress.cs" />
