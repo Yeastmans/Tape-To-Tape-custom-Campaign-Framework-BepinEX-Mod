@@ -188,6 +188,7 @@ public sealed partial class MainWindow : Window
         else if (config.Fields.ContainsKey("Team Name")) context = file.Contains("player_teams") ? "Custom squad" : "Opponent team";
         else if (Path.GetFileName(parent) == "draft_pool") context = "Starting bench";
         else if (Path.GetFileName(parent) == "free_agents") context = "Free agents";
+        else if (Path.GetFileName(parent) == GoalieFreeAgents.Folder) context = "Goalie free agents";
         else if (Path.GetFileName(parent) == "superstars") context = "Superstars";
         if (fallback.Equals("campaign", StringComparison.OrdinalIgnoreCase)) name = "Campaign settings";
         return new CampaignFile(Path.GetRelativePath(campaignRoot, file), name, context);

@@ -2,11 +2,11 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 22](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r22-build-1792481506911) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 23](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r23-build-1792527027345) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
-**Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **`roguelite` branch, build 26071671**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
+**Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **`roguelite` branch, build 26085704**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
 
-Beta 1.0 revision 22 fixes in-match lag in campaigns with many custom rewards and supports game build 26071671; revision 21 fixed General Manager offers for squads with no skaters; revision 19 removed custom reward number limits, added opposing targets and Extra goals. It supports the updated game and adds **Delete from library** for custom talents while preserving campaign/player copies. It retains revision 16, which adds toggleable **per-skater contract durations**, a separate **Referee head** for each campaign, and readable community campaign names with descriptions and custom **PNG icons**. Contracts count only matches played, work outside GM campaigns, and apply to new runs and future recruits. Targets **build 26071671**. See the [contract guide](docs/PLAYER-CONTRACTS.md), [changelog](release/CHANGELOG.md) and [native audit](docs/NATIVE-26067234-REVIEW.md).
+Beta 1.0 revision 23 repairs compatibility with **build 26085704**, adds goalie recruitment and Home/Away kit-copy controls, and fixes campaign-logo resolution and independent exported-player equipment. Goalie recruits stay for the run unless replaced again. See the [changelog](release/CHANGELOG.md) and [native audit](docs/NATIVE-26085704-REVIEW.md).
 
 **This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. Reporting bugs on [Discord](https://discord.gg/hscxnYghb) or [GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues) helps immensely.
 
@@ -35,7 +35,7 @@ Beta 1.0 revision 22 fixes in-match lag in campaigns with many custom rewards an
 
 ### Windows
 
-**You need:** Windows x64, your own Steam copy of Tape to Tape, and access to its **`roguelite` branch**. Beta 1.0 targets **game build 26071671**. The Windows installer includes the editor runtime and the required BepInEx 6 IL2CPP loader; Python and a separate .NET installation are not needed to use it.
+**You need:** Windows x64, your own Steam copy of Tape to Tape, and access to its **`roguelite` branch**. Beta 1.0 targets **game build 26085704**. The Windows installer includes the editor runtime and the required BepInEx 6 IL2CPP loader; Python and a separate .NET installation are not needed to use it.
 
 1. In Steam, right-click **Tape to Tape → Properties → Betas** and select **`roguelite`**. If it is unavailable, you need branch access before continuing. Let Steam finish updating.
 2. Launch the game once, then quit it. Close any old creator or Studio window.

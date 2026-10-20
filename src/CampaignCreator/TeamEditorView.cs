@@ -149,8 +149,22 @@ internal sealed partial class TeamEditorView : UserControl
         var left = new Grid { RowDefinitions = new RowDefinitions("Auto,*"), RowSpacing = StudioTheme.SpaceSm };
         var views = new StackPanel { Spacing = StudioTheme.SpaceXs };
         var kit = new TabStrip { Name = "TeamKitTabs", ItemsSource = new[] { "Home", "Away" }, SelectedIndex = 0 };
-        kit.SelectionChanged += (_,_) => { away = kit.SelectedIndex == 1; BuildParts(); RefreshUniform(); };
+        var copyKit = ActionButton("Copy to Away", () => CopyKit(status));
+        copyKit.Name = "CopyKitToAway";
+        var copyHome = ActionButton("Copy to Home", () => CopyKit(status));
+        copyHome.Name = "CopyKitToHome";
+        copyHome.IsVisible = false;
+        ToolTip.SetTip(copyKit, "Copy this kit's skater and goalie styles and colors to the other kit. Save to keep the changes.");
+        ToolTip.SetTip(copyHome, "Copy this kit's skater and goalie styles and colors to the other kit. Save to keep the changes.");
+        kit.SelectionChanged += (_,_) => {
+            away = kit.SelectedIndex == 1;
+            copyKit.IsVisible = !away;
+            copyHome.IsVisible = away;
+            BuildParts(); RefreshUniform();
+        };
         views.Children.Add(kit);
+        views.Children.Add(copyKit);
+        views.Children.Add(copyHome);
         var facing = new TabStrip { Name = "TeamFacingTabs", ItemsSource = new[] { "Front", "Back" }, SelectedIndex = 0 };
         facing.SelectionChanged += (_, _) => { uniform.Back = goalieUniform.Back = facing.SelectedIndex == 1; RefreshUniform(); };
         views.Children.Add(facing);

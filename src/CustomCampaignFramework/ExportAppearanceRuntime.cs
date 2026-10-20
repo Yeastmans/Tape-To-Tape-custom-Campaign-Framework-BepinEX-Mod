@@ -248,6 +248,7 @@ internal static class ExportAppearanceRuntime
 
     internal static void Install(Harmony h)
     {
+        ExportTeamAppearanceRuntime.Install(h);
         foreach (var method in typeof(Skaters.T2TSkeletonExtensions).GetMethods(BindingFlags.Public | BindingFlags.Static)
             .Where(m => (m.Name == "ApplySkin" || m.Name == "ApplySkinAsync") && m.GetParameters().Any(p => p.Name == "skaterData") && m.GetParameters().Any(p => p.Name == "logo")))
             h.Patch(method, prefix: new HarmonyMethod(typeof(ExportAppearanceRuntime), nameof(SkinPrefix)));

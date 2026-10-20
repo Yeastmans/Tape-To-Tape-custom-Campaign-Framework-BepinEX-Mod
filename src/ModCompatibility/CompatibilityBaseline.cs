@@ -49,12 +49,51 @@ public sealed class CompatibilityBaseline
             var method=image.Containing(site.Method,(ulong)site.Rva);site.Method=image.Identity(method); var body=image.Instructions(method.Rva);
             int pos=Array.FindIndex(body,i=>i.IP==(ulong)site.Rva);
             if(pos<0) throw new InvalidDataException("Patch is not on an instruction boundary: "+site.Method);
+            if(site.Kind=="inline_eq")
+            {
+                var reviewed=InlineComparisonContract.Read(image,site.Method,pos,site.Feature,site.Query);
+                if(reviewed.Rva!=site.Rva || reviewed.Target!=site.Target || reviewed.Bytes!=site.Bytes) throw new InvalidDataException("Inline manifest does not match reviewed instructions.");
+                site=reviewed;
+            }
             p.Sites.Add(site);baseline.Sites.Add(new(){Site=site,InstructionIndex=pos}); protectedMethods.Add(site.Method);
         }
         baseline.FlowMethod=NativeSymbolNames.Stable(flowMethod);
         baseline.FlowIndex=Array.FindIndex(image.Instructions(image.Resolve(baseline.FlowMethod).Rva),i=>i.IP==(ulong)flow);
         if(baseline.FlowIndex<0) throw new InvalidDataException("Unknown starting-flow boundary.");
         protectedMethods.UnionWith(new[]{baseline.FlowMethod,"Arena.IceSetup$$SwitchIceType","Tape2Tape.CampaignUtil$$IsPlayingSquad","System.String$$op_Equality","System.String$$op_Inequality"});
+        if(baseline.Sites.Any(s=>s.Site.Kind=="inline_eq")) protectedMethods.Add(InlineComparisonContract.SequenceEqual);
+        protectedMethods.Add("Skaters.SkinHelper$$OverrideSkinsWithCustomTeamUniform");
+        // The compiler inlines attribute-lock consumers into ForwardStats, which
+        // now reach the generic Talent.Get body directly. The narrow reward
+        // adapter pins its MethodInfo separately and preserves native results.
+        protectedMethods.Add("Rogue.Talent$$Get::T Get(System.Collections.Generic.List`1<Rogue.Talent> powerUps)");
+        // Positive live-gameplay scopes surround the inlined data-level reward
+        // queries. A change to these consumers can alter scope or native
+        // precedence even when the generic data query ABI remains identical.
+        foreach(string name in new[] { "Movements.MovementManager$$CanBodycheck",
+            "Goaltender.GoaltenderStates.SavingState$$OnPuckCollision",
+            "Rogue.NoStickSoccerRelicController$$<AddEffect>b__3_0",
+            "Rogue.Relics.Controllers.SpikeArmorRelicController$$AddEffect",
+            "Skaters.ForwardStats$$GetStatAfterInjuryCheck",
+            "Skaters.SkaterAbility$$GetPowerupsInShots",
+            "Skaters.SkaterAbility.<_Pass>d__#$$MoveNext",
+            "Skaters.SkaterCollision$$IsGuaranteedKnockout", "Skaters.SkaterCollision$$HandleHitted",
+            "Skaters.Injuries.InjurySystem$$TryInjuryAttempt",
+            "Tape2Tape.Team.<>c$$<HasRefBlockShotTalent>b__175_0",
+            "AI.AIStates.AIState$$ResetToDefaultState", "AI.AIStates.AIState$$IsKnightOf" })
+        {
+            var method=image.Resolve(name);
+            if(image.SharedMethodCount(method.Rva)!=1)throw new InvalidDataException("Shared live reward scope: "+name);
+            protectedMethods.Add(image.Identity(method));
+        }
+        // These former comparison owners now delegate eligibility to native
+        // helpers. Keep their dispatch contract protected after removing the
+        // obsolete local patch sites from the 26085704 manifest.
+        foreach(string name in new[] { "GoalLineTrigger$$VerifyGoalScored",
+            "Rogue.NPC.NurseNPC.Procedures.NurseProcedureRoster$$CreateForCurrentRun",
+            "State.GameModeControllers.NormalMatch.NormalMatchGameModeController$$TryRefereeBreakawayPenaltyShot",
+            "State.GolferOutro.GolferOutroDirector$$Stage" })
+            protectedMethods.Add(image.Identity(image.Resolve(name)));
         // The custom Check/Checked bridge observes the native match-wide hit
         // consumer instead of converting its non-blittable value-type event to
         // a managed delegate. Keep its ABI and balanced subscription lifecycle
@@ -98,6 +137,23 @@ public sealed class CompatibilityBaseline
         {
             var method = image.Resolve(name);
             if (image.SharedMethodCount(method.Rva) != 1) throw new InvalidDataException("Shared player-contract target: " + name);
+            protectedMethods.Add(image.Identity(method));
+        }
+        // Goalie recruitment replaces the one active goalie through native GM
+        // choices and restores supplemental fields after native run loading.
+        // Protect exact hook overloads and the native goalie save/load chain.
+        foreach (string name in new[] {
+            "State.CampaignState$$SetCurrentNode::System.Void SetCurrentNode(STS.Map.MapNode mapNode)",
+            "Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent$$Initialize::System.Void Initialize()",
+            "Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent$$NextChoices::System.Boolean NextChoices(System.Int32 numChoicesAlreadyMade)",
+            "State.DeserializerV2$$DeserializeFromModel::System.Void DeserializeFromModel(Data.RunData runData, State.RunDataModelV2 runDataModel)",
+            "State.SerializerV2$$SerializeToModel::State.TeamDataModelV2 SerializeToModel(Data.TeamData input)",
+            "State.SerializerV2$$SerializeToModel::State.SkaterDataModelV2 SerializeToModel(Data.GoaltenderData input)",
+            "State.DeserializerV2$$InitializeTeamDataFromModel::System.Void InitializeTeamDataFromModel(State.TeamDataModelV2 team, Data.TeamData teamData)",
+            "State.DeserializerV2$$ConvertGoaltenderDataModelToGoaltenderData::Data.GoaltenderData ConvertGoaltenderDataModelToGoaltenderData(State.GoaltenderDataModelV2 goalie)" })
+        {
+            var method = image.Resolve(name);
+            if (image.SharedMethodCount(method.Rva) != 1) throw new InvalidDataException("Shared goalie recruitment target: " + name);
             protectedMethods.Add(image.Identity(method));
         }
         // Custom ability pools may return fewer cards than the native fallback
@@ -269,6 +325,11 @@ public sealed class CompatibilityBaseline
         foreach(var c in Sites)
         {
             var method=image.Resolve(c.Site.Method); var body=image.Instructions(method.Rva); var ins=body[c.InstructionIndex];
+            if(c.Site.Kind=="inline_eq")
+            {
+                result.Sites.Add(InlineComparisonContract.Read(image,c.Site.Method,c.InstructionIndex,c.Site.Feature,c.Site.Query));
+                continue;
+            }
             if(ins.Length!=5 || ins.FlowControl is not (FlowControl.Call or FlowControl.UnconditionalBranch)) throw new InvalidDataException("Native comparison ABI changed.");
             string targetName=c.Site.Kind switch {"query"=>"Tape2Tape.CampaignUtil$$IsPlayingSquad","eq"=>"System.String$$op_Equality","neq"=>"System.String$$op_Inequality",_=>throw new InvalidDataException("Unknown comparison kind.")};
             if(ins.NearBranchTarget!=image.Resolve(targetName).Rva) throw new InvalidDataException("Native comparison target changed.");

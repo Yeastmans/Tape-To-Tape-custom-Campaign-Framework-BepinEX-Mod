@@ -27,6 +27,7 @@ public sealed class MapLayoutNode
     public int TalentRewards { get; set; } = 1;
     public int RelicRewards { get; set; } = 1;
     public int GmChoices { get; set; } = 1;
+    public string GmRole { get; set; } = GoalieFreeAgents.Skaters;
     public string EliteGroup { get; set; } = "";
     public string EliteTeam { get; set; } = "";
 }
@@ -73,6 +74,7 @@ public sealed class MapLayout
             n.Layer.ToString(), n.Type, n.X.ToString("R", CultureInfo.InvariantCulture), n.Y.ToString("R", CultureInfo.InvariantCulture),
             n.Team, string.Join(",", n.Outgoing), n.SourceLayer.ToString(), n.SourceNode.ToString(), n.TalentRewards.ToString(), n.RelicRewards.ToString(), n.GmChoices.ToString(), n.EliteGroup, n.EliteTeam }.Select(Encode)));
         // Optional editor metadata keeps the existing 13-field node records compatible.
+        foreach (var n in Nodes.Where(n => n.GmRole != GoalieFreeAgents.Skaters)) d.Set("Recruit role " + n.Id, n.GmRole);
         foreach (var n in Nodes.Where(n => n.Stadium.Length > 0)) d.Set("Stadium " + n.Id, Encode(n.Stadium));
         foreach (var n in Nodes.Where(n => n.PeriodCount != 0)) d.Set("Periods " + n.Id, n.PeriodCount.ToString(CultureInfo.InvariantCulture));
         foreach (var n in Nodes.Where(n => n.PeriodLengthMinutes != 0)) d.Set("Period minutes " + n.Id, n.PeriodLengthMinutes.ToString("R", CultureInfo.InvariantCulture));
@@ -96,6 +98,7 @@ public sealed class MapLayout
             map.Nodes.Add(new MapLayoutNode { Id = pair.Key.Substring(5), Layer = Int(p[0]), Type = p[1],
                 X = double.Parse(p[2], CultureInfo.InvariantCulture), Y = double.Parse(p[3], CultureInfo.InvariantCulture), Team = p[4],
                 Stadium = Uri.UnescapeDataString(d.Get("Stadium " + pair.Key.Substring(5))),
+                GmRole = d.Get("Recruit role " + pair.Key.Substring(5), GoalieFreeAgents.Skaters),
                 PeriodCount = Int(d.Get("Periods " + pair.Key.Substring(5), "0")),
                 PeriodLengthMinutes = float.Parse(d.Get("Period minutes " + pair.Key.Substring(5), "0"), CultureInfo.InvariantCulture),
                 Outgoing = p[5].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList(), SourceLayer = Int(p[6]), SourceNode = Int(p[7]),
@@ -155,6 +158,7 @@ public sealed class MapLayout
             if (double.IsNaN(n.X) || double.IsInfinity(n.X) || double.IsNaN(n.Y) || double.IsInfinity(n.Y) || Math.Abs(n.X) > 1000 || Math.Abs(n.Y) > 1000) errors.Add(label + ": position is outside the supported range.");
             if (n.Team.Length > 0 && (!teams.Contains(n.Team) || (n.Type != "Elite" && n.Type != "Boss"))) errors.Add(label + ": assign a campaign team to an Elite or Boss match.");
             if (n.TalentRewards < 0 || n.TalentRewards > 10 || n.RelicRewards < 0 || n.RelicRewards > 10 || n.GmChoices < 1 || n.GmChoices > 20) errors.Add(label + ": invalid reward or recruitment count.");
+            if (n.GmRole != GoalieFreeAgents.Skaters && n.GmRole != GoalieFreeAgents.Goalies) errors.Add(label + ": invalid recruitment role.");
             if (n.Outgoing.Distinct().Count() != n.Outgoing.Count) errors.Add(label + ": duplicate connection.");
             if (n.Layer < last && n.Outgoing.Count == 0) errors.Add(label + ": connect a route to the next layer.");
             foreach (string target in n.Outgoing)

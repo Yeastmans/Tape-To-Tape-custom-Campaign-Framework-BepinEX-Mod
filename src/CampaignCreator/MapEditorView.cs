@@ -894,7 +894,14 @@ public sealed class MapEditorView : UserControl
             Count("Talent rewards", n.TalentRewards, 0, 10, v => n.TalentRewards = v);
             Count("Relic rewards", n.RelicRewards, 0, 10, v => n.RelicRewards = v);
         }
-        if (n.Type == "GeneralManager") Count("Players to recruit", n.GmChoices, 1, 20, v => n.GmChoices = v);
+        if (n.Type == "GeneralManager")
+        {
+            inspector.Children.Add(new TextBlock { Text = "Recruit role" });
+            var role = new ComboBox { Name = "RecruitRole", ItemsSource = new[] { GoalieFreeAgents.Skaters, GoalieFreeAgents.Goalies }, SelectedItem = n.GmRole, HorizontalAlignment = HorizontalAlignment.Stretch };
+            role.SelectionChanged += (_, _) => { if (role.SelectedItem is not string value || value == n.GmRole) return; Checkpoint(); n.GmRole = value; Validate(); };
+            inspector.Children.Add(role);
+            Count("Players to recruit", n.GmChoices, 1, 20, v => n.GmChoices = v);
+        }
     }
 }
 

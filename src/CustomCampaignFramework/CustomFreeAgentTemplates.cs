@@ -146,6 +146,7 @@ internal static class GeneralManagerFreeAgentTemplates
     private static void Prefix(out SwapPoolState __state)
     {
         __state = null;
+        if (GoalieRecruitment.IsGoalieNode) return;
         CustomFreeAgentTemplates.EnsureCurrent();
         if (Plugin.IsDefaultMode) return;
         try

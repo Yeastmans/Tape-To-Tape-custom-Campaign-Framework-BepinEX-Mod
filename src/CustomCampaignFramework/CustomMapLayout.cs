@@ -24,6 +24,15 @@ internal static class CustomMapLayout
     private static bool restoring;
     internal static MapLayout GeneratingLayout => Active && appliedMap == null && !Plugin.IsDefaultMode
         && appliedFolder == Plugin.ModFolder ? appliedLayout : null;
+    internal static string RecruitRoleFor(MapNode node)
+    {
+        if (Plugin.IsDefaultMode || node?.Node == null) return GoalieFreeAgents.Skaters;
+        var map = node.GetComponentInParent<MapObject>()?.mapManager?.CurrentMap;
+        var layout = map == null ? null : LayoutFor(map);
+        var match = layout?.Nodes.FirstOrDefault(n => n.Layer == node.Node.LayerIndex
+            && layout.NativeIndex(n) == node.Node.NodeIndex && n.Type == "GeneralManager");
+        return match?.GmRole == GoalieFreeAgents.Goalies ? GoalieFreeAgents.Goalies : GoalieFreeAgents.Skaters;
+    }
     private static string RuntimeFolder => Path.Combine(Plugin.ModFolder, "_map_runtime");
     internal static void ResetForNewRun()
     {

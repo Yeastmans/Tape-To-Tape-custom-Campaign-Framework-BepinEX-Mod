@@ -5,6 +5,24 @@ namespace CampaignCreator;
 
 internal sealed partial class TeamEditorView
 {
+    private void CopyKit(TextBlock status)
+    {
+        var look = TeamLookCopy.Kit(away, DefaultLookValue);
+        foreach (var (key, value) in look.Fields)
+        {
+            if (FieldSchema.GoalieAssets.Contains(key)) goalieEquipment.Set(key, value);
+            else
+            {
+                equipment[key] = value;
+                Track(key, () => equipment[key]);
+            }
+        }
+        BuildParts();
+        RefreshUniform();
+        changed();
+        status.Text = away ? "Away look copied to Home. Save to keep it." : "Home look copied to Away. Save to keep it.";
+    }
+
     private async Task FillLook(string root, TextBlock status)
     {
         string? sourceFile = await TeamLookPicker.Pick(owner, root);

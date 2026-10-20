@@ -9,6 +9,26 @@ public static class TeamLookCopy
     // Fill look copies equipment and colors only; the team keeps its own logo.
     public static IEnumerable<string> Keys => DefaultPlayerLook.Keys.Where(k => !PlayerColorModel.IsStickKey(k) && k != "Logo From");
 
+    // Snapshot before writing: copying Away to Home must not change values still
+    // being read. Shared fields (logo, mask, number style) already apply to both.
+    public static CampaignDocument Kit(bool sourceAway, Func<string, string> read)
+    {
+        var result = new CampaignDocument("");
+        foreach (string awayKey in Keys.Where(k => k.Contains(" Away") || k.StartsWith("Away ")))
+        {
+            string homeKey = awayKey switch
+            {
+                "Away Primary" => "Jersey Primary",
+                "Away Secondary" => "Jersey Secondary",
+                "Away Accent" => "Jersey Accent",
+                "Number Color Away" => "Number Color Home",
+                _ => AppearanceContract.HomeKey(awayKey)
+            };
+            result.Set(sourceAway ? homeKey : awayKey, read(sourceAway ? awayKey : homeKey));
+        }
+        return result;
+    }
+
     public static CampaignDocument Load(string teamFile)
     {
         if (!ContentImport.Matches(teamFile, "team")) throw new ArgumentException("Choose a team to fill the look.");

@@ -71,13 +71,17 @@ internal sealed class PlayerEditorView : UserControl
             .Concat(new[] { "Logo From", "Logo Skin" }).ToHashSet(StringComparer.OrdinalIgnoreCase);
         values = doc.Fields;
         foreach (var key in equipment) values.TryAdd(key, "");
-        bool custom = AppearanceContract.Independent(doc, team, role);
+        bool custom = PlayerExport.EquipmentIntent(doc) == "yes";
         inheritFromTeam = new ToggleSwitch { Name = "InheritFromTeam", Content = "Team equipment", IsChecked = !custom,
             OnContent = "On · team styles", OffContent = "Off · own styles", HorizontalAlignment = HorizontalAlignment.Stretch };
         ToolTip.SetTip(inheritFromTeam, "Use the team's equipment styles. Turn off to choose Team, Custom colors, or Premade for each piece and kit.");
         foreach (var key in equipment) register(key, () => Independent && (key is "Logo From" or "Logo Skin") && !AppearanceContract.SupportsJerseyLogo(Effective(), role) ? "" : Independent && role == "skater" && (key is "Helmet" or "Helmet Away")
             && !HeadAppearance.CanWearHelmet(values.GetValueOrDefault("Face", "")) ? "none" : values[key]);
         register("Override Team Settings", () => Independent ? "yes" : "no");
+        // Imported snapshots must retain their intent on an unchanged save, and
+        // a deliberate toggle change must supersede the previous export marker.
+        if (doc.Fields.ContainsKey(PlayerExport.OwnEquipmentKey))
+            register(PlayerExport.OwnEquipmentKey, () => Independent ? "yes" : "no");
         foreach (string key in doc.Fields.Keys.Where(k => k.StartsWith("Export Logo ", StringComparison.OrdinalIgnoreCase)))
             register(key, () => !Independent || AppearanceContract.SupportsJerseyLogo(Effective(), role) && SelectionValue("Logo From") == doc.Get("Logo From") ? doc.Get(key) : "");
         // Freeze the displayed roster slot before editing, including legacy filename positions.
@@ -249,10 +253,14 @@ internal sealed class PlayerEditorView : UserControl
     internal void ApplyExportAppearance(CampaignDocument target)
     {
         var effective = Effective();
-        // The Play Now team supplies defaults; explicit per-piece colors travel with the player.
+        // Freeze each opted-in piece as previewed, including source-team fallback
+        // channels, before the standalone export loses that team context.
+        // Unselected pieces still take their colors from the Play Now team.
         foreach (var key in AppearanceContract.PlayerKeys(role))
-            target.Set(key, AppearanceContract.IsColor(key) ? values.GetValueOrDefault(key, "") : effective.Get(key));
+            target.Set(key, AppearanceContract.IsColor(key) && !PlayerKitColors.Owns(k => values.GetValueOrDefault(k, ""), key)
+                ? values.GetValueOrDefault(key, "") : effective.Get(key));
         foreach (string key in target.Fields.Keys.Where(k => PlayerColorModel.IsTeamOnlyColor(k) && !PlayerKitColors.Owns(v => target.Get(v), k)).ToArray()) target.Remove(key);
+        target.Set(PlayerExport.OwnEquipmentKey, Independent ? "yes" : "no");
         target.Set("Override Team Settings", "yes");
         if (!AppearanceContract.SupportsJerseyLogo(effective, role)) AppearanceContract.ClearJerseyLogo(target);
     }

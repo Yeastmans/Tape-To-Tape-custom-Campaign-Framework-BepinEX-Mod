@@ -84,13 +84,13 @@ internal static class CustomRewardTeamCapabilities
         try {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8) throw new PlatformNotSupportedException("Team queries require the audited Windows x64 build.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().First(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-            if (NativeCompatibility.Load(module.FileName).GameHash != "92C6308809D5E324178C7D7E03F767C2E7D9AFCB9F41B2390B9EEAA77216BC58")
+            if (NativeCompatibility.Load(module.FileName).GameHash != "92E73E6D0BE549DD8C695302B7AAE6A77CBBF4DE27F27D26ED01F4B3DABC5B8D")
                 throw new InvalidOperationException("Team queries have not been audited for this game build.");
-            var direct = module.BaseAddress + 0xc85b20;
-            Verify(direct, "48895C24104889742418574883EC20");
-            var live = module.BaseAddress + 0xc85ec0; var data = module.BaseAddress + 0xc85a00;
-            Verify(live, "40555741564883EC2048837A3800488B");
-            Verify(data, "48895C240848896C2410488974241857");
+            var direct = module.BaseAddress + 0xed8cf0;
+            Verify(direct, "48895C241848896C2420564883EC20");
+            var live = module.BaseAddress + 0xed8a20; var data = module.BaseAddress + 0xed8e10;
+            Verify(live, "48895C2418554883EC2048837A380048");
+            Verify(data, "48895C241048896C2418565741574883");
             liveEffects.Add(Method(typeof(Team), typeof(SorestLoser), live), CustomRewardEffects.CelebrationInjuries);
             liveEffects.Add(Method(typeof(Team), typeof(Needle), live), CustomRewardEffects.SpeedOneTimerAccuracy);
             liveEffects.Add(Method(typeof(Team), typeof(QuantumSextant), live), CustomRewardEffects.ConvertSpeedBonuses);

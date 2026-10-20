@@ -6,6 +6,16 @@ namespace CampaignCreator;
 
 internal static class PlayerExport
 {
+    internal const string OwnEquipmentKey = "Export Own Equipment";
+    // Export snapshots bake Override Team Settings=yes to retain resolved styles.
+    // Their separate marker records the author's choice for future team assignment.
+    internal static string EquipmentIntent(CampaignDocument source)
+    {
+        string saved = source.Get(OwnEquipmentKey);
+        return saved.Equals("yes", StringComparison.OrdinalIgnoreCase) ? "yes"
+            : saved.Equals("no", StringComparison.OrdinalIgnoreCase) ? "no"
+            : AppearanceFields.OverridesTeam(source) ? "yes" : "no";
+    }
     internal static Dictionary<string, object> Convert(CampaignDocument d, GameData game, string role, string id, ExportReport? report = null)
     {
         d = ExportPlayerResolver.Resolve(d, role);
@@ -98,6 +108,7 @@ internal static class PlayerExport
     {
         string sourceRoot = root;
         d = ExportPlayerResolver.Resolve(d, role);
+        d.Set(OwnEquipmentKey, EquipmentIntent(d));
         d = ExportSelections.Logo(AppearanceContract.Resolve(d, new CampaignDocument(""), new CampaignDocument(""), role), root, report);
         root = ExportTranslation.RuntimeRoot(root);
         game = new GameData(sourceRoot); game.LoadCustomRewards(sourceFile);
@@ -141,6 +152,7 @@ internal static class PlayerExport
         result.Set("Export Version", "3");
         result.Set("Export Model", JsonSerializer.Serialize(model));
         result.Set("Export Role", role);
+        result.Set(OwnEquipmentKey, EquipmentIntent(original));
         foreach (var pair in d.Fields.Where(p => !p.Key.StartsWith("Export "))) if (!result.Fields.ContainsKey(pair.Key)) result.Set(pair.Key, pair.Value);
         if (AppearanceContract.SupportsJerseyLogo(d, role)) LogoExport.Copy(ExportSelections.Logo(original, game.Root, report), result);
         else AppearanceContract.ClearJerseyLogo(result);

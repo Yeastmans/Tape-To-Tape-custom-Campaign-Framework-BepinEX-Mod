@@ -7,7 +7,7 @@ public static class CreatorContent
     public static string ValidateName(string name)
     {
         name = name.Trim();
-        var reserved = new[] { "CON", "PRN", "AUX", "NUL", "draft_pool", "free_agents", "superstars" }
+        var reserved = new[] { "CON", "PRN", "AUX", "NUL", "draft_pool", "free_agents", "superstars", GoalieFreeAgents.Folder }
             .Concat(Enumerable.Range(1, 9).SelectMany(i => new[] { "COM" + i, "LPT" + i }));
         if (name.Length == 0 || name.Length > 80 || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || name.EndsWith('.') || reserved.Contains(name.Split('.')[0], StringComparer.OrdinalIgnoreCase))
             throw new ArgumentException("Enter a name of 1–80 characters without filename punctuation or a reserved Windows name.");

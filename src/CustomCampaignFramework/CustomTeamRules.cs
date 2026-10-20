@@ -21,6 +21,11 @@ internal static class CustomTeamRules
     {
         string source = !string.IsNullOrWhiteSpace(cfg.LogoFrom) ? cfg.LogoFrom : cfg.ImportTeam;
         if (team?.logo == null || string.IsNullOrWhiteSpace(source) || source.Equals("RANDOM", StringComparison.OrdinalIgnoreCase)) return;
+        // Only cache a verified borrowed native logo. If a named custom PNG was
+        // missing, team.logo can still be the encounter donor's sprite; writing
+        // that under the requested name makes the wrong image persist next load.
+        var native = PatchBossLaunchMatch.FindTeamByName(source);
+        if (native == null || IsCustom(native) || native.logo == null || native.logo != team.logo) return;
         string file = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(Plugin.ModFolder)), "_team_logos", CustomTeamIdentity.Create("logo", source) + ".png");
         if (ExportedLogos.Contains(file)) return;
         try

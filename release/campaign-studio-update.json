@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "buildId": 1792527027345,
+  "label": "Beta 1.0 revision 23",
+  "platform": "win-x64",
+  "releaseTag": "beta-1.0-r23-build-1792527027345",
+  "installerName": "T2T_Custom_Campaign_Framework_Setup.exe",
+  "installerSize": 142319535,
+  "installerSha256": "FBDA9C267EA0DD2262DD52D3D23F304755F13D3E0DE639504E34A12E98B282DA",
+  "studioSha256": "355130556DAC6276F1EA77C7F1E10B9DDF27AA2E0A0832583EC50500C6ECD9C7",
+  "modSha256": "7A1785994015F15B0F7C90ECB637A8551F9138367A8253DB4FF8A8E1910E824C"
+}

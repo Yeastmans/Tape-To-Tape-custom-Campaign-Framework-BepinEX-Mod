@@ -60,7 +60,7 @@ public sealed partial class CampaignWorkspace : UserControl
         }
         return mapEditor;
     }
-    public bool HasUnsavedChanges => isNew || rewardDirty || freeAgentsDirty || customRewardCreator?.HasChanges == true || nativeFreeAgents?.HasChanges == true || StartingPoolsDirty || mapEditor?.HasUnsavedChanges == true || fields.Any(f => !savedFieldValues.TryGetValue(f.Key, out var saved) || f.Value() != saved);
+    public bool HasUnsavedChanges => isNew || rewardDirty || freeAgentsDirty || goalieAgentsDirty || customRewardCreator?.HasChanges == true || nativeFreeAgents?.HasChanges == true || StartingPoolsDirty || mapEditor?.HasUnsavedChanges == true || fields.Any(f => !savedFieldValues.TryGetValue(f.Key, out var saved) || f.Value() != saved);
     private void CaptureSavedFieldValues()
     {
         // Defaults displayed for older campaigns are not user edits.
@@ -296,8 +296,9 @@ public sealed partial class CampaignWorkspace : UserControl
     }
     private Control FreeAgentsPage()
     {
-        var page = Page("Free agents", "Choose base-game players and add custom players to this campaign's pool. An explicitly saved empty pool offers no recruits.");
+        var page = Page("Free agents", "Choose skaters and goalies for this campaign's recruitment pools. An explicitly saved empty pool offers no recruits of that role.");
         page.Children.Add(GeneralManagerNote());
+        page.Children.Add(new TextBlock { Text = "Skater recruitment settings", FontSize = 20 });
         string keepStatsValue = settings.Get(FreeAgentStats.KeepKey);
         var keepStats = new CheckBox { Name = "KeepFreeAgentStats", Content = "Keep authored stats",
             IsChecked = FreeAgentStats.Keep(settings) };
@@ -308,7 +309,7 @@ public sealed partial class CampaignWorkspace : UserControl
         fields[FreeAgentStats.KeepKey] = () => keepStatsValue;
         page.Children.Add(InsetPoolPanel.Frame(new StackPanel { Spacing = 8, Children = {
             keepStats,
-            new TextBlock { Text = "Keep the source player's Speed, Shot Accuracy, Shot Power and Checking for all new free-agent offers. Off lets the GM adjust stats to your team. Talents use the pool below. Already recruited players are unchanged.", TextWrapping = TextWrapping.Wrap }
+            new TextBlock { Text = "Keep the source player's Speed, Shot Accuracy, Shot Power and Checking for new skater offers. Off lets the GM adjust stats to your team. Skater talents use the pool below. Already recruited players are unchanged.", TextWrapping = TextWrapping.Wrap }
         } }, "FreeAgentStatsPanel"));
         string disableExtrasValue = settings.Get(FreeAgentTalentPool.DisableExtrasKey);
         var disableExtras = new CheckBox { Name = "DisableExtraRecruitTalents", Content = "Disable extra recruit talents",
@@ -320,7 +321,7 @@ public sealed partial class CampaignWorkspace : UserControl
         fields[FreeAgentTalentPool.DisableExtrasKey] = () => disableExtrasValue;
         page.Children.Add(InsetPoolPanel.Frame(new StackPanel { Spacing = 8, Children = {
             disableExtras,
-            new TextBlock { Text = "New free-agent offers receive no random extra talents, including extras cached in the current run. Fixed player talents and already signed players stay unchanged. Turn this off to use your saved talent choices and weights below.", TextWrapping = TextWrapping.Wrap }
+            new TextBlock { Text = "New skater offers receive no random extra talents, including extras cached in the current run. Fixed player talents and already signed players stay unchanged. Turn this off to use your saved talent choices and weights below.", TextWrapping = TextWrapping.Wrap }
         } }, "FreeAgentExtraTalentsPanel"));
         string disableAbilitiesValue = settings.Get(FreeAgentAbilities.DisableKey);
         var disableAbilities = new CheckBox { Name = "DisableRecruitAbilities", Content = "Disable recruit abilities",
@@ -332,7 +333,7 @@ public sealed partial class CampaignWorkspace : UserControl
         fields[FreeAgentAbilities.DisableKey] = () => disableAbilitiesValue;
         page.Children.Add(InsetPoolPanel.Frame(new StackPanel { Spacing = 8, Children = {
             disableAbilities,
-            new TextBlock { Text = "New free-agent offers have no abilities, including abilities assigned in Studio. Talents and already recruited players stay unchanged. Turn this off to allow abilities on new offers again.", TextWrapping = TextWrapping.Wrap }
+            new TextBlock { Text = "New skater offers have no abilities, including abilities assigned in Studio. Talents and already recruited players stay unchanged. Turn this off to allow abilities on new offers again.", TextWrapping = TextWrapping.Wrap }
         } }, "FreeAgentAbilitiesPanel"));
         freeAgentTalentWeights = new FreeAgentTalentWeightsEditor(root, settings.Get(FreeAgentTalentWeights.Key), settings);
         fields[FreeAgentTalentWeights.Key] = () => freeAgentTalentWeights.Value;
@@ -340,9 +341,10 @@ public sealed partial class CampaignWorkspace : UserControl
         fields[FreeAgentTalentPool.SelectedKey] = () => freeAgentTalentWeights.SelectedValue;
         page.Children.Add(freeAgentTalentWeights);
         var pool = new StackPanel { Spacing = StudioTheme.SpaceMd, Children = {
-            new TextBlock { Text = "Free-agent pool", FontSize = 20 }
+            new TextBlock { Text = "Skaters", FontSize = 20 }
         } };
         page.Children.Add(InsetPoolPanel.Frame(pool, "FreeAgentPoolPanel"));
+        page.Children.Add(GoalieFreeAgentsPanel());
         if (VanillaCopyData.IsPool(Path.Combine(directory,"player_teams","free_agents")))
         {
             void RefreshNative()
@@ -716,6 +718,7 @@ public sealed partial class CampaignWorkspace : UserControl
             if (!mapEditor.TrySaveMap(out string error)) throw new InvalidOperationException(error);
         }
         if (freeAgentsDirty) { FreeAgentContent.Save(root, directory, selectedBaseAgents, selectedCustomAgents); freeAgentsDirty = false; }
+        if (goalieAgentsDirty) { SelectedPlayerPool.Save(GoalieFreeAgents.DirectoryPath(directory), selectedGoalieAgents.Order(StringComparer.OrdinalIgnoreCase)); goalieAgentsDirty = false; }
         var updated = new CampaignDocument(File.ReadAllText(Path.Combine(directory, "campaign.txt")));
         CustomRewardCatalog.BundleLibrary(root, directory);
         foreach (var field in fields) if (field.Value() != settings.Get(field.Key)) updated.Set(field.Key, field.Value());

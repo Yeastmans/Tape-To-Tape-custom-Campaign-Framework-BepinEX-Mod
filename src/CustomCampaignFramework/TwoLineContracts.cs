@@ -129,6 +129,7 @@ internal static class TwoLineContracts
 
     internal static Visit GetVisit(GeneralManagerEvent node)
     {
+        if (GoalieRecruitment.IsGoalieNode) return null;
         var run = Tape2Tape.CampaignUtil.CampaignState?.runData;
         if (!Applies(run?.teamData)) return null;
         if (Current == null || Current.Node.Pointer != node.Pointer || Current.Run != run.Pointer

@@ -22,13 +22,14 @@ internal static class CustomRewardDataCapabilities
 {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate byte HasTalent(IntPtr data, IntPtr method);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate IntPtr GetTalent(IntPtr data, IntPtr method);
-    private static INativeDetour cachedDetour, directDetour, getDetour;
+    private static INativeDetour cachedDetour, directDetour, getDetour, listGetDetour;
     private static HasTalent cachedOriginal, directOriginal;
-    private static GetTalent getOriginal;
+    private static GetTalent getOriginal, listGetOriginal;
     private static readonly HasTalent cachedCallback = Has, directCallback = Direct;
-    private static readonly GetTalent getCallback = Get;
+    private static readonly GetTalent getCallback = Get, listGetCallback = ListGet;
     private static readonly Dictionary<IntPtr, string> attributes = new();
     private static readonly Dictionary<IntPtr, string> markers = new();
+    private static readonly Dictionary<IntPtr, string> listAttributes = new();
     private static readonly Dictionary<string, Talent> proxies = new();
     [ThreadStatic] private static bool resolving;
 
@@ -42,32 +43,58 @@ internal static class CustomRewardDataCapabilities
             CustomRewardRuntime.EnsureAssets();
             var player = new SkaterData(data);
             var owned = player.powerups;
-            // Native loadout order supplies a deterministic value for duplicate
-            // custom locks. An actual native lock always wins in Has/Get below.
-            for (int i = 0; owned != null && i < owned.Count; i++) {
-                var talent = owned[i];
-                if (talent == null || talent.PayoffSuppressed || !CustomRewardRuntime.Definitions.TryGetValue(talent.id, out var rule)
-                    || rule.NeedsRedesign || (attribute ? rule.Effect != CustomRewardEffects.LockAttribute || rule.Stat != stat : rule.Effect != markers[method])) continue;
-                if (!proxies.TryGetValue(rule.Id, out var proxy)) {
-                    proxy = !attribute ? ScriptableObject.CreateInstance<GoldenHelmetTalent>() : stat == "Shot Power" ? ScriptableObject.CreateInstance<Railgun>()
-                        : stat == "Speed" ? ScriptableObject.CreateInstance<TopGear>() : ScriptableObject.CreateInstance<Bedrock>();
-                    proxy.id = rule.Id; proxy.name = "CCF_DataCapability_" + rule.Id; proxy.level = 1;
-                    if (attribute) proxy.Cast<StatLockTalent>().m_LockedValue = rule.Amount;
-                    proxy.powerupName = rule.Name; proxy.description = rule.FullDescription;
-                    proxy.hideFlags = HideFlags.DontUnloadUnusedAsset; proxies.Add(rule.Id, proxy);
-                }
-                return proxy;
-            }
+            return ResolveOwned(owned, attribute, stat, attribute ? null : markers[method]);
         } catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Attribute lock query: " + ex); }
         finally { resolving = false; }
         return null;
     }
+    private static Talent ResolveOwned(Il2CppSystem.Collections.Generic.List<Talent> owned, bool attribute, string stat, string marker)
+    {
+        // Native loadout order supplies a deterministic value for duplicate
+        // custom locks. An actual native lock always wins in Has/Get below.
+        for (int i = 0; owned != null && i < owned.Count; i++) {
+            var talent = owned[i];
+            if (talent == null || talent.PayoffSuppressed || !CustomRewardRuntime.Definitions.TryGetValue(talent.id, out var rule)
+                || rule.NeedsRedesign || (attribute ? rule.Effect != CustomRewardEffects.LockAttribute || rule.Stat != stat : rule.Effect != marker)) continue;
+            if (!proxies.TryGetValue(rule.Id, out var proxy)) {
+                proxy = !attribute ? ScriptableObject.CreateInstance<GoldenHelmetTalent>() : stat == "Shot Power" ? ScriptableObject.CreateInstance<Railgun>()
+                    : stat == "Speed" ? ScriptableObject.CreateInstance<TopGear>() : ScriptableObject.CreateInstance<Bedrock>();
+                proxy.id = rule.Id; proxy.name = "CCF_DataCapability_" + rule.Id; proxy.level = 1;
+                if (attribute) proxy.Cast<StatLockTalent>().m_LockedValue = rule.Amount;
+                proxy.powerupName = rule.Name; proxy.description = rule.FullDescription;
+                proxy.hideFlags = HideFlags.DontUnloadUnusedAsset; proxies.Add(rule.Id, proxy);
+            }
+            return proxy;
+        }
+        return null;
+    }
+    // Attribute getter bodies are inlined into stat setters and previews in
+    // 26085704. This static list query keeps their SAME saved-loadout semantics;
+    // no live conditions or actor lookup are applied here.
+    private static IntPtr ListGet(IntPtr owned, IntPtr method)
+    {
+        var native = listGetOriginal(owned, method);
+        if (native != IntPtr.Zero || owned == IntPtr.Zero || resolving || !listAttributes.TryGetValue(method, out var stat)) return native;
+        try {
+            resolving = true;
+            CustomRewardRuntime.EnsureAssets();
+            return ResolveOwned(new Il2CppSystem.Collections.Generic.List<Talent>(owned), true, stat, null)?.Pointer ?? IntPtr.Zero;
+        } catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Inlined attribute value: " + ex); return native; }
+        finally { resolving = false; }
+    }
     private static byte Has(IntPtr data, IntPtr method) {
-        byte native = cachedOriginal(data, method);
+        byte native;
+        // HaveTalentCached populates its cache by calling HaveTalent. Never
+        // write a temporary custom capability into that native cache.
+        CustomRewardCapabilities.NativeQueryDepth++;
+        try { native = cachedOriginal(data, method); }
+        finally { CustomRewardCapabilities.NativeQueryDepth--; }
+        native = CustomRewardCapabilities.FromData(native, data, method);
         return native != 0 || Resolve(data, method) == null ? native : (byte)1;
     }
     private static byte Direct(IntPtr data, IntPtr method) {
         byte native = directOriginal(data, method);
+        native = CustomRewardCapabilities.FromData(native, data, method);
         return native != 0 || Resolve(data, method) == null ? native : (byte)1;
     }
     private static IntPtr Get(IntPtr data, IntPtr method) {
@@ -80,21 +107,26 @@ internal static class CustomRewardDataCapabilities
         try {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8) throw new PlatformNotSupportedException("Attribute queries require the audited Windows x64 build.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().First(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-            if (NativeCompatibility.Load(module.FileName).GameHash != "92C6308809D5E324178C7D7E03F767C2E7D9AFCB9F41B2390B9EEAA77216BC58")
+            if (NativeCompatibility.Load(module.FileName).GameHash != "92E73E6D0BE549DD8C695302B7AAE6A77CBBF4DE27F27D26ED01F4B3DABC5B8D")
                 throw new InvalidOperationException("Attribute queries have not been audited for this game build.");
-            var cached = module.BaseAddress + 0xc45250; var get = module.BaseAddress + 0xc451b0;
-            var direct = module.BaseAddress + 0xc45370;
-            Verify(cached, "48895C240848896C2410488974241857");
+            var cached = module.BaseAddress + 0xe901f0; var get = module.BaseAddress + 0xe90030;
+            var direct = module.BaseAddress + 0xe900d0;
+            Verify(cached, "48895C241048896C2418565741574883");
             Verify(get, "48895C2408574883EC2048837A380048");
-            Verify(direct, "48895C24104889742418574883EC20");
+            Verify(direct, "48895C241848896C2420564883EC20");
+            var listGet = module.BaseAddress + 0xeb91d0;
+            Verify(listGet, "48895C241848896C2420574883EC20");
+            RegisterList<Railgun>("Shot Power", listGet); RegisterList<TopGear>("Speed", listGet); RegisterList<Bedrock>("Checking", listGet);
             Register<Railgun>("Shot Power", cached, get); Register<TopGear>("Speed", cached, get); Register<Bedrock>("Checking", cached, get);
             RegisterMarker<GoldenHelmetTalent>(CustomRewardEffects.GoldenHelmet, "HaveTalentCached", cached);
             RegisterMarker<GoldenHelmetTalent>(CustomRewardEffects.GoldenHelmet, "HaveTalent", direct);
+            listGetDetour = INativeDetour.CreateAndApply(listGet, listGetCallback, out listGetOriginal);
             getDetour = INativeDetour.CreateAndApply(get, getCallback, out getOriginal);
             cachedDetour = INativeDetour.CreateAndApply(cached, cachedCallback, out cachedOriginal);
             directDetour = INativeDetour.CreateAndApply(direct, directCallback, out directOriginal);
             Plugin.Log.LogInfo("[CustomRewards] Native attribute-lock queries installed.");
         } catch (Exception ex) {
+            listGetDetour?.Dispose(); listGetDetour = null; listAttributes.Clear();
             directDetour?.Dispose(); directDetour = null; cachedDetour?.Dispose(); cachedDetour = null; getDetour?.Dispose(); getDetour = null; attributes.Clear(); markers.Clear();
             Plugin.Log.LogError("[CustomRewards] Attribute-lock rules unavailable: " + ex);
         }
@@ -112,6 +144,15 @@ internal static class CustomRewardDataCapabilities
             if (method == IntPtr.Zero || Marshal.ReadIntPtr(method) != entry.Item2) throw new InvalidOperationException("Unexpected native query for " + typeof(T).Name + "." + entry.Item1);
             attributes.Add(method, stat);
         }
+    }
+    private static void RegisterList<T>(string stat, IntPtr entry)
+    {
+        var storage = typeof(Talent).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)
+            .Single(t => t.Name.StartsWith("MethodInfoStoreGeneric_Get_", StringComparison.Ordinal)).MakeGenericType(typeof(T));
+        RuntimeHelpers.RunClassConstructor(storage.TypeHandle);
+        var method = (IntPtr)storage.GetField("Pointer", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
+        if (method == IntPtr.Zero || Marshal.ReadIntPtr(method) != entry) throw new InvalidOperationException("Unexpected native attribute list query for " + typeof(T).Name);
+        listAttributes.Add(method, stat);
     }
     private static void RegisterMarker<T>(string effect, string name, IntPtr entry) {
         var storage = typeof(SkaterData).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)

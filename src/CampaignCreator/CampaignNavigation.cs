@@ -67,7 +67,7 @@ public static class CampaignNavigation
         string teams = Path.Combine(root, "teams");
         if (Directory.Exists(teams)) nodes.AddRange(Directory.GetDirectories(teams).Order(StringComparer.OrdinalIgnoreCase).Select((dir, i) => Team(dir, i + 1)));
         string squads = Path.Combine(root, "player_teams");
-        var reserved = new[] { "draft_pool", "free_agents", "superstars" };
+        var reserved = new[] { "draft_pool", "free_agents", "superstars", GoalieFreeAgents.Folder };
         if (Directory.Exists(squads))
         {
             var children = Directory.GetDirectories(squads).Order(StringComparer.OrdinalIgnoreCase)
@@ -84,6 +84,9 @@ public static class CampaignNavigation
             }
             if (children.Count > 0) nodes.Add(new(label, "", null, children));
         }
+        string goalies = GoalieFreeAgents.DirectoryPath(root);
+        if (Directory.Exists(goalies)) nodes.Add(new("Goalie Free Agents", "", null,
+            Directory.GetFiles(goalies, "*.txt").Order(StringComparer.OrdinalIgnoreCase).Select(Player).ToList()));
         return nodes;
     }
     public static List<CampaignNode> Filter(IEnumerable<CampaignNode> nodes, string query) => nodes.Select(n =>

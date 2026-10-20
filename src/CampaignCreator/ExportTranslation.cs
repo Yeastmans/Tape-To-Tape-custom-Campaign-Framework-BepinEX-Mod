@@ -35,6 +35,7 @@ internal static partial class ExportTranslation
     internal static CampaignDocument Player(CampaignDocument player, CampaignDocument team, CampaignDocument? goalieDefaults, string role, GameData? game = null)
     {
         var result = AppearanceContract.Resolve(player, team, goalieDefaults ?? new CampaignDocument(""), role);
+        result.Set(PlayerExport.OwnEquipmentKey, PlayerExport.EquipmentIntent(player));
         // This is now a standalone export snapshot. Later conversion has no team
         // context, so it must retain the appearance we just inherited.
         result.Set("Override Team Settings", "yes");

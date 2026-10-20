@@ -30,6 +30,8 @@ internal static class CustomRewardCapabilities
     private static readonly HasTalent cachedCallback = Cached, directCallback = Direct;
     private static readonly GetTalent getCallback = Get;
     private static readonly Dictionary<IntPtr, string> effects = new();
+    private static readonly Dictionary<IntPtr, IntPtr> dataMethods = new();
+    [ThreadStatic] internal static int NativeQueryDepth;
     private static readonly Dictionary<string, Func<CustomRewardDefinition, Talent>> factories = new();
     private static readonly Dictionary<string, Talent> proxies = new();
     [ThreadStatic] private static bool resolving;
@@ -71,8 +73,25 @@ internal static class CustomRewardCapabilities
         return proxy;
     }
 
-    private static byte Cached(IntPtr player, IntPtr method) => Resolve(cachedOriginal(player, method), player, method);
-    private static byte Direct(IntPtr player, IntPtr method) => Resolve(directOriginal(player, method), player, method);
+    private static byte Native(HasTalent original, IntPtr player, IntPtr method)
+    {
+        NativeQueryDepth++;
+        try { return original(player, method); }
+        finally { NativeQueryDepth--; }
+    }
+    private static byte Cached(IntPtr player, IntPtr method) => Resolve(Native(cachedOriginal, player, method), player, method);
+    private static byte Direct(IntPtr player, IntPtr method) => Resolve(Native(directOriginal, player, method), player, method);
+    // Only audited inlined LIVE callers enter this scope. Data-only queries
+    // (including previews of the same SkaterData) retain their native meaning.
+    internal static byte FromData(byte native, IntPtr data, IntPtr method)
+    {
+        if (!CustomRewardLiveQueryScope.Active || NativeQueryDepth != 0 || !dataMethods.TryGetValue(method, out var liveMethod)) return native;
+        try {
+            var actor = CustomRewardRuntime.ActorForData(data);
+            if (actor == null || !actor.ArePowerUpsEnabled()) return native;
+            return Resolve(native, actor.Pointer, liveMethod);
+        } catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Inlined live query: " + ex); return native; }
+    }
     private static byte Resolve(byte native, IntPtr player, IntPtr method)
     {
         if (player != IntPtr.Zero && !resolving && CustomRewardRuntime.InMatch && effects.TryGetValue(method, out string goal) && goal == CustomRewardEffects.ExtraGoal)
@@ -97,7 +116,9 @@ internal static class CustomRewardCapabilities
     {
         try {
             resolving = true;
-            var scope = CustomRewardGoalValues.ScopeFor(new Skater(player));
+            var actor = new Skater(player);
+            if (!actor.ArePowerUpsEnabled()) return native;
+            var scope = CustomRewardGoalValues.ScopeFor(actor);
             if (scope == null) return native;
             // A denial reverses only what this goal's scoring query added.
             int units = scope.Denial && scope.Units < 0 ? 0 : scope.Query(native != 0);
@@ -141,8 +162,8 @@ internal static class CustomRewardCapabilities
     private static void InstallGoalRepeat(ProcessModule module)
     {
         try {
-            var add = module.BaseAddress + 0x38e2450; var cancel = module.BaseAddress + 0x38e2170;
-            Verify(add, "48895C2408488974241048897C24184C8974242041574883EC60");
+            var add = module.BaseAddress + 0x403cf00; var cancel = module.BaseAddress + 0x403cba0;
+            Verify(add, "48895C2408488974241048897C241841564883EC60");
             Verify(cancel, "48895C2418574883EC40803D");
             cancelStats = Marshal.GetDelegateForFunctionPointer<CancelStatsFn>(cancel);
             addGoalDetour = INativeDetour.CreateAndApply(add, addGoalCallback, out addGoalOriginal);
@@ -170,10 +191,10 @@ internal static class CustomRewardCapabilities
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8)
                 throw new PlatformNotSupportedException("Native capability rules require the audited Windows x64 build.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().First(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-            if (NativeCompatibility.Load(module.FileName).GameHash != "92C6308809D5E324178C7D7E03F767C2E7D9AFCB9F41B2390B9EEAA77216BC58")
+            if (NativeCompatibility.Load(module.FileName).GameHash != "92E73E6D0BE549DD8C695302B7AAE6A77CBBF4DE27F27D26ED01F4B3DABC5B8D")
                 throw new InvalidOperationException("Native capability queries have not been audited for this game build.");
-            var cached = module.BaseAddress + 0xc45b60; var direct = module.BaseAddress + 0xc45cc0; var get = module.BaseAddress + 0xc459d0;
-            Verify(cached, "48895C2418564883EC2048837A3800");
+            var cached = module.BaseAddress + 0xe8ff70; var direct = module.BaseAddress + 0xe8ff10; var get = module.BaseAddress + 0xe8fc60;
+            Verify(cached, "48895C2408574883EC2048837A3800");
             Verify(direct, "48895C2408574883EC2048837A3800");
             Verify(get, "48895C2408574883EC2048837A3800");
             Register<SpikedArmor>(CustomRewardEffects.SpikedRetaliation, cached, direct, get);
@@ -225,13 +246,63 @@ internal static class CustomRewardCapabilities
             getDetour = INativeDetour.CreateAndApply(get, getCallback, out getOriginal);
             cachedDetour = INativeDetour.CreateAndApply(cached, cachedCallback, out cachedOriginal);
             directDetour = INativeDetour.CreateAndApply(direct, directCallback, out directOriginal);
+            InstallFixedQueries(module);
             Plugin.Log.LogInfo("[CustomRewards] Native movement and contact capability queries installed.");
             InstallGoalRepeat(module);
         } catch (Exception ex) {
-            directDetour?.Dispose(); directDetour = null; cachedDetour?.Dispose(); cachedDetour = null; getDetour?.Dispose(); getDetour = null; effects.Clear(); factories.Clear();
+            foreach (var hook in fixedDetours) hook.Dispose(); fixedDetours.Clear(); fixedCallbacks.Clear();
+            directDetour?.Dispose(); directDetour = null; cachedDetour?.Dispose(); cachedDetour = null; getDetour?.Dispose(); getDetour = null; effects.Clear(); dataMethods.Clear(); factories.Clear();
             Plugin.Log.LogError("[CustomRewards] Native capability rules unavailable: " + ex);
         }
     }
+
+    // The optimizer emitted one-argument specializations which do not call the
+    // shared Skater query entry. Their originals still own the native gates.
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate byte FixedQuery(IntPtr player);
+    private static readonly List<INativeDetour> fixedDetours = new();
+    private static readonly List<FixedQuery> fixedCallbacks = new();
+    private static void InstallFixedQueries(ProcessModule module)
+    {
+        Fixed<Kick>(module, 0x636ef0, "HaveTalentCached", "48895C2408574883EC20488B1D5FBF1F08488BF948837B38");
+        Fixed<Slugger>(module, 0x636f60, "HaveTalentCached", "48895C2408574883EC20488B1DD7BE1F08488BF948837B38");
+        Fixed<ChargeShot>(module, 0x636fe0, "HaveTalentCached", "48895C2408574883EC20488B1DFFBB1F08488BF948837B38");
+        Fixed<WonderWall>(module, 0x63a330, "HaveTalentCached", "48895C2408574883EC20488B1DAFA52108488BF948837B38");
+        Fixed<OffensiveBodycheck>(module, 0x63e6d0, "HaveTalentCached", "48895C2408574883EC20488B1DBF301D08488BF948837B38");
+        Fixed<HyperDrive>(module, 0x63e840, "HaveTalentCached", "48895C2408574883EC20488B1D0F401D08488BF948837B38");
+        Fixed<SpringBoard>(module, 0x63eb80, "HaveTalentCached", "48895C2408574883EC20488B1D874E1D08488BF948837B38");
+        Fixed<Rogue.Powerups.Chaos.FragileTalent>(module, 0x6406a0, "HaveTalent", "48895C2408574883EC20488B1DCFDF1808488BF948837B38");
+        Fixed<GoldenPuck>(module, 0x646400, "HaveTalentCached", "48895C2408574883EC20488B1DD7712308488BF948837B38");
+        Fixed<PrinceAI>(module, 0x6470e0, "HaveTalentCached", "48895C2408574883EC20488B1D97B02308488BF948837B38");
+        Fixed<Rogue.Powerups.Chaos.Anchor>(module, 0x647150, "HaveTalentCached", "48895C2408574883EC20488B1D67B02308488BF948837B38");
+        Fixed<SpikedArmor>(module, 0x6471c0, "HaveTalentCached", "48895C2408574883EC20488B1D3FAD2308488BF948837B38");
+        Fixed<Gambler>(module, 0x647790, "HaveTalent", "48895C2408574883EC20488B1D07DE2308488BF948837B38");
+        Fixed<Gambler>(module, 0x647950, "HaveTalentCached", "48895C2408574883EC20488B1D17DB2308488BF948837B38");
+        Fixed<DestroyerShot>(module, 0x647f10, "HaveTalentCached", "48895C2408574883EC20488B1D37E22308488BF948837B38");
+        Fixed<PingKing>(module, 0x648200, "HaveTalent", "48895C2408574883EC20488B1D37192408488BF948837B38");
+        Fixed<Velcro>(module, 0x6499c0, "HaveTalentCached", "48895C2408574883EC20488B1DFF852508488BF948837B38");
+        Fixed<DefensiveDeflect>(module, 0x649a30, "HaveTalentCached", "48895C2408574883EC20488B1D97852508488BF948837B38");
+        Fixed<KarlsonBehavior>(module, 0x658400, "HaveTalentCached", "48895C2408574883EC20488B1D47611A08488BF948837B38");
+    }
+    private static void Fixed<T>(ProcessModule module, int rva, string query, string prologue)
+    {
+        var storage = typeof(Skater).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)
+            .Single(t => t.Name.StartsWith("MethodInfoStoreGeneric_" + query + "_", StringComparison.Ordinal)).MakeGenericType(typeof(T));
+        RuntimeHelpers.RunClassConstructor(storage.TypeHandle);
+        var method = (IntPtr)storage.GetField("Pointer", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
+        if (!effects.ContainsKey(method)) throw new InvalidOperationException("Unregistered fixed live query " + typeof(T).Name);
+        Verify(module.BaseAddress + rva, prologue);
+        FixedQuery original = null;
+        FixedQuery callback = player => {
+            byte native;
+            NativeQueryDepth++;
+            try { native = original(player); }
+            finally { NativeQueryDepth--; }
+            return Resolve(native, player, method);
+        };
+        fixedCallbacks.Add(callback);
+        fixedDetours.Add(INativeDetour.CreateAndApply(module.BaseAddress + rva, callback, out original));
+    }
+
     private static void Verify(IntPtr address, string hex)
     {
         byte[] expected = Convert.FromHexString(hex), actual = new byte[expected.Length];
@@ -250,8 +321,45 @@ internal static class CustomRewardCapabilities
             if (method == IntPtr.Zero || Marshal.ReadIntPtr(method) != entry.Item2)
                 throw new InvalidOperationException("Unexpected native method pointer for " + typeof(T).Name + "." + entry.Item1);
             effects.Add(method, effect);
+            if (entry.Item1 != "GetTalent") {
+                var dataStorage = typeof(Data.SkaterData).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)
+                    .Single(t => t.Name.StartsWith("MethodInfoStoreGeneric_" + entry.Item1 + "_", StringComparison.Ordinal)).MakeGenericType(typeof(T));
+                RuntimeHelpers.RunClassConstructor(dataStorage.TypeHandle);
+                var dataMethod = (IntPtr)dataStorage.GetField("Pointer", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
+                var dataEntry = entry.Item1 == "HaveTalentCached" ? cached - 0xe8ff70 + 0xe901f0 : direct - 0xe8ff10 + 0xe900d0;
+                if (dataMethod == IntPtr.Zero || Marshal.ReadIntPtr(dataMethod) != dataEntry)
+                    throw new InvalidOperationException("Unexpected inlined data query for " + typeof(T).Name + "." + entry.Item1);
+                dataMethods.Add(dataMethod, method);
+            }
         }
     }
+}
+
+// These are the 26085704 callers whose native bodies inline the Skater gate
+// and call SkaterData directly. Keep this positive list separate from saved
+// data consumers: BenchBonus.MoveNext, for example, contains both kinds.
+[HarmonyPatch]
+internal static class CustomRewardLiveQueryScope
+{
+    [ThreadStatic] internal static bool Active;
+    private static IEnumerable<MethodBase> TargetMethods()
+    {
+        yield return AccessTools.Method(typeof(Movements.MovementManager), "CanBodycheck");
+        yield return AccessTools.Method(typeof(Goaltender.GoaltenderStates.SavingState), "OnPuckCollision");
+        yield return AccessTools.Method(typeof(Rogue.NoStickSoccerRelicController), "_AddEffect_b__3_0");
+        yield return AccessTools.Method(typeof(Rogue.Relics.Controllers.SpikeArmorRelicController), "AddEffect");
+        yield return AccessTools.Method(typeof(Skaters.ForwardStats), "GetStatAfterInjuryCheck");
+        yield return AccessTools.Method(typeof(SkaterAbility), "GetPowerupsInShots");
+        yield return AccessTools.Method(typeof(SkaterAbility.__Pass_d__49), "MoveNext");
+        yield return AccessTools.Method(typeof(Skaters.SkaterCollision), "IsGuaranteedKnockout");
+        yield return AccessTools.Method(typeof(Skaters.SkaterCollision), "HandleHitted");
+        yield return AccessTools.Method(typeof(Skaters.Injuries.InjurySystem), "TryInjuryAttempt");
+        yield return AccessTools.Method(typeof(Tape2Tape.Team.__c), "_HasRefBlockShotTalent_b__175_0");
+        yield return AccessTools.Method(typeof(AI.AIStates.AIState), "ResetToDefaultState");
+        yield return AccessTools.Method(typeof(AI.AIStates.AIState), "IsKnightOf");
+    }
+    [HarmonyPrefix] private static void Prefix(out bool __state) { __state = Active; Active = true; }
+    [HarmonyFinalizer] private static void Finalizer(bool __state) => Active = __state;
 }
 
 [HarmonyPatch(typeof(Pools.Stick), "TryHit")]

@@ -23,6 +23,8 @@ internal static class NativeSquadBehaviorBridge
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate byte Compare(IntPtr left, IntPtr right, IntPtr method);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate byte InlineCompare(IntPtr left, IntPtr right);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate byte StartingFlow(IntPtr state, byte intro, IntPtr title);
     private sealed class Site
     {
@@ -30,6 +32,7 @@ internal static class NativeSquadBehaviorBridge
         internal int Rva, Target;
         internal byte[] Original;
         internal IntPtr Address, Stub;
+        internal CampaignCore.NativeInlineComparison Inline;
     }
     private static readonly List<Delegate> callbacks = new();
     private static readonly List<Site> installed = new();
@@ -53,11 +56,17 @@ internal static class NativeSquadBehaviorBridge
             foreach (var entry in profile.Sites)
             {
                 var site = new Site { Feature = entry.Feature, Query = entry.Query, Kind = entry.Kind,
-                    Rva = entry.Rva, Target = entry.Target, Original = Convert.FromHexString(entry.Bytes), Name = entry.Method };
+                    Rva = entry.Rva, Target = entry.Target, Original = Convert.FromHexString(entry.Bytes), Name = entry.Method, Inline=entry.Inline };
                 site.Address = module.BaseAddress + site.Rva;
                 var current = new byte[site.Original.Length]; Marshal.Copy(site.Address, current, 0, current.Length);
-                if (current.Length != 5 || !current.SequenceEqual(site.Original))
+                if (!current.SequenceEqual(site.Original))
                     throw new InvalidOperationException("Squad comparison site changed: " + site.Name);
+                if(site.Kind=="inline_eq")
+                {
+                    var expected=Convert.FromHexString(site.Inline.BlockBytes);var actual=new byte[expected.Length];
+                    Marshal.Copy(site.Address,actual,0,actual.Length);
+                    if(!actual.SequenceEqual(expected)) throw new InvalidOperationException("Inline squad comparison changed: "+site.Name);
+                }
                 sites.Add(site);
             }
             var flow = new Site { Feature = "starting_screens", Query = "", Kind = "flow", Rva = profile.FlowRva,
@@ -71,6 +80,27 @@ internal static class NativeSquadBehaviorBridge
             int offset = 0;
             foreach (var site in sites)
             {
+                if(site.Kind=="inline_eq")
+                {
+                    InlineCompare callback=(left,right)=>
+                    {
+                        try
+                        {
+                            if(Plugin.IsDefaultMode) return 0;
+                            string a=IL2CPP.Il2CppStringToManaged(left),b=IL2CPP.Il2CppStringToManaged(right);
+                            string customId=b==site.Query?a:a==site.Query?b:null;
+                            return SquadBehaviorRuntime.TryEnabled(customId,site.Feature,out bool enabled)?(byte)(enabled?2:1):(byte)0;
+                        }
+                        catch(Exception ex){ReportCallback(ex);return 0;}
+                    };
+                    callbacks.Add(callback);site.Stub=arena+offset;offset+=512;
+                    var code=NativeInlineComparisonStub.BuildInlineComparisonStub(Marshal.GetFunctionPointerForDelegate(callback),
+                        site.Address+site.Original.Length,module.BaseAddress+site.Inline.EqualBranchRva,module.BaseAddress+site.Target,
+                        site.Original.Take(3).ToArray(),site.Inline.LeftRegister);
+                    if(code.Length>512) throw new InvalidOperationException("Inline squad stub exceeds reserved space.");
+                    Marshal.Copy(code,0,site.Stub,code.Length);
+                    continue;
+                }
                 if (site.Kind == "flow")
                 {
                     StartingFlow callback = SquadStartingScreens.Apply; callbacks.Add(callback);
@@ -137,7 +167,7 @@ internal static class NativeSquadBehaviorBridge
             foreach (var site in sites)
             {
                 byte[] call = (byte[])site.Original.Clone();
-                if (site.Kind == "flow") { Array.Fill(call, (byte)0x90); call[0] = 0xe9; }
+                if (site.Kind == "flow" || site.Kind=="inline_eq") { Array.Fill(call, (byte)0x90); call[0] = 0xe9; }
                 BitConverter.GetBytes(checked((int)(site.Stub.ToInt64() - site.Address.ToInt64() - 5))).CopyTo(call, 1);
                 WriteCode(site.Address, call); installed.Add(site);
             }

@@ -12,7 +12,7 @@ public static class SquadCopy
         if (SquadTemplateCatalog.Find(template) == null) throw new ArgumentException("Choose a known base-game squad template.");
         name = name.Trim();
         string stem = name.Split('.')[0];
-        var reserved = new[] { "CON", "PRN", "AUX", "NUL", "draft_pool", "free_agents", "superstars" }.Concat(Enumerable.Range(1, 9).SelectMany(i => new[] { "COM" + i, "LPT" + i }));
+        var reserved = new[] { "CON", "PRN", "AUX", "NUL", "draft_pool", "free_agents", "superstars", GoalieFreeAgents.Folder }.Concat(Enumerable.Range(1, 9).SelectMany(i => new[] { "COM" + i, "LPT" + i }));
         if (name.Length == 0 || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || name.EndsWith('.') || name.EndsWith(' ') || reserved.Contains(stem, StringComparer.OrdinalIgnoreCase)) throw new ArgumentException("Choose a non-reserved squad name without filename punctuation.");
         string squads = Path.Combine(campaign, "player_teams");
         string target = Path.Combine(squads, name);

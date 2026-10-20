@@ -26,6 +26,7 @@ public sealed class UpgradeCleanup
         fields["player"].Add(PlayerBrawlOptions.PrinceKey);
         fields["player"].UnionWith(new[] { PlayerContractOptions.EnabledKey, PlayerContractOptions.MatchesKey });
         fields["player"].Add("Number Style");
+        fields["player"].Add(PlayerExport.OwnEquipmentKey);
         fields["campaign"].Add(FreeAgentTalentWeights.Key);
         fields["campaign"].Add(FreeAgentStats.KeepKey);
         fields["campaign"].Add(FreeAgentTalentPool.DisableExtrasKey);

@@ -1,5 +1,18 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 23 — 2026-10-20
+
+- Compatibility repair for Tape to Tape roguelite build **26085704**, including native squad behavior and custom reward queries affected by the game update.
+- **Goalie recruitment:** choose Skaters (default) or Goalies on a General Manager node. Studio's Free Agents tab now has a Goalies pool with create, import, edit and selection controls. Recruits replace the active goalie and stay for the run unless replaced again.
+- **Copy to Home / Copy to Away** copies the full kit draft, including skater and goalie settings. Use the existing Save button to keep changes.
+- Campaign opponent logos resolve from the active campaign before global caches, fixing custom jersey and map-icon substitutions.
+- Exported players with independent equipment retain that ownership when assigned to a custom team. **Re-export older affected players** to record the ownership setting.
+
+Technical validation includes focused editor/runtime checks, independent review and a 299-method compatibility baseline. Live gameplay, rendered goalie cards, and complete native Save/Continue acceptance remain pending. Save and close Studio and the game before installing.
+
+Not included in this revision: two-line Play Now exports, separate home/away logos, bench-goalie swapping or temporary goalie contracts. These are follow-up work.
+
+
 ## Beta 1.0 revision 22 - 2026-10-20
 
 - **Fix: in-match lag in campaigns with many custom rewards.** Custom stat changes, While-conditions and other per-tick rules checked every reward in the campaign for every skater on every physics step (a campaign with about 340 custom rewards dropped to about 4 fps). They now check only the rewards owned by the players and teams in the match.

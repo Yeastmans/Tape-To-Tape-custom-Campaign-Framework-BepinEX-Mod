@@ -168,6 +168,7 @@ internal static class StudioGuideReference
             new("Talent rewards / Relic rewards", "Match nodes only: " + PoolChoiceGuidance.MatchRewards),
             new("Periods / Period length", "Match, Boss and Challenge nodes can override timed matches. Use base-game setting retains the native value. Goal-target rules are not converted to timed rules. Changes enter the draft; Save maps keeps them."),
             new("Players to recruit", "General Manager nodes: choose 1–20 recruitment choices."),
+            new("Recruit role", "General Manager nodes default to Skaters. Choose Goalies to offer candidates from the campaign's Goalies section in Free Agents. Recruited goalies replace the current goalie and stay until replaced again. Save maps keeps this setting."),
             new("Random event options...", "Choose among 5 event types; each random node becomes 1 event. Positive weights set the displayed roll odds and zero excludes an event. At least one weight must be positive. Custom pools allow repeats and override Nurse, Solo Blademaster and template-replacement restrictions. Apply, then Save maps to use the pool for newly generated maps."),
             new("Remove node", "Delete a non-Boss node from the draft; Undo restores it."),
             new("Done", "Close node settings. Edits are already in the draft; Save maps writes them."),
@@ -175,7 +176,7 @@ internal static class StudioGuideReference
         }.Concat(MapLayout.NodeTypes.Select(type => new GuideEntry("Node type: " + MapEditorView.NodeName(type), type switch {
             "Elite" => "A match with team, stadium, talent-reward and relic-reward settings.",
             "Boss" => "The fixed final match of the map; choose its opponent and stadium.",
-            "GeneralManager" => "General Manager recruitment event with a Players to recruit setting.",
+            "GeneralManager" => "General Manager recruitment event with Recruit role and Players to recruit settings.",
             "NULL" => "Becomes 1 event when the map is generated. Random event options sets this node's weighted pool; unedited nodes inherit the game's pool. Existing maps keep their events.",
             _ => "The game's " + MapEditorView.NodeName(type) + " event. Event behavior follows the game's rules."
         }))).Concat(NodeSettingsWindow.Stadiums.Select(s => new GuideEntry("Stadium: " + s.Name, "World-map artwork option."))).ToArray(),
@@ -188,7 +189,8 @@ internal static class StudioGuideReference
             new("Custom", "Check custom free agents to include them. Unchecked players remain available through Edit player."),
             new("Import", "Copy a skater from the import picker directly into this campaign's free agents."),
             new("Make New", "Name and create a free agent, then complete the player editor."),
-            new("Save campaign", "Save both base-game and custom selections. With neither selected, the default game pool is used.")],
+            new("Goalies", "Campaign-wide goalie candidates for General Manager nodes set to Goalies. Import goalie copies a goalie from the picker; Make New goalie opens a new goalie in the existing player editor. Unchecked goalies remain editable. Recruited goalies replace the current goalie and stay until replaced again."),
+            new("Save campaign", "Save skater and goalie selections. An explicitly saved empty pool offers no recruits of that role.")],
         "rewards" => [
             new("Relics", PoolChoiceGuidance.RewardOffer("Relics")),
             new("Regular talents", PoolChoiceGuidance.RewardOffer("Talents")),

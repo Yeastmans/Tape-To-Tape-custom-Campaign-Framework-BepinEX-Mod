@@ -31,6 +31,26 @@ internal static class CustomRewardRuntime
     private static readonly Dictionary<string, Relic> relics = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<IntPtr, Forward> forwards = new();
     private static readonly Dictionary<IntPtr, Skater> actors = new();
+    // Only exact live object identities qualify for inlined native queries.
+    // Rebuild at bind time so the hot query path never scans actors or assets.
+    private static readonly Dictionary<IntPtr, Skater> actorsByData = new();
+    private static readonly HashSet<IntPtr> ambiguousActorData = new();
+    private static void IndexActorData()
+    {
+        actorsByData.Clear(); ambiguousActorData.Clear();
+        foreach (var actor in actors.Values) {
+            var data = actor?._skaterData;
+            if (data == null || data.Pointer == IntPtr.Zero || ambiguousActorData.Contains(data.Pointer)) continue;
+            if (actorsByData.TryGetValue(data.Pointer, out var other) && other.Pointer != actor.Pointer) {
+                actorsByData.Remove(data.Pointer); ambiguousActorData.Add(data.Pointer);
+            } else actorsByData[data.Pointer] = actor;
+        }
+    }
+    internal static Skater ActorForData(IntPtr data)
+    {
+        if (!InMatch || data == IntPtr.Zero || !actorsByData.TryGetValue(data, out var actor)) return null;
+        return actor != null && actor._skaterData?.Pointer == data && actor.Team?._teamData != null ? actor : null;
+    }
     private static readonly HashSet<string> dispatching = new();
     private sealed class TimedTag { internal Skater Skater; internal StatusTag Tag; internal float Until; internal string Reward, Owner; }
     private static readonly Dictionary<string, TimedTag> tags = new();
@@ -419,7 +439,7 @@ internal static class CustomRewardRuntime
         foreach (var action in unsubscribe) Safe(action);
         foreach (var action in removeModifiers) Safe(action);
         foreach (var tag in tags.Values) if (tag.Skater != null) Safe(() => tag.Skater.statusEffectsManager?.RemoveTag(tag.Tag));
-        tags.Clear(); dispatching.Clear(); actors.Clear(); brokenSticks.Clear(); nextRefresh = 0; inPlay = Array.Empty<CustomRewardDefinition>(); inPlayStale = true;
+        tags.Clear(); dispatching.Clear(); actors.Clear(); actorsByData.Clear(); ambiguousActorData.Clear(); brokenSticks.Clear(); nextRefresh = 0; inPlay = Array.Empty<CustomRewardDefinition>(); inPlayStale = true;
         unsubscribe.Clear(); removeModifiers.Clear(); delegates.Clear(); forwards.Clear(); boundStats.Clear(); eventsBound = false;
     }
     internal static void Bind(Forward forward)
@@ -428,6 +448,7 @@ internal static class CustomRewardRuntime
         MatchStarted(); if (!inMatch) return;
         forwards[forward.Pointer] = forward;
         actors[forward.Pointer] = forward; inPlayStale = true;
+        IndexActorData();
         if (!boundStats.Add(forward.stats.Pointer)) return;
         Il2CppSystem.Func<int, int> Modifier(string stat) {
             var fn = (Il2CppSystem.Func<int, int>)(Func<int, int>)(value => {
@@ -449,6 +470,7 @@ internal static class CustomRewardRuntime
         if (goalie?.goalieStats == null || goalie._skaterData == null || goalie.Team?._teamData == null) return;
         MatchStarted(); if (!inMatch) return;
         actors[goalie.Pointer] = goalie; inPlayStale = true;
+        IndexActorData();
         if (!boundStats.Add(goalie.goalieStats.Pointer)) return;
         void Add(Il2CppSystem.Collections.Generic.List<Il2CppSystem.Func<int, int>> list, string stat) {
             var modifier = (Il2CppSystem.Func<int, int>)(Func<int, int>)(value => (int)Math.Max(0, Math.Min(int.MaxValue, (long)value + Bonus(goalie, stat))));

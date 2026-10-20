@@ -5839,13 +5839,13 @@ public static class PatchBossLaunchMatch
     {
         if (string.IsNullOrWhiteSpace(name)) return null;
         string key = name.Trim();
-        if (_customLogoCache.TryGetValue(key, out var cached)) return cached;
-
-        // 1) Prefer the game's OWN recognized logo (so jerseys map it too).
+        // Resolve campaign artwork before consulting native/global preview caches.
         string selectedFile = CampaignCore.LogoFiles.Resolve(Plugin.ModContentRoot,
-            Path.Combine(UnityEngine.Application.persistentDataPath, "CustomLogos"), key);
+            Path.Combine(UnityEngine.Application.persistentDataPath, "CustomLogos"), key, Plugin.ModFolder);
+        string cacheKey = selectedFile ?? key;
+        if (_customLogoCache.TryGetValue(cacheKey, out var cached)) return cached;
         var native = selectedFile == null && !Path.IsPathRooted(key) ? GetNativeLogo(key) : null;
-        if (native != null) { _customLogoCache[key] = native; return native; }
+        if (native != null) { _customLogoCache[cacheKey] = native; return native; }
 
         UnityEngine.Sprite sprite = null;
         try
@@ -5885,7 +5885,7 @@ public static class PatchBossLaunchMatch
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[CustomLogo] '{name}': {ex.Message}"); }
 
-        if (sprite != null) _customLogoCache[key] = sprite;
+        if (sprite != null) _customLogoCache[cacheKey] = sprite;
         return sprite;
     }
 
@@ -9150,7 +9150,7 @@ public static class PatchPlayerTeamInit
         }
 
         // Apply goalie config
-        if (team.goalie != null && cfg.Goalie != null && !string.IsNullOrEmpty(cfg.Goalie.Name))
+        if (team.goalie != null && !GoalieRecruitment.IsRecruit(team.goalie) && cfg.Goalie != null && !string.IsNullOrEmpty(cfg.Goalie.Name))
         {
             if (!liveRun && !string.IsNullOrEmpty(cfg.Goalie.ImportPlayer))
             {

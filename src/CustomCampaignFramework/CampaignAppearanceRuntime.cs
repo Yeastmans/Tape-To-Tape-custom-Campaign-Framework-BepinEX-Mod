@@ -27,7 +27,7 @@ internal static class CampaignAppearanceRuntime
         // The saved goalie model also omits numberFormat. Restore appearance only
         // for the authored goalie; a replacement or unnamed donor stays unchanged.
         var goalie = team.goalie;
-        if (goalie != null && !string.IsNullOrWhiteSpace(config.Goalie?.Name)
+        if (goalie != null && !GoalieRecruitment.IsRecruit(goalie) && !string.IsNullOrWhiteSpace(config.Goalie?.Name)
             && string.Equals(config.Goalie.Name.Trim(), ((goalie.firstName ?? "") + " " + (goalie.lastName ?? "")).Trim(), StringComparison.OrdinalIgnoreCase)
             && config.Uniform.NumberFormat >= 0 && config.Uniform.NumberFormat < FieldSchema.NumberStyles.Length)
             goalie.numberFormat = (NumberFormat)(config.Goalie.NumberFormat >= 0 ? config.Goalie.NumberFormat : config.Uniform.NumberFormat);
@@ -194,6 +194,32 @@ internal static class CampaignAppearanceRuntime
     }
     internal static CampaignDocument Read(SkaterData player)
         => player != null && Bindings.TryGetValue(player.Pointer, out var value) && !value.Export ? value.Effective : null;
+    internal static CampaignDocument RecruitSnapshot(SkaterData player)
+    {
+        var snapshot = new CampaignDocument("");
+        if (player == null || !Bindings.TryGetValue(player.Pointer, out var value)) return snapshot;
+        foreach (var pair in value.Team.Fields) snapshot.Set("Appearance Team " + pair.Key, pair.Value);
+        foreach (var pair in value.Player.Fields) snapshot.Set("Appearance Player " + pair.Key, pair.Value);
+        foreach (var pair in value.Own.Fields) snapshot.Set("Appearance Own " + pair.Key, pair.Value);
+        snapshot.Set("Appearance Team Painted", value.TeamPainted ? "yes" : "no");
+        return snapshot;
+    }
+    internal static void RestoreRecruit(SkaterData player, CampaignDocument snapshot)
+    {
+        var value = new Binding();
+        foreach (var pair in snapshot.Fields)
+        {
+            if (pair.Key.StartsWith("Appearance Team ", StringComparison.OrdinalIgnoreCase) && !pair.Key.Equals("Appearance Team Painted", StringComparison.OrdinalIgnoreCase)) value.Team.Set(pair.Key.Substring(16), pair.Value);
+            else if (pair.Key.StartsWith("Appearance Player ", StringComparison.OrdinalIgnoreCase)) value.Player.Set(pair.Key.Substring(18), pair.Value);
+            else if (pair.Key.StartsWith("Appearance Own ", StringComparison.OrdinalIgnoreCase)) value.Own.Set(pair.Key.Substring(15), pair.Value);
+        }
+        value.TeamPainted = snapshot.Get("Appearance Team Painted") == "yes";
+        value.OwnColors = PlayerColorModel.HasStick(k => value.Own.Get(k)) || PlayerColorModel.HasSkates(k => value.Own.Get(k));
+        Merge(value); Bindings[player.Pointer] = value;
+        // Native colorSchemes is saved. Rebuild omitted render metadata without
+        // repainting or reapplying any authored stats, names or earned rewards.
+        OwnColors(player, k => value.Own.Get(k), value.Effective);
+    }
     internal static bool Away(SkaterData player)
         => player != null && Bindings.TryGetValue(player.Pointer, out var value) && value.Away;
     internal static CampaignDocument OwnPalette(SkaterData player, bool away)
