@@ -187,6 +187,32 @@ var malformedBefore = Files(Path.GetDirectoryName(malformedExtension.Library)!);
 Reject(() => Update(Package("next", "next-player-", "After", true), malformedExtension), "Malformed other-team extension prevents uncertain ownership reuse");
 SameFiles(malformedBefore, Path.GetDirectoryName(malformedExtension.Library)!, "Malformed extension leaves every file unchanged");
 
+var mismatchedIdentity = Fixture("mismatched-team-identity", twoLines: true);
+Call("Write", Package("other", "other-player-", "Other", true), mismatchedIdentity.Save, mismatchedIdentity.Overrides, mismatchedIdentity.Library);
+string mismatchedSidecarFile = Path.Combine(mismatchedIdentity.Overrides, "other.team.txt");
+var mismatchedSidecar = new CampaignDocument(File.ReadAllText(mismatchedSidecarFile));
+Check(PlayNowRosterCodec.TryRead(mismatchedSidecar, out var mismatchedRoster, out _), "Mismatched identity fixture's extension reads");
+mismatchedRoster.Line2[0] = "old-player-6";
+PlayNowRosterCodec.Write(mismatchedSidecar, mismatchedRoster);
+File.WriteAllText(mismatchedSidecarFile, mismatchedSidecar.ToString());
+string mismatchedNativeFile = Path.Combine(mismatchedIdentity.Save, "CustomTeam-other.json");
+var mismatchedNative = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(mismatchedNativeFile))!;
+mismatchedNative["Id"] = "different";
+File.WriteAllText(mismatchedNativeFile, mismatchedNative.ToJsonString());
+var mismatchedBefore = Files(Path.GetDirectoryName(mismatchedIdentity.Library)!);
+Reject(() => Update(Package("next", "next-player-", "After", true), mismatchedIdentity),
+    "Mismatched filename and JSON team identity rejects uncertain sidecar ownership");
+SameFiles(mismatchedBefore, Path.GetDirectoryName(mismatchedIdentity.Library)!,
+    "Mismatched identity rejection preserves the shared Line 2 player and every other file exactly");
+
+var duplicateIdentity = Fixture("duplicate-team-identity", twoLines: true);
+File.WriteAllText(Path.Combine(duplicateIdentity.Save, "CustomTeam-duplicate.json"), "{\"Id\":\"old-team\",\"TeamName\":\"Duplicate\"}");
+var duplicateBefore = Files(Path.GetDirectoryName(duplicateIdentity.Library)!);
+Reject(() => Update(Package("next", "next-player-", "After", true), duplicateIdentity),
+    "Duplicate JSON team identity rejects ownership decisions");
+SameFiles(duplicateBefore, Path.GetDirectoryName(duplicateIdentity.Library)!,
+    "Duplicate identity rejection leaves all native and companion bytes unchanged");
+
 var shrink = Fixture("two-to-one", twoLines: true);
 File.WriteAllText(Path.Combine(shrink.Save, "CustomTeam-other.json"), "{\"Id\":\"other\",\"TeamName\":\"Other\",\"centerId\":\"old-player-6\"}");
 var shrinkBefore = Files(Path.GetDirectoryName(shrink.Library)!);

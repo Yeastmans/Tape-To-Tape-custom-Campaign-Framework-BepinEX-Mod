@@ -91,6 +91,7 @@ internal static partial class ExportTranslation
         var nativeTeams = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var teamSidecars = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
         var sharedPlayers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var seenTeamIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (string file in Directory.EnumerateFiles(save, "CustomTeam-*.json"))
         {
             byte[] bytes = File.ReadAllBytes(file);
@@ -98,6 +99,9 @@ internal static partial class ExportTranslation
             var model = JsonNode.Parse(bytes) as JsonObject ?? throw new IOException("A saved team cannot be read. No export was changed.");
             string id = Text(model, "Id");
             if (!SafeExportId(id)) throw new IOException("A saved team has an unsafe identity. No export was changed.");
+            if (!seenTeamIds.Add(id)) throw new IOException("Saved teams have a duplicate identity. No export was changed.");
+            if (!Path.GetFileName(file).Equals("CustomTeam-" + id + ".json", StringComparison.OrdinalIgnoreCase))
+                throw new IOException("A saved team's filename does not match its identity. No export was changed.");
             string sidecarFile = TeamSidecarFile(overrides, id);
             teamSidecars[sidecarFile] = File.Exists(sidecarFile) ? Fingerprint(sidecarFile) : null;
             var extension = ReadRoster(File.Exists(sidecarFile) ? File.ReadAllText(sidecarFile) : null);
