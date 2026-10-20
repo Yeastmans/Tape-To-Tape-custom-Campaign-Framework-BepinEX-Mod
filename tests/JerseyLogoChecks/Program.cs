@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Media.Imaging;
+using System.IO.Compression;
+using System.Reflection;
 using CampaignCore;
 using CampaignCreator;
 
@@ -96,6 +98,43 @@ try
             $"Incomplete embedded {(slotAway ? "away" : "home")} fails with source file {(filePresent ? "present" : "absent")}");
         Identity(team, incomplete, "Incomplete embedded metadata does not alter identity");
     }
+    string gameSave = Path.Combine(root, "fake-game");
+    Environment.SetEnvironmentVariable("T2T_GAME_SAVE_PATH", gameSave);
+    string campaign = Path.Combine(root, "campaigns", "Portable");
+    string teamFile = Path.Combine(campaign, "teams", "Portable", "team.txt");
+    string playerFile = Path.Combine(campaign, "teams", "Portable", "players", "Center.txt");
+    Directory.CreateDirectory(Path.GetDirectoryName(playerFile)!);
+    File.WriteAllText(Path.Combine(campaign, "campaign.txt"), "Campaign Name = Portable\n");
+    string first = Path.Combine(root, "first", "crest.png"), second = Path.Combine(root, "second", "crest.png");
+    Directory.CreateDirectory(Path.GetDirectoryName(first)!); Directory.CreateDirectory(Path.GetDirectoryName(second)!);
+    File.Copy(home, first); File.Copy(away, second);
+    var portable = new CampaignDocument("Team Name = Portable\nLogo From = none\n");
+    portable.Set(JerseyLogoOptions.Field(false), first); portable.Set(JerseyLogoOptions.Field(true), second); portable.Save(teamFile);
+    const string personalText = "Name = Center\nPosition = Center\nOverride Team Settings = yes\nLogo From = personal-logo\nBody = Body/Customization/Customization_colors\n";
+    File.WriteAllText(playerFile, personalText);
+    var sharing = typeof(App).Assembly.GetType("CampaignCreator.CampaignSharing")!;
+    var zipMethod = sharing.GetMethod("Zip", BindingFlags.Static | BindingFlags.NonPublic)!;
+    string zipPath = Path.Combine(root, "portable.zip");
+    zipMethod.Invoke(null, [campaign, zipPath, root]);
+    using (var zip = ZipFile.OpenRead(zipPath))
+    {
+        var logos = zip.Entries.Where(e => e.FullName.Contains("/_logos/")).ToArray();
+        Check(logos.Length == 2 && logos.Select(e => e.Name).Distinct().Count() == 2, "Portable kits stage distinct same-name PNGs");
+        var entry = zip.GetEntry("Portable/teams/Portable/team.txt")!;
+        using var reader = new StreamReader(entry.Open());
+        var staged = new CampaignDocument(reader.ReadToEnd());
+        Check(staged.Get(JerseyLogoOptions.Field(false)) != staged.Get(JerseyLogoOptions.Field(true))
+            && !Path.IsPathRooted(staged.Get(JerseyLogoOptions.Field(false))), "Portable kit references are rewritten in package");
+    }
+    Check(File.ReadAllText(teamFile).Contains(first) && File.ReadAllText(teamFile).Contains(second)
+        && File.ReadAllText(playerFile) == personalText, "Sharing leaves source team and independent player untouched");
+    string imported = Path.Combine(root, "imported");
+    sharing.GetMethod("Install", BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, [zipPath, imported, "Portable"]);
+    var installed = new CampaignDocument(File.ReadAllText(Path.Combine(imported, "campaigns", "Portable", "teams", "Portable", "team.txt")));
+    Check(LogoFiles.Resolve(imported, Path.Combine(gameSave, "CustomLogos"), installed.Get(JerseyLogoOptions.Field(false))) is { } homeFile
+        && File.ReadAllBytes(homeFile).SequenceEqual(File.ReadAllBytes(first))
+        && LogoFiles.Resolve(imported, Path.Combine(gameSave, "CustomLogos"), installed.Get(JerseyLogoOptions.Field(true))) is { } awayFile
+        && File.ReadAllBytes(awayFile).SequenceEqual(File.ReadAllBytes(second)), "Portable install resolves each kit to its own PNG");
     Console.WriteLine($"PASS {checks} jersey logo assertions");
 }
 finally { Directory.Delete(root, true); }

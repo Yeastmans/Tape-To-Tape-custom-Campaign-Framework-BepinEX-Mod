@@ -131,7 +131,8 @@ internal sealed partial class TeamEditorView : UserControl
         uniform.ColorValue = token => DiagramColor(token, false);
         goalieUniform.ColorValue = token => DiagramColor(token, true);
         uniform.NumberText = goalieUniform.NumberText = () => FieldSchema.NumberText(27, Value("Number Style"));
-        uniform.Logo = goalieUniform.Logo = Crest;
+        uniform.Logo = () => Crest(false);
+        goalieUniform.Logo = () => Crest(true);
         DetachedFromVisualTree += (_, _) => { logoBitmap?.Dispose(); logoBitmap = null; };
         uniform.SkinValue = part => DiagramSkin(part, false);
         goalieUniform.SkinValue = part => DiagramSkin(part, true);
@@ -379,6 +380,7 @@ internal sealed partial class TeamEditorView : UserControl
         Part("Skates", null, skateColors, leftParts);
         Part("Helmet", "Helmet"+a, Colors("Helmet")[..1], middleParts);
         Part("Jersey", "Body"+a, jerseyColors, middleParts);
+        middleParts.Children.Add(JerseyLogoPicker(away));
         Part("Pants", "Pants"+a, pantsColors, middleParts);
         Part("Socks", "Socks"+a, Colors("Socks"), middleParts);
         Part("Goalie mask", "Helmet Skin", Colors("Helmet")[1..], rightParts, true);
@@ -479,9 +481,15 @@ internal sealed partial class TeamEditorView : UserControl
         string key = DiagramField(token);
         string value = Value(key);
         return FieldSchema.TryRgb(value, out byte r, out byte g, out byte b) ? $"#{r:X2}{g:X2}{b:X2}" : "";
-    }    private Bitmap? Crest()
+    }
+    private Bitmap? Crest(bool goalie)
     {
-        string source = Value("Logo From");
+        if (!AppearanceContract.SupportsJerseyLogo(goalie ? "goalie" : "skater", DiagramSkin("jersey", goalie))) return null;
+        var team = new CampaignDocument("");
+        team.Set("Logo From", Value("Logo From"));
+        team.Set(JerseyLogoOptions.Field(away), Value(JerseyLogoOptions.Field(away)));
+        var choice = JerseyLogoOptions.Resolve(new CampaignDocument(""), team, away);
+        string source = choice.Mode == JerseyLogoMode.Image ? choice.Source : "";
         if (source != logoSource) { logoSource = source; logoBitmap?.Dispose(); logoBitmap = null; try { logoBitmap = LogoExport.Preview(data.Root, source); } catch { } }
         return logoBitmap;
     }

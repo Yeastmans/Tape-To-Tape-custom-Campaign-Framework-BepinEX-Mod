@@ -21,13 +21,14 @@ internal static class LogoPicker
     }
 
     internal static (Control control, Func<string> read) Create(string root, string value, Action changed,
-        string emptyCaption = "No logo selected", string title = "Choose team logo", bool inline = false)
+        string emptyCaption = "No logo selected", string title = "Choose team logo", bool inline = false,
+        string buttonCaption = "Choose logo")
     {
         string saved = value;
 
         var caption = new TextBlock { Text = saved.Length == 0 ? emptyCaption : Path.GetFileNameWithoutExtension(saved), TextTrimming = TextTrimming.CharacterEllipsis };
         Button? choose = null;
-        choose = ActionButton("Choose logo", async () =>
+        choose = ActionButton(buttonCaption, async () =>
         {
             if (TopLevel.GetTopLevel(choose) is not Window owner) return;
             var dialog = new Window { Title = title, Width = 940, Height = 650, MinWidth = 540, MinHeight = 400,
@@ -53,7 +54,7 @@ internal static class LogoPicker
                     new TextBlock { Text = choice?.Label, TextWrapping = TextWrapping.Wrap, MaxLines = 2 }
                 } };
             });
-            var gridTemplate = new Avalonia.Controls.Templates.FuncTemplate<Panel>(() => new WrapPanel());
+            var gridTemplate = new Avalonia.Controls.Templates.FuncTemplate<Panel?>(() => new WrapPanel());
             var native = new ListBox { Name = "BaseGameLogos", ItemTemplate = thumbnailTemplate, ItemsPanel = gridTemplate };
             var custom = new ListBox { Name = "CustomFolderLogos", ItemTemplate = thumbnailTemplate, ItemsPanel = gridTemplate };
             var catalog = Path.Combine(root, "_game_team_logos.txt");

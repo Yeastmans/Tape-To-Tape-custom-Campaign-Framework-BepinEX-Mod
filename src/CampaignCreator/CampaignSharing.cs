@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Security.Cryptography;
 using CampaignCore;
 
 namespace CampaignCreator;
@@ -33,27 +34,50 @@ internal static partial class CampaignSharing
         return client;
     }
 
-    /// <summary>Logo names referenced by "Logo From" / "Squad Head" that exist as CustomLogos PNGs.</summary>
-    private static Dictionary<string, string> ReferencedLogos(string campaign)
+    private sealed record PortableLogos(Dictionary<string, CampaignDocument> Documents, Dictionary<string, byte[]> Images);
+
+    /// <summary>Stage referenced PNG bytes and rewrite only the documents written into the ZIP.</summary>
+    private static PortableLogos ReferencedLogos(string campaign, string contentRoot)
     {
-        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var documents = new Dictionary<string, CampaignDocument>(StringComparer.OrdinalIgnoreCase);
+        var images = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
         string folder = LogoExport.CustomFolder;
-        if (!Directory.Exists(folder)) return result;
-        var onDisk = Directory.GetFiles(folder, "*.png").GroupBy(f => Path.GetFileNameWithoutExtension(f), StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+        var onDisk = Directory.Exists(folder) ? Directory.GetFiles(folder, "*.png")
+            .GroupBy(f => Path.GetFileNameWithoutExtension(f), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (string file in Directory.GetFiles(campaign, "*.txt", SearchOption.AllDirectories))
         {
             if (Path.GetRelativePath(campaign, file).Split(Path.DirectorySeparatorChar).Any(p => SkipFolders.Contains(p, StringComparer.OrdinalIgnoreCase))) continue;
             var doc = new CampaignDocument(File.ReadAllText(file));
-            foreach (string key in new[] { "Logo From", "Squad Head" })
+            bool rewritten = false;
+            foreach (bool? slot in new bool?[] { null, false, true })
             {
+                string key = slot is bool away ? JerseyLogoOptions.Field(away) : "Logo From";
                 string value = doc.Get(key).Trim();
-                if (value.StartsWith("CustomLogos/", StringComparison.OrdinalIgnoreCase)) value = value["CustomLogos/".Length..];
-                if (value.EndsWith(".png", StringComparison.OrdinalIgnoreCase)) value = value[..^4];
-                if (value.Length > 0 && onDisk.TryGetValue(value, out var png)) result[value] = png;
+                if (value.Length == 0 || value.Equals("none", StringComparison.OrdinalIgnoreCase)) continue;
+                string? resolved = LogoExport.FindFile(contentRoot, value);
+                bool custom = Path.IsPathRooted(value) || value.IndexOfAny(['/', '\\']) >= 0
+                    || resolved != null && (resolved.StartsWith(Path.GetFullPath(Path.Combine(contentRoot, "logos")) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                        || resolved.StartsWith(Path.GetFullPath(folder) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
+                if (slot is bool kit && doc.Get(JerseyLogoOptions.Prefix(kit) + " Mode").Equals("embedded", StringComparison.OrdinalIgnoreCase)) custom = true;
+                if (!custom) continue;
+                var snapshot = slot is bool selectedKit ? LogoExport.Snapshot(doc, contentRoot, selectedKit) : LogoExport.Snapshot(doc, contentRoot);
+                string prefix = slot is bool metadataKit ? JerseyLogoOptions.Prefix(metadataKit) : "Export Logo";
+                byte[] bytes = Convert.FromBase64String(snapshot.Get(prefix + " PNG"));
+                string id = "t2t_" + Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant() + ".png";
+                images[id] = bytes;
+                doc.Set(key, id);
+                rewritten = true;
             }
+            // Legacy custom squad icons share the old name-based bundle contract.
+            string head = doc.Get("Squad Head").Trim();
+            if (head.StartsWith("CustomLogos/", StringComparison.OrdinalIgnoreCase)) head = head["CustomLogos/".Length..];
+            if (head.EndsWith(".png", StringComparison.OrdinalIgnoreCase)) head = head[..^4];
+            if (head.Length > 0 && onDisk.TryGetValue(head, out var headPng)) images[Path.GetFileName(headPng)] = File.ReadAllBytes(headPng);
+            if (rewritten) documents[file] = doc;
         }
-        return result;
+        return new PortableLogos(documents, images);
     }
 
     /// <summary>Zips a campaign with its referenced logos and custom head projects.</summary>
@@ -62,7 +86,7 @@ internal static partial class CampaignSharing
         var customRewards = CustomRewardCatalog.PortableItems(contentRoot, campaign);
         CustomRewardCatalog.ValidateCampaignLoadouts(contentRoot, campaign, customRewards);
         string top = Path.GetFileName(campaign.TrimEnd('\\', '/'));
-        var logos = ReferencedLogos(campaign);
+        var logos = ReferencedLogos(campaign, contentRoot);
         var heads = ReferencedHeads(campaign, contentRoot);
         if (File.Exists(destination)) File.Delete(destination);
         using var zip = ZipFile.Open(destination, ZipArchiveMode.Create);
@@ -70,19 +94,28 @@ internal static partial class CampaignSharing
         {
             var parts = Path.GetRelativePath(campaign, file).Split(Path.DirectorySeparatorChar);
             if (parts[..^1].Any(p => SkipFolders.Contains(p, StringComparer.OrdinalIgnoreCase)) || SkipFiles.Contains(parts[^1], StringComparer.OrdinalIgnoreCase)) continue;
-            zip.CreateEntryFromFile(file, top + "/" + string.Join('/', parts), CompressionLevel.Optimal);
+            string entryName = top + "/" + string.Join('/', parts);
+            if (logos.Documents.TryGetValue(file, out var rewritten))
+            {
+                using var writer = new StreamWriter(zip.CreateEntry(entryName, CompressionLevel.Optimal).Open());
+                writer.Write(rewritten.ToString());
+            }
+            else zip.CreateEntryFromFile(file, entryName, CompressionLevel.Optimal);
         }
         foreach (var reward in customRewards.Values) {
             if (File.Exists(Path.Combine(campaign, CustomRewardDefinition.Folder, reward.Id + CustomRewardDefinition.Extension))) continue;
             using var writer = new StreamWriter(zip.CreateEntry($"{top}/{CustomRewardDefinition.Folder}/{reward.Id}{CustomRewardDefinition.Extension}", CompressionLevel.Optimal).Open());
             writer.Write(reward.ToDocument().ToString());
         }
-        foreach (string png in logos.Values.Distinct(StringComparer.OrdinalIgnoreCase).Order())
-            zip.CreateEntryFromFile(png, $"{top}/{LogoBundle}/{Path.GetFileName(png)}", CompressionLevel.Optimal);
+        foreach (var (name, bytes) in logos.Images.OrderBy(p => p.Key))
+        {
+            using var stream = zip.CreateEntry($"{top}/{LogoBundle}/{name}", CompressionLevel.Optimal).Open();
+            stream.Write(bytes);
+        }
         foreach (var head in heads)
             foreach (string relative in HeadFiles(head.Folder))
                 zip.CreateEntryFromFile(head.Asset(relative), $"{top}/{HeadBundle}/{head.Name}/{relative.Replace('\\', '/')}", CompressionLevel.Optimal);
-        return new PackageResult(logos.Count, heads.Count);
+        return new PackageResult(logos.Images.Count, heads.Count);
     }
 
     /// <summary>The single top-level folder a campaign zip installs as.</summary>
@@ -120,6 +153,19 @@ internal static partial class CampaignSharing
                     entry.ExtractToFile(destination);
                 }
             CustomRewardCatalog.ValidateCampaignLoadouts(contentRoot, staging, CustomRewardCatalog.PortableItems(contentRoot, staging));
+            string stagedLogos = Path.Combine(staging, LogoBundle);
+            if (Directory.Exists(stagedLogos))
+                foreach (string png in Directory.GetFiles(stagedLogos, "*.png"))
+                {
+                    string name = Path.GetFileNameWithoutExtension(png);
+                    byte[] bytes = File.ReadAllBytes(png);
+                    if (name.StartsWith("t2t_", StringComparison.OrdinalIgnoreCase)
+                        && !name[4..].Equals(Convert.ToHexString(SHA256.HashData(bytes)), StringComparison.OrdinalIgnoreCase))
+                        throw new InvalidDataException("The campaign contains a corrupted content-named logo: " + Path.GetFileName(png));
+                    string existing = Path.Combine(LogoExport.CustomFolder, Path.GetFileName(png));
+                    if (File.Exists(existing) && !File.ReadAllBytes(existing).SequenceEqual(bytes))
+                        throw new InvalidDataException("A bundled logo conflicts with an existing image: " + Path.GetFileName(png));
+                }
             headsKept = InstallHeads(staging, contentRoot, addedHeads);
             Directory.CreateDirectory(campaigns);
             Directory.Move(staging, target);

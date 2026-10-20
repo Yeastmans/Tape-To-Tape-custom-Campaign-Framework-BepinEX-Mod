@@ -58,3 +58,9 @@ tests/AppearanceTranslationChecks/*
 tests/CampaignStudioChecks/*
 !tests/CampaignStudioChecks/CampaignStudioChecks.csproj
 !tests/CampaignStudioChecks/ExportChecks.cs
+!tests/CampaignStudioChecks/LogoPickerChecks.cs
+!tests/CampaignStudioChecks/PlayerLogoChecks.cs
+!tests/CampaignStudioChecks/ImportLibraryChecks.cs
+!tests/TeamLookFillChecks/
+tests/TeamLookFillChecks/*
+!tests/TeamLookFillChecks/Program.cs

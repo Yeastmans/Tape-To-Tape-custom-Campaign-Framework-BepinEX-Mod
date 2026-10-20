@@ -7,10 +7,13 @@ public static class TeamLookCopy
 {
     // A team's look never includes a stick (each player's in the base game) or a skate style.
     // Fill look copies equipment and colors only; the team keeps its own logo.
-    public static IEnumerable<string> Keys => DefaultPlayerLook.Keys.Where(k => !PlayerColorModel.IsStickKey(k) && k != "Logo From");
+    public static IEnumerable<string> Keys => DefaultPlayerLook.Keys.Where(k => !PlayerColorModel.IsStickKey(k) && k != "Logo From"
+        && k != JerseyLogoOptions.Field(false) && k != JerseyLogoOptions.Field(true)
+        && !k.StartsWith(JerseyLogoOptions.Prefix(false) + " ", StringComparison.OrdinalIgnoreCase)
+        && !k.StartsWith(JerseyLogoOptions.Prefix(true) + " ", StringComparison.OrdinalIgnoreCase));
 
     // Snapshot before writing: copying Away to Home must not change values still
-    // being read. Shared fields (logo, mask, number style) already apply to both.
+    // being read. The team identity logo, mask and number style apply to both kits.
     public static CampaignDocument Kit(bool sourceAway, Func<string, string> read)
     {
         var result = new CampaignDocument("");
@@ -25,6 +28,23 @@ public static class TeamLookCopy
                 _ => AppearanceContract.HomeKey(awayKey)
             };
             result.Set(sourceAway ? homeKey : awayKey, read(sourceAway ? awayKey : homeKey));
+        }
+        bool targetAway = !sourceAway;
+        string selected = read(JerseyLogoOptions.Field(sourceAway));
+        var sourceLogo = new CampaignDocument("");
+        sourceLogo.Set(JerseyLogoOptions.Field(sourceAway), selected);
+        foreach (string suffix in new[] { "Mode", "ID", "SHA256", "PNG" })
+            if (selected.Length > 0 && !selected.Equals("none", StringComparison.OrdinalIgnoreCase))
+                sourceLogo.Set(JerseyLogoOptions.Prefix(sourceAway) + " " + suffix,
+                    read(JerseyLogoOptions.Prefix(sourceAway) + " " + suffix));
+        JerseyLogoOptions.Copy(sourceLogo, sourceAway, result, targetAway);
+        // The editor writes only fields present in this draft; include empty
+        // targets so an inherited or no-logo copy removes any old payload.
+        result.Set(JerseyLogoOptions.Field(targetAway), selected);
+        foreach (string suffix in new[] { "Mode", "ID", "SHA256", "PNG" })
+        {
+            string key = JerseyLogoOptions.Prefix(targetAway) + " " + suffix;
+            if (!result.Fields.ContainsKey(key)) result.Set(key, "");
         }
         return result;
     }

@@ -20,6 +20,8 @@ public sealed class UpgradeCleanup
         fields["team"].UnionWith(SquadBehaviors.All.Select(b => b.Key));
         fields["team"].Add(SquadPlayerPools.ModeKey);
         fields["team"].UnionWith(new[] { "Golf Fairway", "Tycoons Sponsors", "Canada Curses" });
+        fields["team"].UnionWith(new[] { JerseyLogoOptions.Field(false), JerseyLogoOptions.Field(true) });
+        fields["player"].UnionWith(new[] { JerseyLogoOptions.Field(false), JerseyLogoOptions.Field(true) });
         fields["team"].UnionWith(RelicOpponentInteractions.All.Select(i => i.SettingKey));
         fields["player"].Add(PlayerColorModel.VersionKey);
         fields["player"].UnionWith(PlayerKitColors.ModeKeys);
@@ -89,7 +91,10 @@ public sealed class UpgradeCleanup
     // AppearanceFields reads) and equipment styles such as Socks and Goalie Pants are
     // read through shared helpers instead, so they come from the shared schema.
     private bool Known(string kind, string key) => fields[kind].Contains(key) || kind != "campaign"
-        && (AppearanceFields.ColorKey(key).Length > 0 || FieldSchema.SkaterAssets.Concat(FieldSchema.GoalieAssets).Contains(key, IgnoreCase));
+        && (key.StartsWith(JerseyLogoOptions.Prefix(false) + " ", StringComparison.OrdinalIgnoreCase)
+            || key.StartsWith(JerseyLogoOptions.Prefix(true) + " ", StringComparison.OrdinalIgnoreCase)
+            || AppearanceFields.ColorKey(key).Length > 0
+            || FieldSchema.SkaterAssets.Concat(FieldSchema.GoalieAssets).Contains(key, IgnoreCase));
     public static bool RandomValue(string value) => Regex.IsMatch(value, @"\brandom\b", RegexOptions.IgnoreCase);
     public bool Clean(CampaignDocument doc, string kind, string role)
     {
@@ -162,6 +167,8 @@ public sealed class UpgradeCleanup
         if (SquadBehaviors.All.Any(b => b.Key.Equals(key, StringComparison.OrdinalIgnoreCase)))
             return In(value, "Inherit", "On", "Off", "yes", "no", "true", "false") ? value : "";
         if (k.StartsWith("export ")) return value;
+        if (key.Equals(JerseyLogoOptions.Field(false), StringComparison.OrdinalIgnoreCase)
+            || key.Equals(JerseyLogoOptions.Field(true), StringComparison.OrdinalIgnoreCase)) return value;
         if (k.StartsWith("pool mode ")) return In(value, "Base Game", "Custom") ? value : "";
         if (key.Equals(RewardPoolDefinition.IncludeChaosTalentsKey, StringComparison.OrdinalIgnoreCase)
             || key.Equals(RewardPoolDefinition.IncludeRegularTalentsKey, StringComparison.OrdinalIgnoreCase)

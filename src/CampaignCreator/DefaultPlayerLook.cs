@@ -8,7 +8,9 @@ public static class DefaultPlayerLook
     public static IEnumerable<string> ColorKeys => FieldSchema.TeamColors.Concat(FieldSchema.EquipmentColors()).Distinct();
     public static IEnumerable<string> Keys => ColorKeys
         .Concat(FieldSchema.SkaterAssets.Where(k => k is not ("Face" or "Glasses" or "Number Skin" or "Skates" or "Skates Away")))
-        .Concat(FieldSchema.GoalieAssets.Where(k => k != "Logo Skin")).Append("Logo From").Append("Number Style").Distinct();
+        .Concat(FieldSchema.GoalieAssets.Where(k => k != "Logo Skin")).Append("Logo From").Append("Number Style")
+        .Concat(new[] { false, true }.SelectMany(away => new[] { JerseyLogoOptions.Field(away) }
+            .Concat(new[] { "Mode", "ID", "SHA256", "PNG" }.Select(suffix => JerseyLogoOptions.Prefix(away) + " " + suffix)))).Distinct();
 
     public static CampaignDocument Load(string root) => new(File.Exists(FilePath(root)) ? File.ReadAllText(FilePath(root)) : "");
 
