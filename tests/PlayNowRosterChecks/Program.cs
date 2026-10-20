@@ -138,21 +138,56 @@ Case("DuplicateOrWrongRoleRejected", () =>
     File.AppendAllText(file, "Export Role = goalie\n");
     try { Export(wrongRole); throw new Exception("Goalie in a skater slot was accepted"); }
     catch (ArgumentException ex) { Check(ex.Message.Contains("goalie", StringComparison.OrdinalIgnoreCase), "Wrong-role diagnostic should identify goalie"); }
+    var declaredSkater = Fixture("declared-skater-goalie-slot", true);
+    File.AppendAllText(Path.Combine(declaredSkater.Root, "players", "Goalie - Player 11.txt"), "Export Role = skater\n");
+    try { Export(declaredSkater); throw new Exception("Explicit skater role in a goalie slot was accepted"); }
+    catch (ArgumentException ex) { Check(ex.Message.Contains("goalie", StringComparison.OrdinalIgnoreCase), "Goalie slot rejects an explicit skater role"); }
     var extraGoalie = Fixture("extra-goalie", true);
     File.WriteAllText(Path.Combine(extraGoalie.Root, "players", "Extra Goalie.txt"), "Name = Extra Goalie\nPosition = Goalie\nCatching = 50\n");
     try { Export(extraGoalie); throw new Exception("Second goalie was accepted"); }
     catch (ArgumentException ex) { Check(ex.Message.Contains("Goalie", StringComparison.OrdinalIgnoreCase), "Extra-goalie diagnostic should identify goalie"); }
 });
 
+Case("ExplicitPositionPrecedesFilename", () =>
+{
+    var fixture = Fixture("explicit-position", false);
+    string players = Path.Combine(fixture.Root, "players");
+    File.Delete(Path.Combine(players, "Center - Player 02.txt"));
+    File.WriteAllText(Path.Combine(players, "Center - Goalie Smith.txt"),
+        "Name = Goalie Smith\nPosition = Center\nFace = Faces/Anyteam/Black_Helmet\n");
+    var package = Export(fixture);
+    using var native = JsonDocument.Parse(package.Saves.Single(p => p.Key.StartsWith("CustomTeam-")).Value);
+    string centerId = native.RootElement.GetProperty("centerId").GetString()!;
+    Check(IdName(package.Overrides, centerId) == "Goalie Smith", "Explicit Center position exports as a skater even when filename contains goalie");
+});
+
+Case("LegacyPositionFallback", () =>
+{
+    var fixture = Fixture("legacy-position", true);
+    string players = Path.Combine(fixture.Root, "players");
+    File.Delete(Path.Combine(players, "Line 2 Right Wing - Player 08.txt"));
+    string secondLine = Path.Combine(players, "second-line");
+    Directory.CreateDirectory(secondLine);
+    File.WriteAllText(Path.Combine(secondLine, "Right Wing - Player 08.txt"),
+        "Name = Player 08\nFace = Faces/Anyteam/Black_Helmet\n");
+    var package = Export(fixture);
+    var sidecar = new CampaignDocument(package.Overrides.Single(p => p.Key.EndsWith(".team.txt")).Value);
+    Check(ReadRoster(sidecar, out object? roster, out _) && roster != null, "Legacy fixture extension should read");
+    Check(IdName(package.Overrides, Line(roster!, "Line2")[2]) == "Player 08", "Filename and second-line folder supply position when explicit Position is absent");
+});
+
 Case("UnknownRosterVersionUsesFallback", () =>
 {
     var package = Export(Fixture("unknown-version", true));
-    using var native = JsonDocument.Parse(package.Saves.Single(p => p.Key.StartsWith("CustomTeam-")).Value);
-    string first = native.RootElement.GetProperty("leftWingerId").GetString()!;
+    string nativeJson = package.Saves.Single(p => p.Key.StartsWith("CustomTeam-")).Value;
     var sidecar = new CampaignDocument(package.Overrides.Single(p => p.Key.EndsWith(".team.txt")).Value);
     sidecar.Set("Export Roster Version", "999");
     Check(!ReadRoster(sidecar, out _, out string error) && error.Contains("version", StringComparison.OrdinalIgnoreCase), "Unknown version must fail with a diagnostic");
-    Check(native.RootElement.GetProperty("leftWingerId").GetString() == first, "The valid native first line remains available after extension failure");
+    using var fallback = JsonDocument.Parse(nativeJson);
+    string[] firstLine = nativeSlots.Select(slot => fallback.RootElement.GetProperty(slot).GetString()!).ToArray();
+    Check(firstLine.Select(id => IdName(package.Overrides, id)).SequenceEqual(["Player 01", "Player 02", "Player 03", "Player 04", "Player 05"])
+        && firstLine.All(id => package.Saves.ContainsKey("CustomForward-" + id + ".json")),
+        "The native first line still references five valid player records after extension rejection");
 });
 
 Case("MalformedRosterAndRemap", () =>

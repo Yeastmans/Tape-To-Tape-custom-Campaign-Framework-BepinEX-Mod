@@ -118,7 +118,13 @@ internal static partial class ExportTranslation
             // Prepared Line 2 files are authoring content until two-line play is enabled.
             if (line2 && !twoLines) continue;
             bool goalie = basePosition.Equals("Goalie", StringComparison.OrdinalIgnoreCase);
-            if (ContentImport.IsGoalie(raw, file) != goalie)
+            string declaredRole = raw.Get("Export Role").Trim();
+            string expectedRole = goalie ? "goalie" : "skater";
+            if (declaredRole.Length > 0 && !declaredRole.Equals(expectedRole, StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException($"Play Now cannot export '{Path.GetFileName(file)}': {position} needs a {expectedRole}, but Export Role is {declaredRole}.");
+            bool goalieOnlyFields = raw.Fields.ContainsKey("Catching") || raw.Fields.ContainsKey("Goalie Skill");
+            if ((!goalie && goalieOnlyFields)
+                || (declaredRole.Length == 0 && raw.Get("Position").Trim().Length == 0 && ContentImport.IsGoalie(raw, file) != goalie))
                 throw new ArgumentException($"Play Now cannot export '{Path.GetFileName(file)}': {position} has the wrong skater/goalie role.");
             if (!rosterFiles.TryAdd(position, (file, raw)))
                 throw new ArgumentException($"Play Now has more than one player in {position}. Give each export slot exactly one player.");
