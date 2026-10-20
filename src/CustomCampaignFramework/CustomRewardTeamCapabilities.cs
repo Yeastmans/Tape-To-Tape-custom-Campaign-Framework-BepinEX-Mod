@@ -84,7 +84,7 @@ internal static class CustomRewardTeamCapabilities
         try {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8) throw new PlatformNotSupportedException("Team queries require the audited Windows x64 build.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().First(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-            if (NativeCompatibility.Load(module.FileName).GameHash != "98D7EEF11DB0FB175CCC72C2ED9273D9B739677AD606D217F7B4E3897E2D0DA4")
+            if (NativeCompatibility.Load(module.FileName).GameHash != "92C6308809D5E324178C7D7E03F767C2E7D9AFCB9F41B2390B9EEAA77216BC58")
                 throw new InvalidOperationException("Team queries have not been audited for this game build.");
             var direct = module.BaseAddress + 0xc85b20;
             Verify(direct, "48895C24104889742418574883EC20");

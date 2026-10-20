@@ -141,7 +141,7 @@ internal static class CustomRewardCapabilities
     private static void InstallGoalRepeat(ProcessModule module)
     {
         try {
-            var add = module.BaseAddress + 0x38e07f0; var cancel = module.BaseAddress + 0x38e0510;
+            var add = module.BaseAddress + 0x38e2450; var cancel = module.BaseAddress + 0x38e2170;
             Verify(add, "48895C2408488974241048897C24184C8974242041574883EC60");
             Verify(cancel, "48895C2418574883EC40803D");
             cancelStats = Marshal.GetDelegateForFunctionPointer<CancelStatsFn>(cancel);
@@ -170,7 +170,7 @@ internal static class CustomRewardCapabilities
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8)
                 throw new PlatformNotSupportedException("Native capability rules require the audited Windows x64 build.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().First(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-            if (NativeCompatibility.Load(module.FileName).GameHash != "98D7EEF11DB0FB175CCC72C2ED9273D9B739677AD606D217F7B4E3897E2D0DA4")
+            if (NativeCompatibility.Load(module.FileName).GameHash != "92C6308809D5E324178C7D7E03F767C2E7D9AFCB9F41B2390B9EEAA77216BC58")
                 throw new InvalidOperationException("Native capability queries have not been audited for this game build.");
             var cached = module.BaseAddress + 0xc45b60; var direct = module.BaseAddress + 0xc45cc0; var get = module.BaseAddress + 0xc459d0;
             Verify(cached, "48895C2418564883EC2048837A3800");

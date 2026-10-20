@@ -7,7 +7,7 @@ Run commands from the repository root. Paths containing spaces must be quoted. P
 ## Verify an existing reviewed baseline
 
 ```powershell
-dotnet run --project .\tools\CompatibilityTool -c Release -- verify 'D:\SteamLibrary\steamapps\common\Tape to Tape' '.\src\ModCompatibility\Assets\native-baseline.json' '26067234' '.\build\compatibility\verified-profile.json'
+dotnet run --project .\tools\CompatibilityTool -c Release -- verify 'D:\SteamLibrary\steamapps\common\Tape to Tape' '.\src\ModCompatibility\Assets\native-baseline.json' '26071671' '.\build\compatibility\verified-profile.json'
 ```
 
 The input baseline is integrity-checked. Verification rejects changed protected behavior, unsupported patch contracts, missing or ambiguous methods and unexpected squad query coverage. Success writes a profile pinned to the inspected game and metadata hashes. This is compatibility validation, not gameplay confirmation. A failure requires native-code review; do not bypass it by replacing hashes.
@@ -22,9 +22,9 @@ CompatibilityTool baseline <game folder> <squad TSV> <Steam build> <flow RVA hex
 
 The checked-in inputs for the current reviewed build are:
 
-- Game build: `26067234`.
+- Game build: `26071671`.
 - Squad manifest: `src/CustomCampaignFramework/Assets/squad-behavior-sites.tsv`.
-- Flow RVA: `3BBB522`.
+- Flow RVA: `3BBEBF2`.
 - Flow identity: `Tape2Tape.Hockey.UI.TitleScreen.<<NewRun>g__StartNewRun|#>d$$MoveNext`.
 - Baseline destination: `src/ModCompatibility/Assets/native-baseline.json`.
 - Runtime profile destination: `src/CustomCampaignFramework/Assets/native-compatibility.json`.

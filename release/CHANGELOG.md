@@ -1,5 +1,14 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 20 - 2026-10-19
+
+- **Supports Tape to Tape roguelite build 26071671** (Steam updates of 19 October 2026, 26070875 then 26071671). The native compatibility profile, interop and the three moved native entry points used by custom rewards (goal-scored event, Extra goals repeat and denial) are updated.
+- The game rewrote the Benchwarmer draft check: Trio now requires three valid skaters through a new check, and the native Gauntlet bench requirement was removed (all squads now get an "open spots" confirmation instead). Custom squads with **Trio draft requirement** follow the new native trio check; **Gauntlet draft requirement** now matches the native gauntlet squad, which no longer enforces a bench minimum.
+- Native review: of 589 game methods the mod depends on, 532+ are unchanged or differ only by address; the boss bodycheck cooldown and squad-earned unlock reveal (26070875) and the Benchwarmer rewrite (26071671) leave the mod's hooks valid. 139 squad comparison sites and 110 squad queries are re-verified.
+
+Gameplay validation on 26071671 is limited to a clean plugin load and a campaign match start. Save and close Studio and the game before installing.
+
+
 ## Beta 1.0 revision 19 - 2026-10-19
 
 - **No arbitrary number limits** for custom talents and relics. Amounts, activations, stacks, recipient counts, radius and durations are open-ended, with Unlimited options for activations and stacks. Only real limits remain (non-zero/positive values where needed, 1-100% chances, native levels). The game runtime bounds a few values that could stall or overflow it (sizes, puck-bag length, timer rate, puck speed, 9,999 extra goals per goal).
