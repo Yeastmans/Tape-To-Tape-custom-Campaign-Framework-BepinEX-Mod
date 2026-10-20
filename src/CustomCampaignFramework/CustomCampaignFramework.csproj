@@ -15,6 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="../CampaignCore/PlayNowRoster.cs" Link="Core/PlayNowRoster.cs" />
     <Compile Include="../CampaignCore/CustomRewardDefinition.cs" Link="Core/CustomRewardDefinition.cs" />
     <Compile Include="../CampaignCore/CustomRewardAssignments.cs" Link="Core/CustomRewardAssignments.cs" />
     <Compile Include="../CampaignCore/CustomRewardEffects.cs" Link="Core/CustomRewardEffects.cs" />

@@ -182,6 +182,7 @@ public class Plugin : BasePlugin
         ConfigTeams.Clear();
         ConfigTeamDirs.Clear();
         VanillaCampaignRuntime.Reset();
+        PlayNowRosterRuntime.Clear();
         Log.LogInfo("[Campaign] DEFAULT MODE — no custom campaign selected; playing base game");
     }
 
@@ -434,6 +435,7 @@ public class Plugin : BasePlugin
         ConfigTeams.Clear();
         ConfigTeamDirs.Clear();
         VanillaCampaignRuntime.Reset();
+        PlayNowRosterRuntime.Clear();
         ExcludedRewardRelicIds.Clear();
         ExcludedRewardTalentIds.Clear();
         ExcludedRewardAbilityIds.Clear();

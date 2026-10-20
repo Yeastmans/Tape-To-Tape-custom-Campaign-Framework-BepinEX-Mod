@@ -199,6 +199,10 @@ internal static class PlayNowTranslation
     {
         ExportAppearanceRuntime.Install(harmony);
         ExportLoadoutBadges.Install(harmony);
+        // Bulk loading inlines DeserializeTeam/DeserializeGoalie; wait for the
+        // completed cold or warm cache, including the native goalie assignment.
+        harmony.Patch(AccessTools.Method(typeof(TeamRepository), "GetAllCustomTeams"), postfix: new HarmonyMethod(typeof(PlayNowRosterRuntime), nameof(PlayNowRosterRuntime.CustomTeamsPostfix)));
+        harmony.Patch(AccessTools.Method(typeof(TeamData), "Clone"), postfix: new HarmonyMethod(typeof(PlayNowRosterRuntime), nameof(PlayNowRosterRuntime.ClonePostfix)));
         // Never hook TeamData.GetColors/GetGoalieColors — see TryKit.
         harmony.Patch(AccessTools.Method(typeof(TeamDataAdapter), "ConvertToTeamData"), postfix: new HarmonyMethod(typeof(PlayNowTranslation), nameof(TeamPostfix)));
         // Repositories resolve IDs AFTER adapters. Replace their curated-pool
