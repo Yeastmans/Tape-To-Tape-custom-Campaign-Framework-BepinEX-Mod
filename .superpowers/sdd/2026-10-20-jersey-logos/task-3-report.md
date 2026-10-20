@@ -2,7 +2,7 @@
 
 Status: **DONE_WITH_CONCERNS** for the assigned source/test/build unit. Native installation, trampoline execution, final compatibility-profile generation, and visible gameplay remain unperformed. The current embedded compatibility baseline has no JerseyLogo raw contracts, so this candidate's new hooks remain disabled until final integration supplies the exact reviewed set. No gate was bypassed.
 
-Base: `a0d842cefad5c4c6746f18bee042d68d0992b7a2`. Implementation commit: recorded in the final handoff and Git history (`Implement guarded per-kit jersey logo rendering`). The separate foundation report remains unchanged.
+Base: `a0d842cefad5c4c6746f18bee042d68d0992b7a2`. Implementation commit: `7163d3a2df3ccce4a3f14e046e93108df213ce9d` (`Implement guarded per-kit jersey logo rendering`). The separate foundation report remains unchanged.
 
 ## Implemented
 
