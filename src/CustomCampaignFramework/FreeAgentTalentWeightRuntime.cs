@@ -26,7 +26,7 @@ internal static class FreeAgentTalentWeightRuntime
         internal FreeAgentTalentWeights Policy;
         internal FreeAgentTalentPool Pool;
         internal IntPtr State, Run;
-        internal bool KeepStats, DisableAbilities;
+        internal bool KeepStats, DisableAbilities, EmptyRoster;
         internal IntPtr OfferTemplate;
         internal int OfferCount, Speed, Accuracy, Power, Checking;
         internal Rogue.FreeAgents.PreGeneratedFreeAgentData StoredAgent;
@@ -300,13 +300,19 @@ internal static class FreeAgentTalentWeightRuntime
 internal static class FreeAgentChoiceWeightScope
 {
     [HarmonyPrefix, HarmonyPriority(Priority.First)]
-    private static void Prefix(Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent __instance, ForwardData __0,
+    private static void Prefix(Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent __instance, ForwardData __0, TeamData __1,
         out FreeAgentTalentWeightRuntime.Scope __state)
     {
         __state = FreeAgentTalentWeightRuntime.Enter("recruit/contract replacement");
         __state.OfferTemplate = __0?.Pointer ?? IntPtr.Zero;
         __state.OfferCount = __instance.eventChoices?.Count ?? 0;
-        if (__state.KeepStats && __0 != null)
+        // A squad with no skaters (no starting players) has no team average:
+        // AdjustPlayerStatsToMatchTeam averages GetForwards() and throws on an
+        // empty roster, so every GM offer failed. EmptyRosterForwards hands that
+        // average the offered template instead; its own stats are restored below.
+        __state.EmptyRoster = __0 != null && __1 != null && (__1.GetForwards(false)?.Count ?? 0) == 0;
+        if (__state.EmptyRoster) EmptyRosterForwards.Begin(__1, __0);
+        if ((__state.KeepStats || __state.EmptyRoster) && __0 != null)
         {
             __state.Speed = __0.speed;
             __state.Accuracy = __0.shotAccuracy;
@@ -319,6 +325,8 @@ internal static class FreeAgentChoiceWeightScope
     private static void Postfix(Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent __instance, ForwardData __0, TeamData __1,
         FreeAgentTalentWeightRuntime.Scope __state)
     {
+        // Contract setup below reads the real roster.
+        EmptyRosterForwards.End();
         if (!FreeAgentTalentWeightRuntime.IsCurrentOffer(__0, __state)
             || __instance.eventChoices == null || __instance.eventChoices.Count != __state.OfferCount + 1) return;
         var player = __instance.eventChoices[__state.OfferCount]?.Skater?.TryCast<ForwardData>();
@@ -326,7 +334,7 @@ internal static class FreeAgentChoiceWeightScope
         // Complete the native offer first, then restore only its four base stats.
         // Detouring AdjustPlayerStatsToMatchTeam (which takes Nullable<float>)
         // crashes native GM calls on build 26001062, even with keep-stats off.
-        if (__state.KeepStats)
+        if (__state.KeepStats || __state.EmptyRoster)
         {
             player.speed = __state.Speed;
             player.shotAccuracy = __state.Accuracy;
@@ -340,7 +348,27 @@ internal static class FreeAgentChoiceWeightScope
     }
     [HarmonyFinalizer]
     private static Exception Finalizer(FreeAgentTalentWeightRuntime.Scope __state, Exception __exception)
-    { __state?.Dispose(); return __exception; }
+    { EmptyRosterForwards.End(); __state?.Dispose(); return __exception; }
+}
+
+// Active only inside one CreatePlayerChoice call for a team with no skaters:
+// that team's empty GetForwards() result becomes [offered template], so the
+// native team-average stat match has something to average. Team data is not changed.
+[HarmonyPatch(typeof(TeamData), nameof(TeamData.GetForwards))]
+internal static class EmptyRosterForwards
+{
+    private static IntPtr team;
+    private static ForwardData template;
+    internal static void Begin(TeamData owner, ForwardData offered) { team = owner.Pointer; template = offered; }
+    internal static void End() { team = IntPtr.Zero; template = null; }
+    [HarmonyPostfix]
+    private static void Postfix(TeamData __instance, ref Il2CppSystem.Collections.Generic.List<ForwardData> __result)
+    {
+        if (template == null || __instance == null || __instance.Pointer != team || (__result != null && __result.Count > 0)) return;
+        var standIn = new Il2CppSystem.Collections.Generic.List<ForwardData>();
+        standIn.Add(template);
+        __result = standIn;
+    }
 }
 
 [HarmonyPatch(typeof(State.CampaignState), "PreGenerateFreeAgents")]
