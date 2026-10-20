@@ -5,10 +5,10 @@ using CampaignCore;
 namespace CampaignCreator;
 
 // "In-game custom" is exactly the custom teams and players saved in the game's own
-// folder (TeamDataModels), read each time the list is built. Studio exports are shown
-// with Studio's saved copy, which keeps what the game's format drops; anything made in
-// the game's editor is converted into a cached campaign-format file. The game's files
-// are never changed.
+// folder (TeamDataModels), read each time the list is built. Studio exports keep
+// their authored fields while their live sidecar supplies the current lineup.
+// Game-editor content is converted into a cached campaign-format file. The game's
+// files are never changed.
 internal static class GameCustomContent
 {
     internal sealed record Item(string File, string Detail);
@@ -20,13 +20,20 @@ internal static class GameCustomContent
     private static readonly string[] Positions = ["Left Wing", "Right Wing", "Center", "Left Defense", "Right Defense", "Goalie"];
 
     internal static List<Item> Load(string root)
+        => Load(root, Folder, Path.Combine(UserContentPaths.Root, "play_now_overrides"));
+
+    // The folder parameter also keeps fixture checks away from the live game save.
+    internal static List<Item> Load(string root, string saveFolder)
+        => Load(root, saveFolder, Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(saveFolder)!)!, "runtime", "play_now_overrides"));
+
+    private static List<Item> Load(string root, string saveFolder, string overrideFolder)
     {
         var items = new List<Item>();
-        if (!Directory.Exists(Folder)) return items;
+        if (!Directory.Exists(saveFolder)) return items;
         string cache = Cache(root);
         var written = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var models = new Dictionary<string, (string File, JsonElement Json)>(StringComparer.OrdinalIgnoreCase);
-        foreach (string file in Directory.EnumerateFiles(Folder, "Custom*.json"))
+        foreach (string file in Directory.EnumerateFiles(saveFolder, "Custom*.json"))
         {
             try
             {
@@ -48,7 +55,37 @@ internal static class GameCustomContent
             if (kind == "CustomTeam")
             {
                 string snapshot = Path.Combine(exportedTeams, id, "team.txt");
-                if (File.Exists(snapshot)) { items.Add(new(snapshot, "Studio export · " + when)); continue; }
+                if (File.Exists(snapshot))
+                {
+                    string liveFile = Path.Combine(overrideFolder, id + ".team.txt");
+                    if (File.Exists(liveFile))
+                    {
+                        var live = new CampaignDocument(File.ReadAllText(liveFile));
+                        if (PlayNowRosterCodec.TryRead(live, out var roster, out _))
+                        {
+                            string cacheTeam = Path.Combine(cache, "teams", id);
+                            var team = new CampaignDocument(File.ReadAllText(snapshot));
+                            PlayNowRosterCodec.Write(team, roster);
+                            Write(Path.Combine(cacheTeam, "team.txt"), team, written);
+                            string[] positions = ["Left Wing", "Center", "Right Wing", "Left Defense", "Right Defense"];
+                            foreach (var (pid, position) in roster.Line1.Zip(positions).Concat(roster.Line2.Zip(positions.Select(p => "Line 2 " + p))).Append((roster.GoalieId, "Goalie")))
+                            {
+                                string snapshotPlayer = Path.Combine(exportedTeams, id, "players", pid + ".txt");
+                                string runtimePlayer = Path.Combine(Path.GetDirectoryName(liveFile)!, pid + ".txt");
+                                CampaignDocument? playerDoc = File.Exists(runtimePlayer) ? new CampaignDocument(File.ReadAllText(runtimePlayer))
+                                    : File.Exists(snapshotPlayer) ? new CampaignDocument(File.ReadAllText(snapshotPlayer))
+                                    : models.TryGetValue(pid, out var nativePlayer) ? Player(nativePlayer.Json, position == "Goalie") : null;
+                                if (playerDoc == null) continue;
+                                playerDoc.Set("Position", position);
+                                Write(Path.Combine(cacheTeam, "players", position + " - " + pid + ".txt"), playerDoc, written);
+                            }
+                            items.Add(new(Path.Combine(cacheTeam, "team.txt"), "Studio export · " + when));
+                            continue;
+                        }
+                    }
+                    items.Add(new(snapshot, "Studio export · " + when));
+                    continue;
+                }
                 string folder = Path.Combine(cache, "teams", id);
                 Write(Path.Combine(folder, "team.txt"), Team(model), written);
                 for (int i = 0; i < Slots.Length; i++)

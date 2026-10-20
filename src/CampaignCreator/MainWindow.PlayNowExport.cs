@@ -15,7 +15,7 @@ public sealed partial class MainWindow
     {
         var targets = ExportTranslation.ExistingTeams(Path.Combine(GameSavePaths.Root, "TeamDataModels"),
             Path.Combine(UserContentPaths.Root, "play_now_overrides"), root);
-        var dialog = new Window { Title = "Export team to Play Now", Width = 760, Height = 410,
+        var dialog = new Window { Title = "Export team to Play Now", Width = 760, Height = 450,
             MinWidth = 560, MinHeight = 370, WindowStartupLocation = WindowStartupLocation.CenterOwner };
         var picker = new ComboBox { Name = "PlayNowExportTarget", ItemsSource = targets, SelectedIndex = -1,
             PlaceholderText = "Choose an exported team to update", HorizontalAlignment = HorizontalAlignment.Stretch,
@@ -23,6 +23,8 @@ public sealed partial class MainWindow
         var update = new Button { Name = "PlayNowUpdateTeam", Content = "Update selected team", IsEnabled = false };
         var create = new Button { Name = "PlayNowExportAsNew", Content = "Export as new" };
         var cancel = new Button { Name = "PlayNowExportCancel", Content = "Cancel" };
+        var lineupWarning = new TextBlock { Name = "PlayNowLineupWarning", IsVisible = false, TextWrapping = TextWrapping.Wrap,
+            Foreground = Brush.Parse("#FFD18C"), Text = "This team's saved in-game lineup differs from its Studio export. Updating replaces those saved lineup edits with Studio's current roster." };
         bool submitted = false;
         void Complete(TeamExportChoice? choice)
         {
@@ -31,7 +33,11 @@ public sealed partial class MainWindow
             picker.IsEnabled = update.IsEnabled = create.IsEnabled = cancel.IsEnabled = false;
             dialog.Close(choice);
         }
-        picker.SelectionChanged += (_, _) => update.IsEnabled = !submitted && picker.SelectedItem is ExportTranslation.ExistingTeam;
+        picker.SelectionChanged += (_, _) => {
+            update.IsEnabled = !submitted && picker.SelectedItem is ExportTranslation.ExistingTeam;
+            lineupWarning.IsVisible = picker.SelectedItem is ExportTranslation.ExistingTeam { LineupChanged: true };
+            update.Content = lineupWarning.IsVisible ? "Replace lineup and update" : "Update selected team";
+        };
         update.Click += (_, _) => { if (picker.SelectedItem is ExportTranslation.ExistingTeam target) Complete(new(target)); };
         create.Click += (_, _) => Complete(new(null));
         cancel.Click += (_, _) => Complete(null);
@@ -40,6 +46,7 @@ public sealed partial class MainWindow
             new TextBlock { Text = "Create another Play Now team, or replace an exported team's data and roster. Your Studio team stays unchanged.", TextWrapping = TextWrapping.Wrap },
             new TextBlock { Text = "Update existing team", FontWeight = FontWeight.SemiBold },
             picker,
+            lineupWarning,
             new TextBlock { Text = targets.Count == 0 ? "No Studio-exported teams are available to update." : "Choose the exact export using its name, date and ID. Shared players in other teams are preserved.", TextWrapping = TextWrapping.Wrap, Foreground = StudioTheme.Muted },
             new TextBlock { Text = "Close the game before exporting, then restart it to load the changes.", TextWrapping = TextWrapping.Wrap }
         } };

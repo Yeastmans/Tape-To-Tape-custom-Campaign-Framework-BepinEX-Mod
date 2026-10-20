@@ -2,10 +2,11 @@ using System.Collections;
 using System.Reflection;
 using System.Text.Json;
 using CampaignCreator;
+using CampaignCore;
 
 // All native saves, sidecars and snapshots are passed explicitly below. These
 // checks never call RuntimeRoot, UserContentPaths.EnsureRoot, or launch Studio.
-string output = Path.GetFullPath(args.Length == 1 ? args[0] : "artifacts/community-management-20261017/play-now-checks");
+string output = Path.GetFullPath(args.Length == 1 ? args[0] : "artifacts/four-features/play-now-update-checks");
 string root = Path.Combine(output, Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
 Type exporter = typeof(MainWindow).Assembly.GetType("CampaignCreator.ExportTranslation", true)!;
@@ -19,7 +20,7 @@ object? Call(string name, params object?[] values)
     try { return exporter.GetMethod(name, flags)!.Invoke(null, values); }
     catch (TargetInvocationException e) when (e.InnerException != null) { System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e.InnerException).Throw(); throw; }
 }
-object Package(string id, string prefix, string name)
+object Package(string id, string prefix, string name, bool twoLines = false)
 {
     var model = new Dictionary<string, object> { ["Id"] = id, ["TeamName"] = name, ["City"] = "Test City" };
     var saves = new Dictionary<string, string>();
@@ -32,19 +33,36 @@ object Package(string id, string prefix, string name)
         saves[(i == 5 ? "CustomGoalie-" : "CustomForward-") + pid + ".json"] = json;
         sidecars[pid + ".txt"] = "Name = " + name + " Player\nExport Version = 3\nExport Model = " + json + "\n";
     }
+    if (twoLines)
+    {
+        var roster = new PlayNowRoster(
+            [prefix + "0", prefix + "2", prefix + "1", prefix + "3", prefix + "4"],
+            Enumerable.Range(6, 5).Select(i => prefix + i).ToArray(), prefix + "5", true);
+        for (int i = 6; i < 11; i++)
+        {
+            string pid = prefix + i;
+            string json = JsonSerializer.Serialize(new { id = pid, firstName = name, lastName = "Second", speed = 89 });
+            saves["CustomForward-" + pid + ".json"] = json;
+            sidecars[pid + ".txt"] = "Name = " + name + " Second\nExport Version = 3\nExport Model = " + json + "\n";
+        }
+        var teamSidecar = new CampaignDocument("Team Name = " + name + "\nExport Version = 3\n");
+        PlayNowRosterCodec.Write(teamSidecar, roster);
+        sidecars[id + ".team.txt"] = teamSidecar.ToString();
+    }
     saves["CustomTeam-" + id + ".json"] = JsonSerializer.Serialize(model);
-    sidecars[id + ".team.txt"] = "Team Name = " + name + "\nExport Version = 3\n";
+    if (!twoLines) sidecars[id + ".team.txt"] = "Team Name = " + name + "\nExport Version = 3\n";
     return Activator.CreateInstance(packageType, id, saves, sidecars)!;
 }
-(string Save, string Overrides, string Library) Fixture(string label)
+(string Save, string Overrides, string Library) Fixture(string label, bool twoLines = false)
 {
     string folder = Path.Combine(root, label), save = Path.Combine(folder, "native", "TeamDataModels"), sidecars = Path.Combine(folder, "runtime", "play_now_overrides"), library = Path.Combine(folder, "workspace");
     Directory.CreateDirectory(save);
-    Call("Write", Package("old-team", "old-player-", "Before"), save, sidecars, library);
+    Call("Write", Package("old-team", "old-player-", "Before", twoLines), save, sidecars, library);
     return (save, sidecars, library);
 }
 object Target((string Save, string Overrides, string Library) f)
-    => ((IEnumerable)Call("ExistingTeams", f.Save, f.Overrides, f.Library)!).Cast<object>().Single();
+    => ((IEnumerable)Call("ExistingTeams", f.Save, f.Overrides, f.Library)!).Cast<object>()
+        .Single(item => (string)item.GetType().GetProperty("Id")!.GetValue(item)! == "old-team");
 string Update(object package, (string Save, string Overrides, string Library) f)
 {
     return (string)Call("WriteUpdate", package, Target(f), f.Save, f.Overrides, f.Library)!;
@@ -134,4 +152,117 @@ string created = (string)Call("Write", Package("second-team", "second-player-", 
 Check(Path.GetFileName(created) == "CustomTeam-second-team.json" && Directory.GetFiles(create.Save, "Custom*.json").Length == 14, "Export as new retains the existing independent-copy behavior");
 var createAfter = Files(Path.GetDirectoryName(create.Library)!);
 Check(original.All(p => createAfter[p.Key] == p.Value), "Export as new preserves every earlier export file");
+
+var lineShared = Fixture("line-two-shared", twoLines: true);
+Call("Write", Package("other-team", "other-player-", "Other", true), lineShared.Save, lineShared.Overrides, lineShared.Library);
+string otherSidecarFile = Path.Combine(lineShared.Overrides, "other-team.team.txt");
+var otherSidecarDoc = new CampaignDocument(File.ReadAllText(otherSidecarFile));
+Check(PlayNowRosterCodec.TryRead(otherSidecarDoc, out var otherRoster, out _), "Second team's roster extension reads");
+otherRoster.Line2[0] = "old-player-6";
+PlayNowRosterCodec.Write(otherSidecarDoc, otherRoster);
+File.WriteAllText(otherSidecarFile, otherSidecarDoc.ToString());
+var sharedLineBefore = Files(Path.GetDirectoryName(lineShared.Library)!);
+Update(Package("incoming", "incoming-player-", "After", true), lineShared);
+var updatedLineDoc = new CampaignDocument(File.ReadAllText(Path.Combine(lineShared.Overrides, "old-team.team.txt")));
+Check(PlayNowRosterCodec.TryRead(updatedLineDoc, out var updatedLine, out _)
+    && updatedLine.Line2[0] == "incoming-player-6" && updatedLine.Line2[1] == "old-player-7", "LineTwoSharedOwnership: shared Line 2 ID is remapped and unshared Line 2 ID is reused");
+var sharedLineAfter = Files(Path.GetDirectoryName(lineShared.Library)!);
+Check(sharedLineBefore.Where(p => (p.Key.Contains("old-player-6") && !p.Key.Contains(Path.Combine("Exported Teams", "old-team")))
+        || p.Key.Contains("other-team") || p.Key.Contains("other-player"))
+    .All(p => sharedLineAfter.TryGetValue(p.Key, out var hash) && hash == p.Value)
+    && sharedLineAfter.Keys.Where(p => p.Contains("other-team") || p.Contains("other-player")).All(sharedLineBefore.ContainsKey),
+    "LineTwoSharedOwnership: shared and other-team files stay byte-for-byte unchanged with no outside writes");
+
+var expand = Fixture("one-to-two");
+Update(Package("expanded", "expanded-player-", "Expanded", true), expand);
+var expandedSidecar = new CampaignDocument(File.ReadAllText(Path.Combine(expand.Overrides, "old-team.team.txt")));
+Check(PlayNowRosterCodec.TryRead(expandedSidecar, out var expandedRoster, out _)
+    && expandedRoster.Line1[1] == "old-player-2" && expandedRoster.Line2.SequenceEqual(Enumerable.Range(6, 5).Select(i => "expanded-player-" + i))
+    && Directory.GetFiles(expand.Save, "Custom*.json").Length == 12, "OneToTwoAddsLineTwo: first line keeps owned IDs and new second line receives independent records");
+
+var malformedExtension = Fixture("malformed-other", twoLines: true);
+File.WriteAllText(Path.Combine(malformedExtension.Save, "CustomTeam-other.json"), "{\"Id\":\"other\",\"TeamName\":\"Other\"}");
+File.WriteAllText(Path.Combine(malformedExtension.Overrides, "other.team.txt"), "Export Roster Version = 999\n");
+var malformedBefore = Files(Path.GetDirectoryName(malformedExtension.Library)!);
+Reject(() => Update(Package("next", "next-player-", "After", true), malformedExtension), "Malformed other-team extension prevents uncertain ownership reuse");
+SameFiles(malformedBefore, Path.GetDirectoryName(malformedExtension.Library)!, "Malformed extension leaves every file unchanged");
+
+var shrink = Fixture("two-to-one", twoLines: true);
+File.WriteAllText(Path.Combine(shrink.Save, "CustomTeam-other.json"), "{\"Id\":\"other\",\"TeamName\":\"Other\",\"centerId\":\"old-player-6\"}");
+var shrinkBefore = Files(Path.GetDirectoryName(shrink.Library)!);
+Update(Package("single", "single-player-", "Single"), shrink);
+Check(File.Exists(Path.Combine(shrink.Save, "CustomForward-old-player-6.json"))
+    && File.Exists(Path.Combine(shrink.Overrides, "old-player-6.txt"))
+    && !File.Exists(Path.Combine(shrink.Save, "CustomForward-old-player-7.json"))
+    && !File.Exists(Path.Combine(shrink.Overrides, "old-player-7.txt")), "TwoToOneRetainsSharedFiles: shared Line 2 files survive and unshared retired files are removed");
+Check(Files(Path.GetDirectoryName(shrink.Library)!).Where(p => p.Key.Contains("old-player-6") || p.Key.Contains("CustomTeam-other"))
+    .All(p => shrinkBefore.TryGetValue(p.Key, out var hash) && hash == p.Value), "TwoToOneRetainsSharedFiles: retained bytes are exact");
+
+var standalone = Fixture("standalone-retained", twoLines: true);
+string standaloneCopy = Path.Combine(standalone.Library, "library", "Exported Players", "old-player-7.txt");
+Directory.CreateDirectory(Path.GetDirectoryName(standaloneCopy)!);
+File.Copy(Path.Combine(standalone.Overrides, "old-player-7.txt"), standaloneCopy);
+var standaloneBefore = Files(Path.GetDirectoryName(standalone.Library)!);
+Update(Package("single", "single-player-", "Single"), standalone);
+var standaloneAfter = Files(Path.GetDirectoryName(standalone.Library)!);
+Check(new[] { Path.Combine("native", "TeamDataModels", "CustomForward-old-player-7.json"),
+        Path.Combine("runtime", "play_now_overrides", "old-player-7.txt"),
+        Path.Combine("workspace", "library", "Exported Players", "old-player-7.txt") }
+    .All(path => standaloneAfter.TryGetValue(path, out var hash) && standaloneBefore[path] == hash),
+    "TwoToOneRetainsStandaloneFiles: separately exported player copies remain byte-for-byte unchanged");
+
+var activeStandalone = Fixture("active-standalone");
+string activeCopy = Path.Combine(activeStandalone.Library, "library", "Exported Players", "old-player-2.txt");
+Directory.CreateDirectory(Path.GetDirectoryName(activeCopy)!);
+File.Copy(Path.Combine(activeStandalone.Overrides, "old-player-2.txt"), activeCopy);
+var activeBefore = Files(Path.GetDirectoryName(activeStandalone.Library)!);
+Update(Package("next", "next-player-", "After"), activeStandalone);
+var activeAfter = Files(Path.GetDirectoryName(activeStandalone.Library)!);
+using (var native = JsonDocument.Parse(File.ReadAllText(Path.Combine(activeStandalone.Save, "CustomTeam-old-team.json"))))
+    Check(native.RootElement.GetProperty("centerId").GetString() == "next-player-2",
+        "Active standalone identity is remapped instead of overwritten");
+Check(new[] { Path.Combine("native", "TeamDataModels", "CustomForward-old-player-2.json"),
+        Path.Combine("runtime", "play_now_overrides", "old-player-2.txt"),
+        Path.Combine("workspace", "library", "Exported Players", "old-player-2.txt") }
+    .All(path => activeAfter.TryGetValue(path, out var hash) && activeBefore[path] == hash),
+    "Active standalone native, companion and library bytes remain exact");
+
+var nativeEdit = Fixture("native-edit", twoLines: true);
+var nativeChoice = Target(nativeEdit);
+File.AppendAllText(Path.Combine(nativeEdit.Save, "CustomTeam-old-team.json"), " ");
+var nativeBefore = Files(Path.GetDirectoryName(nativeEdit.Library)!);
+Reject(() => Call("WriteUpdate", Package("next", "next-player-", "After", true), nativeChoice, nativeEdit.Save, nativeEdit.Overrides, nativeEdit.Library), "NativeEditInvalidatesChooser: changed native JSON rejects stale selection");
+SameFiles(nativeBefore, Path.GetDirectoryName(nativeEdit.Library)!, "NativeEditInvalidatesChooser: every preexisting byte remains");
+
+var sidecarEdit = Fixture("sidecar-edit", twoLines: true);
+var sidecarChoice = Target(sidecarEdit);
+File.AppendAllText(Path.Combine(sidecarEdit.Overrides, "old-team.team.txt"), "# concurrent edit\n");
+var sidecarBefore = Files(Path.GetDirectoryName(sidecarEdit.Library)!);
+Reject(() => Call("WriteUpdate", Package("next", "next-player-", "After", true), sidecarChoice, sidecarEdit.Save, sidecarEdit.Overrides, sidecarEdit.Library), "Concurrent sidecar mutation invalidates chooser");
+SameFiles(sidecarBefore, Path.GetDirectoryName(sidecarEdit.Library)!, "Concurrent sidecar mutation preserves all bytes");
+
+var bothRollback = Fixture("both-lines-rollback", twoLines: true);
+var bothBefore = Files(Path.GetDirectoryName(bothRollback.Library)!);
+var bothChoice = Target(bothRollback);
+using (var locked = new FileStream(Path.Combine(bothRollback.Save, "CustomTeam-old-team.json"), FileMode.Open, FileAccess.Read, FileShare.Read))
+    Reject(() => Call("WriteUpdate", Package("next", "next-player-", "After", true), bothChoice, bothRollback.Save, bothRollback.Overrides, bothRollback.Library), "UpdateRollbackRestoresBothLines: final native publication fails");
+SameFiles(bothBefore, Path.GetDirectoryName(bothRollback.Library)!, "UpdateRollbackRestoresBothLines: all native, sidecar and snapshot bytes restore");
+
+var importFixture = Fixture("import-live", twoLines: true);
+string liveSidecarFile = Path.Combine(importFixture.Overrides, "old-team.team.txt");
+var liveSidecar = new CampaignDocument(File.ReadAllText(liveSidecarFile));
+Check(PlayNowRosterCodec.TryRead(liveSidecar, out var liveRoster, out _), "Import fixture's live sidecar reads");
+(liveRoster.Line2[0], liveRoster.Line2[1]) = (liveRoster.Line2[1], liveRoster.Line2[0]);
+PlayNowRosterCodec.Write(liveSidecar, liveRoster);
+File.WriteAllText(liveSidecarFile, liveSidecar.ToString());
+Check((bool)Target(importFixture).GetType().GetProperty("LineupChanged")!.GetValue(Target(importFixture))!,
+    "LineupChanged exposes current-sidecar versus saved-library roster difference");
+var contentType = typeof(MainWindow).Assembly.GetType("CampaignCreator.GameCustomContent", true)!;
+var load = contentType.GetMethod("Load", flags, [typeof(string), typeof(string)])!;
+var imported = ((IEnumerable)load.Invoke(null, [importFixture.Library, importFixture.Save])!).Cast<object>().ToArray();
+string ItemFile(object item) => (string)item.GetType().GetProperty("File")!.GetValue(item)!;
+string importedTeam = ItemFile(imported.Single(item => ItemFile(item).EndsWith("team.txt")));
+string importedPlayers = Path.Combine(Path.GetDirectoryName(importedTeam)!, "players");
+Check(new CampaignDocument(File.ReadAllText(Path.Combine(importedPlayers, "Line 2 Left Wing - old-player-7.txt"))).Get("Position") == "Line 2 Left Wing",
+    "ImportUsesCurrentSavedLineup: reimport follows the live sidecar position instead of the library snapshot");
 Console.WriteLine($"{checks} Play Now checks passed. Isolated evidence: {root}");

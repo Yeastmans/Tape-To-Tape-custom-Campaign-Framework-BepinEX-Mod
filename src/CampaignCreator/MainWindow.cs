@@ -420,7 +420,9 @@ public sealed partial class MainWindow : Window
                         Path.Combine(GameSavePaths.Root, "TeamDataModels"),
                         Path.Combine(ExportTranslation.RuntimeRoot(root), "play_now_overrides"), root);
                 }
-                status.Text = (choice.Target == null ? "Exported new team and roster" : "Updated selected team and roster") + " · restart the game to load " + Path.GetFileName(teamResult);
+                status.Text = (choice.Target == null ? "Exported new team and roster"
+                    : choice.Target.LineupChanged ? "Updated selected team and replaced saved in-game lineup edits with Studio's roster"
+                    : "Updated selected team and roster") + " · restart the game to load " + Path.GetFileName(teamResult);
                 ShowExportReport(report);
             }
             finally { teamExportPending = false; }
