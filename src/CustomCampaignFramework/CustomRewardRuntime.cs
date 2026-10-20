@@ -35,6 +35,31 @@ internal static class CustomRewardRuntime
     private sealed class TimedTag { internal Skater Skater; internal StatusTag Tag; internal float Until; internal string Reward, Owner; }
     private static readonly Dictionary<string, TimedTag> tags = new();
     private static float nextRefresh;
+    // Rules owned by a skater or team in the current match. Stat modifiers and
+    // continuous conditions run per skater per tick, so they scan this short list
+    // instead of every campaign reward (a 300+ reward campaign ran at 4 fps).
+    // Built once as players load in at match start; ownership is fixed for the match.
+    private static CustomRewardDefinition[] inPlay = Array.Empty<CustomRewardDefinition>();
+    private static bool inPlayStale = true;
+    internal static CustomRewardDefinition[] InPlay
+    {
+        get
+        {
+            if (!inPlayStale) return inPlay;
+            var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var teams = new HashSet<IntPtr>();
+            foreach (var actor in actors.Values) {
+                if (actor == null) continue;
+                var powerups = actor._skaterData?.powerups;
+                if (powerups != null) foreach (var t in powerups) if (t != null && t.id != null) ids.Add(t.id);
+                var team = actor.Team?._teamData;
+                if (team?.relics != null && teams.Add(team.Pointer)) foreach (var r in team.relics) if (r != null && r.id != null) ids.Add(r.id);
+            }
+            inPlay = Definitions.Values.Where(d => ids.Contains(d.Id)).ToArray();
+            inPlayStale = false;
+            return inPlay;
+        }
+    }
     private static readonly HashSet<IntPtr> boundStats = new();
     private static readonly List<object> delegates = new();
     private static readonly List<Action> unsubscribe = new();
@@ -394,7 +419,7 @@ internal static class CustomRewardRuntime
         foreach (var action in unsubscribe) Safe(action);
         foreach (var action in removeModifiers) Safe(action);
         foreach (var tag in tags.Values) if (tag.Skater != null) Safe(() => tag.Skater.statusEffectsManager?.RemoveTag(tag.Tag));
-        tags.Clear(); dispatching.Clear(); actors.Clear(); brokenSticks.Clear(); nextRefresh = 0;
+        tags.Clear(); dispatching.Clear(); actors.Clear(); brokenSticks.Clear(); nextRefresh = 0; inPlay = Array.Empty<CustomRewardDefinition>(); inPlayStale = true;
         unsubscribe.Clear(); removeModifiers.Clear(); delegates.Clear(); forwards.Clear(); boundStats.Clear(); eventsBound = false;
     }
     internal static void Bind(Forward forward)
@@ -402,7 +427,7 @@ internal static class CustomRewardRuntime
         if (forward?.stats == null || forward._forwardData == null || forward.Team?._teamData == null) return;
         MatchStarted(); if (!inMatch) return;
         forwards[forward.Pointer] = forward;
-        actors[forward.Pointer] = forward;
+        actors[forward.Pointer] = forward; inPlayStale = true;
         if (!boundStats.Add(forward.stats.Pointer)) return;
         Il2CppSystem.Func<int, int> Modifier(string stat) {
             var fn = (Il2CppSystem.Func<int, int>)(Func<int, int>)(value => {
@@ -423,7 +448,7 @@ internal static class CustomRewardRuntime
     {
         if (goalie?.goalieStats == null || goalie._skaterData == null || goalie.Team?._teamData == null) return;
         MatchStarted(); if (!inMatch) return;
-        actors[goalie.Pointer] = goalie;
+        actors[goalie.Pointer] = goalie; inPlayStale = true;
         if (!boundStats.Add(goalie.goalieStats.Pointer)) return;
         void Add(Il2CppSystem.Collections.Generic.List<Il2CppSystem.Func<int, int>> list, string stat) {
             var modifier = (Il2CppSystem.Func<int, int>)(Func<int, int>)(value => (int)Math.Max(0, Math.Min(int.MaxValue, (long)value + Bonus(goalie, stat))));
@@ -525,7 +550,7 @@ internal static class CustomRewardRuntime
         if (!inMatch || forward == null || forward.Team?._teamData == null) return 0;
         string actor = Player(forward), team = Team(forward);
         long total = CustomRewardTemperature.Bonus(forward, stat) + (long)progress.Bonus(actor, team, stat, Time.time, StillOwned) + CustomRewardShotCalculations.Bonus(forward, stat) + CustomRewardChargedShots.Bonus(forward, stat);
-        foreach (var d in Definitions.Values) {
+        foreach (var d in InPlay) {
             if (d.NeedsRedesign || d.Effect != CustomRewardEffects.StatChange || !CustomRewardTriggers.IsCondition(d.Trigger)) continue;
             if (!(d.Stat == stat || d.Stat == "Overall" && CustomRewardDefinition.IsOverallStat(stat))) continue;
             int Scale(Skater source) {
@@ -549,7 +574,7 @@ internal static class CustomRewardRuntime
         if (!InMatch || recipient?.Team?._teamData == null) yield break;
         // One entry per source, so per-owner rules (team auras, opposing
         // auras) stack exactly as two owners of the same native item would.
-        foreach (var d in Definitions.Values.ToArray()) {
+        foreach (var d in InPlay) {
             if (d.NeedsRedesign || !CustomRewardTriggers.IsCondition(d.Trigger)) continue;
             foreach (var _ in ContinuousSources(d, recipient, s => Condition(d.Trigger, s))) yield return d;
         }
@@ -562,7 +587,7 @@ internal static class CustomRewardRuntime
         if (f.TryCast<Forward>() is { } forward) Bind(forward);
         else if (f.TryCast<NativeGoalie>() is { } goalie) BindGoalie(goalie);
         string actor = Player(f), team = Team(f);
-        foreach (var d in Definitions.Values) {
+        foreach (var d in InPlay) {
             if (d.NeedsRedesign || d.Trigger != signal && d.ResetOn != signal || !d.IsRelic && !f.ArePowerUpsEnabled()) continue;
             if (d.Effect == CustomRewardEffects.StatChange && d.Target == CustomRewardEffects.Actor
                 && d.Stat.StartsWith("Goalie ", StringComparison.Ordinal) != (f.TryCast<NativeGoalie>() != null)) continue;

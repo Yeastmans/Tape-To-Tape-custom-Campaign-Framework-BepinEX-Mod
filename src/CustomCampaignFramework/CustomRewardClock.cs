@@ -22,7 +22,7 @@ internal static class CustomRewardClock
         double result = 1;
         foreach (var team in new[] { GameManager.HomeTeam, GameManager.VisitorTeam }) {
             if (team?._teamData == null) continue;
-            foreach (var rule in CustomRewardRuntime.Definitions.Values) {
+            foreach (var rule in CustomRewardRuntime.InPlay) {
                 if (rule.NeedsRedesign || !rule.IsRelic || rule.Effect != CustomRewardEffects.ClockSpeed || !CustomRewardRuntime.Has(team._teamData, rule.Id)) continue;
                 bool active = rule.Trigger switch {
                     "While owned" => true,

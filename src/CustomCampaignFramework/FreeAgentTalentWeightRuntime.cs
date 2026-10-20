@@ -308,8 +308,8 @@ internal static class FreeAgentChoiceWeightScope
         __state.OfferCount = __instance.eventChoices?.Count ?? 0;
         // A squad with no skaters (no starting players) has no team average:
         // AdjustPlayerStatsToMatchTeam averages GetForwards() and throws on an
-        // empty roster, so every GM offer failed. EmptyRosterForwards hands that
-        // average the offered template instead; its own stats are restored below.
+        // empty roster, so every GM offer failed. EmptyRosterForwards puts the offered
+        // template on the roster for this call; its own stats are restored below.
         __state.EmptyRoster = __0 != null && __1 != null && (__1.GetForwards(false)?.Count ?? 0) == 0;
         if (__state.EmptyRoster) EmptyRosterForwards.Begin(__1, __0);
         if ((__state.KeepStats || __state.EmptyRoster) && __0 != null)
@@ -352,22 +352,21 @@ internal static class FreeAgentChoiceWeightScope
 }
 
 // Active only inside one CreatePlayerChoice call for a team with no skaters:
-// that team's empty GetForwards() result becomes [offered template], so the
-// native team-average stat match has something to average. Team data is not changed.
-[HarmonyPatch(typeof(TeamData), nameof(TeamData.GetForwards))]
+// the offered template sits in that team's forwards list so the native
+// team-average stat match has something to average, then is taken out again.
 internal static class EmptyRosterForwards
 {
-    private static IntPtr team;
+    private static TeamData team;
     private static ForwardData template;
-    internal static void Begin(TeamData owner, ForwardData offered) { team = owner.Pointer; template = offered; }
-    internal static void End() { team = IntPtr.Zero; template = null; }
-    [HarmonyPostfix]
-    private static void Postfix(TeamData __instance, ref Il2CppSystem.Collections.Generic.List<ForwardData> __result)
+    internal static void Begin(TeamData owner, ForwardData offered)
     {
-        if (template == null || __instance == null || __instance.Pointer != team || (__result != null && __result.Count > 0)) return;
-        var standIn = new Il2CppSystem.Collections.Generic.List<ForwardData>();
-        standIn.Add(template);
-        __result = standIn;
+        if (owner?.forwards == null || offered == null) return;
+        owner.forwards.Add(offered); team = owner; template = offered;
+    }
+    internal static void End()
+    {
+        if (team?.forwards != null && template != null) team.forwards.Remove(template);
+        team = null; template = null;
     }
 }
 

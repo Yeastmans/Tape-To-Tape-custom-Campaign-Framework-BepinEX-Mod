@@ -29,7 +29,7 @@ internal static class CustomRewardTemperature
     {
         if (!CustomRewardDefinition.IsOverallStat(stat) || player?.Team?._teamData == null || !pairs.TryGetValue(player.Team.Pointer, out var pair)) return 0;
         long result = 0;
-        foreach (var rule in CustomRewardRuntime.Definitions.Values) {
+        foreach (var rule in CustomRewardRuntime.InPlay) {
             if (rule.NeedsRedesign || !CustomRewardEffects.IsTemperature(rule.Effect) || !CustomRewardRuntime.Has(player.Team._teamData, rule.Id)) continue;
             if (rule.Effect == CustomRewardEffects.HotAttribute && player.Pointer == pair.Hot) result += rule.Amount;
             if (rule.Effect == CustomRewardEffects.ColdAttribute && player.Pointer == pair.Cold) result -= rule.Amount;

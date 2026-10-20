@@ -24,7 +24,7 @@ internal static class CustomRewardShotCalculations
         // Each on-ice owner whose rule reaches this shooter contributes once:
         // the owner itself, its teammates, or opposing shooters (all of them,
         // nearby, closest, the carrier or a per-match random selection).
-        foreach (var rule in CustomRewardRuntime.Definitions.Values) {
+        foreach (var rule in CustomRewardRuntime.InPlay) {
             if (rule.NeedsRedesign || rule.Trigger != trigger || rule.Effect != CustomRewardEffects.StatChange) continue;
             foreach (var _ in CustomRewardRuntime.ContinuousSources(rule, recipient, _ => true)) total += rule.Amount;
         }
