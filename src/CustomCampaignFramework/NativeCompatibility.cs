@@ -29,6 +29,8 @@ internal static class NativeCompatibility
         var expected=baseline.Sites.Select(s=>s.Feature+"|"+s.Query+"|"+s.Kind+"|"+s.Method).OrderBy(s=>s).ToArray();
         var current=selected.Sites.Select(s=>s.Feature+"|"+s.Query+"|"+s.Kind+"|"+s.Method).OrderBy(s=>s).ToArray();
         if(!expected.SequenceEqual(current)) throw new InvalidDataException("Compatibility comparison coverage differs from the installed mod.");
+        if (System.Text.Json.JsonSerializer.Serialize(baseline.RawHooks.OrderBy(c => c.Id)) != System.Text.Json.JsonSerializer.Serialize(selected.RawHooks.OrderBy(c => c.Id)))
+            throw new InvalidDataException("Raw native callback coverage differs from the installed mod.");
         return cached=selected;
     }
     private static string Hash(string file) { using var data=File.OpenRead(file);using var sha=SHA256.Create();return Convert.ToHexString(sha.ComputeHash(data)); }

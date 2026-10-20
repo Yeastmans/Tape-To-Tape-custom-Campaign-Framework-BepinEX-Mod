@@ -45,6 +45,7 @@ internal static class ExportAppearanceRuntime
     internal static void Apply(SkaterData player, CampaignDocument doc, bool away = false)
     {
         if (doc.Get("Export Version") != "3") return;
+        JerseyLogoRuntime.Bind(player, new CampaignDocument(""), doc, doc, Plugin.ModFolder);
         bool goalie = player.TryCast<GoaltenderData>() != null;
         object target = goalie ? player.TryCast<GoaltenderData>() : player.TryCast<ForwardData>();
         Type type = goalie ? typeof(GoaltenderData) : typeof(ForwardData);
@@ -121,7 +122,7 @@ internal static class ExportAppearanceRuntime
     // players. Override only that argument, retaining each player's embedded crest.
     public static void SkinPrefix(SkaterData skaterData, ref Texture logo)
     {
-        if (skaterData == null) return;
+        if (skaterData == null || JerseyLogoNativeHooks.Enabled) return;
         if (AppearanceDecalRuntime.ClearIncompatibleLogo(skaterData)) { logo = null; return; }
         try
         {
@@ -249,6 +250,7 @@ internal static class ExportAppearanceRuntime
     internal static void Install(Harmony h)
     {
         ExportTeamAppearanceRuntime.Install(h);
+        JerseyLogoNativeHooks.Install();
         foreach (var method in typeof(Skaters.T2TSkeletonExtensions).GetMethods(BindingFlags.Public | BindingFlags.Static)
             .Where(m => (m.Name == "ApplySkin" || m.Name == "ApplySkinAsync") && m.GetParameters().Any(p => p.Name == "skaterData") && m.GetParameters().Any(p => p.Name == "logo")))
             h.Patch(method, prefix: new HarmonyMethod(typeof(ExportAppearanceRuntime), nameof(SkinPrefix)));

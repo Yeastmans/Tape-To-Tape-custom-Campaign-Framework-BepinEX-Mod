@@ -64,3 +64,14 @@ tests/CampaignStudioChecks/*
 !tests/TeamLookFillChecks/
 tests/TeamLookFillChecks/*
 !tests/TeamLookFillChecks/Program.cs
+
+!tests/JerseyLogoRuntimeChecks/
+tests/JerseyLogoRuntimeChecks/*
+!tests/JerseyLogoRuntimeChecks/JerseyLogoRuntimeChecks.csproj
+!tests/JerseyLogoRuntimeChecks/Program.cs
+!tests/JerseyLogoRuntimeChecks/NativeDoubles.cs
+
+!tests/CampaignLogoResolutionChecks/
+tests/CampaignLogoResolutionChecks/*
+!tests/CampaignLogoResolutionChecks/CampaignLogoResolutionChecks.csproj
+!tests/CampaignLogoResolutionChecks/Program.cs

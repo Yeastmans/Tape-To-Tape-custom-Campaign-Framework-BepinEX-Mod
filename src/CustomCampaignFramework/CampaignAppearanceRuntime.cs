@@ -182,8 +182,16 @@ internal static class CampaignAppearanceRuntime
         return scheme;
     }
     private static readonly Dictionary<IntPtr, Binding> Bindings = new();
+    private static long logoContext = -1;
+    private static void CheckContext()
+    {
+        JerseyLogoRuntime.EnsureContext();
+        if (logoContext == JerseyLogoRuntime.Context) return;
+        logoContext = JerseyLogoRuntime.Context; Bindings.Clear();
+    }
     private static Binding Get(SkaterData player)
     {
+        CheckContext();
         if (!Bindings.TryGetValue(player.Pointer, out var value)) Bindings[player.Pointer] = value = new Binding();
         return value;
     }
@@ -193,19 +201,25 @@ internal static class CampaignAppearanceRuntime
         foreach (var pair in binding.Player.Fields) binding.Effective.Set(pair.Key, pair.Value);
     }
     internal static CampaignDocument Read(SkaterData player)
-        => player != null && Bindings.TryGetValue(player.Pointer, out var value) && !value.Export ? value.Effective : null;
+    {
+        CheckContext();
+        return player != null && Bindings.TryGetValue(player.Pointer, out var value) && !value.Export ? value.Effective : null;
+    }
     internal static CampaignDocument RecruitSnapshot(SkaterData player)
     {
+        CheckContext();
         var snapshot = new CampaignDocument("");
         if (player == null || !Bindings.TryGetValue(player.Pointer, out var value)) return snapshot;
         foreach (var pair in value.Team.Fields) snapshot.Set("Appearance Team " + pair.Key, pair.Value);
         foreach (var pair in value.Player.Fields) snapshot.Set("Appearance Player " + pair.Key, pair.Value);
         foreach (var pair in value.Own.Fields) snapshot.Set("Appearance Own " + pair.Key, pair.Value);
         snapshot.Set("Appearance Team Painted", value.TeamPainted ? "yes" : "no");
+        foreach (var pair in JerseyLogoRuntime.Snapshot(player).Fields) snapshot.Set(pair.Key, pair.Value);
         return snapshot;
     }
     internal static void RestoreRecruit(SkaterData player, CampaignDocument snapshot)
     {
+        CheckContext();
         var value = new Binding();
         foreach (var pair in snapshot.Fields)
         {
@@ -216,6 +230,7 @@ internal static class CampaignAppearanceRuntime
         value.TeamPainted = snapshot.Get("Appearance Team Painted") == "yes";
         value.OwnColors = PlayerColorModel.HasStick(k => value.Own.Get(k)) || PlayerColorModel.HasSkates(k => value.Own.Get(k));
         Merge(value); Bindings[player.Pointer] = value;
+        SyncLogo(player, value); JerseyLogoRuntime.Restore(player, snapshot);
         // Native colorSchemes is saved. Rebuild omitted render metadata without
         // repainting or reapplying any authored stats, names or earned rewards.
         OwnColors(player, k => value.Own.Get(k), value.Effective);
@@ -227,6 +242,7 @@ internal static class CampaignAppearanceRuntime
             ? PlayerKitColors.Palette(value.Own, away, value.Effective) : null;
     internal static void ForKit(SkaterData player, bool home)
     {
+        CheckContext();
         if (player == null) return;
         if (Bindings.TryGetValue(player.Pointer, out var binding) && !binding.Export)
         { binding.Away = !home; Paint(player, binding); return; }
@@ -240,6 +256,8 @@ internal static class CampaignAppearanceRuntime
     }
     internal static void Copy(SkaterData source, SkaterData target)
     {
+        CheckContext();
+        JerseyLogoRuntime.Copy(source, target);
         if (Bindings.TryGetValue(source.Pointer, out var value))
             Bindings[target.Pointer] = new Binding { Team = value.Team, Player = value.Player, Effective = value.Effective, Own = value.Own,
                 TeamPainted = value.TeamPainted, Away = value.Away, Export = value.Export, OwnColors = value.OwnColors };
@@ -265,6 +283,8 @@ internal static class CampaignAppearanceRuntime
         // Keep opted-in kit colors separate from team defaults. Stick/skates also use
         // the game's personal color fields, independently of the style toggle.
         value.Player = new CampaignDocument("");
+        foreach (var pair in config.Fields.Fields)
+            if (pair.Key.StartsWith("Export ", StringComparison.OrdinalIgnoreCase) || pair.Key.StartsWith("Jersey Logo", StringComparison.OrdinalIgnoreCase) || pair.Key == "Override Team Settings") value.Player.Set(pair.Key, pair.Value);
         Func<string, string> own = k => config.Fields.Get(k);
         value.OwnColors = PlayerColorModel.HasStick(own) || PlayerColorModel.HasSkates(own);
         value.Own = new CampaignDocument("");
@@ -285,12 +305,12 @@ internal static class CampaignAppearanceRuntime
             if (config.Fields.Get("Socks").Length > 0) value.Player.Set("Socks", config.Fields.Get("Socks"));
             value.Player.Set("Socks Away", config.Fields.Get("Socks Away"));
         }
-        Merge(value); OwnColors(player, own, value.Effective); Paint(player, value);
+        Merge(value); SyncLogo(player, value); OwnColors(player, own, value.Effective); Paint(player, value);
     }
     internal static void Team(SkaterData player, TeamConfig config, TeamData team, bool away)
     {
         if (player == null || config == null) return;
-        var value = Get(player); value.Away = away; value.Team = TeamPalette(config); Merge(value);
+        var value = Get(player); value.Away = away; value.Team = TeamPalette(config); Merge(value); SyncLogo(player, value);
         // Team-look players (no authored stick/skates) must not keep a donor's own colors.
         if (!value.OwnColors) OwnColors(player, _ => "", value.Effective);
         if (team != null)
@@ -331,8 +351,12 @@ internal static class CampaignAppearanceRuntime
         // Sock styles are skins, not colors; AppearanceDecalRuntime composes them at render time.
         foreach (string key in new[] { "Socks", "Socks Away" })
             if (config.Fields.Get(key).Length > 0) doc.Set(key, config.Fields.Get(key));
+        foreach (var pair in config.Fields.Fields)
+            if (pair.Key.StartsWith("Export ", StringComparison.OrdinalIgnoreCase) || pair.Key.StartsWith("Jersey Logo", StringComparison.OrdinalIgnoreCase) || pair.Key == "Logo From") doc.Set(pair.Key, pair.Value);
         return doc;
     }
+    private static void SyncLogo(SkaterData player, Binding binding)
+        => JerseyLogoRuntime.Bind(player, binding.Team, binding.Player, binding.Own, Plugin.ModFolder);
     internal static Texture Logo(SkaterData player)
     {
         if (!AppearanceDecalRuntime.SupportsLogo(player)) return null;

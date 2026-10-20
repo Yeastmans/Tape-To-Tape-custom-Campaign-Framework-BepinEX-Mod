@@ -41,6 +41,8 @@
     <Compile Include="../ModCompatibility/Shared/NativeCompatibilityProfile.cs" Link="Core/NativeCompatibilityProfile.cs" />
     <Compile Include="../CampaignCore/NativeCompatibilityProfile.cs" Link="Core/NativeSymbolNames.cs" />
     <Compile Include="../CustomHeads/CustomHeadCatalog.cs" Link="Core/CustomHeadCatalog.cs" />
+    <EmbeddedResource Include="Assets/jersey-logo-targets.json" LogicalName="JerseyLogoTargets.json" />
+    <Compile Include="../CampaignCore/JerseyLogoOptions.cs" Link="Core/JerseyLogoOptions.cs" />
     <Compile Include="../CampaignCore/LogoFiles.cs" Link="Core/LogoFiles.cs" />
     <Compile Include="../CampaignCore/HeadAppearance.cs" Link="Core/HeadAppearance.cs" />
     <Compile Include="../CampaignCore/PlayerBrawlOptions.cs" Link="Core/PlayerBrawlOptions.cs" />

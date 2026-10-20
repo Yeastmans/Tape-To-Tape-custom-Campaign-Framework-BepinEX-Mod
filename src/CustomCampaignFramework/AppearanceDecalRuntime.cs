@@ -13,10 +13,7 @@ internal static class AppearanceDecalRuntime
     private static readonly string[] PantsRight = { "Pants_right", "Pants_right_NE", "Pants_right_NW", "S_Pants_right", "SW_Pants_right", "SE_Pants_right" };
     internal static bool SupportsLogo(SkaterData player)
     {
-        var f = player?.TryCast<ForwardData>();
-        if (f != null) return !string.IsNullOrEmpty(f.bodySkin) && AppearanceContract.SupportsJerseyLogo("skater", f.bodySkin, f.bodyAwaySkin);
-        var g = player?.TryCast<GoaltenderData>();
-        return g != null && !string.IsNullOrEmpty(g.skin) && AppearanceContract.SupportsJerseyLogo("goalie", g.skin, g.awaySkin);
+        return JerseyLogoRuntime.Compatible(player, false) || JerseyLogoRuntime.Compatible(player, true);
     }
     // Referees are game-owned, not campaign players. Emptying their logo was the
     // last thing the mod did before the first-faceoff crash after the 2026-09-25
@@ -40,7 +37,8 @@ internal static class AppearanceDecalRuntime
     internal static void Forward(SkeletonData skeleton, ForwardData player, Il2CppSystem.Collections.Generic.List<Skin> skins, bool home)
     {
         if (IsReferee(player)) return;
-        bool premade = ClearIncompatibleLogo(player, skins);
+        bool premade = !JerseyLogoRuntime.Compatible(player, !home);
+        if (premade) RemoveKitLogo(skins); else ClearIncompatibleLogo(player, skins);
         var doc = CampaignAppearanceRuntime.Read(player) ?? PlayNowTranslation.ReadPlayer(player);
         // Native SkinHelper replaces logoSkin for customizable uniforms and uses
         // CustomNumberController instead of the old serialized numberSkin field.
@@ -96,6 +94,11 @@ internal static class AppearanceDecalRuntime
         }
         return replaced > 0 ? combined : jersey;
     }
+    private static void RemoveKitLogo(Il2CppSystem.Collections.Generic.List<Skin> skins)
+    {
+        for (int i = skins.Count - 1; i >= 0; i--)
+            if (skins[i]?.Name?.StartsWith("Team_Logo/", StringComparison.Ordinal) == true) skins.RemoveAt(i);
+    }
     private static bool Replace(SkeletonData data, Il2CppSystem.Collections.Generic.List<Skin> skins, string requested, Func<string, bool> matches)
     {
         if (string.IsNullOrEmpty(requested)) return false;
@@ -107,7 +110,9 @@ internal static class AppearanceDecalRuntime
     public static void GoaliePostfix(SkeletonData skeletonData, GoaltenderData data, bool useHomeUniform, Il2CppSystem.Collections.Generic.List<Skin> __result)
     {
         if (data == null || skeletonData == null || __result == null) return;
-        ClearIncompatibleLogo(data, __result);
+        if (!JerseyLogoRuntime.Compatible(data, !useHomeUniform)) RemoveKitLogo(__result);
+        else ClearIncompatibleLogo(data, __result);
+        JerseyLogoNativeHooks.CaptureList(data, useHomeUniform, __result);
         try { ApplyGoaliePants(skeletonData, data, useHomeUniform, __result); }
         catch (Exception ex) { Plugin.Log.LogWarning("[Appearance] Goalie pants style could not be composed: " + ex); }
     }

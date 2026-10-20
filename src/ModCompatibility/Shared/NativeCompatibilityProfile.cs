@@ -22,6 +22,7 @@ public sealed class NativeCompatibilityProfile
     public int FlowRva { get; set; }
     public string FlowBytes { get; set; } = "410FB6C60A4758";
     public List<NativeComparisonSite> Sites { get; set; } = new();
+    public List<RawNativeHookContract> RawHooks { get; set; } = new();
 
     public void Validate(string gameHash, string baselineId)
     {
@@ -72,3 +73,29 @@ public sealed class NativeInlineComparison
     }
 }
 
+
+// Explicit raw callback inventory. Harmony coverage alone cannot discover it.
+public sealed class RawNativeHookContract
+{
+    public static void RequireExactSet(IEnumerable<RawNativeHookContract> expected, IEnumerable<RawNativeHookContract> approved, string feature)
+    {
+        if (expected == null || approved == null) throw new InvalidDataException("Missing raw native contracts.");
+        var wanted = expected.OrderBy(c => c.Id, StringComparer.Ordinal).ToArray();
+        var actual = approved.Where(c => c.Feature == feature).OrderBy(c => c.Id, StringComparer.Ordinal).ToArray();
+        if (wanted.Length == 0 || wanted.Length != wanted.Select(c => c.Id).Distinct().Count() || wanted.Length != wanted.Select(c => c.Rva).Distinct().Count()
+            || !wanted.Select(c => JsonSerializer.Serialize(c)).SequenceEqual(actual.Select(c => JsonSerializer.Serialize(c))))
+            throw new InvalidDataException("Raw callbacks have not passed final compatibility integration: " + feature);
+    }
+
+    public string Feature { get; set; } = "";
+    public string Id { get; set; } = "";
+    public string Kind { get; set; } = "";
+    public int Scope { get; set; }
+    public int Rva { get; set; }
+    public int Size { get; set; }
+    public string Sha256 { get; set; } = "";
+    public string Prologue { get; set; } = "";
+    public string Identity { get; set; } = "";
+    public string NativeSignature { get; set; } = "";
+    public int AliasCount { get; set; }
+}

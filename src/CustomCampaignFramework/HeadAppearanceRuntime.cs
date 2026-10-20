@@ -46,7 +46,11 @@ internal static class HeadAppearanceRuntime
             CampaignRefereeAppearance.Apply(skeletonData, forwardData, __result);
             return; // Preserve the referee decal/logo exclusion, including head-only renders.
         }
-        if (!headOnly) AppearanceDecalRuntime.Forward(skeletonData, forwardData, __result, isHome);
+        if (!headOnly)
+        {
+            AppearanceDecalRuntime.Forward(skeletonData, forwardData, __result, isHome);
+            JerseyLogoNativeHooks.CaptureList(forwardData, isHome, __result);
+        }
         // Native GetSkins constructs a ForwardDataEquipmentOwner when callers
         // omit one. Preserve its complete head/helmet result in previews too:
         // physical talents, transformations and helmet stacks are native state.
