@@ -78,7 +78,9 @@ public sealed class CompatibilityBaseline
         }
         // Pin native offer construction and its stat-adjustment contract. The
         // optional policy restores the completed offer's stats before display.
-        foreach (string name in new[] { "Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent$$CreatePlayerChoice", "Data.ForwardData$$AdjustPlayerStatsToMatchTeam" })
+        // An empty roster substitutes the offered template in GetForwards for that call.
+        foreach (string name in new[] { "Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent$$CreatePlayerChoice", "Data.ForwardData$$AdjustPlayerStatsToMatchTeam",
+            "Data.TeamData$$GetForwards" })
         {
             var method = image.Resolve(name);
             if (image.SharedMethodCount(method.Rva) != 1) throw new InvalidDataException("Shared recruitment stats target: " + name);

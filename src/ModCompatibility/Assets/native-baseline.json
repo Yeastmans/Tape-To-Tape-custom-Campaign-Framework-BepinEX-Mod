@@ -1,8 +1,8 @@
 {
-  "Id": "B262B1E1FFA626710EC0F528258868D2BF076C6598A01070B5A7D84581B19D35",
+  "Id": "A44828EB7F9DA23D3BD1193FB06470DA112BCEF4D5F0F528ABB6977683F8E036",
   "Profile": {
     "RuntimeContract": "t2t-native-v1-20261008",
-    "BaselineId": "B262B1E1FFA626710EC0F528258868D2BF076C6598A01070B5A7D84581B19D35",
+    "BaselineId": "A44828EB7F9DA23D3BD1193FB06470DA112BCEF4D5F0F528ABB6977683F8E036",
     "Build": "26071671",
     "GameHash": "92C6308809D5E324178C7D7E03F767C2E7D9AFCB9F41B2390B9EEAA77216BC58",
     "MetadataHash": "1009F63178E260153CBBF224338BDC9124F9468D0F462F7A58327F638188914A",
@@ -1459,6 +1459,11 @@
       "Name": "Data.TeamData$$GetBench::System.Collections.Generic.List\u00601\u003CData.ForwardData\u003E GetBench()",
       "Signature": "System.Collections.Generic.List\u00601\u003CData.ForwardData\u003E GetBench()",
       "BodyHash": "599D6D1A0A008597D1CD4EF72803567AE70AC819D8238A2B923C3B2A42971189"
+    },
+    {
+      "Name": "Data.TeamData$$GetForwards::System.Collections.Generic.List\u00601\u003CData.ForwardData\u003E GetForwards(System.Boolean includeNull = False)",
+      "Signature": "System.Collections.Generic.List\u00601\u003CData.ForwardData\u003E GetForwards(System.Boolean includeNull = False)",
+      "BodyHash": "4BBAB2B885B1B1D1B89991099B0F3D450EAA9E9228FCB51AAF0BB04219F6E679"
     },
     {
       "Name": "DG.Tweening.ShortcutExtensions$$DOOrthoSize::DG.Tweening.Core.TweenerCore\u00603\u003CSystem.Single, System.Single, DG.Tweening.Plugins.Options.FloatOptions\u003E DOOrthoSize(UnityEngine.Camera target, System.Single endValue, System.Single duration)",

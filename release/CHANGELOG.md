@@ -1,5 +1,13 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 21 - 2026-10-20
+
+- **Fix: General Manager offers for squads with no skaters.** A GM free-agent node offered nothing when the squad had no players (a campaign with no starting roster): the game averages the team's skaters to scale each offer and failed on an empty roster. For that one offer the game now averages the offered player itself, and the offer keeps its own four base stats. Team data is unchanged.
+- Still supports Tape to Tape roguelite build 26071671 (same as revision 20). The native compatibility baseline adds one pinned method (`TeamData.GetForwards`) for this fix; everything else is unchanged.
+
+Not yet tested in game: the empty-roster GM fix is verified by build and native-compatibility checks only. Save and close Studio and the game before installing.
+
+
 ## Beta 1.0 revision 20 - 2026-10-19
 
 - **Supports Tape to Tape roguelite build 26071671** (Steam updates of 19 October 2026, 26070875 then 26071671). The native compatibility profile, interop and the three moved native entry points used by custom rewards (goal-scored event, Extra goals repeat and denial) are updated.
