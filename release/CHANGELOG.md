@@ -1,5 +1,14 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 22 - 2026-10-20
+
+- **Fix: in-match lag in campaigns with many custom rewards.** Custom stat changes, While-conditions and other per-tick rules checked every reward in the campaign for every skater on every physics step (a campaign with about 340 custom rewards dropped to about 4 fps). They now check only the rewards owned by the players and teams in the match.
+- **The revision 21 General Manager fix no longer hooks a method the game calls constantly during matches.** For squads with no skaters, the offered player is briefly placed on the roster while the game scales that one offer, then removed.
+- Still supports Tape to Tape roguelite build 26071671. Native compatibility baseline unchanged from revision 21.
+
+Not yet tested in game: neither the lag fix nor the empty-roster GM fix has been played; both are verified by build, native-compatibility and source-linked checks only. Save and close Studio and the game before installing.
+
+
 ## Beta 1.0 revision 21 - 2026-10-20
 
 - **Fix: General Manager offers for squads with no skaters.** A GM free-agent node offered nothing when the squad had no players (a campaign with no starting roster): the game averages the team's skaters to scale each offer and failed on an empty roster. For that one offer the game now averages the offered player itself, and the offer keeps its own four base stats. Team data is unchanged.
