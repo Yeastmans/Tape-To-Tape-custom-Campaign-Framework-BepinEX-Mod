@@ -53,7 +53,7 @@ internal static class PlayNowPlayerSave
         var r = PlayNowRosterSave.Capture(root, kind, player.id);
         // Native cached models must still describe the file that establishes the
         // accepted revision. A newer file cannot legitimize an older object.
-        MatchLoadedModel(r.NativeJson, modelJson);
+        MatchLoadedModel(r.NativeJson, modelJson, kind == "goalie" ? typeof(GoalieDataModel) : typeof(ForwardDataModel));
         Loaded[kind + ":" + player.id] = r;
         Players[player.Pointer] = new Binding { Player = player, Instance = player.GetInstanceID(), Revision = r };
         // Native-representable fields are authoritative even for an edit made
@@ -62,22 +62,36 @@ internal static class PlayNowPlayerSave
         var authority = new PlayNowEditAuthority(kind, player.id, r.NativeJson, r.CompanionText, r.NativeHash, r.CompanionHash);
         PlayNowTranslation.RegisterPreview(player.id, authority.Reconcile(modelJson).Companion);
     }
-    internal static void MatchLoadedModel(string persisted, string serialized)
+    internal static void MatchLoadedModel(string persisted, string serialized, Type schema)
     {
         using var disk = JsonDocument.Parse(persisted); using var model = JsonDocument.Parse(serialized);
-        bool Same(JsonElement a, JsonElement b)
+        bool Same(JsonElement a, JsonElement b, Type type)
         {
             if (a.ValueKind != b.ValueKind) return false;
             if (a.ValueKind == JsonValueKind.Object)
                 // Studio includes a few role-independent fields (for example
                 // name/isLefty on goalies) that native JsonUtility ignores.
-                return a.EnumerateObject().All(p => !b.TryGetProperty(p.Name, out var value) || Same(p.Value, value));
-            if (a.ValueKind == JsonValueKind.Array) return a.GetArrayLength() == b.GetArrayLength() && a.EnumerateArray().Zip(b.EnumerateArray(), Same).All(v => v);
-            if (a.ValueKind == JsonValueKind.Number) return a.GetDouble() == b.GetDouble();
+                return a.EnumerateObject().All(p => !b.TryGetProperty(p.Name, out var value)
+                    || Same(p.Value, value, type?.GetField(p.Name)?.FieldType ?? type?.GetProperty(p.Name)?.PropertyType));
+            if (a.ValueKind == JsonValueKind.Array)
+            {
+                Type element = type?.IsArray == true ? type.GetElementType()
+                    : type?.IsGenericType == true && type.GetGenericArguments().Length == 1 ? type.GetGenericArguments()[0] : null;
+                return a.GetArrayLength() == b.GetArrayLength() && a.EnumerateArray().Zip(b.EnumerateArray(), (x, y) => Same(x, y, element)).All(v => v);
+            }
+            if (a.ValueKind == JsonValueKind.Number)
+            {
+                // Studio and JsonUtility can spell the same IEEE single with
+                // different decimals. Only declared native float fields use this
+                // domain; integer/unknown fields must not lose precision to it.
+                if (type == typeof(float)) return a.TryGetSingle(out float x) && b.TryGetSingle(out float y)
+                    && float.IsFinite(x) && float.IsFinite(y) && x == y;
+                return a.TryGetDecimal(out decimal exactA) && b.TryGetDecimal(out decimal exactB) && exactA == exactB;
+            }
             if (a.ValueKind == JsonValueKind.String) return a.GetString() == b.GetString();
             return a.GetRawText() == b.GetRawText();
         }
-        if (!Same(disk.RootElement, model.RootElement)) throw new IOException("Loaded native player/team model is older than its saved file.");
+        if (!Same(disk.RootElement, model.RootElement, schema)) throw new IOException("Loaded native player/team model is older than its saved file.");
     }
     internal static void BindLoaded(SkaterData player)
     {

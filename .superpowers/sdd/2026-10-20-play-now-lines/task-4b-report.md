@@ -63,3 +63,32 @@ The new fixture stubs full PlayNowTranslation and Unity/IL2CPP/Harmony. Thus its
 ## Self-review and handoff
 
 Reviewed changed production consumers and new persistence sources; fixed native position ordering, raw model aliasing, stale-session fingerprint lifetime, nested unrelated masking, competing companion preservation and post-membership-change session escape. Reviewed exact staged files and diff whitespace. No generated bin/obj, fixtures or native-input binaries are intended for commit. Native review artifacts remain in the permitted canonical evidence folder; source/tests/report are committed in the isolated checkout. Commit identity is reported in the agent handoff (avoids a self-referential hash in this file).
+
+## Independent-review correction round 1 (base 8be4788)
+
+Fixed the Important numeric-domain finding from task-4b-review.md. MatchLoadedModel now receives the explicit native role schema from its callers (TeamDataModel, ForwardDataModel or GoalieDataModel). Recursive comparison follows field/property types, including nested ColorScheme/UnityEngine.Color members. Only fields declared as System.Single compare finite IEEE single values, so Studio `0.5019608` and JsonUtility-style `0.501960814` are accepted as the same native color. Other numeric fields use exact decimal comparison rather than being rounded to float; strings/IDs remain exact. Revision capture, byte hashes and stale-write checks are unchanged. This does not add new hooks, change compatibility gates or redesign registry lifetime.
+
+Added NativeFloatSpellingsUseSingleDomainWithoutWeakeningOtherFields. It accepts those equivalent single spellings, rejects a genuinely different representable single (`0.5019609`), rejects a changed ID and adjacent integer values 16777216/16777217 (which would collapse if incorrectly compared as singles), and asserts that the equivalent native values still have different exact byte fingerprints.
+
+Exact regression command (run before and after the fix):
+
+```powershell
+& 'C:/Program Files/dotnet/dotnet.exe' run --project tests/PlayNowPersistenceChecks/PlayNowPersistenceChecks.csproj -c Release
+```
+
+Before fix: exit 1; all previous 27 tests passed; new test failed with `System.IO.IOException: Loaded native player/team model is older than its saved file.` at PlayNowPlayerSave.cs:80. Final summary: `27 passed; 1 failed`.
+
+After fix: exit 0, including:
+
+```text
+PASS NativeFloatSpellingsUseSingleDomainWithoutWeakeningOtherFields
+28 passed; 0 failed
+```
+
+Required production command:
+
+```powershell
+& 'C:/Program Files/dotnet/dotnet.exe' build src/CustomCampaignFramework/CustomCampaignFramework.csproj -c Release '-p:InteropLive=C:/Users/kiran/Desktop/tape to tape mods/artifacts/game-update-26085704-20261020/interop-generation/interop' '-p:InteropDir=C:/Users/kiran/Desktop/tape to tape mods/artifacts/game-update-26085704-20261020/interop-generation/interop' --no-restore
+```
+
+Observed exit 0; `Build succeeded.`, `1 Warning(s)`, `0 Error(s)`. The warning remains Plugin.cs(8430,34) CS0168 for unused `ex`. Candidate DLL SHA256 is now E46A7210A025D0F8BFFD0741C8F305EC98BB1E0DE8127B47F8CA1D1259006179. `git diff --check` passed (Git emitted only existing LF-to-CRLF normalization notices). No unchanged full suites, game, live saves, install, push or compatibility regeneration ran this round. Native serializer/hook execution and the recorded lifecycle concern remain final-integration/review work.

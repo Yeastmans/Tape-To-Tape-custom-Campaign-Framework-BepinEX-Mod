@@ -201,4 +201,15 @@ Test("ProcessRestartFinishesDurableRollbackDecision",(root,side)=>{
  using var process=Process.Start(info);Assert(process.WaitForExit(20000)&&process.ExitCode==89,"child did not stop after rollback decision");
  Assert(PlayNowSaveJournal.Recover(root,side,"team") && beforeN.SequenceEqual(File.ReadAllBytes(n)) && beforeC.SequenceEqual(File.ReadAllBytes(c)),"restart did not restore exact prior pair");
 });
+Test("NativeFloatSpellingsUseSingleDomainWithoutWeakeningOtherFields",(root,_)=>{
+ const string persisted="{\"Id\":\"t\",\"homeColors\":{\"jerseyScheme\":{\"primaryColor\":{\"r\":0.5019608}}}}";
+ const string equivalent="{\"Id\":\"t\",\"homeColors\":{\"jerseyScheme\":{\"primaryColor\":{\"r\":0.501960814}}}}";
+ Assert(float.Parse("0.5019608",System.Globalization.CultureInfo.InvariantCulture)==float.Parse("0.501960814",System.Globalization.CultureInfo.InvariantCulture),"fixture decimal spellings differ as singles");
+ PlayNowPlayerSave.MatchLoadedModel(persisted,equivalent,typeof(TeamDataModel));
+ void Reject(string before,string after,Type schema){try{PlayNowPlayerSave.MatchLoadedModel(before,after,schema);throw new Exception("different native value accepted");}catch(IOException){}}
+ Reject(persisted,equivalent.Replace("0.501960814","0.5019609"),typeof(TeamDataModel));
+ Reject(persisted,equivalent.Replace("\"t\"","\"other\""),typeof(TeamDataModel));
+ Reject("{\"id\":\"p\",\"speed\":16777216}","{\"id\":\"p\",\"speed\":16777217}",typeof(ForwardDataModel));
+ Assert(PlayNowSaveJournal.Hash(Encoding.UTF8.GetBytes(persisted))!=PlayNowSaveJournal.Hash(Encoding.UTF8.GetBytes(equivalent)),"schema comparison weakened byte fingerprints");
+});
 Console.WriteLine($"{pass} passed; {fail} failed");return fail==0?0:1;

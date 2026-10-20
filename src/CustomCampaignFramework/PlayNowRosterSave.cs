@@ -93,7 +93,7 @@ internal static class PlayNowRosterSave
             // in-memory mutations using a newly read file.
             if (Models.TryGetValue(model.Pointer, out var old) && old.Revision.Id == model.Id && old.Revision.Root == __instance._path) continue;
             var revision = Capture(__instance._path, "team", model.Id);
-            PlayNowPlayerSave.MatchLoadedModel(revision.NativeJson, JsonUtility.ToJson(model));
+            PlayNowPlayerSave.MatchLoadedModel(revision.NativeJson, JsonUtility.ToJson(model), typeof(TeamDataModel));
             Models[model.Pointer] = new ModelRevision { Model = model, Revision = revision };
         }
     }
