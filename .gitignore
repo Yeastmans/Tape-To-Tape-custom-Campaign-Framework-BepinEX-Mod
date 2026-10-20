@@ -14,7 +14,9 @@ release/Nexus-Beta-1.0/
 
 # User data, game files and retired development output
 artifacts/
-tests/
+tests/*
+!tests/PlayNowUpdateChecks/
+!tests/PlayNowRosterChecks/
 test-campaigns/
 dump_*/
 graphify-out/
