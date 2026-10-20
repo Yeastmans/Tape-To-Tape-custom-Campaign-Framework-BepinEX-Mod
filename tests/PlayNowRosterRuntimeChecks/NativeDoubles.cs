@@ -41,3 +41,31 @@ namespace EndlessMode
 }
 
 namespace UnityEngine { public class Object { public static void Destroy(object value) { } } }
+namespace HarmonyLib {
+    public class HarmonyPatch : Attribute { public HarmonyPatch(Type t,string name) {} }
+    public class HarmonyPrefix : Attribute {} public class HarmonyPostfix : Attribute {} public class HarmonyFinalizer : Attribute {}
+    public class HarmonyMethod { public HarmonyMethod(Type t,string name) {} }
+    public class Harmony { public void Patch(object original,HarmonyMethod prefix=null,HarmonyMethod postfix=null,HarmonyMethod finalizer=null) {} }
+    public static class AccessTools { public static System.Reflection.ConstructorInfo[] GetDeclaredConstructors(Type t)=>t.GetConstructors(); public static object Method(Type t,string n)=>null; }
+}
+namespace Tape2Tape.Customization.UI {
+    public class TeamRosterData {
+        public TeamData OriginalTeamData,TemporaryTeamData;
+        public ForwardData m_LW,m_RW,m_C,m_LD,m_RD; public GoaltenderData m_G;
+        public Il2CppSystem.Collections.Generic.List<ForwardData> m_BenchForwards = new();
+    }
+}
+namespace Tape2Tape {
+    public class Team { static int next; public IntPtr Pointer=(IntPtr)(++next); public TeamData _teamData; public void Initialize() {} }
+    public static class CampaignUtil { public static CampaignState CampaignState; }
+    public class CampaignState { public Squad GetCurrentSquad()=>null; }
+    public class Squad { public string id; }
+}
+namespace Skaters {
+    public class StaminaConfig { }
+    public class TeamStaminaSystem { public bool _isLinesTeam; public StaminaConfig _config; public bool IsActive=>_isLinesTeam; public int Refills, Rebuilds; public void Initialize(){} public void RefillAll()=>Refills++; public void RebuildOnIce()=>Rebuilds++; }
+}
+namespace UnityEngine { public static class Resources { public static T Load<T>(string name) where T:new()=>new T(); } }
+namespace EndlessMode { public static class SquadBehaviorRuntime { public static bool TryEnabled(string id,string flag,out bool enabled) {enabled=false;return false;} } }
+
+namespace EndlessMode { public static class NativeSquadBehaviorBridge { public static bool Ready=true; } }

@@ -109,7 +109,7 @@ internal static class NativeSquadBehaviorBridge
                     Marshal.Copy(code, 0, site.Stub, code.Length);
                     continue;
                 }
-                string key = site.Feature + "/" + site.Query + "/" + site.Kind;
+                string key = site.Feature + "/" + site.Query + "/" + site.Kind + (site.Kind == "query" ? "/" + site.Rva : "");
                 if (!stubs.TryGetValue(key, out site.Stub))
                 {
                     IntPtr target = module.BaseAddress + site.Target;
@@ -121,6 +121,7 @@ internal static class NativeSquadBehaviorBridge
                         {
                             try
                             {
+                                if (site.Feature == "two_lines" && site.Query == "lines" && PlayNowRosterContext.IsRosterSite(site.Rva) && PlayNowRosterContext.Active) return 1;
                                 if (Plugin.IsDefaultMode || instance == IntPtr.Zero) return original(instance, id, checkMode, method);
                                 var util = new Tape2Tape.CampaignUtil(instance);
                                 string customId = util._campaignState?.GetCurrentSquad()?.id;

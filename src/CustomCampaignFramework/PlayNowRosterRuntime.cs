@@ -17,6 +17,8 @@ internal static class PlayNowRosterRuntime
         internal string TeamId;
         internal bool Stamina;
         internal Dictionary<string, string> SourceIds;
+        internal IntPtr ParentPointer;
+        internal int ParentInstanceId;
     }
     private static readonly Dictionary<IntPtr, Owner> Owners = new();
     private static TeamRepository Repository;
@@ -40,6 +42,15 @@ internal static class PlayNowRosterRuntime
     {
         roster = null;
         return Owned(team, out var owner) && Snapshot(team, owner.Stamina, out roster);
+    }
+
+    internal static bool IsRegistered(TeamData team) => Owned(team, out _);
+    internal static bool IsCloneOf(TeamData clone, TeamData source)
+        => Owned(clone, out var owner) && Owned(source, out _)
+            && owner.ParentPointer == source.Pointer && owner.ParentInstanceId == source.GetInstanceID();
+    internal static void Forget(TeamData team)
+    {
+        if (Owned(team, out _)) Owners.Remove(team.Pointer);
     }
 
     // Native match IDs remain untouched. Persistence can translate them separately.
@@ -149,7 +160,7 @@ internal static class PlayNowRosterRuntime
             {
                 if (player == null) continue;
                 var original = Items(source.forwards).Where(p => p != null &&
-                    (p.id == player.OriginalId || !string.IsNullOrEmpty(p.OriginalId) && p.OriginalId == player.OriginalId)).ToArray();
+                    (p.id == player.id || p.id == player.OriginalId || !string.IsNullOrEmpty(p.OriginalId) && p.OriginalId == player.OriginalId)).ToArray();
                 if (original.Length != 1 || !owner.SourceIds.TryGetValue(original[0].id, out string persisted)) return;
                 sourceIds.Add(player.id, persisted);
             }
@@ -158,6 +169,11 @@ internal static class PlayNowRosterRuntime
             var lines = new Il2CppSystem.Collections.Generic.List<Lineup>();
             lines.Add(Line(clone, roster.Line1)); lines.Add(Line(clone, roster.Line2));
             var registration = Registration(clone, owner.Stamina, sourceIds);
+            registration.ParentPointer = source.Pointer;
+            registration.ParentInstanceId = source.GetInstanceID();
+            var forwards = new Il2CppSystem.Collections.Generic.List<ForwardData>();
+            foreach (var player in clone.forwards) forwards.Add(player);
+            clone.forwards = forwards;
             clone.lines = lines;
             Owners[clone.Pointer] = registration;
         }

@@ -30,13 +30,19 @@ internal static class LineupPreviewRoster
 
     internal static void FillInactiveLine(LineupMenu menu)
     {
-        if (Plugin.IsDefaultMode || menu == null) return;
+        if (menu == null) return;
         try
         {
             var roster = menu.Team;
             var team = roster?.OriginalTeamData;
-            if (team == null || (!CustomTeamRules.IsCustom(team) && !VanillaCampaignRuntime.Owns(team)) ||
+            bool exported = PlayNowRosterRuntime.TryGet(team, out _);
+            if (team == null || (!exported && (Plugin.IsDefaultMode || (!CustomTeamRules.IsCustom(team) && !VanillaCampaignRuntime.Owns(team)))) ||
                 !team.isMultiLineup || roster.m_BenchForwards == null) return;
+            if (exported)
+            {
+                if (menu.m_AreSkatersLocked) PlayNowRosterContext.RefreshLocked(roster);
+                return; // constructor owns absolute editable positions; retain pending swaps
+            }
             var bench = roster.m_BenchForwards;
             var inactive = team.benchPlayers;
             if (inactive == null || inactive.Count != 5) return;

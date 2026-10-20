@@ -197,6 +197,7 @@ internal static class PlayNowTranslation
 
     internal static void Install(Harmony harmony)
     {
+        PlayNowRosterContext.Install(harmony);
         ExportAppearanceRuntime.Install(harmony);
         ExportLoadoutBadges.Install(harmony);
         // Bulk loading inlines DeserializeTeam/DeserializeGoalie; wait for the
