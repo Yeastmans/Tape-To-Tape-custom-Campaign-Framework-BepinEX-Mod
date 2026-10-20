@@ -1,5 +1,16 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 18 - 2026-10-19
+
+- Fixes Copy vanilla campaign failing when local dumps contain custom rewards such as Rally Towels.
+- Keeps custom relics and talents out of base-game reward offers. Custom campaign rewards require explicit selection; native fallback cannot reintroduce them.
+- Preserves custom libraries, authored campaign content, and the revision 17 game compatibility update.
+
+Validation: all 19 native squad copies match clean defaults when local custom rewards are present; 262 source-linked reward adapter checks pass. Native Unity/gameplay validation remains pending.
+
+Save and close Studio and the game before installing. Try Copy vanilla campaign, then check a normal run and an explicitly configured custom campaign's reward offers.
+
+
 ## Beta 1.0 revision 17 — 2026-10-19
 
 - Updates Creator and mod compatibility for Tape to Tape roguelite build **26067234**.

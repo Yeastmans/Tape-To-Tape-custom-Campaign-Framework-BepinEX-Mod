@@ -96,11 +96,18 @@ internal static class CustomRewardPools
     }
     internal static void EnsureWeight(string id, ref float weight)
     {
+        if (!AllowsReward(id)) { weight = 0; return; }
         if (FreeAgentTalentWeightRuntime.ReadingNativeWeights) return;
         // Special assets can have a zero normal reward weight. Explicitly
         // selecting one makes it eligible, without editing the shared asset.
         if (weightedSelections?.Contains(id ?? "") == true && (weight <= 0 || float.IsNaN(weight))) weight = 1;
     }
+    // Registration permits save/export lookup, never implicit native eligibility.
+    // Only an explicit campaign selection may offer a custom asset.
+    internal static bool AllowsReward(string id, string assetName = null)
+        => !(CustomRewardRuntime.Definitions.ContainsKey(id ?? "")
+                || assetName?.StartsWith("CCF_Reward_", StringComparison.Ordinal) == true)
+            || (!Plugin.IsDefaultMode && !RewardPoolPicks.Probing && weightedSelections?.Contains(id ?? "") == true);
     internal static Il2CppSystem.Collections.Generic.List<Relic> PickRelics(Il2CppSystem.Collections.Generic.List<Relic> pool, int count)
         => (Il2CppSystem.Collections.Generic.List<Relic>)AccessTools.Method(typeof(RelicRepository), "GetWeightedRandomRelics")
             .Invoke(null, new object[] { pool.Cast<Il2CppSystem.Collections.Generic.IEnumerable<Relic>>(), count });

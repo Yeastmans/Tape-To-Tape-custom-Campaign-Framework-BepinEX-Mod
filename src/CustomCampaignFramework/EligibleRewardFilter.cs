@@ -22,14 +22,16 @@ internal static class EligibleRewardFilter
     }
     private static void Relics(ref Il2CppSystem.Collections.Generic.IEnumerable<Relic> relicList, int numberOfRelics)
     {
-        if (Plugin.IsDefaultMode || relicList == null || Plugin.ExcludedRewardRelicIds.Count == 0) return;
+        if (relicList == null) return;
         try
         {
             var input = new Il2CppSystem.Collections.Generic.List<Relic>(relicList);
             var copy = new List<Relic>();
-            for (int i = 0; i < input.Count; i++) if (input[i] != null) copy.Add(input[i]);
+            // Remove foreign custom assets before the soft-exclusion fallback;
+            // a short native pool must never restore an unauthorized custom item.
+            for (int i = 0; i < input.Count; i++) if (input[i] != null && CustomRewardPools.AllowsReward(input[i].id, input[i].name)) copy.Add(input[i]);
             var filtered = RewardPoolSelection.Filter(copy, numberOfRelics,
-                r => Plugin.ExcludedRewardRelicIds.Contains(r.id ?? "") || Plugin.ExcludedRewardRelicIds.Contains(r.name ?? ""), out int restored);
+                r => !Plugin.IsDefaultMode && (Plugin.ExcludedRewardRelicIds.Contains(r.id ?? "") || Plugin.ExcludedRewardRelicIds.Contains(r.name ?? "")), out int restored);
             var result = new Il2CppSystem.Collections.Generic.List<Relic>();
             foreach (var item in filtered) result.Add(item);
             relicList = result.Cast<Il2CppSystem.Collections.Generic.IEnumerable<Relic>>();
@@ -39,14 +41,14 @@ internal static class EligibleRewardFilter
     }
     private static void Talents(ref Il2CppSystem.Collections.Generic.IEnumerable<Talent> powerList, int numberOfPowers)
     {
-        if (Plugin.IsDefaultMode || powerList == null || Plugin.ExcludedRewardTalentIds.Count == 0) return;
+        if (powerList == null) return;
         try
         {
             var input = new Il2CppSystem.Collections.Generic.List<Talent>(powerList);
             var copy = new List<Talent>();
-            for (int i = 0; i < input.Count; i++) if (input[i] != null) copy.Add(input[i]);
+            for (int i = 0; i < input.Count; i++) if (input[i] != null && CustomRewardPools.AllowsReward(input[i].id, input[i].name)) copy.Add(input[i]);
             var filtered = RewardPoolSelection.Filter(copy, numberOfPowers,
-                t => Plugin.ExcludedRewardTalentIds.Contains(t.id ?? "") || Plugin.ExcludedRewardTalentIds.Contains(t.name ?? ""), out int restored);
+                t => !Plugin.IsDefaultMode && (Plugin.ExcludedRewardTalentIds.Contains(t.id ?? "") || Plugin.ExcludedRewardTalentIds.Contains(t.name ?? "")), out int restored);
             var result = new Il2CppSystem.Collections.Generic.List<Talent>();
             foreach (var item in filtered) result.Add(item);
             powerList = result.Cast<Il2CppSystem.Collections.Generic.IEnumerable<Talent>>();

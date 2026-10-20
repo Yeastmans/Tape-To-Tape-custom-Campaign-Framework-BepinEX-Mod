@@ -94,7 +94,9 @@ public static class VanillaCampaignCopy
                 var pool=new RewardPoolDefinition {UseBaseGame=true};
                 foreach (string id in RewardCatalog.Load(root,kind).Keys.Where(id=>RewardCatalog.OfferedInBasePool(kind,id)&&!excluded.Contains(id)))
                 {
-                    if (!catalog.GetProperty("rewardCategories").TryGetProperty(id,out var category)) throw new InvalidDataException("Missing current native reward category: "+id);
+                    // Local dumps also contain registered custom rewards. Only the
+                    // installed native catalog defines a vanilla campaign's defaults.
+                    if (!catalog.GetProperty("rewardCategories").TryGetProperty(id,out var category)) continue;
                     if ((category.GetInt64()&mask)==0) pool.Selected.Add(id);
                 }
                 pool.Write(rewards,kind);rewards.Set("Native Defaults "+kind,string.Join(", ",pool.Selected.Order(StringComparer.OrdinalIgnoreCase)));
