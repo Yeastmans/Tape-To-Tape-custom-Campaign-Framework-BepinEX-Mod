@@ -303,7 +303,8 @@ internal sealed class CustomRewardCreator : UserControl
         foreach (var image in libraryImages) image.Dispose(); libraryImages.Clear();
         try {
             var local = libraryOnly ? new Dictionary<string, CustomRewardDefinition>() : CustomRewardDefinition.LoadFolder(Path.Combine(campaign(), CustomRewardDefinition.Folder)).ToDictionary(d => d.Id);
-            var all = CustomRewardDefinition.LoadFolder(Path.Combine(root, "library", "rewards")).ToDictionary(d => d.Id);
+            var shared = CustomRewardDefinition.LoadFolder(Path.Combine(root, "library", "rewards")).ToDictionary(d => d.Id);
+            var all = new Dictionary<string, CustomRewardDefinition>(shared);
             foreach (var pair in local) all[pair.Key] = pair.Value;
             foreach (var d in all.Values.Where(d => (filter.SelectedIndex <= 0 || d.Kind == filter.SelectedItem as string)
                 && d.Name.Contains(search.Text ?? "", StringComparison.OrdinalIgnoreCase)).OrderBy(d => d.Name)) {
@@ -313,9 +314,34 @@ internal sealed class CustomRewardCreator : UserControl
                     new TextBlock { Text = d.Name + " · " + d.Kind, TextWrapping = TextWrapping.Wrap },
                     new TextBlock { Text = d.NeedsRedesign ? "Excluded until redesigned" : local.ContainsKey(d.Id) ? "Campaign copy" : "Available in every campaign · disabled until selected", Foreground = StudioTheme.Muted, TextWrapping = TextWrapping.Wrap } } };
                 row.Children.Add(Button("Edit", () => { if (CanSwitch()) Load(d.Copy()); }));
+                if (!d.IsRelic && shared.ContainsKey(d.Id))
+                    row.Children.Add(Button("Delete from library", () => DeleteFromLibrary(d)));
                 if (!libraryOnly && !local.ContainsKey(d.Id)) row.Children.Add(Button("Copy into campaign", () => { d.Save(Path.Combine(campaign(), CustomRewardDefinition.Folder)); saved(); RefreshLibrary(); }));
                 library.Children.Add(new Border { BorderBrush = StudioTheme.Border, BorderThickness = new Thickness(1), Padding = new Thickness(10), Child = row });
             }
+        } catch (Exception ex) { status.Text = ex.Message; }
+    }
+
+    private async void DeleteFromLibrary(CustomRewardDefinition item)
+    {
+        try {
+            var dialog = new Window { Title = "Delete custom talent", Width = 480,
+                SizeToContent = SizeToContent.Height, WindowStartupLocation = WindowStartupLocation.CenterOwner };
+            var cancel = new Button { Content = "Cancel" };
+            var remove = new Button { Content = "Delete from library", Name = "ConfirmDeleteCustomTalent" };
+            cancel.Click += (_, _) => dialog.Close(false);
+            remove.Click += (_, _) => dialog.Close(true);
+            dialog.Content = new StackPanel { Margin = new Thickness(24), Spacing = 16, Children = {
+                new TextBlock { Text = "Delete “" + item.Name + "” from the shared library?", TextWrapping = TextWrapping.Wrap },
+                new TextBlock { Text = "Existing campaign and player copies will be kept. Saving an open copy later will add it back to the library.", TextWrapping = TextWrapping.Wrap },
+                new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Children = { cancel, remove } }
+            } };
+            if (!await dialog.ShowDialog<bool>(owner)) return;
+            if (!Guid.TryParse(item.Id, out _)) throw new InvalidDataException("Invalid custom talent ID.");
+            File.Delete(Path.Combine(root, "library", "rewards", item.Id + CustomRewardDefinition.Extension));
+            if (draft.Id == item.Id && !HasChanges) Load(new CustomRewardDefinition());
+            RefreshLibrary();
+            status.Text = "Deleted “" + item.Name + "” from the shared library. Existing campaign and player copies were kept.";
         } catch (Exception ex) { status.Text = ex.Message; }
     }
 }

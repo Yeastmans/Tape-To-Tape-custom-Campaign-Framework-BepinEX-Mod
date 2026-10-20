@@ -1,5 +1,16 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 17 — 2026-10-19
+
+- Updates Creator and mod compatibility for Tape to Tape roguelite build **26067234**.
+- Adds **Delete from library** to custom talents, with confirmation. Existing campaign and player copies are preserved.
+- Retains revision 16 features, including per-skater contracts and campaign referee heads.
+
+Validation: 53 native compatibility checks and seven isolated talent-delete UI checks pass. Fresh interop compilation and native hook/signature review pass. Human gameplay acceptance remains pending.
+
+Close the game and save/close Studio before installing. After updating, check Continue, complete a match and return to the map, try custom talent/relic triggers, and verify both roster lines. In Creator, test Delete from library on a disposable talent and confirm existing campaign copies remain.
+
+
 ## Beta 1.0 revision 16 — 2026-10-18
 
 Set contract durations for individual skaters, choose referee heads per campaign, and identify community campaigns with readable names, descriptions and custom PNG icons.

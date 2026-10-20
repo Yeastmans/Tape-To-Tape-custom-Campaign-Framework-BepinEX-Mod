@@ -19,7 +19,7 @@ The old `_build_studio_installer.ps1` and `_sync_github.ps1` are not required.
 - [7-Zip](https://www.7-zip.org/) for the pinned FFmpeg archive. Put `7z.exe` on
   PATH, install it to the standard Program Files location, or use `-SevenZipPath`.
 - Your own Steam installation of **Tape to Tape, roguelite branch, build
-  26020247**, with **current BepInEx-generated IL2CPP interop assemblies** in
+  26067234**, with **current BepInEx-generated IL2CPP interop assemblies** in
   `BepInEx/interop`. Run your game once with the pinned BepInEx loader to
   generate them, then close it. The build wrapper does not install a loader
   into your game or generate interop by launching it.
@@ -77,7 +77,7 @@ Replace the example game path with your own installation. Supply the release's
 exact tag when preparing a publishable build:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Build-CampaignStudio.ps1 -GameDirectory 'D:\SteamLibrary\steamapps\common\Tape to Tape' -ReleaseTag 'beta-1.0-r16-build-1792372510842'
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Build-CampaignStudio.ps1 -GameDirectory 'D:\SteamLibrary\steamapps\common\Tape to Tape' -ReleaseTag 'beta-1.0-r17-build-1792463666888'
 ```
 
 The wrapper's unchanged `-ReleaseTag` default is `beta-1.0-r2`; override it for
