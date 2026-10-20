@@ -54,6 +54,7 @@ internal static class ExportSelections
 
     internal static CampaignDocument JerseyLogo(CampaignDocument source, string root, bool away, ExportReport? report)
     {
+        LogoExport.RequireCompleteEmbedded(source, away);
         var choice = JerseyLogoOptions.Read(source, away);
         if (choice.Mode == JerseyLogoMode.Image && source.Get(choice.MetadataPrefix + " PNG").Length == 0
             && choice.Source.Equals(source.Get("Logo From"), StringComparison.OrdinalIgnoreCase)

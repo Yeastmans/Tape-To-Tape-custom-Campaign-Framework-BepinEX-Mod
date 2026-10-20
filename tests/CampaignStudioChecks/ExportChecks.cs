@@ -121,6 +121,28 @@ internal static class ExportChecks
         string kitHomeHash = kitTeamSidecar.Get("Export Jersey Logo SHA256"), kitAwayHash = kitTeamSidecar.Get("Export Jersey Logo Away SHA256");
         Check(kitHomeHash.Length == 64 && kitAwayHash.Length == 64 && kitHomeHash != kitAwayHash,
             "Team export embeds separate home and away crest PNGs");
+        foreach (bool slotAway in new[] { false, true })
+        foreach (bool filePresent in new[] { true, false })
+        {
+            string file = slotAway ? jerseyAway : jerseyHome;
+            byte[] original = File.ReadAllBytes(file);
+            var incomplete = new CampaignDocument(kitTeam.ToString());
+            string prefix = JerseyLogoOptions.Prefix(slotAway), field = JerseyLogoOptions.Field(slotAway);
+            incomplete.Set(prefix + " Mode", "embedded");
+            incomplete.Set(prefix + " ID", "custom_t2t_missing.png");
+            incomplete.Set(prefix + " SHA256", "missing");
+            incomplete.Remove(prefix + " PNG");
+            if (!filePresent) File.Delete(file);
+            string message = "";
+            int outputsBefore = Directory.GetFiles(root, "CustomTeam-*.json", SearchOption.AllDirectories).Length;
+            try { ExportTranslation.BuildTeam(incomplete, teamFile, game); }
+            catch (ArgumentException ex) { message = ex.Message; }
+            finally { if (!filePresent) File.WriteAllBytes(file, original); }
+            Check(message.Contains(field, StringComparison.OrdinalIgnoreCase)
+                && message.Contains("embedded", StringComparison.OrdinalIgnoreCase)
+                && Directory.GetFiles(root, "CustomTeam-*.json", SearchOption.AllDirectories).Length == outputsBefore,
+                $"Incomplete embedded {(slotAway ? "away" : "home")} blocks package with source file {(filePresent ? "present" : "absent")} before writes");
+        }
         var kitPlayers = kitPackage.Overrides.Where(pair => !pair.Key.EndsWith(".team.txt")).Select(pair => new CampaignDocument(pair.Value)).ToArray();
         Check(kitPlayers.All(player => player.Get("Export Jersey Logo SHA256") == kitHomeHash && player.Get("Export Jersey Logo Away SHA256") == kitAwayHash)
             && kitPlayers.Count(player => player.Get(PlayerExport.OwnEquipmentKey) == "yes") == 5

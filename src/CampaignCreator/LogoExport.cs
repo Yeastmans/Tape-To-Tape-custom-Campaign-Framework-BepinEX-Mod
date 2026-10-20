@@ -54,6 +54,7 @@ internal static class LogoExport
         var result = new CampaignDocument(source.ToString());
         var choice = JerseyLogoOptions.Read(source, away);
         string prefix = choice.MetadataPrefix;
+        RequireCompleteEmbedded(source, away);
         if (choice.Mode != JerseyLogoMode.Image)
         {
             JerseyLogoOptions.Clear(result, away);
@@ -82,6 +83,14 @@ internal static class LogoExport
         result.Set(prefix + " ID", "custom_t2t_" + hash + ".png");
         result.Set(prefix + " PNG", Convert.ToBase64String(bytes));
         return result;
+    }
+    internal static void RequireCompleteEmbedded(CampaignDocument source, bool away)
+    {
+        string prefix = JerseyLogoOptions.Prefix(away);
+        if (JerseyLogoOptions.Read(source, away).Mode == JerseyLogoMode.Image
+            && source.Get(prefix + " Mode").Equals("embedded", StringComparison.OrdinalIgnoreCase)
+            && source.Get(prefix + " PNG").Length == 0)
+            throw new ArgumentException($"{JerseyLogoOptions.Field(away)} embedded PNG is missing. Import the original PNG again.");
     }
     private static void CheckPng(byte[] bytes, string slot)
     {

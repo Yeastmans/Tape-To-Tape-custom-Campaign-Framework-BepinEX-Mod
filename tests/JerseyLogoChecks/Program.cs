@@ -75,6 +75,27 @@ try
     try { LogoExport.Snapshot(art, root, true); } catch (ArgumentException) { rejected = true; }
     Check(rejected && art.Get("Export Jersey Logo PNG") != art.Get("Export Jersey Logo Away PNG"), "CorruptAwayDoesNotMasqueradeAsHome");
     Identity(team, art, "CorruptAwayDoesNotMasqueradeAsHome");
+    foreach (bool slotAway in new[] { false, true })
+    foreach (bool filePresent in new[] { true, false })
+    {
+        string file = slotAway ? away : home;
+        byte[] original = File.ReadAllBytes(file);
+        var incomplete = new CampaignDocument(team.ToString());
+        string prefix = JerseyLogoOptions.Prefix(slotAway), field = JerseyLogoOptions.Field(slotAway);
+        incomplete.Set(prefix + " Mode", "embedded");
+        incomplete.Set(prefix + " ID", "custom_t2t_missing.png");
+        incomplete.Set(prefix + " SHA256", "missing");
+        incomplete.Remove(prefix + " PNG");
+        if (!filePresent) File.Delete(file);
+        string message = "";
+        try { LogoExport.Snapshot(incomplete, root, slotAway); }
+        catch (ArgumentException ex) { message = ex.Message; }
+        finally { if (!filePresent) File.WriteAllBytes(file, original); }
+        Check(message.Contains(field, StringComparison.OrdinalIgnoreCase)
+            && message.Contains("embedded", StringComparison.OrdinalIgnoreCase),
+            $"Incomplete embedded {(slotAway ? "away" : "home")} fails with source file {(filePresent ? "present" : "absent")}");
+        Identity(team, incomplete, "Incomplete embedded metadata does not alter identity");
+    }
     Console.WriteLine($"PASS {checks} jersey logo assertions");
 }
 finally { Directory.Delete(root, true); }
