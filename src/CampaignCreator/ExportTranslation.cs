@@ -101,9 +101,35 @@ internal static partial class ExportTranslation
         if (!Directory.Exists(players)) throw new ArgumentException("Add the team's roster before exporting.");
         string defaults = Path.Combine(folder, "goalie-equipment.cfg");
         var goalieDefaults = new CampaignDocument(File.Exists(defaults) ? File.ReadAllText(defaults) : "");
-        string[] positions = ["Left Wing", "Right Wing", "Center", "Left Defense", "Right Defense", "Goalie"];
-        string[] slots = ["leftWingerId", "rightWingerId", "centerId", "leftDefensemenId", "rightDefensemenId", "goalieId"];
+        bool twoLines = SquadBehaviors.Enabled(team.Get("Squad Template"), "two_lines", key => team.Get(key))
+            || team.Get("Opponent Two Lines").Equals("yes", StringComparison.OrdinalIgnoreCase);
+        bool stamina = SquadBehaviors.Enabled(team.Get("Squad Template"), "line_stamina", key => team.Get(key));
+        string[] positions = RosterLines.Skaters.Concat(["Goalie"]).ToArray();
+        string[] slots = ["leftWingerId", "centerId", "rightWingerId", "leftDefensemenId", "rightDefensemenId", "goalieId"];
+        var rosterFiles = new Dictionary<string, (string File, CampaignDocument Raw)>(StringComparer.OrdinalIgnoreCase);
+        foreach (string file in Directory.GetFiles(players, "*.txt", SearchOption.AllDirectories).Order(StringComparer.OrdinalIgnoreCase))
+        {
+            var raw = new CampaignDocument(File.ReadAllText(file));
+            string position = RosterPosition.Read(file, players, raw);
+            bool line2 = position.StartsWith("Line 2 ", StringComparison.OrdinalIgnoreCase);
+            string basePosition = line2 ? position[7..] : position;
+            if (!positions.Contains(basePosition, StringComparer.OrdinalIgnoreCase) || line2 && basePosition.Equals("Goalie", StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException($"Play Now cannot export '{Path.GetFileName(file)}': '{position}' is not a roster slot.");
+            // Prepared Line 2 files are authoring content until two-line play is enabled.
+            if (line2 && !twoLines) continue;
+            bool goalie = basePosition.Equals("Goalie", StringComparison.OrdinalIgnoreCase);
+            if (ContentImport.IsGoalie(raw, file) != goalie)
+                throw new ArgumentException($"Play Now cannot export '{Path.GetFileName(file)}': {position} has the wrong skater/goalie role.");
+            if (!rosterFiles.TryAdd(position, (file, raw)))
+                throw new ArgumentException($"Play Now has more than one player in {position}. Give each export slot exactly one player.");
+        }
+        string[] required = twoLines ? positions.Concat(RosterLines.Skaters.Select(p => "Line 2 " + p)).ToArray() : positions;
+        string[] missing = required.Where(position => !rosterFiles.ContainsKey(position)).ToArray();
+        if (missing.Length > 0)
+            throw new ArgumentException("Export requires all five starting skaters and a goalie"
+                + (twoLines ? ", plus a complete Line 2" : "") + ". Missing: " + string.Join(", ", missing) + ".");
         var saves = new Dictionary<string, string>(); var overrides = new Dictionary<string, string>();
+        var rosterIds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         string tid = Guid.NewGuid().ToString();
         var model = new Dictionary<string, object> { ["Id"] = tid, ["TeamName"] = team.Get("Team Name"), ["City"] = team.Get("City"),
             ["nickname"] = team.Get("Abbreviation"), ["logoId"] = team.Get("Export Logo ID"), ["hasBigLogo"] = team.Get("Export Logo Mode") == "embedded",
@@ -121,14 +147,11 @@ internal static partial class ExportTranslation
             .Concat(Ids(game, team.Get("Relics"), true, report, team, "Relics")));
         string? benchHead = ExportSelections.Asset(game, "skater", "Face", (string)model["vanillaBenchPlayerHead"], team, report, "Bench Head");
         if (benchHead == null) model.Remove("vanillaBenchPlayerHead"); else model["vanillaBenchPlayerHead"] = benchHead;
-        foreach (string file in Directory.GetFiles(players, "*.txt", SearchOption.AllDirectories).Order(StringComparer.OrdinalIgnoreCase))
+        foreach (var (position, entry) in rosterFiles)
         {
-            var raw = new CampaignDocument(File.ReadAllText(file));
-            string position = raw.Get("Position", Path.GetFileNameWithoutExtension(file).Split(" - ")[0]);
-            int index = Array.FindIndex(positions, p => p.Equals(position, StringComparison.OrdinalIgnoreCase));
-            if (index < 0 || Path.GetRelativePath(players, file).Contains(Path.DirectorySeparatorChar) || model.ContainsKey(slots[index]))
-                throw new ArgumentException($"Play Now supports one player per starting position. '{Path.GetFileName(file)}' cannot be represented in that roster; nothing was exported.");
-            string role = index == 5 ? "goalie" : "skater", id = Guid.NewGuid().ToString();
+            var (file, raw) = entry;
+            bool goalie = position.Equals("Goalie", StringComparison.OrdinalIgnoreCase);
+            string role = goalie ? "goalie" : "skater", id = Guid.NewGuid().ToString();
             var doc = Player(ExportPlayerResolver.Resolve(raw, role), team, goalieDefaults, role, game);
             if (doc.Get("Logo From") == team.Get("Logo From")) LogoExport.Copy(team, doc);
             doc = ExportSelections.Logo(doc, sourceRoot ?? game.Root, report);
@@ -140,9 +163,9 @@ internal static partial class ExportTranslation
             custom.EmbedPlayer(playerSidecar, playerModel);
             overrides[id + ".txt"] = playerSidecar.ToString();
             relics.AddRange(Ids(game, raw.Get("Relics"), true, report, raw, "Relics").Concat(Ids(game, raw.Get("Team Relics"), true, report, raw, "Team Relics")));
-            model[slots[index]] = id;
+            rosterIds[position] = id;
         }
-        if (slots.Any(s => !model.ContainsKey(s))) throw new ArgumentException("Export requires all five starting skaters and a goalie. Add missing positions first.");
+        for (int i = 0; i < positions.Length; i++) model[slots[i]] = rosterIds[positions[i]];
         model["relics"] = custom.Map(relics.Distinct(StringComparer.OrdinalIgnoreCase));
         var teamSidecar = ExportSelections.Sidecar(team, game, "skater", report);
         if (benchHead == null) teamSidecar.Remove("Bench Head");
@@ -153,6 +176,15 @@ internal static partial class ExportTranslation
         teamSidecar.Set("Team Talents", ""); teamSidecar.Set("Talents", "");
         CustomRewardExport.Embed(teamSidecar, custom.Items);
         if (statScale != 1) teamSidecar.Set("Stat Scale", "1"); // already baked into the player stats
+        if (twoLines)
+            PlayNowRosterCodec.Write(teamSidecar, new PlayNowRoster(
+                RosterLines.Skaters.Select(position => rosterIds[position]).ToArray(),
+                RosterLines.Skaters.Select(position => rosterIds["Line 2 " + position]).ToArray(),
+                rosterIds["Goalie"], stamina));
+        else
+            foreach (string key in new[] { PlayNowRosterCodec.VersionKey, PlayNowRosterCodec.Line1Key,
+                PlayNowRosterCodec.Line2Key, PlayNowRosterCodec.GoalieKey, PlayNowRosterCodec.StaminaKey })
+                teamSidecar.Remove(key);
         overrides[tid + ".team.txt"] = teamSidecar.ToString();
         saves["CustomTeam-" + tid + ".json"] = JsonSerializer.Serialize(model);
         return new(tid, saves, overrides);
