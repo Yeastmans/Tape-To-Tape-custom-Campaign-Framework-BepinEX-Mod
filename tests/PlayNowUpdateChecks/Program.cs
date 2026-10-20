@@ -291,4 +291,29 @@ string importedTeam = ItemFile(imported.Single(item => ItemFile(item).EndsWith("
 string importedPlayers = Path.Combine(Path.GetDirectoryName(importedTeam)!, "players");
 Check(new CampaignDocument(File.ReadAllText(Path.Combine(importedPlayers, "Line 2 Left Wing - old-player-7.txt"))).Get("Position") == "Line 2 Left Wing",
     "ImportUsesCurrentSavedLineup: reimport follows the live sidecar position instead of the library snapshot");
+Check(File.Exists(Path.Combine(importedPlayers, "Line 2 Right Wing - old-player-6.txt")) && File.Exists(Path.Combine(importedPlayers, "Line 2 Center - old-player-8.txt")), "Reimport maps native LW,RW,C ordering exactly");
+string editedPath = Path.Combine(importFixture.Save, "CustomForward-old-player-7.json");
+var editedNative = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(editedPath))!;
+editedNative["firstName"] = "Edited"; editedNative["speed"] = 42; editedNative["abilityId"] = ""; editedNative["talentIds"] = new System.Text.Json.Nodes.JsonArray();
+File.WriteAllText(editedPath, editedNative.ToJsonString());
+var editedDoc = new CampaignDocument(File.ReadAllText(Path.Combine(importFixture.Overrides, "old-player-7.txt")));
+editedDoc.Set("Override Team Settings", "yes"); editedDoc.Set("Pass Read", "0.731"); editedDoc.Set("Stick Color", "17, 23, 31");
+File.WriteAllText(Path.Combine(importFixture.Overrides, "old-player-7.txt"), editedDoc.ToString());
+string oldSnapshot = Path.Combine(importFixture.Library, "library", "Exported Players", "old-player-7.txt");
+Directory.CreateDirectory(Path.GetDirectoryName(oldSnapshot)!); File.WriteAllText(oldSnapshot, "Name = Stale Standalone\n");
+var teamNativePath = Path.Combine(importFixture.Save, "CustomTeam-old-team.json");
+var teamNative = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(teamNativePath))!;
+teamNative["TeamName"] = "Edited Team"; teamNative["relics"] = new System.Text.Json.Nodes.JsonArray(); File.WriteAllText(teamNativePath, teamNative.ToJsonString());
+liveSidecar.Set("Goal Sound Data", "retained-audio"); liveSidecar.Set("Team Relics", "stale-relic"); File.WriteAllText(liveSidecarFile, liveSidecar.ToString());
+imported = ((IEnumerable)load.Invoke(null, [importFixture.Library, importFixture.Save])!).Cast<object>().ToArray();
+var currentPlayer = new CampaignDocument(File.ReadAllText(Path.Combine(importedPlayers, "Line 2 Left Wing - old-player-7.txt")));
+Check(currentPlayer.Get("Name") == "Edited Second" && currentPlayer.Get("Speed") == "42" && currentPlayer.Get("Ability") == "" && currentPlayer.Get("Talents") == "", "Reimport uses native edited values and explicit reward clears");
+Check(currentPlayer.Get("Override Team Settings") == "yes" && currentPlayer.Get("Pass Read") == "0.731" && currentPlayer.Get("Stick Color") == "17, 23, 31", "Reimport retains omitted personal fields and own policy");
+var currentTeam = new CampaignDocument(File.ReadAllText(importedTeam));
+Check(currentTeam.Get("Team Name") == "Edited Team" && currentTeam.Get("Team Relics") == "" && currentTeam.Get("Goal Sound Data") == "retained-audio", "Reimport merges current team edits with supplemental fields");
+string loosePlayer = ItemFile(imported.Single(item => ItemFile(item).EndsWith(Path.Combine("players", "old-player-7.txt"))));
+Check(new CampaignDocument(File.ReadAllText(loosePlayer)).Get("Name") == "Edited Second" && File.ReadAllText(oldSnapshot) == "Name = Stale Standalone\n", "Standalone reimport uses current persisted player without rewriting historical snapshot");
+string pendingJournal = Path.Combine(importFixture.Overrides, "save-journal");Directory.CreateDirectory(pendingJournal);File.WriteAllText(Path.Combine(pendingJournal,"team-old-team.json"),"pending");
+try { load.Invoke(null, [importFixture.Library, importFixture.Save]); throw new Exception("Pending pair was reimported"); }
+catch (TargetInvocationException ex) when (ex.InnerException is IOException) { Check(true, "Reimport rejects an interrupted pair until runtime recovery"); }
 Console.WriteLine($"{checks} Play Now checks passed. Isolated evidence: {root}");

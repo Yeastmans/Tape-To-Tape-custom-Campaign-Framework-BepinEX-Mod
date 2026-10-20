@@ -19,6 +19,8 @@ internal static class PlayNowTranslation
     private static readonly Dictionary<IntPtr, bool> Kits = new();
 
     internal static void RegisterPreview(string id, CampaignDocument doc) => Documents[id] = doc;
+    internal static void Invalidate(string id, bool team = false) => Documents.Remove(id + (team ? ".team" : ""));
+    internal static void InvalidateAll() => Documents.Clear();
 
     // TeamData.Clone generates match IDs but retains the source OriginalId.
     // Resolve render metadata through that identity without reapplying the
@@ -45,6 +47,7 @@ internal static class PlayNowTranslation
         var doc = Read(id); if (doc == null || player == null) return;
         CustomRewardRuntime.EnsureAssets();
         ExportAppearanceRuntime.Apply(player, doc);
+        PlayNowPlayerSave.RestorePersonal(player, doc);
         var talents = Resources.FindObjectsOfTypeAll<Rogue.Talent>();
         var resolved = new Il2CppSystem.Collections.Generic.List<Rogue.Talent>();
         foreach (string wanted in Split(doc.Get("Export Talent IDs")))
@@ -67,17 +70,27 @@ internal static class PlayNowTranslation
 
     private static string[] Split(string value) => value.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToArray();
 
-    public static bool ForwardReferencesPrefix(ForwardDataModel model, ForwardData forwardData)
+    public static bool ForwardReferencesPrefix(ForwardRepository __instance, ForwardDataModel model, ForwardData forwardData)
     {
         if (model == null || Read(model.id) == null) return true;
-        try { Player(forwardData, model.id); return false; }
+        try
+        {
+            var disk = __instance.m_customForwardRepository.TryCast<PersistentDataCustomForwardRepository>();
+            if (disk != null) PlayNowPlayerSave.Observe(disk._persistentDataPath, "forward", forwardData, JsonUtility.ToJson(model));
+            Player(forwardData, model.id); return false;
+        }
         catch (Exception ex) { Plugin.Log.LogError($"[PlayNow] Forward translation failed: {ex}"); return true; }
     }
 
-    public static bool GoalieReferencesPrefix(GoalieDataModel model, GoaltenderData goalieData)
+    public static bool GoalieReferencesPrefix(GoalieRepository __instance, GoalieDataModel model, GoaltenderData goalieData)
     {
         if (model == null || Read(model.id) == null) return true;
-        try { Player(goalieData, model.id); return false; }
+        try
+        {
+            var disk = __instance._customGoalieRepository.TryCast<PersistentDataCustomGoalieRepository>();
+            if (disk != null) PlayNowPlayerSave.Observe(disk._persistentDataPath, "goalie", goalieData, JsonUtility.ToJson(model));
+            Player(goalieData, model.id); return false;
+        }
         catch (Exception ex) { Plugin.Log.LogError($"[PlayNow] Goalie translation failed: {ex}"); return true; }
     }
 
@@ -91,8 +104,9 @@ internal static class PlayNowTranslation
             Register(__result.homeColors, false); Register(__result.awayColors, true);
             Register(__result.homeGoalieColors, false); Register(__result.awayGoalieColors, true);
             var doc = Read(model.Id, true); if (doc == null) return;
+            doc = PlayNowRosterSave.ResolveDocument(model, doc);
             CustomRewardRuntime.EnsureAssets();
-            ExportAppearanceRuntime.ApplyTeamLogo(__result, doc);
+            if (doc.Get("Export Native Logo") != "yes") ExportAppearanceRuntime.ApplyTeamLogo(__result, doc);
             TeamGoalSound.Register(__result.id, doc.Get("Goal Sound Data"), doc.Get("Goal Sound Volume", "100"));
             // The native adapter derives equipment colors from the jersey. Restore
             // explicit authored channels after that normalization has finished.
@@ -101,8 +115,12 @@ internal static class PlayNowTranslation
                 ("Away Primary", "Jersey Away Color"), ("Away Secondary", "Jersey Away Secondary Color"), ("Away Accent", "Jersey Away Accent Color"),
                 ("Number Color Home", "Number Tertiary Color"), ("Number Color Away", "Number Away Tertiary Color") })
                 if (doc.Get(pair.Item1).Length > 0) palette.Set(pair.Item2, doc.Get(pair.Item1));
-            Paint(__result.homeColors, palette, false); Paint(__result.awayColors, palette, true);
-            Paint(__result.homeGoalieColors, palette, false); Paint(__result.awayGoalieColors, palette, true);
+            if (doc.Get("Export Saved Palette homeColors").Length > 0) PlayNowRosterSave.RestorePalettes(__result, doc);
+            else
+            {
+                Paint(__result.homeColors, palette, false); Paint(__result.awayColors, palette, true);
+                Paint(__result.homeGoalieColors, palette, false); Paint(__result.awayGoalieColors, palette, true);
+            }
             var all = Resources.FindObjectsOfTypeAll<Rogue.Relic>();
             var relics = new Il2CppSystem.Collections.Generic.List<Rogue.Relic>();
             foreach (string id in Split(doc.Get("Export Relic IDs")))
@@ -198,6 +216,7 @@ internal static class PlayNowTranslation
     internal static void Install(Harmony harmony)
     {
         PlayNowRosterContext.Install(harmony);
+        PlayNowRosterSave.Install(harmony);
         ExportAppearanceRuntime.Install(harmony);
         ExportLoadoutBadges.Install(harmony);
         // Bulk loading inlines DeserializeTeam/DeserializeGoalie; wait for the

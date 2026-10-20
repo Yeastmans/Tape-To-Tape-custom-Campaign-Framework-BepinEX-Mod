@@ -45,3 +45,4 @@ Desktop.ini
 .DS_Store
 !tests/PlayNowRosterRuntimeChecks/
 !tests/TwoLineContractChecks/
+!tests/PlayNowPersistenceChecks/

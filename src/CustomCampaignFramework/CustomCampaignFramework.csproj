@@ -15,6 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Reference Include="UnityEngine.JSONSerializeModule"><HintPath>$(InteropDir)/UnityEngine.JSONSerializeModule.dll</HintPath><Private>false</Private></Reference>
     <Compile Include="../CampaignCore/PlayNowRoster.cs" Link="Core/PlayNowRoster.cs" />
     <Compile Include="../CampaignCore/CustomRewardDefinition.cs" Link="Core/CustomRewardDefinition.cs" />
     <Compile Include="../CampaignCore/CustomRewardAssignments.cs" Link="Core/CustomRewardAssignments.cs" />

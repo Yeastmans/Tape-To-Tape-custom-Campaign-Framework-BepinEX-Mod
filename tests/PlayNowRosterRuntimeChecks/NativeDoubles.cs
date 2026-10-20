@@ -1,9 +1,10 @@
 using CampaignCore;
 using Data;
+using Tape2Tape.Customization;
 namespace Il2CppSystem.Collections.Generic { public class List<T> : System.Collections.Generic.List<T> { static int next; public IntPtr Pointer = (IntPtr)(++next); } }
 namespace Data
 {
-    public class SkaterData { public string id, OriginalId; }
+    public class SkaterData { public string id, OriginalId; public T TryCast<T>() where T:class => this as T; }
     public class ForwardData : SkaterData { }
     public class GoaltenderData : SkaterData { }
     public class TeamData
@@ -35,6 +36,7 @@ namespace Tape2Tape.Customization
 }
 namespace EndlessMode
 {
+    static class PlayNowRosterSave { public static void Clear() {} public static void AcceptLoaded(TeamRepository r, TeamDataModel m, TeamData t) {} public static void Clone(TeamData a,TeamData b) {} }
     static class PlayNowTranslation { internal static Dictionary<string, CampaignDocument> Documents = new(); public static CampaignDocument Read(string id, bool team = false) => Documents.GetValueOrDefault(id); }
     static class Plugin { public static Logger Log = new(); }
     class Logger { public void LogWarning(object message) { } }

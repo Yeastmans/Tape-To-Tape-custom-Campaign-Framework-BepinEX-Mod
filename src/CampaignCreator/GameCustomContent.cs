@@ -30,6 +30,9 @@ internal static class GameCustomContent
     {
         var items = new List<Item>();
         if (!Directory.Exists(saveFolder)) return items;
+        string journals = Path.Combine(overrideFolder, "save-journal");
+        if (Directory.Exists(journals) && Directory.EnumerateFiles(journals, "*.json").Any())
+            throw new IOException("A Play Now save needs recovery. Reload custom teams in the game before reimporting.");
         string cache = Cache(root);
         var written = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var models = new Dictionary<string, (string File, JsonElement Json)>(StringComparer.OrdinalIgnoreCase);
@@ -64,18 +67,20 @@ internal static class GameCustomContent
                         if (PlayNowRosterCodec.TryRead(live, out var roster, out _))
                         {
                             string cacheTeam = Path.Combine(cache, "teams", id);
-                            var team = new CampaignDocument(File.ReadAllText(snapshot));
+                            var team = new CampaignDocument(live.ToString());
+                            Merge(team, Team(model));
                             PlayNowRosterCodec.Write(team, roster);
                             Write(Path.Combine(cacheTeam, "team.txt"), team, written);
-                            string[] positions = ["Left Wing", "Center", "Right Wing", "Left Defense", "Right Defense"];
+                            string[] positions = ["Left Wing", "Right Wing", "Center", "Left Defense", "Right Defense"];
                             foreach (var (pid, position) in roster.Line1.Zip(positions).Concat(roster.Line2.Zip(positions.Select(p => "Line 2 " + p))).Append((roster.GoalieId, "Goalie")))
                             {
                                 string snapshotPlayer = Path.Combine(exportedTeams, id, "players", pid + ".txt");
                                 string runtimePlayer = Path.Combine(Path.GetDirectoryName(liveFile)!, pid + ".txt");
                                 CampaignDocument? playerDoc = File.Exists(runtimePlayer) ? new CampaignDocument(File.ReadAllText(runtimePlayer))
                                     : File.Exists(snapshotPlayer) ? new CampaignDocument(File.ReadAllText(snapshotPlayer))
-                                    : models.TryGetValue(pid, out var nativePlayer) ? Player(nativePlayer.Json, position == "Goalie") : null;
-                                if (playerDoc == null) continue;
+                                    : models.TryGetValue(pid, out var nativePlayer) ? Player(nativePlayer.Json, position == "Goalie") : BuiltIn(pid, position == "Goalie");
+                                if (playerDoc == null) throw new IOException("Cannot reimport the complete saved roster: missing player " + pid);
+                                if (models.TryGetValue(pid, out var current)) Merge(playerDoc, Player(current.Json, position == "Goalie"), "Override Team Settings", "Position");
                                 playerDoc.Set("Position", position);
                                 Write(Path.Combine(cacheTeam, "players", position + " - " + pid + ".txt"), playerDoc, written);
                             }
@@ -103,10 +108,13 @@ internal static class GameCustomContent
             else if (kind is "CustomForward" or "CustomGoalie")
             {
                 string? snapshot = File.Exists(Path.Combine(exportedPlayers, id + ".txt")) ? Path.Combine(exportedPlayers, id + ".txt") : TeamPlayerSnapshot(id);
-                if (snapshot != null) { items.Add(new(snapshot, "Studio export · " + when)); continue; }
                 string target = Path.Combine(cache, "players", id + ".txt");
-                Write(target, Player(model, kind == "CustomGoalie"), written);
-                items.Add(new(target, "Game editor · " + when));
+                string companion = Path.Combine(overrideFolder, id + ".txt");
+                var player = File.Exists(companion) ? new CampaignDocument(File.ReadAllText(companion))
+                    : snapshot != null ? new CampaignDocument(File.ReadAllText(snapshot)) : Player(model, kind == "CustomGoalie");
+                Merge(player, Player(model, kind == "CustomGoalie"), "Override Team Settings", "Position");
+                Write(target, player, written);
+                items.Add(new(target, (snapshot != null ? "Studio export · " : "Game editor · ") + when));
             }
         }
         // Drop cached conversions of anything since deleted in the game.
@@ -114,6 +122,25 @@ internal static class GameCustomContent
             foreach (string stale in Directory.EnumerateFiles(cache, "*", SearchOption.AllDirectories).Where(f => !written.Contains(f)).ToList())
                 File.Delete(stale);
         return items;
+    }
+
+    private static void Merge(CampaignDocument target, CampaignDocument native, params string[] preserve)
+    {
+        foreach (var (key, value) in native.Fields)
+            if (!preserve.Contains(key, StringComparer.OrdinalIgnoreCase)) target.Set(key, value);
+    }
+
+    // Reuse the verified extracted catalog used by ExportPlayerResolver, with
+    // exact stable ID and role matching. Never borrow the previous occupant.
+    private static CampaignDocument? BuiltIn(string id, bool goalie)
+    {
+        string? directory = StudioArt.BaseRosters("Base Game Players");
+        if (directory == null) return null;
+        var matches = Directory.EnumerateFiles(directory, "*.txt")
+            .Where(file => ContentImport.Matches(file, goalie ? "goalie" : "skater"))
+            .Select(file => new CampaignDocument(File.ReadAllText(file)))
+            .Where(doc => doc.Get(VanillaCopyData.PlayerId).Equals(id, StringComparison.Ordinal)).ToArray();
+        return matches.Length == 1 ? matches[0] : null;
     }
 
     private static void Write(string file, CampaignDocument doc, HashSet<string> written)
@@ -147,9 +174,11 @@ internal static class GameCustomContent
     internal static CampaignDocument Player(JsonElement model, bool goalie)
     {
         var doc = new CampaignDocument("# Custom player from the game's save folder\n");
-        doc.Set("Name", (Text(model, "firstName") + " " + Text(model, "lastName")).Trim());
-        doc.Set("Number", Text(model, "number"));
+        if (model.TryGetProperty("firstName", out _) || model.TryGetProperty("lastName", out _)) doc.Set("Name", (Text(model, "firstName") + " " + Text(model, "lastName")).Trim());
+        if (model.TryGetProperty("number", out _)) doc.Set("Number", Text(model, "number"));
         void Map(string json, string field) { if (model.TryGetProperty(json, out _)) doc.Set(field, Text(model, json)); }
+        Map("abilityId", "Ability");
+        Map("headSkin", "Face");
         if (goalie)
         {
             doc.Set("Position", "Goalie");
@@ -183,10 +212,10 @@ internal static class GameCustomContent
     internal static CampaignDocument Team(JsonElement model)
     {
         var doc = new CampaignDocument("# Custom team from the game's save folder\n");
-        doc.Set("Team Name", Text(model, "TeamName", Text(model, "teamName")));
-        doc.Set("City", Text(model, "City", Text(model, "city")));
-        doc.Set("Abbreviation", Text(model, "nickname"));
-        if (Text(model, "logoId").Length > 0) doc.Set("Logo From", Text(model, "logoId"));
+        if (model.TryGetProperty("TeamName", out _) || model.TryGetProperty("teamName", out _)) doc.Set("Team Name", Text(model, "TeamName", Text(model, "teamName")));
+        if (model.TryGetProperty("City", out _) || model.TryGetProperty("city", out _)) doc.Set("City", Text(model, "City", Text(model, "city")));
+        if (model.TryGetProperty("nickname", out _)) doc.Set("Abbreviation", Text(model, "nickname"));
+        if (model.TryGetProperty("logoId", out _)) doc.Set("Logo From", Text(model, "logoId"));
         foreach (var (json, away) in new[] { ("homeColors", false), ("awayColors", true) })
         {
             if (!model.TryGetProperty(json, out var kit)) continue;
@@ -215,7 +244,7 @@ internal static class GameCustomContent
             if (!(key == "Number Color Home" && nativeHomeNumber || key == "Number Color Away" && nativeAwayNumber)
                 && model.TryGetProperty(json, out var c) && c.ValueKind == JsonValueKind.Object) doc.Set(key, Rgb(c));
         if (Text(model, "vanillaBenchPlayerHead").Length > 0) doc.Set("Bench Head", Text(model, "vanillaBenchPlayerHead"));
-        if (Text(model, "relics").Length > 0) doc.Set("Team Relics", Text(model, "relics"));
+        if (model.TryGetProperty("relics", out _)) doc.Set("Team Relics", Text(model, "relics"));
         return doc;
     }
 }

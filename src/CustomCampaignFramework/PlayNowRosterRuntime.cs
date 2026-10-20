@@ -27,6 +27,25 @@ internal static class PlayNowRosterRuntime
     internal static void Clear()
     {
         Owners.Clear(); Repository = null; Cache = null;
+        PlayNowRosterSave.Clear();
+    }
+
+    internal static void RefreshSavedPlayer(SkaterData player)
+    {
+        if (player == null) return;
+        foreach (var owner in Owners.Values)
+        {
+            var team = owner.Team;
+            if (team == null || team.GetInstanceID() != owner.InstanceId) continue;
+            // Generated match identities remain independent. Only exact persisted
+            // references, including the second line, receive this shared edit.
+            var forward = player.TryCast<ForwardData>();
+            if (forward != null && team.forwards != null)
+                for (int i = 0; i < team.forwards.Count; i++)
+                    if (team.forwards[i] != null && team.forwards[i].id == player.id) team.forwards[i] = forward;
+            var goalie = player.TryCast<GoaltenderData>();
+            if (goalie != null && team.goalie != null && team.goalie.id == player.id) team.goalie = goalie;
+        }
     }
 
     private static bool Owned(TeamData team, out Owner owner)
@@ -132,6 +151,7 @@ internal static class PlayNowRosterRuntime
             foreach (string id in PlayNowRosterCodec.PlayerIds(roster)) sourceIds.Add(id, id);
             var owner = Registration(team, roster.StaminaEnabled, sourceIds);
             team.forwards = forwards; team.lines = lines; team.activeLineNumber = 1;
+            PlayNowRosterSave.AcceptLoaded(repository, model, team);
             Owners[team.Pointer] = owner;
             committed = true;
             return true;
@@ -176,6 +196,7 @@ internal static class PlayNowRosterRuntime
             clone.forwards = forwards;
             clone.lines = lines;
             Owners[clone.Pointer] = registration;
+            PlayNowRosterSave.Clone(source, clone);
         }
         catch (Exception ex) { Plugin.Log.LogWarning($"[PlayNow] Clone roster registration failed: {ex.Message}"); }
     }
