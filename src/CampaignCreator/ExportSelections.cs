@@ -52,6 +52,26 @@ internal static class ExportSelections
         return LogoExport.Snapshot(source, root);
     }
 
+    internal static CampaignDocument JerseyLogo(CampaignDocument source, string root, bool away, ExportReport? report)
+    {
+        var choice = JerseyLogoOptions.Read(source, away);
+        if (choice.Mode == JerseyLogoMode.Image && source.Get(choice.MetadataPrefix + " PNG").Length == 0
+            && choice.Source.Equals(source.Get("Logo From"), StringComparison.OrdinalIgnoreCase)
+            && source.Get("Export Logo PNG").Length > 0)
+        {
+            source = new CampaignDocument(source.ToString());
+            LogoExport.CopyIdentityToJersey(source, source, away);
+        }
+        if (choice.Mode == JerseyLogoMode.Image && source.Get(choice.MetadataPrefix + " PNG").Length == 0
+            && LogoExport.FindFile(root, choice.Source) == null)
+        {
+            report?.Skip(source, JerseyLogoOptions.Field(away), choice.Source);
+            source = new CampaignDocument(source.ToString());
+            JerseyLogoOptions.Clear(source, away);
+        }
+        return LogoExport.Snapshot(source, root, away);
+    }
+
     // Run after inheritance, at the last boundary before serializing. Resolving
     // appearance again after omissions would fill removed fields with defaults.
     internal static CampaignDocument Sidecar(CampaignDocument source, GameData game, string role, ExportReport? report)
@@ -77,6 +97,8 @@ internal static class ExportSelections
             string id = Id(game.Abilities, result.Get("Ability"), source, "Ability", report);
             if (id.Length == 0) result.Remove("Ability"); else result.Set("Ability", id);
         }
-        return Logo(result, game.Root, report);
+        result = Logo(result, game.Root, report);
+        foreach (bool away in new[] { false, true }) result = JerseyLogo(result, game.Root, away, report);
+        return result;
     }
 }

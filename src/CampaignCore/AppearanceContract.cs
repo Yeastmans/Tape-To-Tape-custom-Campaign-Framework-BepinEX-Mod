@@ -74,21 +74,16 @@ public static class AppearanceContract
     public static IEnumerable<string> PlayerKeys(string role) => Keys(role).Where(k => !IsColor(k)).Concat(PlayerColorModel.PlayerKeys).Concat(PlayerKitColors.Keys);
     public static bool Independent(CampaignDocument player, CampaignDocument team, string role)
         => AppearanceFields.OverridesTeam(player);
-    // A logo is one shared player selection. Either premade kit makes that
-    // selection incompatible; it must never erase the team's identity logo.
-    public static bool SupportsJerseyLogo(string role, string home, string away)
+    // A jersey supports a separately selected crest only on its colorable skin.
+    public static bool SupportsJerseyLogo(string role, string skin)
     {
         string key = role == "goalie" ? "Skin" : "Body";
-        string Normalize(string skin) => string.IsNullOrWhiteSpace(skin)
-            || skin.Equals("standard", StringComparison.OrdinalIgnoreCase)
-            || skin.Equals("team colors", StringComparison.OrdinalIgnoreCase)
-                ? DefaultSkin(role, key) : skin;
-        home = Normalize(home);
-        away = Normalize(away);
-        string customizable = DefaultSkin(role, key);
-        return home.Equals(customizable, StringComparison.OrdinalIgnoreCase)
-            && away.Equals(customizable, StringComparison.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(skin) || skin.Equals("standard", StringComparison.OrdinalIgnoreCase)
+            || skin.Equals("team colors", StringComparison.OrdinalIgnoreCase)) skin = DefaultSkin(role, key);
+        return skin.Equals(DefaultSkin(role, key), StringComparison.OrdinalIgnoreCase);
     }
+    public static bool SupportsJerseyLogo(string role, string home, string away)
+        => SupportsJerseyLogo(role, home) && SupportsJerseyLogo(role, away);
     public static bool SupportsJerseyLogo(CampaignDocument player, string role)
         => SupportsJerseyLogo(role, player.Get(role == "goalie" ? "Skin" : "Body"), player.Get(role == "goalie" ? "Skin Away" : "Body Away"));
     public static void ClearJerseyLogo(CampaignDocument player)
@@ -154,7 +149,26 @@ public static class AppearanceContract
                 result.Set(key, DefaultColor(scheme, c));
             }
         }
-        if (!SupportsJerseyLogo(result, role)) ClearJerseyLogo(result);
+        foreach (bool away in new[] { false, true })
+        {
+            var choice = JerseyLogoOptions.Resolve(player, team, away);
+            string field = JerseyLogoOptions.Field(away);
+            string jersey = role == "goalie" ? (away ? "Skin Away" : "Skin") : (away ? "Body Away" : "Body");
+            if (!SupportsJerseyLogo(role, result.Get(jersey)))
+            {
+                JerseyLogoOptions.Clear(result, away);
+                continue;
+            }
+            bool frozen = team.Fields.Count == 0 && player.Get(JerseyLogoOptions.Prefix(away) + " Mode").Length > 0
+                && JerseyLogoOptions.Read(player, away).Mode != JerseyLogoMode.Inherit;
+            bool fromTeam = !frozen && !(AppearanceFields.OverridesTeam(player) && player.Get("Logo From").Length > 0)
+                && JerseyLogoOptions.Read(team, away).Mode != JerseyLogoMode.Inherit;
+            if (fromTeam) JerseyLogoOptions.Copy(team, away, result, away);
+            else if (!frozen) JerseyLogoOptions.Clear(result, away);
+            if (choice.Mode != JerseyLogoMode.Inherit) result.Set(field, choice.Source);
+            if (choice.Mode != JerseyLogoMode.Inherit && result.Get(JerseyLogoOptions.Prefix(away) + " Mode").Length == 0)
+                result.Set(JerseyLogoOptions.Prefix(away) + " Mode", choice.Mode == JerseyLogoMode.None ? "none" : "selected");
+        }
         return result;
     }
     public static string Hex(CampaignDocument effective, string token, bool away)

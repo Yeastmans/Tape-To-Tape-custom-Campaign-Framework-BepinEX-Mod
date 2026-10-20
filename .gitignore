@@ -46,3 +46,15 @@ Desktop.ini
 !tests/PlayNowRosterRuntimeChecks/
 !tests/TwoLineContractChecks/
 !tests/PlayNowPersistenceChecks/
+!tests/JerseyLogoChecks/
+tests/JerseyLogoChecks/*
+!tests/JerseyLogoChecks/JerseyLogoChecks.csproj
+!tests/JerseyLogoChecks/Program.cs
+!tests/AppearanceTranslationChecks/
+tests/AppearanceTranslationChecks/*
+!tests/AppearanceTranslationChecks/AppearanceTranslationChecks.csproj
+!tests/AppearanceTranslationChecks/Program.cs
+!tests/CampaignStudioChecks/
+tests/CampaignStudioChecks/*
+!tests/CampaignStudioChecks/CampaignStudioChecks.csproj
+!tests/CampaignStudioChecks/ExportChecks.cs

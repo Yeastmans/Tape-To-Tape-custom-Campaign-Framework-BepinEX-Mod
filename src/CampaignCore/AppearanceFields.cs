@@ -7,6 +7,7 @@ namespace CampaignCore;
 // One serialized color vocabulary for campaign files and Play Now sidecars.
 public static class AppearanceFields
 {
+    public static string JerseyLogoField(bool away) => away ? "Jersey Logo Away From" : "Jersey Logo From";
     private static readonly Dictionary<string, string> Colors = BuildColors();
     private static Dictionary<string, string> BuildColors()
     {

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/CampaignCreator/CampaignCreator.csproj" />
+    <Compile Include="../StudioLearningChecks/GuideIllustrationArt.cs" Link="GuideIllustrationArt.cs" />
+    <Compile Include="../../src/CampaignCreator/GameData.cs" Link="GameData.cs" />
+    <Compile Include="../../src/CampaignCreator/CustomRewardCatalog.cs" Link="CustomRewardCatalog.cs" />
+    <Compile Include="../../src/CampaignCreator/CustomRewardExportBundle.cs" Link="CustomRewardExportBundle.cs" />
+    <Compile Include="../../src/CampaignCreator/StudioArt.cs" Link="StudioArt.cs" />
+    <Compile Include="../../src/CampaignCreator/GameSavePaths.cs" Link="GameSavePaths.cs" />
+    <Compile Include="../../src/CampaignCreator/ExportSelections.cs" Link="ExportSelections.cs" />
+    <Compile Include="../../src/CampaignCreator/PlayerExport.cs" Link="PlayerExport.cs" />
+    <Compile Include="../../src/CampaignCreator/ExportPlayerResolver.cs" Link="ExportPlayerResolver.cs" />
+    <Compile Include="../../src/CampaignCreator/ExportTranslation.cs" Link="ExportTranslation.cs" />
+    <Compile Include="../../src/CampaignCreator/RosterLines.cs" Link="RosterLines.cs" />
+    <Compile Include="../../src/CampaignCreator/LogoExport.cs" Link="LogoExport.cs" />
+    <Compile Include="../../src/CampaignCreator/GoalieEquipmentCatalog.cs" Link="GoalieEquipmentCatalog.cs" />
+
+    <PackageReference Include="Avalonia.Headless" Version="11.3.22" />
+  </ItemGroup>
+</Project>

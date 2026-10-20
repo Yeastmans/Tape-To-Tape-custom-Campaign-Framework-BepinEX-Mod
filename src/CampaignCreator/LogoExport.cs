@@ -6,6 +6,7 @@ namespace CampaignCreator;
 
 internal static class LogoExport
 {
+    private static readonly byte[] PngHeader = { 137, 80, 78, 71, 13, 10, 26, 10 };
     internal static string CustomFolder => Path.Combine(GameSavePaths.Root, "CustomLogos");
     internal static string? FindFile(string root, string source)
     {
@@ -48,9 +49,67 @@ internal static class LogoExport
         result.Set("Export Logo PNG", Convert.ToBase64String(bytes));
         return result;
     }
+    internal static CampaignDocument Snapshot(CampaignDocument source, string root, bool away)
+    {
+        var result = new CampaignDocument(source.ToString());
+        var choice = JerseyLogoOptions.Read(source, away);
+        string prefix = choice.MetadataPrefix;
+        if (choice.Mode != JerseyLogoMode.Image)
+        {
+            JerseyLogoOptions.Clear(result, away);
+            if (choice.Mode == JerseyLogoMode.None) result.Set(JerseyLogoOptions.Field(away), "none");
+            if (choice.Mode == JerseyLogoMode.None) result.Set(prefix + " Mode", "none");
+            return result;
+        }
+        byte[] bytes;
+        if (source.Get(prefix + " PNG").Length > 0)
+        {
+            try { bytes = Convert.FromBase64String(source.Get(prefix + " PNG")); }
+            catch (FormatException) { throw new ArgumentException($"{JerseyLogoOptions.Field(away)} embedded PNG data is invalid."); }
+            CheckPng(bytes, JerseyLogoOptions.Field(away));
+            string checksum = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+            if (source.Get(prefix + " SHA256") != checksum || source.Get(prefix + " ID") != "custom_t2t_" + checksum + ".png")
+                throw new ArgumentException($"{JerseyLogoOptions.Field(away)} embedded checksum mismatch. Import the original PNG again.");
+            result.Set(prefix + " Mode", "embedded");
+            return result;
+        }
+        string? file = FindFile(root, choice.Source);
+        if (file == null) throw new ArgumentException($"{JerseyLogoOptions.Field(away)} '{choice.Source}' has no image available. Import its PNG or refresh the game's logo catalog before exporting.");
+        bytes = File.ReadAllBytes(file);
+        CheckPng(bytes, JerseyLogoOptions.Field(away));
+        string hash = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+        result.Set(prefix + " Mode", "embedded"); result.Set(prefix + " SHA256", hash);
+        result.Set(prefix + " ID", "custom_t2t_" + hash + ".png");
+        result.Set(prefix + " PNG", Convert.ToBase64String(bytes));
+        return result;
+    }
+    private static void CheckPng(byte[] bytes, string slot)
+    {
+        if (bytes.Length > 16 * 1024 * 1024 || bytes.Length < 24 || !bytes.Take(8).SequenceEqual(PngHeader))
+            throw new ArgumentException($"{slot} must be a PNG logo smaller than 16 MB.");
+        try
+        {
+            using var decoded = new Bitmap(new MemoryStream(bytes));
+            if (decoded.PixelSize.Width < 1 || decoded.PixelSize.Height < 1 || decoded.PixelSize.Width > 8192 || decoded.PixelSize.Height > 8192)
+                throw new ArgumentException($"{slot} dimensions must be between 1 and 8192 pixels.");
+        }
+        catch (ArgumentException) { throw; }
+        catch (Exception ex) { throw new ArgumentException($"{slot} must contain valid PNG image data.", ex); }
+    }
     internal static void Copy(CampaignDocument source, CampaignDocument target)
     {
         foreach (var (key,value) in source.Fields.Where(p => p.Key.StartsWith("Export Logo ", StringComparison.OrdinalIgnoreCase))) target.Set(key,value);
+    }
+    internal static void Copy(CampaignDocument source, CampaignDocument target, bool sourceAway, bool targetAway)
+        => JerseyLogoOptions.Copy(source, sourceAway, target, targetAway);
+    internal static void CopyIdentityToJersey(CampaignDocument source, CampaignDocument target, bool away)
+    {
+        string prefix = JerseyLogoOptions.Prefix(away);
+        foreach (string suffix in new[] { "Mode", "ID", "SHA256", "PNG" })
+        {
+            string value = source.Get("Export Logo " + suffix);
+            if (value.Length > 0) target.Set(prefix + " " + suffix, value);
+        }
     }
     internal static Bitmap? Preview(string root, string source)
     {

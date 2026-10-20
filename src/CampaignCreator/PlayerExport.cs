@@ -65,7 +65,9 @@ internal static class PlayerExport
             ["isLefty"] = hand is "yes" or "true",
             ["isBlack"] = tone == "dark",
             ["logoSkin"] = d.Get("Logo From").Length > 0 && !d.Get("Logo From").Equals("none", StringComparison.OrdinalIgnoreCase)
-                ? role == "skater" && hand is "yes" or "true" ? "Team_Logo/Custom_L" : "Team_Logo/Custom_R" : d.Get("Logo Skin"),
+                ? AppearanceContract.SupportsJerseyLogo(role, d.Get(role == "goalie" ? "Skin" : "Body"))
+                    ? role == "skater" && hand is "yes" or "true" ? "Team_Logo/Custom_L" : "Team_Logo/Custom_R" : ""
+                : d.Get("Logo Skin"),
         };
         if (d.Get("Logo From").Length == 0 || d.Get("Logo From").Equals("none", StringComparison.OrdinalIgnoreCase))
         {
@@ -154,8 +156,11 @@ internal static class PlayerExport
         result.Set("Export Role", role);
         result.Set(OwnEquipmentKey, EquipmentIntent(original));
         foreach (var pair in d.Fields.Where(p => !p.Key.StartsWith("Export "))) if (!result.Fields.ContainsKey(pair.Key)) result.Set(pair.Key, pair.Value);
-        if (AppearanceContract.SupportsJerseyLogo(d, role)) LogoExport.Copy(ExportSelections.Logo(original, game.Root, report), result);
-        else AppearanceContract.ClearJerseyLogo(result);
+        LogoExport.Copy(ExportSelections.Logo(original, game.Root, report), result);
+        foreach (bool away in new[] { false, true })
+            if (AppearanceContract.SupportsJerseyLogo(role, d.Get(role == "goalie" ? away ? "Skin Away" : "Skin" : away ? "Body Away" : "Body")))
+                LogoExport.Copy(d, result, away, away);
+            else JerseyLogoOptions.Clear(result, away);
         result.Set("Export Talent IDs", string.Join(",", (string[])model["talentIds"]));
         result.Set("Export Ability ID", (string)model["abilityId"]);
         if (role == "goalie" && d.Get("Pass Read").Length > 0)
