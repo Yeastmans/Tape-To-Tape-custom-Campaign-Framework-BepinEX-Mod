@@ -162,7 +162,8 @@ internal static class CustomRewardRuntime
                         var template = Resources.FindObjectsOfTypeAll<Spasm>().FirstOrDefault(v => v != null && !IsCustom(v.id));
                         if (template == null) continue;
                         var spasm = Object.Instantiate(template);
-                        spasm.TryToSpasmEverySeconds = d.Seconds; spasm.SpasmChance = d.Amount / 100f; spasm.DelayBeforeShootingMs = d.ShotDelayMilliseconds;
+                        spasm.TryToSpasmEverySeconds = Math.Max(.02f, d.Seconds); // at most one roll per physics step
+                        spasm.SpasmChance = d.Amount / 100f; spasm.DelayBeforeShootingMs = d.ShotDelayMilliseconds;
                         t = spasm;
                     } else if (d.Effect == CustomRewardEffects.PlayedMatchContract) {
                         // A contract is a single native lifecycle, including its
@@ -265,10 +266,91 @@ internal static class CustomRewardRuntime
     internal static long Acquired(TeamData team, CustomRewardDefinition d) => progress.Acquired("team:" + team.id, d.Id);
     internal static long Acquired(SkaterData owner, CustomRewardDefinition d) => progress.Acquired("player:" + owner.id, d.Id);
     internal static long Acquired(Skater recipient, CustomRewardDefinition d) {
-        if (d.IsRelic) return Acquired(recipient.Team._teamData, d);
-        var sources = d.Target == CustomRewardEffects.Team ? actors.Values.Where(a => a?.Team == recipient.Team && a.TryCast<Forward>()?.IsBenched() != true) : new[] { recipient };
-        return sources.Where(s => s != null && s.ArePowerUpsEnabled() && Has(s._skaterData, d.Id) && Condition(d.Trigger, s))
+        if (d.IsRelic) return ContinuousSources(d, recipient, s => Condition(d.Trigger, s))
+            .Select(s => Acquired(s.Team._teamData, d)).DefaultIfEmpty(Acquired(recipient.Team._teamData, d)).Max();
+        return ContinuousSources(d, recipient, s => Condition(d.Trigger, s))
             .Select(s => progress.Acquired(Player(s), d.Id)).DefaultIfEmpty(0).Max();
+    }
+    private static bool OwnsTalent(Skater owner, CustomRewardDefinition d) => owner?._skaterData != null && owner.ArePowerUpsEnabled() && Has(owner._skaterData, d.Id)
+        && owner._skaterData.powerups.HasMatch(t => t != null && t.id == d.Id && !t.PayoffSuppressed);
+    private static bool Playing(Skater s) => s?.TryCast<Forward>() is { } f && !f.IsBenched();
+    // Positional recipients of a continuous rule are opposing skaters on the
+    // ice, measured from the skater the rule belongs to (or, for a relic, from
+    // one of the owning team's skaters on the ice).
+    private static bool Reaches(CustomRewardDefinition d, Skater anchor, Skater recipient)
+    {
+        if (d.Target == CustomRewardEffects.Nearby) return (anchor.transform.position - recipient.transform.position).sqrMagnitude <= (double)d.Radius * d.Radius;
+        if (d.Target == CustomRewardEffects.OpponentCarrier) return Puck.Instance?.skaterPossession?.Pointer == recipient.Pointer;
+        if (d.Target != CustomRewardEffects.ClosestOpponent) return false;
+        Skater closest = null; float best = float.MaxValue;
+        foreach (var s in actors.Values) if (s != null && s.Team == anchor.Team.otherTeam && Playing(s)) {
+            float distance = (s.transform.position - anchor.transform.position).sqrMagnitude;
+            if (distance < best) { best = distance; closest = s; }
+        }
+        return closest?.Pointer == recipient.Pointer;
+    }
+    // A continuous random selection is drawn once per match for each owner,
+    // after the opening presentation has put both lineups on the ice.
+    private static readonly Dictionary<string, HashSet<IntPtr>> continuousPicks = new();
+    private static bool presented;
+    private static bool Selected(CustomRewardDefinition d, string owner, Team ownerTeam, Skater recipient)
+    {
+        string key = d.Id + "|" + owner;
+        if (!continuousPicks.TryGetValue(key, out var picks)) {
+            if (!presented) return false;
+            var pool = actors.Values.Where(s => s != null && s.Team == ownerTeam.otherTeam && Playing(s)).ToArray();
+            if (pool.Length == 0) return false;
+            for (int i = 0; i < Math.Min(d.TargetCount, pool.Length); i++) {
+                int pick = UnityEngine.Random.Range(i, pool.Length);
+                (pool[i], pool[pick]) = (pool[pick], pool[i]);
+            }
+            continuousPicks[key] = picks = new HashSet<IntPtr>(pool.Take(d.TargetCount).Select(s => s.Pointer));
+        }
+        return picks.Contains(recipient.Pointer);
+    }
+    // Sources whose continuous rule reaches this recipient: each owning
+    // skater of a talent, or for a relic the skater its condition is checked
+    // on (the recipient itself, or the owning-team skater a positional
+    // recipient is measured from). Relics contribute once per owning team.
+    internal static IEnumerable<Skater> ContinuousSources(CustomRewardDefinition d, Skater recipient, Func<Skater, bool> condition)
+    {
+        var team = recipient?.Team;
+        if (team?._teamData == null) yield break;
+        string target = d.Target;
+        bool selection = target == CustomRewardEffects.Nearby || target == CustomRewardEffects.ClosestOpponent || target == CustomRewardEffects.OpponentCarrier || target == CustomRewardEffects.RandomOpponents;
+        if (d.IsRelic) {
+            foreach (var owner in new[] { team, team.otherTeam }) {
+                if (owner?._teamData == null || !Has(owner._teamData, d.Id)) continue;
+                if (!selection) {
+                    if (CustomRewardEffects.StatTeamApplies(target, owner._teamData.id, team._teamData.id) && condition(recipient)) yield return recipient;
+                    continue;
+                }
+                if (owner == team || !Playing(recipient)) continue;
+                if (target == CustomRewardEffects.RandomOpponents) {
+                    if (Selected(d, "team:" + owner._teamData.id, owner, recipient) && condition(recipient)) yield return recipient;
+                    continue;
+                }
+                var anchor = actors.Values.FirstOrDefault(a => a != null && a.Team == owner && Playing(a) && condition(a) && Reaches(d, a, recipient));
+                if (anchor != null) yield return anchor;
+            }
+            yield break;
+        }
+        if (target != CustomRewardEffects.Team && target != CustomRewardEffects.OtherTeammates && target != CustomRewardEffects.OpposingTeam && !selection) {
+            // The actor, and any non-player recipient: the owner's own rule.
+            if (OwnsTalent(recipient, d) && condition(recipient)) yield return recipient;
+            yield break;
+        }
+        if (target == CustomRewardEffects.OtherTeammates && !Playing(recipient) || selection && !Playing(recipient)) yield break;
+        foreach (var owner in actors.Values.ToArray()) {
+            // Goalies count as playing owners; benched forwards do not lend.
+            if (owner?.Team?._teamData == null || owner.TryCast<Forward>()?.IsBenched() == true || !OwnsTalent(owner, d)) continue;
+            bool reaches = target == CustomRewardEffects.Team ? owner.Team == team
+                : target == CustomRewardEffects.OtherTeammates ? owner.Team == team && owner.Pointer != recipient.Pointer
+                : target == CustomRewardEffects.OpposingTeam ? owner.Team == team.otherTeam
+                : selection && owner.Team == team.otherTeam && (target == CustomRewardEffects.RandomOpponents
+                    ? Selected(d, CustomRewardProgress.ScopedRecipient(Player(owner), Team(owner)), owner.Team, recipient) : Reaches(d, owner, recipient));
+            if (reaches && condition(owner)) yield return owner;
+        }
     }
     internal static void MatchStarted()
     {
@@ -299,6 +381,7 @@ internal static class CustomRewardRuntime
         Safe(CustomRewardFartTimers.Clear);
         Safe(CustomRewardActionControllers.Clear);
         CustomRewardSkatingEvents.Clear(); teamsWithOpposingKnockouts.Clear(); mercyWon = false;
+        continuousPicks.Clear(); presented = false;
         Safe(CustomRewardSoccerWall.Clear);
         Safe(CustomRewardNativeEffects.Clear);
         CustomRewardMovementEffects.Clear();
@@ -444,7 +527,7 @@ internal static class CustomRewardRuntime
         long total = CustomRewardTemperature.Bonus(forward, stat) + (long)progress.Bonus(actor, team, stat, Time.time, StillOwned) + CustomRewardShotCalculations.Bonus(forward, stat) + CustomRewardChargedShots.Bonus(forward, stat);
         foreach (var d in Definitions.Values) {
             if (d.NeedsRedesign || d.Effect != CustomRewardEffects.StatChange || !CustomRewardTriggers.IsCondition(d.Trigger)) continue;
-            bool OwnedTalent(Skater f) => f != null && f.ArePowerUpsEnabled() && Has(f._skaterData, d.Id) && f._skaterData.powerups.HasMatch(t => t != null && t.id == d.Id && !t.PayoffSuppressed) && Condition(d.Trigger, f);
+            if (!(d.Stat == stat || d.Stat == "Overall" && CustomRewardDefinition.IsOverallStat(stat))) continue;
             int Scale(Skater source) {
                 if (CustomRewardDefinition.IsPreviousMatchBasis(d.AmountBasis)) return progress.PreviousMatchCount(Player(source), d.Id);
                 if (d.AmountBasis == "Per liquidated talent") return CustomRewardLifecycle.LiquidatedCount(source._skaterData);
@@ -454,30 +537,21 @@ internal static class CustomRewardRuntime
                 if (d.AmountBasis == "Per knocked-out skater on either team") return KnockedOutOnIce();
                 return 1;
             }
-            int relicOwners = 0;
-            if (d.IsRelic) foreach (var sourceTeam in new[] { forward.Team, forward.Team.otherTeam })
-                if (sourceTeam?._teamData != null && CustomRewardEffects.StatTeamApplies(d.Target, sourceTeam._teamData.id, forward.Team._teamData.id)
-                    && Has(sourceTeam._teamData, d.Id) && Condition(d.Trigger, forward)) relicOwners += Scale(forward);
-            if (d.Target == CustomRewardEffects.OtherTeammates && (forward.TryCast<Forward>() == null || forward.TryCast<Forward>().IsBenched())) continue;
-            int owners = d.IsRelic ? relicOwners : d.Target == "Whole team" || d.Target == CustomRewardEffects.OtherTeammates
-                ? actors.Values.Where(f => f != null && f.Team?._teamData != null && Team(f) == team && f.TryCast<Forward>()?.IsBenched() != true && (d.Target != CustomRewardEffects.OtherTeammates || f.Pointer != forward.Pointer) && OwnedTalent(f)).Sum(Scale) : (OwnedTalent(forward) ? Scale(forward) : 0);
-            if (owners == 0) continue;
-            if (d.Stat == stat || d.Stat == "Overall" && CustomRewardDefinition.IsOverallStat(stat)) total += (long)d.Amount * owners;
+            // A relic's count is measured on the recipient; a talent's on its owner.
+            long owners = 0;
+            foreach (var source in ContinuousSources(d, forward, s => Condition(d.Trigger, s))) owners += Scale(d.IsRelic ? forward : source);
+            if (owners != 0) total += d.Amount * owners;
         }
         return (int)Math.Clamp(total, int.MinValue, int.MaxValue);
     }
     internal static IEnumerable<CustomRewardDefinition> ActiveConditions(Skater recipient)
     {
         if (!InMatch || recipient?.Team?._teamData == null) yield break;
-        foreach (var d in Definitions.Values) {
+        // One entry per source, so per-owner rules (team auras, opposing
+        // auras) stack exactly as two owners of the same native item would.
+        foreach (var d in Definitions.Values.ToArray()) {
             if (d.NeedsRedesign || !CustomRewardTriggers.IsCondition(d.Trigger)) continue;
-            if (d.IsRelic) {
-                if (Has(recipient.Team._teamData, d.Id) && Condition(d.Trigger, recipient)) yield return d;
-            } else {
-                var sources = d.Target == CustomRewardEffects.Team ? actors.Values.Where(a => a?.Team == recipient.Team && a.TryCast<Forward>()?.IsBenched() != true) : new[] { recipient };
-                foreach (var source in sources) if (source != null && source.ArePowerUpsEnabled() && Has(source._skaterData, d.Id)
-                    && source._skaterData.powerups.HasMatch(t => t != null && t.id == d.Id && !t.PayoffSuppressed) && Condition(d.Trigger, source)) yield return d;
-            }
+            foreach (var _ in ContinuousSources(d, recipient, s => Condition(d.Trigger, s))) yield return d;
         }
     }
     internal static void Signal(string signal, Skater skater, HashSet<string> teamOnce = null, Skater other = null)
@@ -496,22 +570,23 @@ internal static class CustomRewardRuntime
                 && f._skaterData.powerups.HasMatch(t => t != null && t.id == d.Id && !t.PayoffSuppressed);
             if (!owned) continue;
             if (d.ResetOn == signal) {
-                progress.ResetBonus(d, signal, d.IsRelic ? team : CustomRewardProgress.ScopedRecipient(actor, team), d.Target == CustomRewardEffects.Opponent ? null : d.Target == CustomRewardEffects.Team ? team : CustomRewardProgress.ScopedRecipient(actor, team));
+                // Actor and team bonuses reset for that recipient; bonuses this
+                // owner gave to selected or opposing skaters all reset together.
+                progress.ResetBonus(d, signal, d.IsRelic ? team : CustomRewardProgress.ScopedRecipient(actor, team), d.Target == CustomRewardEffects.Team ? team : d.Target == CustomRewardEffects.Actor ? CustomRewardProgress.ScopedRecipient(actor, team) : null);
                 // Older saved bonuses used an unqualified player recipient/owner.
-                progress.ResetBonus(d, signal, d.IsRelic ? team : actor, d.Target == CustomRewardEffects.Opponent ? null : d.Target == CustomRewardEffects.Team ? team : actor);
-                foreach (var recipient in forwards.Values.Where(v => v != null && (d.Target == CustomRewardEffects.Opponent || (d.Target == CustomRewardEffects.Team ? Team(v) == team : Player(v) == actor)))) recipient.stats?.UpdateCachedStats();
+                progress.ResetBonus(d, signal, d.IsRelic ? team : actor, d.Target == CustomRewardEffects.Team ? team : d.Target == CustomRewardEffects.Actor ? actor : null);
+                foreach (var recipient in forwards.Values) recipient?.stats?.UpdateCachedStats();
             }
             if (d.Trigger != signal) continue;
-            if (d.Effect == CustomRewardEffects.StatChange && d.Target == CustomRewardEffects.Opponent && (other?._skaterData == null || other.Team != (CustomRewardTriggers.IsOpponentAction(signal) ? f.Team.otherTeam : f.Team))) continue;
-            string recipientId = d.Target == CustomRewardEffects.Team ? team : d.Effect == CustomRewardEffects.StatChange && d.Target == CustomRewardEffects.Opponent ? CustomRewardProgress.ScopedRecipient(Player(other), Team(other)) : CustomRewardProgress.ScopedRecipient(actor, team);
+            if (d.Effect == CustomRewardEffects.StatChange && d.Target == CustomRewardEffects.Opponent && (other?._skaterData == null || other.Team?._teamData == null)) continue;
             if (d.IsRelic && teamOnce != null && !teamOnce.Add(d.Id + team)) continue;
             string counterActor = d.IsRelic && teamOnce != null ? team : CustomRewardProgress.ScopedRecipient(actor, team);
             string dispatchKey = d.Id + "|" + counterActor;
             if (!dispatching.Add(dispatchKey)) continue;
             try {
-            if (progress.Signal(d, signal, counterActor, d.IsRelic ? team : CustomRewardProgress.ScopedRecipient(actor, team), recipientId, Time.time, () => ApplyEffect(d, f, other), () => UnityEngine.Random.Range(0, 100) < d.Chance))
+            if (progress.Signal(d, signal, counterActor, d.IsRelic ? team : CustomRewardProgress.ScopedRecipient(actor, team), () => StatRecipients(d, f, other), Time.time, () => ApplyEffect(d, f, other), () => UnityEngine.Random.Range(0, 100) < d.Chance))
             {
-                foreach (var recipient in forwards.Values.Where(v => v != null && CustomRewardProgress.MatchesRecipient(recipientId, Player(v), Team(v)))) recipient.stats?.UpdateCachedStats();
+                foreach (var recipient in forwards.Values) recipient?.stats?.UpdateCachedStats();
                 Notify(d, f, other);
                 Plugin.Log.LogInfo("[CustomRewards] " + d.Name + " activated for " + f._skaterData.FullName);
             }
@@ -536,7 +611,11 @@ internal static class CustomRewardRuntime
         // an activation never flushes unrelated pending faceoff or map messages.
         var timing = CustomRewardTriggers.IsCompletion(d.Trigger) ? ENotificationTiming.WorldMap : (ENotificationTiming)(1 << 29);
         string duration = d.Duration == "Seconds" ? d.Seconds + "s" : d.Duration.ToLowerInvariant();
-        string who = d.Target == CustomRewardEffects.Opponent && other?._skaterData != null ? other._skaterData.FullName : d.Target == "Whole team" ? "Team" : d.Target == CustomRewardEffects.Nearby ? "Nearby opponents" : d.Target == CustomRewardEffects.Opponent ? "Event target" : f._skaterData.FullName;
+        string who = d.Target == CustomRewardEffects.Opponent && other?._skaterData != null ? other._skaterData.FullName : d.Target == "Whole team" ? "Team"
+            : d.Target == CustomRewardEffects.Nearby ? "Nearby opponents" : d.Target == CustomRewardEffects.Opponent ? "Event target"
+            : d.Target == CustomRewardEffects.OpposingTeam ? "Opposing team" : d.Target == CustomRewardEffects.ClosestOpponent ? "Closest opponent"
+            : d.Target == CustomRewardEffects.OpponentCarrier ? "Opposing puck carrier" : d.Target == CustomRewardEffects.RandomOpponents ? "Random opponents"
+            : d.Target == CustomRewardEffects.RandomAllies ? "Random teammates" : f._skaterData.FullName;
         var asset = d.IsRelic ? (ScriptableObject)FindRelic(d.Id, false) : FindTalent(d.Id, false);
         queue.Queue(new NotificationData {
             Type = ENotificationType.Generic, Timing = timing, Title = d.Name,
@@ -551,7 +630,15 @@ internal static class CustomRewardRuntime
     private static bool ApplyEffect(CustomRewardDefinition d, Skater actor, Skater other)
     {
         var actionSource = CustomRewardTriggers.IsOpponentAction(d.Trigger) ? other : actor;
-        if (d.Effect == CustomRewardEffects.SonicKnockouts) return CustomRewardNativeEffects.Sonic(d, actor);
+        // Centred effects run around each selected recipient instead of the
+        // triggering skater; the native component treats that skater as its source.
+        bool EachRecipient(Func<Skater, bool> apply) {
+            bool any = false;
+            foreach (var s in Recipients(d, actor, other)) if (s != null && s.gameObject.activeInHierarchy) any |= apply(s);
+            return any;
+        }
+        if (d.Effect == CustomRewardEffects.SonicKnockouts) return d.Target == CustomRewardEffects.Actor || d.Target == CustomRewardEffects.Puck
+            ? CustomRewardNativeEffects.Sonic(d, actor) : EachRecipient(s => CustomRewardNativeEffects.Sonic(d, s));
         if (d.Effect == CustomRewardEffects.DeflectLob) return CustomRewardNativeEffects.DeflectLob(actor);
         if (d.Effect == CustomRewardEffects.BoardBounce) return CustomRewardContactEffects.Bounce(d, actor);
         if (CustomRewardEffects.IsUpgrade(d.Effect)) return CustomRewardGrants.Upgrade(d, actor);
@@ -564,25 +651,31 @@ internal static class CustomRewardRuntime
             var shot = CustomRewardPuckContact.Shot ?? GameManager.CurrentShotInfo;
             if (shot?.shootingSkater == null || shot.shootingSkater.Team != actor.Team?.otherTeam || shot.deflectedBy == actor
                 || Puck.Instance == null || Puck.Instance.IsPossessed() || Puck.Rigidbody == null) return false;
-            float speed = Puck.Rigidbody.linearVelocity.magnitude * d.Amount / 100f;
+            float speed = Math.Min(1e5f, Puck.Rigidbody.linearVelocity.magnitude * (d.Amount / 100f)); // finite float physics
             if (speed <= 0) return false;
             shot.deflectedBy = actor;
             Puck.Instance.StartCoroutine(Puck.Instance.HeadShot(shot.shootingSkater, speed, false)); return true;
         }
-        if (CustomRewardEffects.IsGoalieCopy(d.Effect)) return CustomRewardGoalieCopy.Apply(d, actor);
-        if (d.Effect == CustomRewardEffects.AttractPuck) return CustomRewardAttraction.Apply(d, actor);
+        // The opposing goalie copies from this team's goalie: the reverse copy.
+        if (CustomRewardEffects.IsGoalieCopy(d.Effect)) return CustomRewardGoalieCopy.Apply(d, d.Target == CustomRewardEffects.OpposingTeam ? actor.Team?.otherTeam?.goaltender : actor);
+        if (d.Effect == CustomRewardEffects.AttractPuck) return d.Target == CustomRewardEffects.Actor ? CustomRewardAttraction.Apply(d, actor, actor)
+            : EachRecipient(s => CustomRewardAttraction.Apply(d, actor, s));
         if (d.Effect == CustomRewardEffects.ClockTime) {
             var clock = GameManager.Instance?.timeRemaining;
             if (clock == null || clock.GetRemainingTime() <= 0) return false;
             clock.AddTime(d.Amount); return true;
         }
-        if (CustomRewardEffects.IsShockwave(d.Effect)) return CustomRewardNativeEffects.Shockwave(d, actionSource);
+        if (CustomRewardEffects.IsShockwave(d.Effect)) return d.Target == CustomRewardEffects.Actor ? CustomRewardNativeEffects.Shockwave(d, actionSource)
+            : EachRecipient(s => CustomRewardNativeEffects.Shockwave(d, s));
         if (CustomRewardEffects.IsShotFlight(d.Effect)) return CustomRewardNativeEffects.Flight(d, actionSource);
         if (CustomRewardEffects.IsPuck(d.Effect)) {
             if (Puck.Instance == null || Puck.Rigidbody == null || Puck.Instance.IsPossessed()) return false;
             var velocity = Puck.Rigidbody.linearVelocity;
             if (d.Effect == CustomRewardEffects.PuckSpeed) velocity *= d.Amount / 100f;
             else velocity.y = d.Effect == CustomRewardEffects.FlatPuck ? 0 : d.Amount;
+            // Repeated multipliers compound per shot or pass; keep the
+            // puck finite so float physics never overflows to Infinity/NaN.
+            if (!(velocity.sqrMagnitude < 1e10f)) velocity = velocity.normalized * 1e5f;
             Puck.Rigidbody.linearVelocity = velocity; return true;
         }
         var recipients = Recipients(d, actor, other);
@@ -645,16 +738,36 @@ internal static class CustomRewardRuntime
         }
         return applied;
     }
+    // Timed stat bonuses are bookkept per recipient key: a whole team, or one
+    // exactly scoped player. Selected skaters each receive their own stack.
+    private static IReadOnlyList<string> StatRecipients(CustomRewardDefinition d, Skater actor, Skater other)
+    {
+        string team = Team(actor);
+        if (d.Target == CustomRewardEffects.Team) return new[] { team };
+        if (d.Target == CustomRewardEffects.OpposingTeam) return actor.Team.otherTeam?._teamData == null ? Array.Empty<string>() : new[] { "team:" + actor.Team.otherTeam._teamData.id };
+        if (d.Target == CustomRewardEffects.Actor) return new[] { CustomRewardProgress.ScopedRecipient(Player(actor), team) };
+        if (d.Target == CustomRewardEffects.Opponent) return other?._skaterData == null || other.Team?._teamData == null ? Array.Empty<string>() : new[] { CustomRewardProgress.ScopedRecipient(Player(other), Team(other)) };
+        return Recipients(d, actor, other).Where(s => s?._skaterData != null && s.Team?._teamData != null)
+            .Select(s => CustomRewardProgress.ScopedRecipient(Player(s), Team(s))).ToArray();
+    }
+    // Positional recipients are measured from the triggering skater. A relic
+    // reacting to an opponent's action has no triggering skater of its own, so
+    // it measures from the opponent who acted.
+    private static Skater Anchor(CustomRewardDefinition d, Skater actor, Skater other)
+        => d.IsRelic && CustomRewardTriggers.IsOpponentAction(d.Trigger) && other != null ? other : actor;
     private static Skater[] Recipients(CustomRewardDefinition d, Skater actor, Skater other)
     {
         if (d.Target == CustomRewardEffects.Actor) return new[] { actor };
         if (d.Target == CustomRewardEffects.Opponent) return new[] { other };
         if (d.Target == CustomRewardEffects.OpponentCarrier) return Puck.Instance?.skaterPossession is { } holder && holder.Team == actor.Team.otherTeam && holder.TryCast<Forward>() != null ? new[] { holder } : Array.Empty<Skater>();
         bool allies = d.Target == CustomRewardEffects.Team || d.Target == CustomRewardEffects.RandomAllies;
+        bool wholeTeam = d.Target == CustomRewardEffects.Team || d.Target == CustomRewardEffects.OpposingTeam;
+        var anchor = Anchor(d, actor, other);
         var pool = actors.Values.Where(s => s != null && s.gameObject.activeInHierarchy && s.Team == (allies ? actor.Team : actor.Team.otherTeam)
-            && (s.TryCast<Forward>() is { } f ? !f.IsBenched() : allies && d.Target == CustomRewardEffects.Team && d.Effect == CustomRewardEffects.Enrage)
-            && (d.Target != CustomRewardEffects.Nearby || Vector3.Distance(s.transform.position, actor.transform.position) <= d.Radius)).ToArray();
-        if (d.Target == CustomRewardEffects.ClosestOpponent) return pool.OrderBy(s => (s.transform.position - actor.transform.position).sqrMagnitude).Take(1).ToArray();
+            && (s.TryCast<Forward>() is { } f ? !f.IsBenched() : wholeTeam && d.Effect == CustomRewardEffects.Enrage)
+            && (d.Target != CustomRewardEffects.Nearby || Vector3.Distance(s.transform.position, anchor.transform.position) <= d.Radius)).ToArray();
+        if (d.Target == CustomRewardEffects.ClosestOpponent) return pool.Where(s => s.Pointer != anchor.Pointer)
+            .OrderBy(s => (s.transform.position - anchor.transform.position).sqrMagnitude).Take(1).ToArray();
         if (!CustomRewardEffects.IsRandomTarget(d.Target)) return pool;
         // Sampling without replacement: one activation cannot select the same
         // skater twice. Fewer available skaters simply means fewer recipients.
@@ -753,7 +866,9 @@ internal static class CustomRewardRuntime
         ListenSimple(GameplayEvents.EndOfGame, CustomRewardAbilityReplacement.Clear);
         Listen(GameplayEvents.HatTrickGoal, (HatTrickArg a) => CustomRewardGoalConfirmation.Defer(() => Signal("Hat trick", a.skater)));
         var saveCallback = (Il2CppSystem.Action<NativeGoalie, float, bool>)(Action<NativeGoalie, float, bool>)((goalie, quality, shouldFail) => Safe(() => {
-            if (!shouldFail && goalie?.Team?.otherTeam?._teamData != null) SignalAll("Opposing goalie save", goalie.Team.otherTeam._teamData.id);
+            if (shouldFail) return;
+            if (goalie?.Team?.otherTeam?._teamData != null) SignalAll("Opposing goalie save", goalie.Team.otherTeam._teamData.id);
+            Signal("Goalie save", goalie);
         }));
         delegates.Add(saveCallback); SingleEventExtensions.AddListener(GameplayEvents.GoalieSaveAudio, saveCallback);
         unsubscribe.Add(() => SingleEventExtensions.RemoveListener(GameplayEvents.GoalieSaveAudio, saveCallback));
@@ -770,7 +885,7 @@ internal static class CustomRewardRuntime
             if (a.knockedBy?.Team != null && a.playerKnocked?.Team != null && a.knockedBy.Team != a.playerKnocked.Team) teamsWithOpposingKnockouts.Add(a.knockedBy.Team.Pointer);
             if (a.knockedBy?.TryCast<Forward>() is { } checker && checker.ArePowerUpsEnabled()
                 && checker.CurrentMovementState?.TryCast<Movements.MovementStates.BodycheckState>() is { } checking
-                && CustomRewardCampaignRules.Owned(checker.Team?._teamData, "Bodycheck movement").Any(d => d.Effect == CustomRewardEffects.FasterChecks)) checking.OnKnockout(a);
+                && CustomRewardCampaignRules.Applying(checker.Team, "Bodycheck movement", CustomRewardEffects.FasterChecks).Any()) checking.OnKnockout(a);
             var referees = GameManager.Instance?.referees;
             if (a.playerKnocked != null && referees != null && referees.HasMatch(r => r?._forward?.Pointer == a.playerKnocked.Pointer)) SignalAll("Referee knocked out");
             if (a.playerKnocked?.skaterType == SkaterType.Referee && a.knockedBy?.Team?._teamData != null) SignalAll("Team knocks out referee", a.knockedBy.Team._teamData.id);
@@ -800,8 +915,16 @@ internal static class CustomRewardRuntime
         Listen(GameplayEvents.StickBreaking, (Forward f) => { if (f?._forwardData != null) brokenSticks.Add(f._forwardData.id); Signal("Stick broken", f); });
         Listen(GameplayEvents.AbilityUsed, (Skater s) => { Signal("Ability used", s); SignalOpponent("Opponent ability used", s); });
         Listen(GameplayEvents.EnragedTriggered, (Skater s) => Signal("Enraged", s));
-        Listen(GameplayEvents.ForwardReceivedInjury, (ReceivedInjuryEventArgs a) => { if (a != null) foreach (var f in forwards.Values.Where(f => f != null && f._forwardData.id == a.forwardId).ToArray()) Signal("Injury received", f); });
-        Listen(GameplayEvents.ForwardCausedInjury, (CausedInjuryEventArgs a) => { if (a?.injuredBy?.Team != a?.injured?.Team) Signal("Injury caused", a?.injuredBy, other: a?.injured); });
+        Listen(GameplayEvents.ForwardReceivedInjury, (ReceivedInjuryEventArgs a) => {
+            if (a == null) return;
+            foreach (var f in forwards.Values.Where(f => f != null && f._forwardData.id == a.forwardId).ToArray()) Signal("Injury received", f);
+            SignalAll("Any skater injured");
+        });
+        Listen(GameplayEvents.ForwardCausedInjury, (CausedInjuryEventArgs a) => {
+            if (a?.injuredBy?.Team == a?.injured?.Team) return;
+            Signal("Injury caused", a?.injuredBy, other: a?.injured);
+            Signal("Injured by an opponent", a?.injured, other: a?.injuredBy);
+        });
         ListenTwo(GameplayEvents.Deflect, (Forward f, bool _) => Signal("Deflection", f));
         ListenThree(GameplayEvents.Pokecheck, (Forward source, Skater victim, bool _) => { if (victim != null) { Signal("Pokecheck", source, other: victim); Signal("Pokechecked", victim, other: source); } });
         ListenTwo(GameplayEvents.ForwardPassedBlueLine, (Forward f, bool _) => { Signal("Blue line crossed", f); SignalOpponent("Opponent crosses blue line", f); });
@@ -824,7 +947,7 @@ internal static class CustomRewardRuntime
         ListenTwo(GameplayEvents.HelmetKnockedOff, (Forward f, Forward _) => Signal("Helmet lost", f));
         ListenTwo(GameplayEvents.SkaterHitBoard, (Forward f, Vector3 normal) => CustomRewardContactEffects.Contact(f, normal, () => Signal("Board collision", f)));
         ListenTwo(GameplayEvents.VerticalKnockoutLanding, (Forward f, float _) => Signal("Knockout landing", f));
-        ListenSimple(GameplayEvents.AfterGamePresentation, () => { BindGoalie(GameManager.HomeTeam?.goaltender); BindGoalie(GameManager.VisitorTeam?.goaltender); CustomRewardTemperature.Initialize(GameManager.HomeTeam); CustomRewardTemperature.Initialize(GameManager.VisitorTeam); SignalAll("Match started"); SignalAll("Period started"); });
+        ListenSimple(GameplayEvents.AfterGamePresentation, () => { presented = true; BindGoalie(GameManager.HomeTeam?.goaltender); BindGoalie(GameManager.VisitorTeam?.goaltender); CustomRewardTemperature.Initialize(GameManager.HomeTeam); CustomRewardTemperature.Initialize(GameManager.VisitorTeam); SignalAll("Match started"); SignalAll("Period started"); });
         ListenSimple(GameplayEvents.PeriodPresentation, () => SignalAll("Period started"));
         ListenSimple(GameplayEvents.Last30SecondsOfPeriod, () => SignalAll("Last 30 seconds of period"));
         Listen(RogueEvents.WinByMercy, (bool _) => mercyWon = true);
@@ -888,7 +1011,7 @@ internal static class CustomRewardRuntime
         if (d.NeedsRedesign || d.Effect != CustomRewardEffects.StatChange) yield break;
         // Reward previews describe this owner's team. An opponent-only bonus
         // must not be rendered as a change to the selecting player's ratings.
-        if (d.Target == CustomRewardEffects.OpposingTeam || d.Target == CustomRewardEffects.OtherTeammates) yield break;
+        if (CustomRewardEffects.IsOpposingSide(d.Target) || CustomRewardEffects.IsSkaterSelection(d.Target) || d.Target == CustomRewardEffects.OtherTeammates) yield break;
         EnsureRun();
         if (CustomRewardTriggers.IsCondition(d.Trigger)) yield return (d.Stat, d.Amount, d.Trigger != "While owned" || d.AmountBasis != "Fixed amount");
         else {

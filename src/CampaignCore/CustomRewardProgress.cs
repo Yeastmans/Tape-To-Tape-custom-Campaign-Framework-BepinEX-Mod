@@ -26,7 +26,7 @@ public sealed class CustomRewardProgress
     public int ChargesSpent(string owner, string reward) => spentCharges.TryGetValue(owner, out var rewards) && rewards.TryGetValue(reward, out int count) ? count : 0;
     public bool SpendCharge(string owner, string reward, int capacity) {
         int spent = ChargesSpent(owner, reward);
-        if (capacity < 1 || capacity > 999999 || spent >= capacity) return false;
+        if (capacity < 1 || spent >= capacity) return false;
         if (!spentCharges.TryGetValue(owner, out var rewards)) spentCharges[owner] = rewards = new(StringComparer.OrdinalIgnoreCase);
         rewards[reward] = spent + 1; return true;
     }
@@ -56,6 +56,12 @@ public sealed class CustomRewardProgress
     public bool ResetBonus(CustomRewardDefinition definition, string signal, string owner, string recipient)
         => definition.ResetOn == signal && Effects.RemoveAll(e => e.Reward == definition.Id && e.Owner == owner && (recipient == null || e.Recipient == recipient)) > 0;
     public bool Signal(CustomRewardDefinition definition, string signal, string actor, string owner, string recipient, double time, Func<bool> apply = null, Func<bool> roll = null)
+        => Signal(definition, signal, actor, owner, () => new[] { recipient }, time, apply, roll);
+    // Recipients are chosen only after the threshold and chance pass, so a
+    // random or positional selection is drawn once per real activation. An
+    // activation without any recipient (no opposing carrier, nobody nearby)
+    // is not spent.
+    public bool Signal(CustomRewardDefinition definition, string signal, string actor, string owner, Func<IReadOnlyList<string>> recipients, double time, Func<bool> apply = null, Func<bool> roll = null)
     {
         if (CustomRewardTriggers.IsCondition(definition.Trigger) || definition.Trigger != signal) return false;
         string key = Key(definition.Id, actor);
@@ -74,14 +80,20 @@ public sealed class CustomRewardProgress
             return applied;
         }
         Effects.RemoveAll(e => e.Duration == "Seconds" && e.Expires <= time);
-        var existing = Effects.FirstOrDefault(e => e.Reward == definition.Id && e.Owner == owner && e.Recipient == recipient && e.Stat == definition.Stat && e.Duration == definition.Duration);
-        if (existing == null) {
-            existing = new Effect { Reward = definition.Id, Owner = owner, Recipient = recipient, Stat = definition.Stat, Duration = definition.Duration, Amount = definition.Amount };
-            Effects.Add(existing);
+        var targets = (recipients?.Invoke() ?? Array.Empty<string>()).Where(r => !string.IsNullOrEmpty(r)).Distinct().ToArray();
+        if (targets.Length == 0) { count.Activations--; return false; }
+        bool changed = false;
+        foreach (string recipient in targets) {
+            var existing = Effects.FirstOrDefault(e => e.Reward == definition.Id && e.Owner == owner && e.Recipient == recipient && e.Stat == definition.Stat && e.Duration == definition.Duration);
+            if (existing == null) {
+                existing = new Effect { Reward = definition.Id, Owner = owner, Recipient = recipient, Stat = definition.Stat, Duration = definition.Duration, Amount = definition.Amount };
+                Effects.Add(existing);
+            }
+            changed |= existing.Stacks < definition.MaxStacks || (existing.Duration == "Seconds" && existing.Expires < time + definition.Seconds);
+            // Unlimited stacks are int.MaxValue; never wrap past it.
+            if (existing.Stacks < definition.MaxStacks) existing.Stacks++;
+            existing.Expires = time + definition.Seconds;
         }
-        bool changed = existing.Stacks < definition.MaxStacks || (existing.Duration == "Seconds" && existing.Expires < time + definition.Seconds);
-        existing.Stacks = Math.Min(definition.MaxStacks, existing.Stacks + 1);
-        existing.Expires = time + definition.Seconds;
         return changed;
     }
     public static string ScopedRecipient(string player, string team) => team + "|" + player;
@@ -90,11 +102,14 @@ public sealed class CustomRewardProgress
     {
         long total = 0;
         foreach (var effect in Effects)
+            // A relic-owned effect reaches its own team, an explicitly targeted
+            // team (an opposing team) or an exactly scoped player. A bare legacy
+            // player recipient never reaches a same-ID copy on the other team.
             if (MatchesRecipient(effect.Recipient, recipient, team) && (effect.Stat == stat || effect.Stat == "Overall" && CustomRewardDefinition.IsOverallStat(stat))
-                && (!effect.Owner.StartsWith("team:", StringComparison.Ordinal) || effect.Owner.Contains("|player:") || effect.Owner == team || effect.Recipient == ScopedRecipient(recipient, team))
+                && (!effect.Owner.StartsWith("team:", StringComparison.Ordinal) || effect.Owner.Contains("|player:") || effect.Owner == team || effect.Recipient == team || effect.Recipient == ScopedRecipient(recipient, team))
                 && (effect.Duration != "Seconds" || effect.Expires > time) && stillOwned(effect.Reward, effect.Owner))
                 total += (long)effect.Amount * effect.Stacks;
-        return (int)Math.Max(-999000, Math.Min(999000, total));
+        return (int)Math.Clamp(total, int.MinValue, int.MaxValue);
     }
     public void EndPeriod() => Effects.RemoveAll(e => e.Duration == "Rest of period");
     public void BeginMatch() { counts.Clear(); Effects.RemoveAll(e => e.Duration != "Rest of run"); }
@@ -122,7 +137,7 @@ public sealed class CustomRewardProgress
         if (lines[0] != "CCF custom reward progress 1") throw new ArgumentException("Unsupported custom reward progress.");
         foreach (var line in lines.Skip(1).Where(l => l.Length > 0)) {
             var p = line.Split('\t');
-            if (p.Length == 4 && p[0] == "T" && int.TryParse(p[2], out int events) && events >= 0 && events <= 999 && int.TryParse(p[3], out int activations) && activations >= 0 && activations <= 999) {
+            if (p.Length == 4 && p[0] == "T" && int.TryParse(p[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out int events) && events >= 0 && int.TryParse(p[3], NumberStyles.Integer, CultureInfo.InvariantCulture, out int activations) && activations >= 0) {
                 string key = Decode(p[1]); if (next.campaignCounts.ContainsKey(key)) throw new ArgumentException("Duplicate campaign event count.");
                 next.campaignCounts.Add(key, new Counter { Events = events, Activations = activations }); continue;
             }
@@ -146,8 +161,8 @@ public sealed class CustomRewardProgress
                 owned[reward] = sequence; next.acquisitionSequence = Math.Max(next.acquisitionSequence, sequence);
             }
             else if (p.Length == 3 && p[0] == "C" && int.TryParse(p[2], out int count) && count >= 0 && count <= 99) { Decode(p[1]); }
-            else if (p.Length == 7 && p[0] == "E" && int.TryParse(p[5], out int amount) && Math.Abs((long)amount) <= 999
-                && int.TryParse(p[6], out int stacks) && stacks >= 1 && stacks <= 999 && CustomRewardDefinition.Stats.Contains(Decode(p[4])))
+            else if (p.Length == 7 && p[0] == "E" && int.TryParse(p[5], NumberStyles.Integer, CultureInfo.InvariantCulture, out int amount)
+                && int.TryParse(p[6], NumberStyles.Integer, CultureInfo.InvariantCulture, out int stacks) && stacks >= 1 && CustomRewardDefinition.Stats.Contains(Decode(p[4])))
                 next.Effects.Add(new Effect { Reward = Decode(p[1]), Owner = Decode(p[2]), Recipient = Decode(p[3]), Stat = Decode(p[4]), Amount = amount, Stacks = stacks, Duration = "Rest of run" });
             else throw new ArgumentException("Invalid custom reward progress.");
         }

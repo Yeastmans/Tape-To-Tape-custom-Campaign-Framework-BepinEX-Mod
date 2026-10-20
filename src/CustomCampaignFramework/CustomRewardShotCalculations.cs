@@ -20,19 +20,15 @@ internal static class CustomRewardShotCalculations
     private static int Amount(Skater recipient, string trigger)
     {
         if (!CustomRewardRuntime.InMatch || recipient?.Team == null || string.IsNullOrEmpty(trigger)) return 0;
-        int total = 0;
+        long total = 0;
+        // Each on-ice owner whose rule reaches this shooter contributes once:
+        // the owner itself, its teammates, or opposing shooters (all of them,
+        // nearby, closest, the carrier or a per-match random selection).
         foreach (var rule in CustomRewardRuntime.Definitions.Values) {
             if (rule.NeedsRedesign || rule.Trigger != trigger || rule.Effect != CustomRewardEffects.StatChange) continue;
-            bool Owns(Skater source) => source != null && source.ArePowerUpsEnabled() && CustomRewardRuntime.Has(source._skaterData, rule.Id)
-                && source._skaterData.powerups.HasMatch(t => t != null && t.id == rule.Id && !t.PayoffSuppressed);
-            if (rule.IsRelic) { if (CustomRewardRuntime.Has(recipient.Team._teamData, rule.Id)) total += rule.Amount; }
-            else if (rule.Target == CustomRewardEffects.Actor) { if (Owns(recipient)) total += rule.Amount; }
-            else {
-                var team = recipient.Team.PlayingForwards;
-                for (int i = 0; team != null && i < team.Count; i++) if (Owns(team[i])) total += rule.Amount;
-            }
+            foreach (var _ in CustomRewardRuntime.ContinuousSources(rule, recipient, _ => true)) total += rule.Amount;
         }
-        return total;
+        return (int)Math.Clamp(total, int.MinValue, int.MaxValue);
     }
 }
 

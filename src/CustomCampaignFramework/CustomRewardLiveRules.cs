@@ -22,7 +22,9 @@ internal static class CustomRewardLiveRules
 
     internal static void Refresh(Forward f)
     {
-        int amount = CustomRewardRuntime.Bonus(f, "Size");
+        // Six native sizes: clamp summed steps so native size arithmetic
+        // never receives a value beyond its range.
+        int amount = Math.Clamp(CustomRewardRuntime.Bonus(f, "Size"), -5, 5);
         if (amount != 0 || sizes.ContainsKey(f.Pointer)) {
             if (!sizes.TryGetValue(f.Pointer, out var state)) sizes[f.Pointer] = state = new SizeState { Forward = f };
             if (state.Amount != amount) {

@@ -75,6 +75,8 @@ internal static class CustomRewardCapabilities
     private static byte Direct(IntPtr player, IntPtr method) => Resolve(directOriginal(player, method), player, method);
     private static byte Resolve(byte native, IntPtr player, IntPtr method)
     {
+        if (player != IntPtr.Zero && !resolving && CustomRewardRuntime.InMatch && effects.TryGetValue(method, out string goal) && goal == CustomRewardEffects.ExtraGoal)
+            return GoalValue(native, player);
         if (native != 0 || player == IntPtr.Zero || resolving || !CustomRewardRuntime.InMatch || !effects.TryGetValue(method, out string effect)) return native;
         try {
             resolving = true;
@@ -87,6 +89,68 @@ internal static class CustomRewardCapabilities
         }
         catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Native capability query: " + ex); return native; }
         finally { resolving = false; }
+    }
+    // Hidden Ace's query in OnGoalScored / OnDeniedGoal. The native branch adds
+    // or cancels one goal unit; arm the total so the same native helper runs
+    // once per unit. A native Hidden Ace still supplies its own shared unit.
+    private static byte GoalValue(byte native, IntPtr player)
+    {
+        try {
+            resolving = true;
+            var scope = CustomRewardGoalValues.ScopeFor(new Skater(player));
+            if (scope == null) return native;
+            // A denial reverses only what this goal's scoring query added.
+            int units = scope.Denial && scope.Units < 0 ? 0 : scope.Query(native != 0);
+            if (units <= 0) return native;
+            if (!GoalRepeatInstalled && units > 1) units = 1;
+            if (factories.ContainsKey(CustomRewardEffects.ExtraGoal)) Proxy(scope.Rule);
+            CustomRewardGoalValues.Arm(scope, units);
+            return 1;
+        }
+        catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Native goal value query: " + ex); return native; }
+        finally { resolving = false; }
+    }
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate void AddGoalFn(IntPtr stats, IntPtr goal, IntPtr method);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate void CancelStatsFn(IntPtr stats, IntPtr method);
+    private static INativeDetour addGoalDetour;
+    private static AddGoalFn addGoalOriginal;
+    private static readonly AddGoalFn addGoalCallback = AddGoal;
+    private static CancelStatsFn cancelStats;
+    internal static bool GoalRepeatInstalled => addGoalDetour != null && cancelStats != null;
+    // GameStats.<OnGoalScored>g__AddGoal: one complete native goal unit (team
+    // and scorer goals, per-difficulty goals, every assist with its event,
+    // and the persistent goal statistics batch collected by OnGoalScored).
+    private static void AddGoal(IntPtr stats, IntPtr goal, IntPtr method)
+    {
+        int units = 0;
+        try { units = CustomRewardGoalValues.TakeArmed(stats); }
+        catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Extra goals: " + ex); }
+        addGoalOriginal(stats, goal, method);
+        for (int i = 1; i < units; i++) addGoalOriginal(stats, goal, method);
+    }
+    // After native OnDeniedGoal has cancelled its own Hidden Ace unit, cancel
+    // the remaining armed units through the same native helper. CancelStats
+    // reads only the last scorer, assists and stat collector, which denial
+    // leaves intact; it is called exactly as OnDeniedGoal calls it.
+    internal static void CancelExtraGoals(IntPtr stats, bool scorerPresent)
+    {
+        int units = CustomRewardGoalValues.TakeArmed(stats);
+        if (!scorerPresent || cancelStats == null) return;
+        for (int i = 1; i < units; i++) cancelStats(stats, IntPtr.Zero);
+    }
+    private static void InstallGoalRepeat(ProcessModule module)
+    {
+        try {
+            var add = module.BaseAddress + 0x38e07f0; var cancel = module.BaseAddress + 0x38e0510;
+            Verify(add, "48895C2408488974241048897C24184C8974242041574883EC60");
+            Verify(cancel, "48895C2418574883EC40803D");
+            cancelStats = Marshal.GetDelegateForFunctionPointer<CancelStatsFn>(cancel);
+            addGoalDetour = INativeDetour.CreateAndApply(add, addGoalCallback, out addGoalOriginal);
+            Plugin.Log.LogInfo("[CustomRewards] Native extra-goal repeat installed.");
+        } catch (Exception ex) {
+            addGoalDetour?.Dispose(); addGoalDetour = null; cancelStats = null;
+            Plugin.Log.LogError("[CustomRewards] Extra goals limited to one per goal: " + ex);
+        }
     }
     private static IntPtr Get(IntPtr player, IntPtr method)
     {
@@ -152,7 +216,7 @@ internal static class CustomRewardCapabilities
             factories[CustomRewardEffects.PostAim] = _ => ScriptableObject.CreateInstance<PingKing>();
             factories[CustomRewardEffects.PunchShot] = _ => ScriptableObject.CreateInstance<PuckPuncher>();
             factories[CustomRewardEffects.ForceRebound] = _ => ScriptableObject.CreateInstance<ReboundBouncer>();
-            factories[CustomRewardEffects.ExtraGoal] = _ => ScriptableObject.CreateInstance<GoldenPuck>();
+            factories[CustomRewardEffects.ExtraGoal] = factories[CustomRewardEffects.ExtraGoals] = _ => ScriptableObject.CreateInstance<GoldenPuck>();
             factories[CustomRewardEffects.DeflectPucks] = _ => ScriptableObject.CreateInstance<DefensiveDeflect>();
             factories[CustomRewardEffects.TurningDelay] = rule => { var proxy = ScriptableObject.CreateInstance<HyperDrive>(); proxy.minTimeTurningIncrease = rule.Amount / 1000f; return proxy; };
             factories[CustomRewardEffects.ImpactKnockout] = factories[CustomRewardEffects.ImpactExplosion] = rule => {
@@ -162,6 +226,7 @@ internal static class CustomRewardCapabilities
             cachedDetour = INativeDetour.CreateAndApply(cached, cachedCallback, out cachedOriginal);
             directDetour = INativeDetour.CreateAndApply(direct, directCallback, out directOriginal);
             Plugin.Log.LogInfo("[CustomRewards] Native movement and contact capability queries installed.");
+            InstallGoalRepeat(module);
         } catch (Exception ex) {
             directDetour?.Dispose(); directDetour = null; cachedDetour?.Dispose(); cachedDetour = null; getDetour?.Dispose(); getDetour = null; effects.Clear(); factories.Clear();
             Plugin.Log.LogError("[CustomRewards] Native capability rules unavailable: " + ex);

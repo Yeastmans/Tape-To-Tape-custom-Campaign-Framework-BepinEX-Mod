@@ -12,12 +12,14 @@ namespace EndlessMode;
 internal static class CustomRewardEnragedDuration
 {
     [HarmonyPostfix] private static void Postfix(EnragedStatusEffectController __instance) {
-        var team = __instance.skater?.Team?._teamData;
+        var live = __instance.skater?.Team; var team = live?._teamData;
         if (team == null) return;
         CustomRewardRuntime.EnsureAssets();
         double factor = 1;
+        // Own relics aimed at the team, and the opponent's aimed at Opposing team.
         foreach (var rule in CustomRewardRuntime.Definitions.Values)
-            if (!rule.NeedsRedesign && rule.IsRelic && rule.Effect == CustomRewardEffects.EnragedDuration && CustomRewardRuntime.Has(team, rule.Id))
+            if (!rule.NeedsRedesign && rule.IsRelic && rule.Effect == CustomRewardEffects.EnragedDuration
+                && (rule.Target != CustomRewardEffects.OpposingTeam ? CustomRewardRuntime.Has(team, rule.Id) : live.otherTeam?._teamData != null && CustomRewardRuntime.Has(live.otherTeam._teamData, rule.Id)))
                 factor *= rule.Amount / 100d;
         __instance.timeRemaining = (float)Math.Min(float.MaxValue, __instance.timeRemaining * factor);
     }

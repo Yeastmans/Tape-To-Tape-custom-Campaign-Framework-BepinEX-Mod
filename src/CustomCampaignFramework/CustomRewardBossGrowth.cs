@@ -20,7 +20,9 @@ internal static class CustomRewardBossGrowth
             && CustomRewardRuntime.Has(__instance, d.Id)
             && __instance.powerups.HasMatch(t => t != null && t.id == d.Id && !t.PayoffSuppressed)).ToArray()) {
             if (d.Effect == CustomRewardEffects.BossSize) {
-                for (int i = 0; i < Math.Abs(d.Amount); i++) {
+                // Six native sizes: five steps reach either end, so a larger
+                // amount is clamped instead of looping once per step.
+                for (int i = 0; i < Math.Min(5, Math.Abs((long)d.Amount)); i++) {
                     if (d.Amount > 0) __instance.IncreaseSize(); else __instance.ReduceSize();
                 }
             } else if (d.Stat == "Overall") __instance.IncrementOverallStats(d.Amount);

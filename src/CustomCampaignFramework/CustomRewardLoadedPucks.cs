@@ -35,7 +35,11 @@ internal static class CustomRewardLoadedPucks
                 if (!sources.ContainsKey(key)) {
                     var payload = ScriptableObject.CreateInstance<LoadedPuck>();
                     payload.name = "CCF_LoadedPuck_" + rule.Id;
-                    payload.bagNormalCount = rule.NormalPucks; payload.bagTwoGoalCount = rule.DoublePucks; payload.bagThreeGoalCount = rule.TriplePucks;
+                    // The native queue allocates one entry per puck, so very large
+                    // bags are scaled down to 10,000 pucks, keeping their mix.
+                    long bag = (long)rule.NormalPucks + rule.DoublePucks + rule.TriplePucks;
+                    int Scaled(int n) => bag <= 10000 || n == 0 ? n : (int)Math.Max(1, n * 10000L / bag);
+                    payload.bagNormalCount = Scaled(rule.NormalPucks); payload.bagTwoGoalCount = Scaled(rule.DoublePucks); payload.bagThreeGoalCount = Scaled(rule.TriplePucks);
                     // No Initialize/AddEffect: only the selected component runs,
                     // with no native goal listener or delayed sync subscription.
                     sources.Add(key, new Source { Player = player, Rule = rule, Payload = payload,

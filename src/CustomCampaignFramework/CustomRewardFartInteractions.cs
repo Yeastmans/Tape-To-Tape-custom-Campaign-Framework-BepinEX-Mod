@@ -12,7 +12,11 @@ internal static class CustomRewardFartInteractions
     [HarmonyPostfix] private static void Postfix(Team sourceTeam, ref FartSynergyState __result)
     {
         if (!CustomRewardRuntime.InMatch || sourceTeam?._teamData == null) return;
-        var rules = CustomRewardCampaignRules.Owned(sourceTeam._teamData, "Fart interaction").ToArray();
+        // Knockout rules keep their own victim target; force and range are
+        // whole-team rules that an opponent can also aim at this team.
+        var rules = CustomRewardCampaignRules.Owned(sourceTeam._teamData, "Fart interaction").Where(d => d.Effect == CustomRewardEffects.FartKnockouts)
+            .Concat(CustomRewardCampaignRules.Applying(sourceTeam, "Fart interaction", CustomRewardEffects.FartForce))
+            .Concat(CustomRewardCampaignRules.Applying(sourceTeam, "Fart interaction", CustomRewardEffects.FartRange)).ToArray();
         if (rules.Length == 0) return;
         float force = __result.ForceMultiplier, range = __result.RangeMultiplier;
         bool knockout = __result.HasFartKnockout;

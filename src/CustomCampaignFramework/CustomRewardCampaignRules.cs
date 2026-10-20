@@ -22,6 +22,15 @@ internal static class CustomRewardCampaignRules
             }
         return result;
     }
+    // Whole-team match rules reaching this team: its own (aimed at itself) and
+    // the other team's rules aimed at Opposing team.
+    internal static IEnumerable<CustomRewardDefinition> Applying(Team team, string trigger, string effect)
+    {
+        if (team?._teamData == null) yield break;
+        foreach (var d in Owned(team._teamData, trigger)) if (d.Effect == effect && d.Target != CustomRewardEffects.OpposingTeam) yield return d;
+        if (team.otherTeam?._teamData != null)
+            foreach (var d in Owned(team.otherTeam._teamData, trigger)) if (d.Effect == effect && d.Target == CustomRewardEffects.OpposingTeam) yield return d;
+    }
     internal static IEnumerable<CustomRewardDefinition> Owned(TeamData team, string trigger)
     {
         if (team == null) yield break;
@@ -33,7 +42,9 @@ internal static class CustomRewardCampaignRules
             else foreach (var player in team.GetAllSkaters()) if (CustomRewardRuntime.Has(player, d.Id) && player.powerups.HasMatch(t => t != null && t.id == d.Id && !t.PayoffSuppressed)) yield return d;
         }
     }
-    internal static int Amount(TeamData team, string trigger, string effect) => Owned(team, trigger).Where(d => d.Effect == effect).Sum(d => d.Amount);
+    // Unbounded authored counts are summed in long and saturated: native
+    // counters add this to their own value, so stay well inside int.
+    internal static int Amount(TeamData team, string trigger, string effect) => (int)Math.Clamp(Owned(team, trigger).Where(d => d.Effect == effect).Sum(d => (long)d.Amount), 0, int.MaxValue / 4);
     internal static string Surface(TeamData home, TeamData away)
     {
         CustomRewardDefinition selected = null; long priority = long.MinValue;

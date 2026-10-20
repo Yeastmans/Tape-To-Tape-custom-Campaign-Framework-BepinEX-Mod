@@ -1,5 +1,17 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 19 - 2026-10-19
+
+- **No arbitrary number limits** for custom talents and relics. Amounts, activations, stacks, recipient counts, radius and durations are open-ended, with Unlimited options for activations and stacks. Only real limits remain (non-zero/positive values where needed, 1-100% chances, native levels). The game runtime bounds a few values that could stall or overflow it (sizes, puck-bag length, timer rate, puck speed, 9,999 extra goals per goal).
+- **Opposing targets everywhere**: effects that can reach your players can also target the opposing team, random opponents, the closest opponent, the opposing puck carrier, nearby opponents or the other player in the event. Timed stat changes, statuses, While-conditions, AI, capability and centred effects all resolve on opponents. Combinations that cannot work are listed with a reason.
+- **New Extra goals effect**: each goal counts as N+1 goals through the game's own per-goal scoring (score, scorer, assists, stats), reversed by goal denials; works for items owned by opponents.
+- **New triggers** from a full base-game coverage audit: Goalie save, Team first goal value, Final 30/60 seconds goal value, Injured by an opponent, Any skater injured.
+
+Validation: 1,131 creator, 96 mechanic and 262 runtime technical checks pass on game build 26067234. Gameplay validation is pending; the extra-goal native hook has not yet run in a live match.
+
+Save and close Studio and the game before installing.
+
+
 ## Beta 1.0 revision 18 - 2026-10-19
 
 - Fixes Copy vanilla campaign failing when local dumps contain custom rewards such as Rally Towels.

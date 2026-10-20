@@ -17,7 +17,7 @@ internal static class CustomRewardSoccerWall
 {
     private sealed class Wall { internal Team Team; internal SoccerWallController Controller; internal SoccerWall Payload; }
     private static readonly Dictionary<IntPtr, Wall> walls = new();
-    private static bool Owned(Team team) => CustomRewardCampaignRules.Owned(team?._teamData, "Match setup").Any(r => r.Effect == CustomRewardEffects.SoccerWall);
+    private static bool Owned(Team team) => CustomRewardCampaignRules.Applying(team, "Match setup", CustomRewardEffects.SoccerWall).Any();
     internal static void Setup(Team team)
     {
         if (team?._teamData == null || walls.ContainsKey(team.Pointer) || team.HaveRelic<SoccerWall>() || !Owned(team)) return;

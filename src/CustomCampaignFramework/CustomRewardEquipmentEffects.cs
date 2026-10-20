@@ -53,7 +53,7 @@ internal static class CustomRewardEquipmentEffects
         }
         var reserves = new Dictionary<string, int>();
         foreach (var rule in rules) if (rule.Effect == CustomRewardEffects.ExtraSticks) {
-            reserves.TryGetValue(rule.Id, out int count); reserves[rule.Id] = count + rule.Amount;
+            reserves.TryGetValue(rule.Id, out int count); reserves[rule.Id] = (int)Math.Min(int.MaxValue / 4, (long)count + rule.Amount); // summed native stick counts must not overflow
         }
         foreach (var id in state.Reserves.Keys.Where(id => !reserves.ContainsKey(id)).ToArray()) {
             forward.RemoveStickCountContributor(Source + id); state.Reserves.Remove(id);

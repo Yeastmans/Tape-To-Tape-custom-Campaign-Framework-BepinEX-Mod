@@ -27,12 +27,14 @@ internal sealed class CustomRewardCreator : UserControl
     private readonly ComboBox trigger = Choice(CustomRewardDefinition.Triggers);
     private readonly ComboBox stat = Choice(CustomRewardDefinition.Stats);
     private readonly ComboBox effect = Choice(CustomRewardEffects.All.Select(e => e.Name));
-    private readonly NumericUpDown radius = Number(1, 30, 5);
+    // Authored values have no arbitrary ceiling; the shared validator keeps
+    // only sign, chance and native-level limits.
+    private readonly NumericUpDown radius = Number(1, int.MaxValue, 5);
     private readonly NumericUpDown chance = Number(1, 100, 100);
-    private readonly NumericUpDown targetCount = Number(1, 10, 1);
-    private readonly NumericUpDown normalPucks = Number(0, 999, 9), doublePucks = Number(0, 999, 2), triplePucks = Number(0, 999, 1);
-    private readonly NumericUpDown shotDelay = Number(0, 10000, 560);
-    private readonly NumericUpDown intervalMax = new() { Minimum = .05m, Maximum = 3600, Value = 6, Increment = .05m, FormatString = "0.##", HorizontalAlignment = HorizontalAlignment.Stretch };
+    private readonly NumericUpDown targetCount = Number(1, int.MaxValue, 1);
+    private readonly NumericUpDown normalPucks = Number(0, int.MaxValue, 9), doublePucks = Number(0, int.MaxValue, 2), triplePucks = Number(0, int.MaxValue, 1);
+    private readonly NumericUpDown shotDelay = Number(0, int.MaxValue, 560);
+    private readonly NumericUpDown intervalMax = new() { Minimum = .01m, Maximum = MaxSeconds, Value = 6, Increment = .05m, FormatString = "0.##", HorizontalAlignment = HorizontalAlignment.Stretch };
     private Control intervalMaxField = null!;
     private string previousTrigger = "";
     private Control shotDelayField = null!;
@@ -41,8 +43,12 @@ internal sealed class CustomRewardCreator : UserControl
     private readonly ComboBox duration = Choice(CustomRewardDefinition.Durations);
     private readonly ComboBox amountBasis = Choice(CustomRewardDefinition.AmountBases);
     private readonly ComboBox resetOn = Choice(new[] { "Never" });
-    private readonly NumericUpDown amount = Number(-999, 999, 10), threshold = Number(1, 999, 1), activations = Number(1, 999, 1), stacks = Number(1, 999, 99);
-    private readonly NumericUpDown seconds = new() { Minimum = .05m, Maximum = 3600, Value = 15, Increment = .05m, FormatString = "0.##", HorizontalAlignment = HorizontalAlignment.Stretch };
+    private readonly NumericUpDown amount = Number(int.MinValue, int.MaxValue, 10), threshold = Number(1, int.MaxValue, 1), activations = Number(1, int.MaxValue, 1), stacks = Number(1, int.MaxValue, 99);
+    private readonly CheckBox unlimitedActivations = new() { Name = "CustomRewardUnlimitedActivations", Content = "Unlimited" }, unlimitedStacks = new() { Name = "CustomRewardUnlimitedStacks", Content = "Unlimited" };
+    // Seconds are stored as a float; this is the largest decimal it can show.
+    private static readonly decimal MaxSeconds = 1000000000000m;
+    private static decimal Seconds(float value) => value >= (float)MaxSeconds ? MaxSeconds : value <= .01f ? .01m : (decimal)value;
+    private readonly NumericUpDown seconds = new() { Minimum = .01m, Maximum = MaxSeconds, Value = 15, Increment = .05m, FormatString = "0.##", HorizontalAlignment = HorizontalAlignment.Stretch };
     private readonly ContentControl icon = new();
     private readonly TextBlock rules = new() { Name = "CustomRewardRules", TextWrapping = TextWrapping.Wrap };
     private readonly TextBlock status = new() { Name = "CustomRewardStatus", TextWrapping = TextWrapping.Wrap };
@@ -111,8 +117,8 @@ internal sealed class CustomRewardCreator : UserControl
         normal.Children.Add(basisField = Field("Calculate the attribute bonus", amountBasis));
         conditional.Children.Add(Field("Chance each time the event threshold is reached (%)", chance));
         shotDelayField = Field("Shot warning delay (milliseconds)", shotDelay); normal.Children.Add(shotDelayField);
-        conditional.Children.Add(Pair(Field("Events per activation", threshold), Field("Activations per player per match", activations)));
-        conditional.Children.Add(Pair(stacksField = Field("Maximum active stacks", stacks), durationField = Field("How long the stat change lasts", duration)));
+        conditional.Children.Add(Pair(Field("Events per activation", threshold), Field("Activations per player per match", new StackPanel { Spacing = 4, Children = { activations, unlimitedActivations } })));
+        conditional.Children.Add(Pair(stacksField = Field("Maximum active stacks", new StackPanel { Spacing = 4, Children = { stacks, unlimitedStacks } }), durationField = Field("How long the stat change lasts", duration)));
         conditional.Children.Add(resetField = Field("Clear this item's earned bonus on", resetOn));
         normal.Children.Add(conditional);
         // Charge limits and automatic-shot intervals are continuous-effect
@@ -133,6 +139,7 @@ internal sealed class CustomRewardCreator : UserControl
         title.TextChanged += (_, _) => Changed(); description.TextChanged += (_, _) => Changed();
         foreach (var box in new[] { kind, trigger, effect, stat, target, duration, resetOn, amountBasis }) box.SelectionChanged += (_, _) => Changed();
         foreach (var number in new[] { amount, threshold, activations, stacks, seconds, radius, targetCount, chance, normalPucks, doublePucks, triplePucks, shotDelay, intervalMax }) number.ValueChanged += (_, _) => Changed();
+        foreach (var box in new[] { unlimitedActivations, unlimitedStacks }) box.IsCheckedChanged += (_, _) => Changed();
         search.TextChanged += (_, _) => RefreshLibrary(); filter.SelectionChanged += (_, _) => RefreshLibrary(); filter.SelectedIndex = 0;
         owner.Closed += (_, _) => {
             if (icon.Content is Image { Source: IDisposable image }) image.Dispose();
@@ -153,7 +160,7 @@ internal sealed class CustomRewardCreator : UserControl
         return new CustomRewardDefinition { Id = draft.Id, Name = title.Text?.Trim() ?? "", Kind = Text(kind), Description = description.Text?.Trim() ?? "",
             NormalPucks = N(normalPucks), DoublePucks = N(doublePucks), TriplePucks = N(triplePucks),
             Trigger = Text(trigger), Effect = Text(effect), AmountBasis = Text(amountBasis), ResetOn = Text(resetOn) == "Never" ? "" : Text(resetOn), Radius = N(radius), TargetCount = N(targetCount), Stat = Text(stat), Target = Text(target), Duration = Text(duration), Amount = N(amount), Threshold = N(threshold),
-            IntervalMaxSeconds = (float)(intervalMax.Value ?? 0), ShotDelayMilliseconds = N(shotDelay), Chance = N(chance), ActivationsPerMatch = N(activations), MaxStacks = N(stacks), Seconds = (float)(seconds.Value ?? 0), UsesNamedIcon = png == null, NeedsRedesign = draft.NeedsRedesign };
+            IntervalMaxSeconds = (float)(intervalMax.Value ?? 0), ShotDelayMilliseconds = N(shotDelay), Chance = N(chance), ActivationsPerMatch = unlimitedActivations.IsChecked == true ? CustomRewardDefinition.Unlimited : N(activations), MaxStacks = unlimitedStacks.IsChecked == true ? CustomRewardDefinition.Unlimited : N(stacks), Seconds = (float)(seconds.Value ?? 0), UsesNamedIcon = png == null, NeedsRedesign = draft.NeedsRedesign };
     }
     private void Changed()
     {
@@ -177,7 +184,8 @@ internal sealed class CustomRewardCreator : UserControl
         ownershipHelp.Text += " Effects are limited to this kind's native behaviors.";
         triggerHelp.Text = "Base-game example: " + CustomRewardTriggers.Help(d.Trigger);
         effectHelp.Text = CustomRewardEffects.Help(d.Effect);
-        ((TextBlock)((StackPanel)activations.Parent!).Children[0]).Text = CustomRewardTriggers.IsCampaignEvent(d.Trigger) ? "Activations per team per run" : d.IsRelic && CustomRewardTriggers.IsOpponentAction(d.Trigger) ? "Activations per team per match" : "Activations per player per match";
+        activations.IsEnabled = unlimitedActivations.IsChecked != true; stacks.IsEnabled = unlimitedStacks.IsChecked != true;
+        ((TextBlock)((StackPanel)activations.Parent!.Parent!).Children[0]).Text = CustomRewardTriggers.IsCampaignEvent(d.Trigger) ? "Activations per team per run" : d.IsRelic && CustomRewardTriggers.IsOpponentAction(d.Trigger) ? "Activations per team per match" : "Activations per player per match";
         bool completion = CustomRewardTriggers.IsCompletion(d.Trigger), statsEffect = d.Effect == CustomRewardEffects.StatChange;
         duration.IsEnabled = !completion;
         conditional.IsVisible = !CustomRewardTriggers.IsCondition(d.Trigger) && !CustomRewardTriggers.IsQuery(d.Trigger);
@@ -271,7 +279,8 @@ internal sealed class CustomRewardCreator : UserControl
         normalPucks.Value = d.NormalPucks; doublePucks.Value = d.DoublePucks; triplePucks.Value = d.TriplePucks;
         target.ItemsSource = CustomRewardEffects.Targets(d.Kind, d.Trigger, d.Effect).ToArray(); target.SelectedItem = d.Target;
         stat.ItemsSource = CustomRewardEffects.EffectStats(d.Kind, d.Target, d.Trigger, d.Effect).ToArray(); stat.SelectedItem = d.Stat; duration.SelectedItem = d.Duration; radius.Value = d.Radius;
-        intervalMax.Value = (decimal)d.IntervalMaxSeconds; shotDelay.Value = d.ShotDelayMilliseconds; amount.Value = d.Amount; threshold.Value = d.Threshold; activations.Value = d.ActivationsPerMatch; stacks.Value = d.MaxStacks; seconds.Value = (decimal)d.Seconds;
+        intervalMax.Value = Seconds(d.IntervalMaxSeconds); shotDelay.Value = d.ShotDelayMilliseconds; amount.Value = d.Amount; threshold.Value = d.Threshold; activations.Value = CustomRewardDefinition.IsUnlimited(d.ActivationsPerMatch) ? 1 : d.ActivationsPerMatch; stacks.Value = CustomRewardDefinition.IsUnlimited(d.MaxStacks) ? 99 : d.MaxStacks; seconds.Value = Seconds(d.Seconds);
+        unlimitedActivations.IsChecked = CustomRewardDefinition.IsUnlimited(d.ActivationsPerMatch); unlimitedStacks.IsChecked = CustomRewardDefinition.IsUnlimited(d.MaxStacks);
         png = !d.UsesNamedIcon && d.IconPng.Length > 0 ? Convert.FromBase64String(d.IconPng) : null;
         loading = false; HasChanges = false; status.Text = ""; RefreshPreview();
     }

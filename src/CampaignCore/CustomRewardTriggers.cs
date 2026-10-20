@@ -91,6 +91,9 @@ public static class CustomRewardTriggers
         new("First goal value calculation", "", "Remarkable Rock. The first goal of the match, before either score changes.", "GameStats.OnGoalScored / team scores"),
         new("Final 20 seconds goal value calculation", "", "Buzzer Beater's period-clock rule. The native clock must have 20 seconds or less remaining.", "GameStats.OnGoalScored / TimeRemaining.GetRemainingTime"),
         new("Final 45 seconds goal value calculation", "", "Buzzer Beater's timer rule. The native clock must have 45 seconds or less remaining.", "GameStats.OnGoalScored / TimeRemaining.GetRemainingTime"),
+        new("Final 30 seconds goal value calculation", "", "Buzzer Beater+ period-clock rule. The native clock must have 30 seconds or less remaining.", "GameStats.OnGoalScored / TimeRemaining.GetRemainingTime"),
+        new("Final 60 seconds goal value calculation", "", "Buzzer Beater+ timer rule. The native clock must have 60 seconds or less remaining.", "GameStats.OnGoalScored / TimeRemaining.GetRemainingTime"),
+        new("Team first goal value calculation", "", "Remarkable Rock+. The scoring team's first goal of the match, even when the opponent has already scored.", "GameStats.OnGoalScored / team score"),
                 new("Slapshot power calculation", "", "Slap Chot 4000. Changes the attribute used to calculate this slapshot's speed, before launch.", "ForwardStats.GetSlapShotPower"),
         new("Wrist-shot power calculation", "", "Slap Chot 4000's separate wrist-shot component. Changes this shot before launch.", "ForwardStats.GetWristShotPower"),
         new("Slapshot crit calculation", "", "Native critical-shot selection for a slapshot; changes this shot's chance before the roll.", "CriticalShot.GetCriticalOdds(Slapshot)"),
@@ -141,6 +144,8 @@ public static class CustomRewardTriggers
         new("Enraged", "becomes enraged", "Infrared Marker.", "EnragedTriggered"),
         new("Injury received", "receives an injury", "Masochist and injury-related relics.", "ForwardReceivedInjury"),
         new("Injury caused", "injures an opponent", "Mortar and Pestle, Foiled and Double Yolk.", "ForwardCausedInjury"),
+        new("Injured by an opponent", "is injured by an opponent", "Foiled. The opponent who caused the injury is the other player in the event.", "ForwardCausedInjury.injuredBy"),
+        new("Any skater injured", "sees a skater on either team injured", "Injured Clock. Any new on-ice injury on either team; a relic responds once per injury.", "ForwardReceivedInjury"),
         new("Blue line crossed", "crosses a blue line", "Blue Line Boost and Blue Banana.", "ForwardPassedBlueLine"),
         new("Red line crossed", "crosses the red line", "Blue Line Boost+.", "ForwardPassedRedLine"),
         new("Fart", "farts", "Special Undies and Hockey Bag; puck-only farts have no skater recipient.", "RogueEvents.Fart"),
@@ -151,6 +156,7 @@ public static class CustomRewardTriggers
         new("Goalie faces shot on net", "faces a registered shot on net", "Cracked Mask. An opposing shot is registered on net; it need not have hit the goalie yet.", "ShotOnNetRegisteredEvent / opposing shooter"),
         new("Goalie observes shot on either net", "has a shot registered on either net", "Cracked Mask+. Either team's shot on net triggers the owning goalie's rule.", "ShotOnNetRegisteredEvent"),
         new("Goalie picks up puck", "picks up the puck", "Native goalie possession event.", "GoaliePickupPuck"),
+        new("Goalie save", "makes a successful save", "Goalie Dance and Rubbermade. This goalie's native save event with shouldFail=false; failed saves do not count.", "GameplayEvents.GoalieSaveAudio"),
         new("Goalie desperate save", "attempts a desperate save", "Native desperate-save event; this is an attempt, not proof that the puck was saved.", "DesperateSave"),
         new("Goalie pokecheck", "pokechecks a loose puck", "Native goalie loose-puck pokecheck.", "GoalieLoosePuckPokecheck"),
         new("Goalie blocker rebound", "rebounds the puck with their blocker", "Boom Blocker. Fires after the native blocker collision has resolved.", "Puck.TryGetScriptedGoalieRebound / OnCollisionEnter"),
@@ -227,7 +233,7 @@ public static class CustomRewardTriggers
     public static bool IsCampaignEvent(string name) => name == "Training chosen";
     public static bool IsCompletion(string name) => IsCampaignEvent(name) || name == "Match won by mercy" || name == "Match won" || name == "Match completed" || name == "Shutout" || name == "Scoreless match" || name == "Scoreless match with an assist" || name == "Match with a broken stick";
     public static bool IsOpponentAction(string name) => new[] { "Opponent shot", "Opponent slapshot", "Opponent pass", "Opponent ability used", "Opponent knocked out", "Opponent crosses blue line", "Opponent goal" }.Contains(name);
-    public static bool HasOtherPlayer(string name) => IsOpponentAction(name) || new[] { "Assist", "Goalie assist", "Check", "Checked", "Knockout", "Teammate knockout", "Knocked out", "Pokecheck", "Pokechecked", "Interception", "Pass intercepted", "Injury caused", "Goalie receives shot", "Pass sent", "Pass received" }.Contains(name);
+    public static bool HasOtherPlayer(string name) => IsOpponentAction(name) || new[] { "Assist", "Goalie assist", "Check", "Checked", "Knockout", "Teammate knockout", "Knocked out", "Pokecheck", "Pokechecked", "Interception", "Pass intercepted", "Injury caused", "Injured by an opponent", "Goalie receives shot", "Pass sent", "Pass received" }.Contains(name);
     public static bool HasPuckFlow(string name) => HasShotFlow(name) || new[] { "Opponent pass", "Pass sent", "Goalie blocker rebound", "Goalie glove rebound", "Shot rebounds off goalie" }.Contains(name);
     public static bool HasShotFlow(string name) => new[] { "Opponent shot", "Opponent slapshot", "Bat", "Shot", "Slapshot", "Wrist shot", "One-timer", "Critical shot", "Non-critical shot" }.Contains(name);
     public static bool IsGoalieEvent(string name) => name.StartsWith("Goalie ", StringComparison.Ordinal) || name == "Shutout" || name == "Goal conceded";
@@ -243,7 +249,7 @@ public static class CustomRewardTriggers
     private static bool GoalieTrigger(string trigger) => new[] { "Goalie faces shot on net", "Goalie observes shot on either net", "Opponent breakaway", "Period started", "Last 30 seconds of period", "Last 45 seconds of period" }.Contains(trigger)
         || CommonGoalieTrigger(trigger);
     private static bool CommonGoalieTrigger(string trigger) =>
-        new[] { "While owned", "While holding puck", "While without puck", "While enraged", "While score tied", "While leading", "While trailing", "While opponent has puck", "While team has puck", "While in period 1", "While in period 2", "While in period 3", "Goalie receives shot", "Goalie picks up puck", "Goalie desperate save", "Goalie pokecheck", "Goalie blocker rebound", "Goalie glove rebound", "Goalie assist", "Goal conceded", "Shutout", "Pass sent", "Ability used", "Enraged", "Match started", "Match completed", "Match won", "Match rewards", "Reward selection", "Map event choices" }.Contains(trigger);
+        new[] { "While owned", "While holding puck", "While without puck", "While enraged", "While score tied", "While leading", "While trailing", "While opponent has puck", "While team has puck", "While in period 1", "While in period 2", "While in period 3", "Goalie receives shot", "Goalie save", "Goalie picks up puck", "Goalie desperate save", "Goalie pokecheck", "Goalie blocker rebound", "Goalie glove rebound", "Goalie assist", "Goal conceded", "Shutout", "Pass sent", "Ability used", "Enraged", "Match started", "Match completed", "Match won", "Match rewards", "Reward selection", "Map event choices" }.Contains(trigger);
     public static string Help(string name) => All.FirstOrDefault(t => t.Name == name)?.Example ?? "";
     public static string Action(string name, int count) {
         var entry = All.FirstOrDefault(t => t.Name == name) ?? throw new ArgumentException("Unknown trigger: " + name);

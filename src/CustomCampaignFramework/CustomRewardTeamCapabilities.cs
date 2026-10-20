@@ -35,7 +35,9 @@ internal static class CustomRewardTeamCapabilities
             }
         }
         if (native != 0 || team == IntPtr.Zero || !CustomRewardRuntime.InMatch || resolving || !liveEffects.TryGetValue(method, out var effect)) return native;
-        return Owns(new Team(team)._teamData, effect) ? (byte)1 : native;
+        var live = new Team(team);
+        // An opposing team's relic aimed at Opposing team grants this whole-team rule here.
+        return Owns(live._teamData, effect) || live.otherTeam?._teamData != null && Owns(live.otherTeam._teamData, effect, opposing: true) ? (byte)1 : native;
     }
     private static byte Data(IntPtr team, IntPtr method) {
         byte native = dataOriginal(team, method);
@@ -61,7 +63,7 @@ internal static class CustomRewardTeamCapabilities
                 && !CustomRewardLifecycle.Rule(relic.id, CustomRewardEffects.BenchCapacity, out _)) return native;
         return 0;
     }
-    private static bool Owns(TeamData team, string effect)
+    private static bool Owns(TeamData team, string effect, bool opposing = false)
     {
         try {
             resolving = true; CustomRewardRuntime.EnsureAssets();
@@ -69,7 +71,8 @@ internal static class CustomRewardTeamCapabilities
             for (int i = 0; relics != null && i < relics.Count; i++) {
                 var relic = relics[i];
                 if (relic != null && CustomRewardRuntime.Definitions.TryGetValue(relic.id, out var d)
-                    && d.IsRelic && !d.NeedsRedesign && d.Effect == effect) return true;
+                    && d.IsRelic && !d.NeedsRedesign && d.Effect == effect
+                    && (!CustomRewardEffects.IsTeamLevel(effect) || (d.Target == CustomRewardEffects.OpposingTeam) == opposing)) return true;
             }
             return false;
         } catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Native team conversion query: " + ex); return false; }

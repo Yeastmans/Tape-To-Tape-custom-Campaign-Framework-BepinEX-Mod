@@ -171,6 +171,7 @@ public static partial class CustomRewardEffects
         [RandomMatchAbility] = (NativeKind.Talent | NativeKind.Relic, "RandomAbility; GainRandomAbilityRelic."),
         [DenyGoal] = (NativeKind.Talent | NativeKind.Relic, "NoGoalTalent/Padlock; GoalDenier/StopWatch denial component."),
         [ExtraGoal] = (NativeKind.Talent | NativeKind.Relic, "GoldenPuck; BloodBonus/EnrageBonus/Pizzaghetti/FirstBlood scoring component."),
+        [ExtraGoals] = (NativeKind.Talent | NativeKind.Relic, "GoldenPuck scoring branch repeating native AddGoal; BloodBonus's native multi-goal loop."),
         [StatChange] = (NativeKind.All, "Attribute talents; Benchwarmer previous-match bench qualification; Fusilli threshold; PitilessTimer mercy-win component; Zoomer/HitStreak previous-match counts; Chaos attribute components; Shutout/GoalieAssist; TailWind; FireCracker; ShellFish; StatPerTalent; BoringTalent; StatPadder; Liquidation separate saved-count payoff; Trenchcoat; FirstPeriodFever; FatShrimp; SpecialHelmetOvrRelic; LaserPointer; Halo; TrainingWhistle; CornDog; Cripple; BothTeamCrit; ShrinkSerumOpponent."),
         [PassUninterceptable] = (NativeKind.Talent | NativeKind.Relic, "FlawlessFeeder; InvisibleThread."),
         [GoalieHeadshot] = (NativeKind.Goalie, "GoalieHeadShot."),

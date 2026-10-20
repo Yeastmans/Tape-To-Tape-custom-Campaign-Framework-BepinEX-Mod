@@ -12,18 +12,21 @@ internal static class CustomRewardAttraction
     private sealed class State
     {
         internal Forward Skater;
+        internal Skater Owner;
         internal CustomRewardDefinition Rule;
         internal PuckAttractor Attractor;
     }
     private static readonly Dictionary<string, State> active = new();
-    internal static bool Apply(CustomRewardDefinition rule, Skater source)
+    // The puck is steered toward the recipient; ownership is checked on the
+    // owning skater, which differs when an opposing skater is the target.
+    internal static bool Apply(CustomRewardDefinition rule, Skater owner, Skater recipient)
     {
-        var forward = source?.TryCast<Forward>();
-        if (forward == null || !CustomRewardRuntime.InMatch) return false;
-        string key = rule.Id + "|" + forward.Pointer;
+        var forward = recipient?.TryCast<Forward>();
+        if (forward == null || owner?._skaterData == null || !CustomRewardRuntime.InMatch) return false;
+        string key = rule.Id + "|" + owner.Pointer + "|" + forward.Pointer;
         if (!active.TryGetValue(key, out var state)) {
             var attractor = new PuckAttractor(); attractor.Initialize();
-            state = new State { Skater = forward, Rule = rule, Attractor = attractor };
+            state = new State { Skater = forward, Owner = owner, Rule = rule, Attractor = attractor };
             active.Add(key, state);
         }
         if (!state.Attractor.CanAttract(forward, rule.Radius)) return false;
@@ -34,7 +37,7 @@ internal static class CustomRewardAttraction
     {
         CustomRewardLooseAttraction.Tick(skater?.TryCast<Forward>());
         foreach (var pair in active.Where(p => p.Value.Skater == skater).ToArray()) {
-            var state = pair.Value; var source = state.Skater;
+            var state = pair.Value; var source = state.Owner;
             bool owned = source != null && source.ArePowerUpsEnabled() && CustomRewardRuntime.Has(source._skaterData, state.Rule.Id)
                 && source._skaterData.powerups.HasMatch(t => t != null && t.id == state.Rule.Id && !t.PayoffSuppressed);
             if (CustomRewardRuntime.InMatch && owned) state.Attractor.Update();

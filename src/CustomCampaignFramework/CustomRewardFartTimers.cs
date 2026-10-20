@@ -28,7 +28,7 @@ internal static class CustomRewardFartTimers
         var template = Resources.FindObjectsOfTypeAll<FartingPuck>().FirstOrDefault(t => t != null && !CustomRewardRuntime.IsCustom(t.id));
         if (template == null) return null;
         var relic = Object.Instantiate(template);
-        relic.fartInterval = d.Seconds; relic.forceFactor = d.Amount / 100f;
+        relic.fartInterval = Math.Max(.02f, d.Seconds); // one physics step: native timers cannot fire faster, and tiny intervals would spin catch-up relic.forceFactor = d.Amount / 100f;
         relic.maxRangeFactor = d.Radius / (d.Effect == CustomRewardEffects.PushSkaters ? 4.5f : 7f);
         return relic;
     }
@@ -65,7 +65,7 @@ internal static class CustomRewardFartTimers
         }
     }
     private static void SetInterval(Timer timer)
-        => timer.Native._timeBetweenFart = UnityEngine.Random.Range(timer.Rule.Seconds, timer.Rule.IntervalMaxSeconds);
+        => timer.Native._timeBetweenFart = UnityEngine.Random.Range(Math.Max(.02f, timer.Rule.Seconds), Math.Max(.02f, timer.Rule.IntervalMaxSeconds));
     internal static void ResetInterval(DiarrheaAI native)
     {
         var timer = timers.Values.FirstOrDefault(t => t.Native?.Pointer == native.Pointer);

@@ -43,13 +43,15 @@ internal static class CustomRewardInjuryRules
         if (CustomRewardRuntime.InMatch) foreach (var candidate in new[] { GameManager.HomeTeam?._teamData, GameManager.VisitorTeam?._teamData })
             if (candidate?.GetAllSkaters().HasMatch(s => s?.id == player.id) == true) { team = candidate; break; }
         bool inTeam = team?.GetAllSkaters().HasMatch(s => s?.id == player.id) == true;
-        int adjustment = 0;
+        long adjustment = 0;
         foreach (var d in CustomRewardRuntime.Definitions.Values) {
             if (d.NeedsRedesign || d.Trigger != "New injury" || d.Effect != CustomRewardEffects.InjuryHealing) continue;
             if (d.Target == CustomRewardEffects.Actor) { if (Owns(player, d.Id)) adjustment += d.Amount; }
             else if (inTeam) foreach (var source in team.GetAllSkaters()) if (Owns(source, d.Id)) adjustment += d.Amount;
         }
-        return adjustment;
+        // Healing time is an int game count; keep the sum and the native
+        // addition inside int range.
+        return (int)Math.Clamp(adjustment, -100000, 100000);
     }
     internal static bool Prevents(ForwardData player, TeamData team, InjuryType? type)
     {
@@ -57,11 +59,23 @@ internal static class CustomRewardInjuryRules
         CustomRewardRuntime.EnsureAssets();
         foreach (var d in CustomRewardRuntime.Definitions.Values) {
             if (d.NeedsRedesign || d.Trigger != "Injury attempted" || !Covers(d.Effect, type)) continue;
+            if (d.Target == CustomRewardEffects.OpposingTeam) {
+                // Only a live match has an opposing team; campaign events have none.
+                var opposing = Opposing(team);
+                if (opposing != null && (d.IsRelic ? CustomRewardRuntime.Has(opposing, d.Id) : opposing.GetAllSkaters().HasMatch(s => Owns(s, d.Id)))) return true;
+                continue;
+            }
             if (d.IsRelic) { if (CustomRewardRuntime.Has(team, d.Id)) return true; }
             else if (d.Target == CustomRewardEffects.Actor) { if (Owns(player, d.Id)) return true; }
             else if (team != null && team.GetAllSkaters().HasMatch(s => Owns(s, d.Id))) return true;
         }
         return false;
+    }
+    private static TeamData Opposing(TeamData team)
+    {
+        if (!CustomRewardRuntime.InMatch || team == null) return null;
+        var home = GameManager.HomeTeam?._teamData; var away = GameManager.VisitorTeam?._teamData;
+        return home?.id == team.id ? away : away?.id == team.id ? home : null;
     }
     private static bool Owns(SkaterData player, string id) => CustomRewardRuntime.Has(player, id)
         && player.powerups.HasMatch(t => t != null && t.id == id && !t.PayoffSuppressed);

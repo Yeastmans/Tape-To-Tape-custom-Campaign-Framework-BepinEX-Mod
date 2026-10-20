@@ -90,7 +90,7 @@ internal static class CustomRewardReferees
         }
         if (size.Rule != null) {
             state.ChangedSize = true;
-            referee._forward._forwardData.SetSizeEffect(state.SizeSource, size.Rule.Amount); referee._forward.SetSize();
+            referee._forward._forwardData.SetSizeEffect(state.SizeSource, Math.Clamp(size.Rule.Amount, -5, 5)); referee._forward.SetSize();
         }
     }
     internal static void Refresh()

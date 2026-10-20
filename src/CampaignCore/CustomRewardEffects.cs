@@ -112,11 +112,86 @@ public static partial class CustomRewardEffects
     }
     public static bool IsShotFlight(string effect) => effect == PuckGoalieGhost || effect == PuckGhost || effect == PuckCurve || effect == PuckSlow || effect == PuckSpin || IsImpactShot(effect);
     public static bool IsPuck(string effect) => effect == FlatPuck || effect == PuckSpeed || effect == PuckLift || IsShotFlight(effect);
-    public static bool HasAmount(string effect) => effect == BlueLineLaunch || effect == KnockoutDuration || effect == ParticipationBonus || effect == OpeningInjuries || effect == CyclicInjuries || effect == PuckInjuries || effect == VoodooAttribute || IsTemperature(effect) || effect == OpeningCriticals || effect == ReboundCriticals || effect == HealedInjuryBonus || IsTransferHelmet(effect) || effect == RandomMatchAttribute || effect == CenterDefenderChecks || effect == PickupAttribute || effect == BossAttribute || effect == BossSize || effect == FartForce || effect == FartRange || IsCategoryGrant(effect) || effect == AlternateOverall || effect == RetainPowers || effect == SpikedInjury || effect == RandomAutoShot || effect == PlayedMatchContract || effect == ChargePower || effect == ChargeAccuracy || effect == ManualGoalDenial || effect == TrainingMultiplier || effect == ExtraCoachPicks || effect == RandomShotPower || effect == RandomShotAccuracy || effect == BoardBounce || effect == EnragedDuration || effect == HelmetMultiplier || effect == LockAttribute || effect == TurningDelay || effect == RefereeSize || effect == DenyGoal || effect == BenchMultiplier || IsUpgrade(effect) || ScalingConditionEffects.Contains(effect) || effect == InjuryMultiplier || effect == InjuryHealing || effect == GoalieHeadshot || effect == StatChange || effect == ShotRecoil || effect == Boost || effect == ClockTime || effect == TalentRewards || effect == RelicRewards || effect == Rerolls || effect == GoalieFetchSpeed || effect == ExtraSticks || effect == NetWidth || effect == NetHeight || effect == AttractPuck || IsShockwave(effect) || IsPuck(effect) && effect != PuckGhost && effect != PuckGoalieGhost && effect != FlatPuck && !IsImpactShot(effect);
+    public static bool HasAmount(string effect) => effect == BlueLineLaunch || effect == ExtraGoals || effect == KnockoutDuration || effect == ParticipationBonus || effect == OpeningInjuries || effect == CyclicInjuries || effect == PuckInjuries || effect == VoodooAttribute || IsTemperature(effect) || effect == OpeningCriticals || effect == ReboundCriticals || effect == HealedInjuryBonus || IsTransferHelmet(effect) || effect == RandomMatchAttribute || effect == CenterDefenderChecks || effect == PickupAttribute || effect == BossAttribute || effect == BossSize || effect == FartForce || effect == FartRange || IsCategoryGrant(effect) || effect == AlternateOverall || effect == RetainPowers || effect == SpikedInjury || effect == RandomAutoShot || effect == PlayedMatchContract || effect == ChargePower || effect == ChargeAccuracy || effect == ManualGoalDenial || effect == TrainingMultiplier || effect == ExtraCoachPicks || effect == RandomShotPower || effect == RandomShotAccuracy || effect == BoardBounce || effect == EnragedDuration || effect == HelmetMultiplier || effect == LockAttribute || effect == TurningDelay || effect == RefereeSize || effect == DenyGoal || effect == BenchMultiplier || IsUpgrade(effect) || ScalingConditionEffects.Contains(effect) || effect == InjuryMultiplier || effect == InjuryHealing || effect == GoalieHeadshot || effect == StatChange || effect == ShotRecoil || effect == Boost || effect == ClockTime || effect == TalentRewards || effect == RelicRewards || effect == Rerolls || effect == GoalieFetchSpeed || effect == ExtraSticks || effect == NetWidth || effect == NetHeight || effect == AttractPuck || IsShockwave(effect) || IsPuck(effect) && effect != PuckGhost && effect != PuckGoalieGhost && effect != FlatPuck && !IsImpactShot(effect);
     public static bool HasRadius(string effect) => effect == OctopusAttacks || effect == EggExplosion || effect == SonicKnockouts || effect == LoosePuckAttraction || effect == BatKnockout || effect == ImpactExplosion || effect == Burst || effect == AttractPuck || IsShockwave(effect);
-    public static string AmountLabel(string effect) => effect == BlueLineLaunch ? "Native launch force" : effect == KnockoutDuration ? "Knockout duration (%)" : effect == ParticipationBonus ? "Overall bonus per qualifying win" : effect == OpeningInjuries ? "Opening knockouts" : effect == CyclicInjuries ? "Knockouts per injury cycle" : effect == PuckInjuries ? "Injury chance (%)" : effect == VoodooAttribute || IsTemperature(effect) ? "Overall magnitude" : effect == OpeningCriticals ? "Opening team shots" : effect == ReboundCriticals ? "Additional critical chance (%)" : effect == HealedInjuryBonus ? "Overall bonus per healed injury" : IsTransferHelmet(effect) ? "Attribute change while wearing this helmet" : effect == RandomMatchAttribute ? "Bonus per match roll" : effect == CenterDefenderChecks ? "Loaned Bonecrusher level" : effect == PickupAttribute || effect == BossAttribute ? "Permanent base attribute change" : effect == BossSize ? "Permanent native size steps" : effect == FartForce || effect == FartRange ? "Interaction strength (% of native)" : IsCategoryGrant(effect) ? "Granted talent level" : effect == AlternateOverall ? "Alternating Overall magnitude" : effect == RetainPowers ? "Powers retained per eligible benchwarmer" : effect == SpikedInjury ? "Outgoing injury chance (%)" : effect == RandomAutoShot ? "Automatic shot chance (%)" : effect == PlayedMatchContract ? "Played matches before departure" : effect == ChargePower || effect == ChargeAccuracy ? "Attribute bonus per charged second" : effect == ManualGoalDenial ? "Goal-reversal charges" : effect == TrainingMultiplier ? "Training rewards (% of normal)" : effect == ExtraCoachPicks ? "Additional Coach picks" : effect == RandomShotPower || effect == RandomShotAccuracy ? "Minimum random attribute value" : effect == BoardBounce ? "Strength (% of native speed)" : effect == EnragedDuration ? "Enraged duration (%)" : effect == HelmetMultiplier ? "Helmet effect multiplier" : effect == LockAttribute ? "Locked attribute value" : effect == RefereeSize ? "Size steps added / removed" : effect == DenyGoal ? "Chance to deny this goal (%)" : IsUpgrade(effect) ? "Number of different powers to upgrade" : ScalingConditionEffects.Contains(effect) || effect == InjuryMultiplier || effect == GoalieHeadshot || effect == BenchMultiplier ? "Multiplier (% of current value)" : effect == InjuryHealing ? "Recovery games added / removed" : effect == PuckSpeed ? "Puck speed (% of current speed)" : effect == PuckLift ? "Upward velocity (game units per second)"
+    public static string AmountLabel(string effect) => effect == BlueLineLaunch ? "Native launch force" : effect == ExtraGoals ? "Extra goals added to each goal" : effect == KnockoutDuration ? "Knockout duration (%)" : effect == ParticipationBonus ? "Overall bonus per qualifying win" : effect == OpeningInjuries ? "Opening knockouts" : effect == CyclicInjuries ? "Knockouts per injury cycle" : effect == PuckInjuries ? "Injury chance (%)" : effect == VoodooAttribute || IsTemperature(effect) ? "Overall magnitude" : effect == OpeningCriticals ? "Opening team shots" : effect == ReboundCriticals ? "Additional critical chance (%)" : effect == HealedInjuryBonus ? "Overall bonus per healed injury" : IsTransferHelmet(effect) ? "Attribute change while wearing this helmet" : effect == RandomMatchAttribute ? "Bonus per match roll" : effect == CenterDefenderChecks ? "Loaned Bonecrusher level" : effect == PickupAttribute || effect == BossAttribute ? "Permanent base attribute change" : effect == BossSize ? "Permanent native size steps" : effect == FartForce || effect == FartRange ? "Interaction strength (% of native)" : IsCategoryGrant(effect) ? "Granted talent level" : effect == AlternateOverall ? "Alternating Overall magnitude" : effect == RetainPowers ? "Powers retained per eligible benchwarmer" : effect == SpikedInjury ? "Outgoing injury chance (%)" : effect == RandomAutoShot ? "Automatic shot chance (%)" : effect == PlayedMatchContract ? "Played matches before departure" : effect == ChargePower || effect == ChargeAccuracy ? "Attribute bonus per charged second" : effect == ManualGoalDenial ? "Goal-reversal charges" : effect == TrainingMultiplier ? "Training rewards (% of normal)" : effect == ExtraCoachPicks ? "Additional Coach picks" : effect == RandomShotPower || effect == RandomShotAccuracy ? "Minimum random attribute value" : effect == BoardBounce ? "Strength (% of native speed)" : effect == EnragedDuration ? "Enraged duration (%)" : effect == HelmetMultiplier ? "Helmet effect multiplier" : effect == LockAttribute ? "Locked attribute value" : effect == RefereeSize ? "Size steps added / removed" : effect == DenyGoal ? "Chance to deny this goal (%)" : IsUpgrade(effect) ? "Number of different powers to upgrade" : ScalingConditionEffects.Contains(effect) || effect == InjuryMultiplier || effect == GoalieHeadshot || effect == BenchMultiplier ? "Multiplier (% of current value)" : effect == InjuryHealing ? "Recovery games added / removed" : effect == PuckSpeed ? "Puck speed (% of current speed)" : effect == PuckLift ? "Upward velocity (game units per second)"
         : effect == TurningDelay ? "Milliseconds added to turning" : effect == NetWidth || effect == NetHeight ? "Size (% of original dimension)" : IsShotFlight(effect) || IsShockwave(effect) || effect == GoalieFetchSpeed || effect == AttractPuck ? "Strength (% of native base effect)" : effect == ExtraSticks ? "Additional reserve sticks" : (effect == Boost || effect == ShotRecoil) ? "Boost force" : effect == ClockTime ? "Seconds added to the clock" : IsQueryEffect(effect) ? "Extra rewards / rerolls" : "Stat change";
+    // Your-side player recipients and their opposing equivalents. Every effect
+    // that can reach your players also offers each opposing recipient unless
+    // OpposingExclusion records why that combination cannot work.
+    public static readonly string[] OwnSidePlayerTargets = { Actor, Team, RandomAllies, OtherTeammates };
+    public static readonly string[] OpposingPlayerTargets = { OpposingTeam, RandomOpponents, ClosestOpponent, OpponentCarrier, Nearby, Opponent };
+    // Individually selected skaters, as opposed to a whole team or the actor.
+    public static bool IsSkaterSelection(string target) => target == RandomAllies || target == RandomOpponents || target == ClosestOpponent || target == OpponentCarrier || target == Nearby;
+    public static bool IsOpposingSide(string target) => target == OpposingTeam || target == RandomOpponents || target == ClosestOpponent || target == OpponentCarrier || target == Nearby;
     public static IEnumerable<string> Targets(string kind, string trigger, string effect)
+    {
+        var targets = BaseTargets(kind, trigger, effect).ToList();
+        if (!targets.Any(t => OwnSidePlayerTargets.Contains(t))) return targets;
+        foreach (string target in OpposingPlayerTargets)
+            if (!targets.Contains(target) && (target != Opponent || CustomRewardTriggers.HasOtherPlayer(trigger))
+                && OpposingExclusion(kind, trigger, effect, target) == null) targets.Add(target);
+        return targets;
+    }
+    public const string NoOpponentOnMap = "Training is chosen on the campaign map, where no opposing team exists.";
+    public const string AfterMatchEnds = "It is applied after the match ends; that opponent is gone and later opponents are different teams.";
+    public const string CampaignRoster = "It changes your saved campaign roster, rewards or map choices; opposing skaters are not part of the saved run.";
+    public const string OwnerComponent = "Not supported yet: the native component behind it is attached to the owning skater or team, so the game only runs it for its owner.";
+    public const string RunLongGrant = "A run-long talent grant writes to your saved roster; opposing skaters are not part of the saved run. Use Random ability for this match instead.";
+    public const string RecoilOnly = "Recoil is the shooter's reaction to their own shot; other skaters did not shoot. Use Skating boost to push them.";
+    public const string OwnDeflection = "It lobs the puck this skater just deflected; other skaters did not deflect it.";
+    public const string OwnBoardContact = "It bounces this skater off the board it just hit; other skaters did not hit the boards.";
+    public const string HumanDisplay = "It is a scoreboard display for the human-controlled owner; CPU opponents have no display.";
+    public const string HumanInput = "It offers a manual button to the human team; CPU opponents cannot press it.";
+    public const string SeparateVariant = "The opposing version is the separate effect Knock out an entering opposing puck carrier.";
+    public const string TeamLevel = "It is a whole-team native rule, so it applies to the opposing team as a whole, not to individually selected skaters.";
+    public const string GoalieOnly = "It only affects a goalie; the opposing goalie is reached with Opposing team.";
+    public const string SingleScorer = "A goal has a single scorer, so goal rules choose whose goals count by team rather than by a selected skater.";
+    public const string InjuryData = "Injury checks receive saved player data, not an on-ice position, so random, distance and carrier selections are unavailable; Opposing team covers every opposing skater.";
+    public const string NoAnchor = "This relic trigger is a team-wide event without a triggering skater, so distance-based recipients have no skater to measure from.";
+    public const string Unconscious = "The knocked-out opponent cannot be knocked out, frozen, moved or disarmed again while unconscious.";
+    private static readonly HashSet<string> CampaignOnlyEffects = new() {
+        PickupAttribute, BossAttribute, BossSize, RandomMatchAttribute, LiquidateTalents, ScorelessExpiry, UpgradeOwnTalents, AlternateOverall, RetainPowers,
+        PlayedMatchContract, GoldenHelmet, SpreadAttributeGains, PreferRewards, ExcludeRewards, KeepFreeAgents, BenchMultiplier, InjuryHealing,
+        TalentRewards, RelicRewards, Rerolls, TrainingMultiplier, ExtraCoachPicks, AttributeRewardChoice, SecondScorerHelmet, ConvertSpeedTraining,
+        BenchCapacity, BenchTalentSlot, DonateBenchAttribute, DonateBenchTalents, UpgradeAngusTalents, UpgradeAngusAbility,
+        GrantSpeedTalent, GrantCheckingTalent, GrantDefenseTalent, GrantShootingTalent, GrantSlapshotTalent, ParticipationBonus, HealedInjuryBonus };
+    private static readonly HashSet<string> OwnerComponentEffects = new() {
+        RandomAutoShot, HungerRage, ReboundCriticals, OpeningCriticals, CenterDefenderChecks, DefenseTeleport, LockAttribute, HelmetMultiplier,
+        BreakawayAd, PostGoal, AngusZero, FreezeOwnRelics, FrogOwnPair, MinimumTeamSize, ShareTalent, HotAttribute, ColdAttribute };
+    // Native whole-team rules that the runtime can also grant to the opposing team.
+    private static readonly HashSet<string> TeamLevelEffects = new() {
+        SpeedOneTimerAccuracy, ConvertSpeedBonuses, PossessionOvertime, WinByTwo, RiggedFaceoffs, FasterChecks, EnragedDuration, FartForce, FartRange, SoccerWall };
+    public static bool IsTeamLevel(string effect) => TeamLevelEffects.Contains(effect);
+    private static readonly HashSet<string> TeamWideTriggers = new() {
+        "Match started", "Period started", "Last 30 seconds of period", "Last 45 seconds of period", "Referee knocked out", "Team knocks out referee", "Opposing goalie save", "Opponent breakaway", "Any skater injured" };
+    // Null when the opposing recipient works for this combination; otherwise
+    // the reason it is excluded. Exclusions only filter added opposing
+    // recipients; recipients a definition could already use stay valid.
+    public static string OpposingExclusion(string kind, string trigger, string effect, string target)
+    {
+        bool selection = target != OpposingTeam;
+        if (CustomRewardTriggers.IsCampaignEvent(trigger)) return NoOpponentOnMap;
+        if (CustomRewardTriggers.IsCompletion(trigger)) return AfterMatchEnds;
+        if (CampaignOnlyEffects.Contains(effect) || IsUpgrade(effect) || IsFreeAgentCopy(effect)) return CampaignRoster;
+        if (trigger == "Random fart timer" || OwnerComponentEffects.Contains(effect) || IsTransferHelmet(effect) || IsCultist(effect)) return OwnerComponent;
+        if (effect == GainTalent) return RunLongGrant;
+        if (effect == ShotRecoil) return RecoilOnly;
+        if (effect == DeflectLob) return OwnDeflection;
+        if (effect == BoardBounce) return OwnBoardContact;
+        if (effect == FogScoreboard) return HumanDisplay;
+        if (effect == ManualGoalDenial) return HumanInput;
+        if (effect == OffensiveBlueLineKnockout) return SeparateVariant;
+        if (TeamLevelEffects.Contains(effect)) return selection ? TeamLevel : null;
+        if (IsGoalieCopy(effect) || GoalieConditionEffects.Contains(effect)) return selection ? GoalieOnly : null;
+        if (effect == ExtraGoal || effect == ExtraGoals || effect == DenyGoal) return selection ? SingleScorer : null;
+        if (IsInjuryPrevention(effect) || effect == InjuryMultiplier) return selection ? InjuryData : null;
+        if ((target == Nearby || target == ClosestOpponent) && kind == CustomRewardDefinition.CustomRelics && TeamWideTriggers.Contains(trigger)) return NoAnchor;
+        if (target == Opponent && trigger == "Opponent knocked out" && (effect == Knockout || effect == Freeze || effect == Dance || effect == Boost || effect == ThrowStick)) return Unconscious;
+        return null;
+    }
+    // Recipients before opposing equivalents are added.
+    public static IEnumerable<string> BaseTargets(string kind, string trigger, string effect)
     {
         if (CustomRewardTriggers.IsCampaignEvent(trigger)) return new[] { Team };
         if (trigger == "Random fart timer") return new[] { Actor };
@@ -170,7 +245,7 @@ public static partial class CustomRewardEffects
         if (effect == ClockSpeed) return new[] { Clock };
         if (CustomRewardTriggers.IsShotCalculation(trigger)) return new[] { Actor, Team };
         if (IsRefereeSetup(effect)) return new[] { Referees };
-        if (effect == ExtraGoal) return kind == CustomRewardDefinition.CustomRelics ? new[] { Team } : new[] { Actor, Team };
+        if (effect == ExtraGoal || effect == ExtraGoals) return kind == CustomRewardDefinition.CustomRelics ? new[] { Team } : new[] { Actor, Team };
         if (effect == DenyGoal) return kind == CustomRewardDefinition.CustomRelics ? new[] { OpposingTeam } : new[] { Actor, OpposingTeam };
         if (IsUpgrade(effect) || effect == KeepFreeAgents) return new[] { Team };
         if (effect == BenchMultiplier) return kind == CustomRewardDefinition.CustomRelics ? new[] { Team } : new[] { Actor, Team };
@@ -193,8 +268,13 @@ public static partial class CustomRewardEffects
         if (effect == ShotRecoil) return new[] { Actor };
         if (effect == Burst) return new[] { Actor };
         if (effect == StatChange && kind == CustomRewardDefinition.CustomChaosTalents && CustomRewardTriggers.IsCondition(trigger)) return new[] { Actor, Team, OtherTeammates };
-        if (effect == StatChange) return kind == CustomRewardDefinition.CustomRelics && trigger == "While owned" ? new[] { Actor, Team, OpposingTeam, BothTeams }
-            : new[] { "Assist", "Goalie assist", "Pass sent", "Pass received" }.Contains(trigger) ? new[] { Actor, Team, Opponent } : new[] { Actor, Team };
+        if (effect == StatChange) {
+            if (kind == CustomRewardDefinition.CustomRelics && trigger == "While owned") return new[] { Actor, Team, OpposingTeam, BothTeams };
+            var own = new[] { "Assist", "Goalie assist", "Pass sent", "Pass received" }.Contains(trigger) ? new[] { Actor, Team, Opponent } : new[] { Actor, Team };
+            // A live event can stack a timed bonus on randomly chosen teammates;
+            // continuous and after-match rules keep their own recipients.
+            return CustomRewardTriggers.IsCondition(trigger) || CustomRewardTriggers.IsCompletion(trigger) ? own : own.Concat(new[] { RandomAllies });
+        }
         if (effect == Knockout || effect == BreakStick || effect == Frog || effect == Injure || effect == InjureArm || effect == Heal || effect == ThrowStick || effect == DropHelmet || effect == Freeze || effect == Dance) {
             var targets = new List<string>();
             bool needsMobileActor = effect == Knockout || effect == Freeze || effect == Dance || effect == ThrowStick;
@@ -210,7 +290,11 @@ public static partial class CustomRewardEffects
         return CustomRewardTriggers.HasOtherPlayer(trigger) ? ownTeam.Concat(new[] { Opponent }) : ownTeam;
     }
     public static IEnumerable<string> Stats(string kind, string target, string trigger = "While owned")
-        => target == Opponent ? CustomRewardDefinition.Stats.Where(s => !s.StartsWith("Goalie ", StringComparison.Ordinal)) : CustomRewardTriggers.IsShotCalculation(trigger) ? new[] { trigger.EndsWith("crit calculation", StringComparison.Ordinal) ? "Critical chance" : "Shot Power" } : CustomRewardDefinition.Stats.Where(s => !(kind == CustomRewardDefinition.CustomRelics && CustomRewardTriggers.IsCondition(trigger)
+        => target == Opponent ? CustomRewardDefinition.Stats.Where(s => !s.StartsWith("Goalie ", StringComparison.Ordinal)) : CustomRewardTriggers.IsShotCalculation(trigger) ? new[] { trigger.EndsWith("crit calculation", StringComparison.Ordinal) ? "Critical chance" : "Shot Power" }
+            // Selected individual skaters are skaters, never goalies.
+            : IsSkaterSelection(target) ? CustomRewardDefinition.Stats.Where(s => !s.StartsWith("Goalie ", StringComparison.Ordinal))
+                .Where(s => (s != "Size" || !trigger.StartsWith("While size ", StringComparison.Ordinal)) && (trigger != "While Shot Power is at least 50" || s != "Shot Power" && s != "Overall"))
+            : CustomRewardDefinition.Stats.Where(s => !(kind == CustomRewardDefinition.CustomRelics && CustomRewardTriggers.IsCondition(trigger)
                 && !CustomRewardTriggers.ForKind(CustomRewardDefinition.CustomGoalieTalents).Contains(trigger) && s.StartsWith("Goalie ", StringComparison.Ordinal)))
             .Where(s => target == Team || target == OpposingTeam || target == BothTeams
             || kind == CustomRewardDefinition.CustomRelics && !CustomRewardTriggers.IsGoalieEvent(trigger) && (CustomRewardTriggers.IsCondition(trigger) || trigger == "Match started" || trigger == "Match completed" || trigger == "Match won" || trigger == "Pass sent" || trigger == "Enraged" || trigger == "Ability used")
@@ -218,55 +302,62 @@ public static partial class CustomRewardEffects
             .Where(s => (s != "Size" || !trigger.StartsWith("While size ", StringComparison.Ordinal)) && (trigger != "While Shot Power is at least 50" || s != "Shot Power" && s != "Overall"));
     public static void Validate(CustomRewardDefinition d)
     {
-        if ((d.Target == BothTeams || d.Target == OpposingTeam) && d.Effect == StatChange && d.AmountBasis != "Fixed amount") throw new ArgumentException("An opposing-team or both-team attribute rule uses a fixed amount.");
+        // Only real limits: a sign or nonzero value where the other values
+        // mean nothing, percentage chances, native enum levels and finite
+        // time (checked by the definition). Effects whose amount drives a
+        // loop, an allocation or float physics are bounded in the runtime.
+        if (d.Effect == StatChange && d.AmountBasis != "Fixed amount" && d.Target != Actor && d.Target != Team && d.Target != OtherTeammates) throw new ArgumentException("An attribute rule aimed at opponents, both teams or selected skaters uses a fixed amount.");
         if (d.Effect == BlueLineLaunch && d.Amount < 1) throw new ArgumentException("Choose a positive native launch force.");
-        if (d.Effect == KnockoutDuration && (d.Amount < 100 || d.Amount > 400)) throw new ArgumentException("Choose knockout duration from 100% to 400%.");
-        if (d.Effect == ParticipationBonus && d.Amount < 1) throw new ArgumentException("Choose a positive participation bonus.");
-        if ((d.Effect == OpeningInjuries || d.Effect == CyclicInjuries || d.Effect == VoodooAttribute || IsTemperature(d.Effect)) && d.Amount < 1 || d.Effect == PuckInjuries && (d.Amount < 1 || d.Amount > 100)) throw new ArgumentException("Use a positive count or magnitude, or an injury chance from 1% to 100%.");
+        if (d.Effect == KnockoutDuration && d.Amount < 1) throw new ArgumentException("Choose a knockout duration above 0% of the native time.");
+        if (d.Effect == ParticipationBonus && d.Amount == 0) throw new ArgumentException("Choose a nonzero participation bonus.");
+        if ((d.Effect == OpeningInjuries || d.Effect == CyclicInjuries) && d.Amount < 1) throw new ArgumentException("Choose a positive number of knockouts.");
+        if ((d.Effect == VoodooAttribute || IsTemperature(d.Effect)) && d.Amount < 1) throw new ArgumentException("Choose a positive Overall magnitude; the effect itself sets whether it is a bonus or a penalty.");
+        if (d.Effect == PuckInjuries && (d.Amount < 1 || d.Amount > 100)) throw new ArgumentException("Choose an injury chance from 1% to 100%.");
         if ((d.Effect == OpeningCriticals || d.Effect == ReboundCriticals) && d.Amount < 1 || d.Effect == HealedInjuryBonus && d.Amount == 0) throw new ArgumentException("Choose positive opening-shot or critical-chance values, or a nonzero injury recovery bonus.");
         if (IsTransferHelmet(d.Effect) && (d.Amount == 0 || !EffectStats(d.Kind, d.Target, d.Trigger, d.Effect).Contains(d.Stat))) throw new ArgumentException("Choose a nonzero attribute from this native helmet.");
-        if (d.Effect == RandomMatchAttribute && d.Amount < 1 || d.Effect == CenterDefenderChecks && (d.Amount < 1 || d.Amount > 2)) throw new ArgumentException("Choose a positive match bonus, or native Bonecrusher level 1 or 2.");
+        if (d.Effect == RandomMatchAttribute && d.Amount == 0) throw new ArgumentException("Choose a nonzero attribute change per match roll.");
+        if (d.Effect == CenterDefenderChecks && (d.Amount < 1 || d.Amount > 2)) throw new ArgumentException("Choose native Bonecrusher level 1 or 2.");
         if (d.Effect == DonateBenchAttribute && !EffectStats(d.Kind, d.Target, d.Trigger, d.Effect).Contains(d.Stat)) throw new ArgumentException("Choose one native skater attribute to transfer.");
         if ((d.Effect == PickupAttribute || d.Effect == BossAttribute) && (d.Amount == 0 || !EffectStats(d.Kind, d.Target, d.Trigger, d.Effect).Contains(d.Stat))) throw new ArgumentException("Choose a nonzero permanent base attribute change.");
-        if (d.Effect == BossSize && (d.Amount == 0 || d.Amount < -5 || d.Amount > 5)) throw new ArgumentException("Choose nonzero native size steps from -5 to +5.");
-        if ((d.Effect == FartForce || d.Effect == FartRange) && (d.Amount < 1 || d.Amount > 400)) throw new ArgumentException("Choose fart interaction strength from 1% to 400%.");
+        if (d.Effect == BossSize && d.Amount == 0) throw new ArgumentException("Choose nonzero native size steps; the native smallest and largest sizes still apply.");
+        if ((d.Effect == FartForce || d.Effect == FartRange) && d.Amount < 1) throw new ArgumentException("Choose a fart interaction strength above 0%.");
         if (IsCategoryGrant(d.Effect) && (d.Amount < 1 || d.Amount > 2)) throw new ArgumentException("Choose native talent level 1 or 2.");
-        if (d.Effect == AlternateOverall && d.Amount < 1 || d.Effect == RetainPowers && (d.Amount < 1 || d.Amount > 10)) throw new ArgumentException("Choose a positive alternating bonus, or from 1 to 10 retained powers.");
-        if (d.Effect == RandomAutoShot && (d.Amount < 1 || d.Amount > 100 || d.Seconds > 60 || d.ShotDelayMilliseconds < 0 || d.ShotDelayMilliseconds > 10000)) throw new ArgumentException("Choose a shot chance from 1% to 100%, an interval up to 60 seconds and a delay from 0 to 10000 milliseconds.");
-        if (d.Effect == PlayedMatchContract && (d.Amount < 1 || d.Amount > 999)) throw new ArgumentException("Choose from 1 to 999 played matches for a contract.");
+        if (d.Effect == AlternateOverall && d.Amount < 1 || d.Effect == RetainPowers && d.Amount < 1) throw new ArgumentException("Choose a positive alternating magnitude, or at least 1 retained power.");
+        if (d.Effect == RandomAutoShot && (d.Amount < 1 || d.Amount > 100 || d.ShotDelayMilliseconds < 0)) throw new ArgumentException("Choose a shot chance from 1% to 100% and a warning delay of 0 milliseconds or more.");
+        if (d.Effect == PlayedMatchContract && d.Amount < 1) throw new ArgumentException("Choose at least 1 played match for a contract.");
         if (!SupportsKind(d.Effect, d.Kind)) throw new ArgumentException("This effect does not belong to the selected item's native kind. Choose an effect from its list.");
         if (!ForTrigger(d.Kind, d.Trigger).Contains(d.Effect)) throw new ArgumentException("This effect cannot happen at the selected trigger. Choose an effect from its list.");
         if (!Targets(d.Kind, d.Trigger, d.Effect).Contains(d.Target)) throw new ArgumentException("This trigger and effect do not support that recipient.");
-        if (IsCharge(d.Effect) && (d.Seconds > 60 || d.Effect != ChargeCritical && d.Amount < 1)) throw new ArgumentException("Choose a charge limit from 0.05 to 60 seconds and a positive per-second bonus.");
-        if ((d.Effect == RandomShotPower || d.Effect == RandomShotAccuracy) && (d.Amount < 0 || d.Amount > (d.Effect == RandomShotPower ? 148 : 99))) throw new ArgumentException("Choose a minimum from 0 to 148 for Shot Power or 0 to 99 for Accuracy.");
-        if (d.Effect == TrainingMultiplier && (d.Amount < 100 || d.Amount > 400)) throw new ArgumentException("Choose training reward strength from 100% to 400%.");
-        if (d.Effect == ExtraCoachPicks && (d.Amount < 1 || d.Amount > 10)) throw new ArgumentException("Choose from 1 to 10 additional Coach picks.");
-        if (d.Effect == ManualGoalDenial && (d.Amount < 1 || d.Amount > 10)) throw new ArgumentException("Choose from 1 to 10 goal-reversal charges.");
-        if (d.Effect == LoadedPuckBag && (d.NormalPucks < 0 || d.NormalPucks > 999 || d.DoublePucks < 0 || d.DoublePucks > 999 || d.TriplePucks < 0 || d.TriplePucks > 999 || (long)d.NormalPucks + d.DoublePucks + d.TriplePucks == 0)) throw new ArgumentException("Choose 0 to 999 pucks of each value and at least one puck in the bag.");
-        if (d.Effect == BoardBounce && (d.Amount < 1 || d.Amount > 400)) throw new ArgumentException("Choose board rebound strength from 1% to 400%.");
-        if (d.Effect == EnragedDuration && (d.Amount < 100 || d.Amount > 400)) throw new ArgumentException("Choose an enraged duration multiplier from 100% to 400%.");
-        if (d.Effect == HelmetMultiplier && (d.Amount < 1 || d.Amount > 10)) throw new ArgumentException("Choose a helmet multiplier from 1 to 10.");
-        if (d.Effect == LockAttribute && (d.Amount < 0 || d.Amount > 100 || !EffectStats(d.Kind, d.Target, d.Trigger, d.Effect).Contains(d.Stat))) throw new ArgumentException("Choose Shot Power, Speed or Checking and a locked value from 0 to 100.");
-        if (d.Effect == TurningDelay && d.Amount < 1) throw new ArgumentException("Choose additional turning time from 1 to 999 milliseconds.");
-        if (d.Effect == RefereeSize && (d.Amount == 0 || d.Amount < -5 || d.Amount > 5)) throw new ArgumentException("Referee size uses nonzero native size steps from -5 to +5.");
-        if ((d.Effect == StatusMultiplier || d.Effect == CooldownMultiplier) && d.Amount < 100) throw new ArgumentException("These native extension effects use multipliers from 100% to 400%.");
+        if (IsCharge(d.Effect) && d.Effect != ChargeCritical && d.Amount == 0) throw new ArgumentException("Choose a nonzero attribute change per charged second.");
+        if ((d.Effect == RandomShotPower || d.Effect == RandomShotAccuracy) && d.Amount < 0) throw new ArgumentException("Choose a minimum random attribute value of 0 or more.");
+        if (d.Effect == TrainingMultiplier && d.Amount < 1) throw new ArgumentException("Choose a training reward strength above 0%.");
+        if (d.Effect == ExtraCoachPicks && d.Amount < 1) throw new ArgumentException("Choose at least 1 additional Coach pick.");
+        if (d.Effect == ManualGoalDenial && d.Amount < 1) throw new ArgumentException("Choose at least 1 goal-reversal charge.");
+        if (d.Effect == LoadedPuckBag && (d.NormalPucks < 0 || d.DoublePucks < 0 || d.TriplePucks < 0 || (long)d.NormalPucks + d.DoublePucks + d.TriplePucks == 0)) throw new ArgumentException("Choose 0 or more pucks of each value and at least one puck in the bag.");
+        if (d.Effect == BoardBounce && d.Amount < 1) throw new ArgumentException("Choose a board rebound strength above 0%.");
+        if (d.Effect == EnragedDuration && d.Amount < 1) throw new ArgumentException("Choose an enraged duration above 0% of the native time.");
+        if (d.Effect == HelmetMultiplier && d.Amount < 1) throw new ArgumentException("Choose a helmet multiplier of at least 1.");
+        if (d.Effect == LockAttribute && (d.Amount < 0 || !EffectStats(d.Kind, d.Target, d.Trigger, d.Effect).Contains(d.Stat))) throw new ArgumentException("Choose Shot Power, Speed or Checking and a locked value of 0 or more.");
+        if (d.Effect == TurningDelay && d.Amount < 1) throw new ArgumentException("Choose at least 1 millisecond of additional turning time.");
+        if (d.Effect == RefereeSize && d.Amount == 0) throw new ArgumentException("Referee size uses nonzero native size steps; the native smallest and largest sizes still apply.");
+        if ((d.Effect == StatusMultiplier || d.Effect == CooldownMultiplier) && d.Amount < 1) throw new ArgumentException("Choose a multiplier above 0%.");
         if (d.Effect == DenyGoal && (d.Amount < 1 || d.Amount > 100)) throw new ArgumentException("Choose a denial chance from 1% to 100%.");
         if (d.Effect == BonusMultiplier && !EffectStats(d.Kind, d.Target, d.Trigger, d.Effect).Contains(d.Stat)) throw new ArgumentException("This attribute multiplier does not belong to the selected native item kind.");
-        if ((ScalingConditionEffects.Contains(d.Effect) || d.Effect == SpikedInjury || d.Effect == InjuryMultiplier || d.Effect == GoalieHeadshot || d.Effect == BenchMultiplier) && (d.Amount < 1 || d.Amount > 400)) throw new ArgumentException("Choose a multiplier from 1% to 400%.");
-        if (d.Effect == InjuryHealing && (d.Amount == 0 || d.Amount < -10 || d.Amount > 10)) throw new ArgumentException("Choose a nonzero recovery adjustment from -10 to 10 games.");
-        if (IsUpgrade(d.Effect) && (d.Amount < 1 || d.Amount > 10)) throw new ArgumentException("Choose from 1 to 10 upgrades.");
+        if ((ScalingConditionEffects.Contains(d.Effect) || d.Effect == SpikedInjury || d.Effect == InjuryMultiplier || d.Effect == GoalieHeadshot || d.Effect == BenchMultiplier) && d.Amount < 1) throw new ArgumentException("Choose a multiplier above 0%.");
+        if (d.Effect == InjuryHealing && d.Amount == 0) throw new ArgumentException("Choose a nonzero recovery adjustment; at least one game always remains.");
+        if (IsUpgrade(d.Effect) && d.Amount < 1) throw new ArgumentException("Choose at least 1 upgrade.");
         if (d.Effect == StatChange && (d.Amount == 0 || !Stats(d.Kind, d.Target, d.Trigger).Contains(d.Stat))) throw new ArgumentException("Choose a nonzero stat change for the selected recipient.");
-        if (d.Effect == StatChange && d.Stat == "Size" && (d.Amount < -5 || d.Amount > 5)) throw new ArgumentException("Size changes use native size steps from -5 to +5; the native minimum and maximum still apply.");
-        if ((d.Effect == TalentRewards || d.Effect == RelicRewards || d.Effect == Rerolls) && (d.Amount < 1 || d.Amount > 10)) throw new ArgumentException("Choose from 1 to 10 extra rewards or rerolls.");
+        if ((d.Effect == TalentRewards || d.Effect == RelicRewards || d.Effect == Rerolls) && d.Amount < 1) throw new ArgumentException("Choose at least 1 extra reward or reroll.");
         if (d.Effect == ClockTime && d.Amount == 0) throw new ArgumentException("Enter a nonzero clock adjustment.");
-        if ((d.Target == Nearby || HasRadius(d.Effect)) && (d.Radius < 1 || d.Radius > 30)) throw new ArgumentException("Set a radius from 1 to 30 game units.");
-        if (d.Effect == AttractPuck && (d.Amount < 1 || d.Amount > 400)) throw new ArgumentException("Attraction strength must be from 1% to 400%.");
-        if (IsShockwave(d.Effect) && (d.Amount < 1 || d.Amount > 400)) throw new ArgumentException("Shockwave strength must be from 1% to 400%.");
-        if (IsPuck(d.Effect) && HasAmount(d.Effect) && (d.Amount < 1 || d.Amount > (d.Effect == PuckLift ? 50 : 400))) throw new ArgumentException(d.Effect == PuckLift ? "Upward puck velocity must be from 1 to 50 game units per second." : "Puck effect strength must be from 1% to 400%.");
-        if ((d.Effect == Boost || d.Effect == ShotRecoil) && (d.Amount < 1 || d.Amount > 100 || d.Seconds > 5)) throw new ArgumentException("Use boost force from 1 to 100 and duration from 0.05 to 5 seconds.");
-        if (d.Effect == GoalieFetchSpeed && (d.Amount < 1 || d.Amount > 400)) throw new ArgumentException("Retrieval-speed strength must be from 1% to 400%.");
-        if (d.Effect == ExtraSticks && (d.Amount < 1 || d.Amount > 10)) throw new ArgumentException("Choose from 1 to 10 additional reserve sticks.");
-        if ((d.Effect == NetWidth || d.Effect == NetHeight) && (d.Amount < 25 || d.Amount > 300)) throw new ArgumentException("Goal dimensions must be from 25% to 300% of the original dimension.");
+        if ((d.Target == Nearby || HasRadius(d.Effect)) && d.Radius < 1) throw new ArgumentException("Set a radius of at least 1 game unit.");
+        if (d.Effect == AttractPuck && d.Amount < 1) throw new ArgumentException("Attraction strength must be above 0%.");
+        if (IsShockwave(d.Effect) && d.Amount < 1) throw new ArgumentException("Shockwave strength must be above 0%.");
+        if (IsPuck(d.Effect) && HasAmount(d.Effect) && d.Amount < 1) throw new ArgumentException(d.Effect == PuckLift ? "Upward puck velocity must be at least 1 game unit per second." : "Puck effect strength must be above 0%.");
+        if ((d.Effect == Boost || d.Effect == ShotRecoil) && d.Amount < 1) throw new ArgumentException("Use a positive boost force; the effect itself sets the direction.");
+        if (d.Effect == GoalieFetchSpeed && d.Amount < 1) throw new ArgumentException("Retrieval-speed strength must be above 0%.");
+        if (d.Effect == ExtraSticks && d.Amount < 1) throw new ArgumentException("Choose at least 1 additional reserve stick.");
+        if ((d.Effect == NetWidth || d.Effect == NetHeight) && d.Amount < 1) throw new ArgumentException("Goal dimensions must be above 0% of the original dimension.");
+        if (d.Effect == ExtraGoals && d.Amount < 1) throw new ArgumentException("Choose at least 1 extra goal per goal.");
         if (d.Effect != StatChange && d.Duration != (IsUpgrade(d.Effect) ? "Rest of run" : "Seconds")) throw new ArgumentException("Use the duration supported by this effect: on-ice statuses use seconds and campaign upgrades remain in the run.");
     }
     public static string Summary(CustomRewardDefinition d) => d.Effect == EggExplosion ? "Explosion within " + d.Radius + " game units, affecting both teams and its source"
@@ -286,6 +377,7 @@ public static partial class CustomRewardEffects
         : d.Effect == BonusMultiplier ? d.Stat + " bonuses × " + (d.Amount / 100f)
         : d.Effect == SpikedInjury || d.Effect == ClockSpeed || d.Effect == CritMultiplier || d.Effect == StatusMultiplier || d.Effect == CooldownMultiplier || d.Effect == InjuryMultiplier || d.Effect == GoalieHeadshot ? d.Effect + ": " + d.Amount + "%"
         : d.Effect == ClockTime ? (d.Amount >= 0 ? "+" : "") + d.Amount + "s on the clock"
+        : d.Effect == ExtraGoals ? "+" + d.Amount + (d.Amount == 1 ? " goal" : " goals") + " per goal"
         : HasAmount(d.Effect) && IsQueryEffect(d.Effect) ? "+" + d.Amount + " " + d.Effect.ToLowerInvariant()
         : d.Effect == PuckGoalieGhost ? PuckGoalieGhost : d.Effect == FlatPuck ? FlatPuck : d.Effect == PuckGhost ? PuckGhost : d.Effect == Burst ? Burst + " (radius " + d.Radius + ")"
         : IsShockwave(d.Effect) ? d.Effect + ": " + d.Amount + "% strength, radius " + d.Radius
@@ -294,9 +386,38 @@ public static partial class CustomRewardEffects
         : d.Effect == Boost || d.Effect == ShotRecoil ? d.Effect + ": force " + d.Amount + " for " + d.Seconds + "s"
         : IsPuck(d.Effect) ? d.Effect + ": " + d.Amount + (d.Effect == PuckLift ? " units/s" : "%")
         : d.Effect + (Find(d.Effect)?.Timed == true || d.Effect == Knockout ? " for " + d.Seconds + "s" : "");
+    // Recipient phrases shared by event and continuous rules. Positional
+    // opposing recipients are measured from the triggering skater; for a relic
+    // reacting to an opponent's action, from the opponent who acted.
+    public static string RecipientText(CustomRewardDefinition d, string owner)
+    {
+        bool goalieStat = d.Stat.StartsWith("Goalie ", StringComparison.Ordinal) && d.Effect == StatChange;
+        string from = CustomRewardTriggers.IsCondition(d.Trigger) || CustomRewardTriggers.IsShotCalculation(d.Trigger) ? (d.IsRelic ? "one of your skaters" : "this skater")
+            : d.IsRelic && CustomRewardTriggers.IsOpponentAction(d.Trigger) ? "the opponent who acted" : d.IsRelic ? "the triggering skater" : owner;
+        return d.Target == Team ? (goalieStat ? "your goalie" : d.Effect == Enrage ? "your team, including the goalie" : "your skaters")
+            : IsRandomTarget(d.Target) ? "up to " + d.TargetCount + " randomly chosen " + (d.Target == RandomAllies ? "teammates" : "opponents") + (CustomRewardTriggers.IsCondition(d.Trigger) || CustomRewardTriggers.IsShotCalculation(d.Trigger) ? " (chosen once per match)" : "")
+            : d.Target == OtherTeammates ? "the owning skater's other playing teammates"
+            : d.Target == BothTeams ? (d.Stat.StartsWith("Goalie ", StringComparison.Ordinal) ? "both goalies" : "skaters on both teams")
+            : d.Target == OpposingTeam ? (goalieStat || IsGoalieCopy(d.Effect) || GoalieConditionEffects.Contains(d.Effect) ? "the opposing goalie" : d.Effect == Enrage ? "the opposing team, including the goalie" : "all opposing skaters")
+            : d.Target == ClosestOpponent ? "the opposing skater closest to " + from : d.Target == OpponentCarrier ? "the opposing skater holding the puck"
+            : d.Target == Nearby ? "opposing skaters within " + d.Radius + " game units of " + from : d.Target == Opponent ? "the other player involved" : owner;
+    }
+    private static bool Singular(string recipient) => !recipient.StartsWith("your skaters", StringComparison.Ordinal) && !recipient.StartsWith("up to ", StringComparison.Ordinal)
+        && !recipient.StartsWith("all ", StringComparison.Ordinal) && !recipient.StartsWith("opposing skaters", StringComparison.Ordinal) && !recipient.StartsWith("skaters ", StringComparison.Ordinal)
+        && !recipient.StartsWith("both ", StringComparison.Ordinal) && !recipient.Contains("teammates") && !recipient.StartsWith("your team", StringComparison.Ordinal) && !recipient.StartsWith("the opposing team", StringComparison.Ordinal);
+    private static string Capital(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text.Substring(1);
+    // Which skater a continuous condition is checked on, when it is not the recipient itself.
+    private static string ConditionNote(CustomRewardDefinition d) => d.Trigger == "While owned" || d.Target == Actor || !CustomRewardTriggers.IsCondition(d.Trigger) ? ""
+        : !d.IsRelic ? " The condition is checked on this skater."
+        : d.Target == Nearby || d.Target == ClosestOpponent || d.Target == OpponentCarrier ? " The condition is checked on your skater it is measured from." : "";
+    public static string ActivationText(CustomRewardDefinition d, string per)
+        => (CustomRewardDefinition.IsUnlimited(d.ActivationsPerMatch) ? "Unlimited activations " : "Up to " + d.ActivationsPerMatch + " activations ") + per;
+    public static string StackText(CustomRewardDefinition d)
+        => CustomRewardDefinition.IsUnlimited(d.MaxStacks) ? "No limit on active stacks per recipient." : "Maximum " + d.MaxStacks + " active stacks per recipient.";
     public static string Describe(CustomRewardDefinition d)
     {
-        if (CustomRewardTriggers.IsCampaignEvent(d.Trigger)) return (d.Chance == 100 ? "" : d.Chance + "% chance: ") + "After every " + d.Threshold + " training choices, your team gains " + Summary(d) + " for the rest of the run while this relic is owned. Up to " + d.ActivationsPerMatch + " activations per run, at most " + d.MaxStacks + " stacks. Counters and earned bonuses persist through Continue. Previews and rerolls do not count.";
+        if (CustomRewardTriggers.IsCampaignEvent(d.Trigger)) return (d.Chance == 100 ? "" : d.Chance + "% chance: ") + "After every " + d.Threshold + " training choices, your team gains " + Summary(d) + " for the rest of the run while this relic is owned. "
+            + ActivationText(d, "per run, ") + (CustomRewardDefinition.IsUnlimited(d.MaxStacks) ? "with no stack limit" : "at most " + d.MaxStacks + " stacks") + ". Counters and earned bonuses persist through Continue. Previews and rerolls do not count.";
         if (CustomRewardTriggers.IsQuery(d.Trigger)) return QueryDescription(d);
         if (d.AmountBasis == "If benched for the entire previous match") return (d.Target == Team ? "Your skaters gain " : "This skater gains ") + Summary(d) + " " + CustomRewardTriggers.ConditionText(d.Trigger) + " if this owner never played in their last completed match while owning the item. No bonus before the first completed match. Playing at any point in that match clears eligibility; abandoned matches do not replace it.";
         if (CustomRewardDefinition.IsPreviousMatchBasis(d.AmountBasis)) return (d.Target == Team ? "Your skaters gain " : "This skater gains ") + Summary(d) + " " + d.AmountBasis.ToLowerInvariant()
@@ -304,30 +425,27 @@ public static partial class CustomRewardEffects
         if (d.AmountBasis == "Per liquidated talent") return "This skater gains " + Summary(d) + " per talent removed by an owned Liquidation carrier. Uses that carrier's saved native count; no bonus without one. " + CustomRewardTriggers.ConditionText(d.Trigger) + ". Does not remove any talents or permanently change base attributes.";
         if (d.AmountBasis != "Fixed amount") return (d.Target == Team ? "Your skaters gain " : "This skater gains ") + Summary(d) + " " + d.AmountBasis.ToLowerInvariant() + " " + CustomRewardTriggers.ConditionText(d.Trigger) + ". Counts update during play. "
             + (d.AmountBasis == "Per other owned talent" ? "This reward is excluded from the talent count. " : d.AmountBasis == "Per injured playing teammate" ? "The owner is excluded from the teammate count. " : "") + "These are current bonuses, not permanent gains.";
-        if (ScalingConditionEffects.Contains(d.Effect)) return Summary(d) + " " + CustomRewardTriggers.ConditionText(d.Trigger) + ". " + Help(d.Effect);
-        if (IsUpgrade(d.Effect)) return "When " + (d.IsRelic ? "your team " : "this skater ") + CustomRewardTriggers.Action(d.Trigger, d.Threshold) + ", " + d.Effect.ToLowerInvariant() + " (up to " + d.Amount + " different eligible powers). " + Help(d.Effect);
-        if (d.Effect == CatchSaves) return "Your goalie catches eligible saves " + CustomRewardTriggers.ConditionText(d.Trigger) + ". " + Help(CatchSaves);
-        if (d.Effect == GoalieFetchSpeed) return "This goalie gains " + (6 * d.Amount / 100f) + " retrieval speed " + CustomRewardTriggers.ConditionText(d.Trigger) + ". " + Help(GoalieFetchSpeed);
-        if (d.Effect == GoalieThrow) return "This goalie uses native stick throws " + CustomRewardTriggers.ConditionText(d.Trigger) + ". " + Help(GoalieThrow);
-        if (ForwardConditionEffects.Contains(d.Effect)) return (d.IsRelic || d.Target == Team ? "Your skaters: " : "This skater: ")
-            + (d.Effect == LoosePuckAttraction || d.Effect == SpikedInjury || d.Effect == RandomAutoShot || IsCharge(d.Effect) || d.Effect == BatKnockout || d.Effect == RandomShotPower || d.Effect == RandomShotAccuracy || d.Effect == LockAttribute || d.Effect == TurningDelay ? Summary(d) : d.Effect.ToLowerInvariant()) + (d.Effect == ExtraSticks ? " +" + d.Amount : "") + " " + CustomRewardTriggers.ConditionText(d.Trigger) + ". " + Help(d.Effect);
         string owner = d.IsGoalie ? "this goalie" : d.IsRelic ? "a teammate" : "this skater";
-        string recipient = d.Target == Team ? (d.Stat.StartsWith("Goalie ") && d.Effect == StatChange ? "your goalie" : d.Effect == Enrage ? "your team, including the goalie" : "your skaters")
-            : IsRandomTarget(d.Target) ? "up to " + d.TargetCount + " randomly chosen " + (d.Target == RandomAllies ? "teammates" : "opponents")
-            : d.Target == OtherTeammates ? "the owning skater's other playing teammates"
-            : d.Target == BothTeams ? (d.Stat.StartsWith("Goalie ") ? "both goalies" : "skaters on both teams")
-            : d.Target == OpposingTeam ? (d.Stat.StartsWith("Goalie ") && d.Effect == StatChange ? "the opposing goalie" : "all opposing skaters") : d.Target == ClosestOpponent ? "the closest opposing skater" : d.Target == OpponentCarrier ? "the opposing skater holding the puck"
-            : d.Target == Nearby ? "opposing skaters within " + d.Radius + " game units" : d.Target == Opponent ? "the other player involved" : owner;
+        string recipient = RecipientText(d, owner);
+        bool opposing = IsOpposingSide(d.Target);
+        if (ScalingConditionEffects.Contains(d.Effect)) return (opposing ? Capital(recipient) + ": " : "") + Summary(d) + " " + CustomRewardTriggers.ConditionText(d.Trigger) + "." + ConditionNote(d) + " " + Help(d.Effect);
+        if (IsUpgrade(d.Effect)) return "When " + (d.IsRelic ? "your team " : "this skater ") + CustomRewardTriggers.Action(d.Trigger, d.Threshold) + ", " + d.Effect.ToLowerInvariant() + " (up to " + d.Amount + " different eligible powers). " + Help(d.Effect);
+        string goalie = d.Target == OpposingTeam ? "The opposing goalie" : d.IsRelic ? "Your goalie" : "This goalie";
+        if (d.Effect == CatchSaves) return goalie + " catches eligible saves " + CustomRewardTriggers.ConditionText(d.Trigger) + "." + ConditionNote(d) + " " + Help(CatchSaves);
+        if (d.Effect == GoalieFetchSpeed) return goalie + " gains " + (6 * (double)d.Amount / 100) + " retrieval speed " + CustomRewardTriggers.ConditionText(d.Trigger) + "." + ConditionNote(d) + " " + Help(GoalieFetchSpeed);
+        if (d.Effect == GoalieThrow) return goalie + " uses native stick throws " + CustomRewardTriggers.ConditionText(d.Trigger) + "." + ConditionNote(d) + " " + Help(GoalieThrow);
+        if (ForwardConditionEffects.Contains(d.Effect)) return (opposing ? Capital(recipient) : d.IsRelic || d.Target == Team ? "Your skaters" : "This skater") + ": "
+            + (d.Effect == LoosePuckAttraction || d.Effect == SpikedInjury || d.Effect == RandomAutoShot || IsCharge(d.Effect) || d.Effect == BatKnockout || d.Effect == RandomShotPower || d.Effect == RandomShotAccuracy || d.Effect == LockAttribute || d.Effect == TurningDelay ? Summary(d) : d.Effect.ToLowerInvariant()) + (d.Effect == ExtraSticks ? " +" + d.Amount : "") + " " + CustomRewardTriggers.ConditionText(d.Trigger) + "." + ConditionNote(d) + " " + Help(d.Effect);
         string effectName = d.Effect == Boost || d.Effect == ShotRecoil ? d.Effect + " (force " + d.Amount + ")" : IsShockwave(d.Effect) || d.Effect == EggExplosion || d.Effect == SonicKnockouts || d.Effect == AttractPuck || d.Effect == BoardBounce ? Summary(d) : d.Effect;
-        string effect = d.Effect == StatChange ? recipient + " gain " + Summary(d) : d.Effect == ClockTime ? Summary(d)
+        string effect = d.Effect == StatChange ? recipient + (Singular(recipient) ? " gains " : " gain ") + Summary(d) : d.Effect == ClockTime ? Summary(d)
             : IsPuck(d.Effect) ? Summary(d) + " on the current puck" : effectName + ": " + recipient;
         string condition = d.IsRelic && CustomRewardTriggers.IsOpponentAction(d.Trigger) ? "when " + (d.Trigger == "Opponent goal" ? "an opponent scores" : CustomRewardTriggers.Action(d.Trigger, d.Threshold)) : CustomRewardTriggers.IsCondition(d.Trigger) ? CustomRewardTriggers.ConditionText(d.Trigger) : "when " + owner + " " + CustomRewardTriggers.Action(d.Trigger, d.Threshold);
-        if (CustomRewardTriggers.IsCondition(d.Trigger)) return effect + " " + condition + ". The item must be owned.";
+        if (CustomRewardTriggers.IsCondition(d.Trigger)) return Capital(effect) + " " + condition + "." + ConditionNote(d) + " The item must be owned.";
         string duration = d.Effect == StatChange ? (d.Duration == "Seconds" ? "for " + d.Seconds + " seconds" : "for the " + d.Duration.ToLowerInvariant().Replace("of ", "of the "))
             : Find(d.Effect)?.Timed == true || d.Effect == Knockout ? "for " + d.Seconds + " seconds" : "immediately";
-        return (d.Chance == 100 ? "" : d.Chance + "% chance: ") + char.ToUpperInvariant(condition[0]) + condition.Substring(1) + ", " + effect + " " + duration + ".\n"
-            + "Up to " + d.ActivationsPerMatch + (d.IsRelic && (CustomRewardTriggers.IsOpponentAction(d.Trigger) || d.Trigger == "Referee knocked out" || d.Trigger == "Goal reversed") ? " activations per team per match. " : " activations per triggering player per match. ")
-            + (d.Effect == StatChange ? "Maximum " + d.MaxStacks + " active stacks per recipient." : Find(d.Effect)?.Timed == true ? "Repeated activations refresh the duration." : "The effect happens at this event.")
+        return (d.Chance == 100 ? "" : d.Chance + "% chance: ") + Capital(condition) + ", " + effect + " " + duration + ".\n"
+            + ActivationText(d, d.IsRelic && (CustomRewardTriggers.IsOpponentAction(d.Trigger) || d.Trigger == "Referee knocked out" || d.Trigger == "Goal reversed") ? "per team per match. " : "per triggering player per match. ")
+            + (d.Effect == StatChange ? StackText(d) : Find(d.Effect)?.Timed == true ? "Repeated activations refresh the duration." : "The effect happens at this event.")
             + (d.ResetOn.Length == 0 ? "" : " This item's active bonus resets when " + owner + " " + CustomRewardTriggers.Action(d.ResetOn, 1) + ". Activation limits are unchanged.");
     }
 }
