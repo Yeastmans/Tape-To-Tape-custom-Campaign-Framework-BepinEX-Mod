@@ -33,6 +33,7 @@
     <Compile Include="../CampaignCore/FreeAgentTalentPool.cs" Link="Core/FreeAgentTalentPool.cs" />
     <Compile Include="../CampaignCore/FreeAgentStats.cs" Link="Core/FreeAgentStats.cs" />
     <Compile Include="../CampaignCore/GoalieFreeAgents.cs" Link="Core/GoalieFreeAgents.cs" />
+    <Compile Include="../CampaignCore/GoalieFeatureOptions.cs" Link="Core/GoalieFeatureOptions.cs" />
     <Compile Include="../CampaignCore/GoalieRecruitSnapshots.cs" Link="Core/GoalieRecruitSnapshots.cs" />
     <Compile Include="../CampaignCore/FreeAgentAbilities.cs" Link="Core/FreeAgentAbilities.cs" />
     <EmbeddedResource Include="../../assets/reward-pools/normal_run_pool.tsv" LogicalName="NormalRewardPools.tsv" />

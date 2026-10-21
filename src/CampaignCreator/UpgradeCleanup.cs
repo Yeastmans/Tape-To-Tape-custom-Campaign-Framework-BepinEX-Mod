@@ -34,6 +34,7 @@ public sealed class UpgradeCleanup
         fields["campaign"].Add(FreeAgentTalentPool.DisableExtrasKey);
         fields["campaign"].Add(FreeAgentAbilities.DisableKey);
         fields["campaign"].Add(FieldSchema.RefereeHeadKey);
+        fields["campaign"].Add(GoalieFeatureOptions.RecruitmentKey);
         fields["campaign"].UnionWith(new[] { FreeAgentTalentPool.ModeKey, FreeAgentTalentPool.SelectedKey });
         foreach (string kind in RewardPoolDefinition.Kinds.Concat(CustomRewardDefinition.Kinds).Append("Goalie Abilities"))
             fields["campaign"].UnionWith(new[] { "Pool Mode " + kind, "Selected " + kind, "Included " + kind, "Excluded " + kind });

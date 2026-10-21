@@ -40,7 +40,7 @@ internal sealed partial class TeamEditorView
                 if (legacy.Length > 0 && Value(legacy).Equals("yes", StringComparison.OrdinalIgnoreCase)) saved = "on";
             }
             var choice = new ComboBox { Name = "Behavior_" + behavior.Id, Tag = behavior.Key, ItemsSource = new[] { "Inherit", "On", "Off" },
-                SelectedIndex = saved is "on" or "yes" or "true" ? 1 : saved is "off" or "no" or "false" ? 2 : 0,
+                SelectedIndex = saved is "on" or "yes" or "true" || (behavior.Id == GoalieFeatureOptions.ReserveBehaviorId && saved == "1") ? 1 : saved is "off" or "no" or "false" ? 2 : 0,
                 Width = 130, VerticalAlignment = VerticalAlignment.Center };
             int requested = choice.SelectedIndex;
             Track(behavior.Key, () => Value(VanillaCopyData.SquadId).Length>0 && requested==0 ? "Inherit"

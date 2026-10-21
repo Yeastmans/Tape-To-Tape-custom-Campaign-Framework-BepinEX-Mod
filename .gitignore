@@ -61,6 +61,7 @@ tests/CampaignStudioChecks/*
 !tests/CampaignStudioChecks/LogoPickerChecks.cs
 !tests/CampaignStudioChecks/PlayerLogoChecks.cs
 !tests/CampaignStudioChecks/ImportLibraryChecks.cs
+!tests/CampaignStudioChecks/GoalieFreeAgentChecks.cs
 !tests/TeamLookFillChecks/
 tests/TeamLookFillChecks/*
 !tests/TeamLookFillChecks/Program.cs
@@ -75,3 +76,12 @@ tests/JerseyLogoRuntimeChecks/*
 tests/CampaignLogoResolutionChecks/*
 !tests/CampaignLogoResolutionChecks/CampaignLogoResolutionChecks.csproj
 !tests/CampaignLogoResolutionChecks/Program.cs
+
+!tests/GoalieFreeAgentChecks/
+tests/GoalieFreeAgentChecks/*
+!tests/GoalieFreeAgentChecks/GoalieFreeAgentChecks.csproj
+!tests/GoalieFreeAgentChecks/Program.cs
+!tests/GoalieFeatureEditorChecks/
+tests/GoalieFeatureEditorChecks/*
+!tests/GoalieFeatureEditorChecks/GoalieFeatureEditorChecks.csproj
+!tests/GoalieFeatureEditorChecks/Program.cs

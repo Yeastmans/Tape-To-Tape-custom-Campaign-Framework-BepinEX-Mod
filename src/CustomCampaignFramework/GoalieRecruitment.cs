@@ -23,6 +23,8 @@ internal static class GoalieRecruitment
         internal IntPtr State, Run, Team, Blueprint;
         internal string RunId, Folder;
         internal int Act, Layer, Index;
+        internal bool RecruitmentEnabled;
+        internal string ConfigurationError;
         internal bool Matches(CampaignState state)
         {
             var run = state?.runData;
@@ -55,9 +57,23 @@ internal static class GoalieRecruitment
             var run = state.runData;
             if (string.IsNullOrWhiteSpace(run.runID) || run.currentNodePoint.x != node.Node.NodeIndex
                 || run.currentNodePoint.y != node.Node.LayerIndex || CustomMapLayout.RecruitRoleFor(node) != GoalieFreeAgents.Goalies) return;
+            string campaignFile = Path.Combine(Plugin.ModFolder, "campaign.txt");
+            bool enabled = false;
+            string error = "";
+            try
+            {
+                var campaign = new CampaignDocument(File.Exists(campaignFile) ? File.ReadAllText(campaignFile) : "");
+                enabled = GoalieFeatureOptions.Recruitment(campaign);
+                if (!enabled) error = $"Goalies node at act {run.CurrentAct}, layer {node.Node.LayerIndex + 1}, node {node.Node.NodeIndex + 1} requires Goalie Recruitment = On in campaign.txt (found '{campaign.Get(GoalieFeatureOptions.RecruitmentKey)}').";
+            }
+            catch (Exception ex)
+            {
+                error = $"Goalies node at act {run.CurrentAct}, layer {node.Node.LayerIndex + 1}, node {node.Node.NodeIndex + 1} cannot read Goalie Recruitment from campaign.txt: {ex.Message}";
+            }
             selected = new Selection { State = state.Pointer, Run = run.Pointer, Team = run.teamData.Pointer,
                 Blueprint = state.currentNode.Pointer, RunId = run.runID, Folder = Plugin.ModFolder,
-                Act = run.CurrentAct, Layer = node.Node.LayerIndex, Index = node.Node.NodeIndex };
+                Act = run.CurrentAct, Layer = node.Node.LayerIndex, Index = node.Node.NodeIndex,
+                RecruitmentEnabled = enabled, ConfigurationError = error };
         }
         catch (Exception ex) { Plugin.Log.LogWarning("[GoalieRecruit] Could not resolve saved map role: " + ex.Message); }
     }
@@ -69,6 +85,12 @@ internal static class GoalieRecruitment
         try
         {
             if (!IsGoalieNode) return false;
+            if (!selected.RecruitmentEnabled)
+            {
+                Plugin.Log.LogError("[GoalieRecruit] " + selected.ConfigurationError);
+                TwoLineContracts.ReplaceChoices(node, cards);
+                return false;
+            }
             if (visit == null || visit.Node != node.Pointer || !ReferenceEquals(visit.Selection, selected))
                 visit = new Visit { Selection = selected, Node = node.Pointer };
             var current = visit;

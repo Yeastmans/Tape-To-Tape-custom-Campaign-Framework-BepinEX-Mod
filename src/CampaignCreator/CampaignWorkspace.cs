@@ -57,6 +57,7 @@ public sealed partial class CampaignWorkspace : UserControl
         {
             mapEditor = new MapEditorView(root, directory, () => SelectedTemplate);
             mapEditor.RewardValidation = layouts => string.Join("\n", RewardBudgets(layouts).SelectMany(b => b.Errors));
+            mapEditor.GoalieRecruitmentEnabled = () => GoalieRecruitmentDraft;
         }
         return mapEditor;
     }
@@ -708,6 +709,8 @@ public sealed partial class CampaignWorkspace : UserControl
     private void SaveWorkingCopy()
     {
         if (customRewardCreator?.HasChanges == true) throw new InvalidOperationException("Save your item in the Creator tab, or discard its draft, before saving the campaign.");
+        var goalieNodeErrors = GoalieFeatureOptions.ValidateNodes(GoalieRecruitmentDraft, mapEditor?.RewardLayouts ?? SavedLayouts()).ToArray();
+        if (goalieNodeErrors.Length > 0) throw new InvalidOperationException(string.Join("\n", goalieNodeErrors));
         freeAgentTalentWeights?.Validate();
         var rewardErrors = RewardBudgets().SelectMany(b => b.Errors).ToArray();
         if (rewardErrors.Length > 0) throw new InvalidOperationException(string.Join("\n", rewardErrors));
@@ -733,6 +736,17 @@ public sealed partial class CampaignWorkspace : UserControl
             changed.Save(Path.Combine(directory, "reward_pools.txt")); rewards = changed; rewardDirty = false;
         }
         CaptureSavedFieldValues();
+    }
+    private bool GoalieRecruitmentDraft => fields.TryGetValue(GoalieFeatureOptions.RecruitmentKey, out var read)
+        ? GoalieFeatureOptions.Recruitment(new CampaignDocument(GoalieFeatureOptions.RecruitmentKey + " = " + read()))
+        : GoalieFeatureOptions.Recruitment(settings);
+    private IEnumerable<MapLayout> SavedLayouts()
+    {
+        string folder = Path.Combine(directory, "map_layouts");
+        return Directory.Exists(folder)
+            ? Directory.GetFiles(folder, "map-*.txt").OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+                .Select(path => MapLayout.Parse(File.ReadAllText(path))).ToArray()
+            : Array.Empty<MapLayout>();
     }
     private void Save()
     {

@@ -62,6 +62,11 @@ public sealed class MapEditorView : UserControl
     public int MapCount => drafts.Count;
     public IReadOnlyList<MapLayout> RewardLayouts => drafts.Select(d => d.Layout!).ToList();
     public Func<IReadOnlyList<MapLayout>, string?>? RewardValidation { get; set; }
+    public Func<bool>? GoalieRecruitmentEnabled { get; set; }
+    private bool RecruitmentEnabled => GoalieRecruitmentEnabled?.Invoke() ?? GoalieFeatureOptions.Recruitment(
+        new CampaignDocument(File.Exists(System.IO.Path.Combine(campaignDir, "campaign.txt"))
+            ? File.ReadAllText(System.IO.Path.Combine(campaignDir, "campaign.txt")) : ""));
+    public void RefreshGoalieRecruitment() { if (map == null) return; Inspect(); Validate(); }
     public void SelectMap(int index)
     {
         if (index >= 0 && index < drafts.Count) LoadStage(index);
@@ -548,6 +553,7 @@ public sealed class MapEditorView : UserControl
     }
     private List<string> ValidateLayout(MapLayout layout)
         => layout.Validate(teamNames.Keys).Concat(MapPlacementBounds.Validate(layout)).Concat(MapCatalog.ValidateSource(layout, sourceCatalog))
+            .Concat(GoalieFeatureOptions.ValidateNodes(RecruitmentEnabled, new[] { layout }))
             .Concat(layout.Nodes.Where(n => n.Type is "Elite" or "Boss" && n.Stadium.Length > 0
                 && !NodeSettingsWindow.Stadiums.Any(s => s.Id == n.Stadium))
                 .Select(n => $"Stadium '{n.Stadium}' is unavailable. Choose a current stadium."))
@@ -897,7 +903,14 @@ public sealed class MapEditorView : UserControl
         if (n.Type == "GeneralManager")
         {
             inspector.Children.Add(new TextBlock { Text = "Recruit role" });
-            var role = new ComboBox { Name = "RecruitRole", ItemsSource = new[] { GoalieFreeAgents.Skaters, GoalieFreeAgents.Goalies }, SelectedItem = n.GmRole, HorizontalAlignment = HorizontalAlignment.Stretch };
+            bool enabled = RecruitmentEnabled;
+            if (!enabled && n.GmRole == GoalieFreeAgents.Goalies)
+                inspector.Children.Add(new TextBlock { Text = "This node is set to Goalies. Enable goalie recruitment in campaign settings or change the node to Skaters.", TextWrapping = TextWrapping.Wrap, Foreground = Brushes.Orange });
+            var role = new ComboBox { Name = "RecruitRole", ItemsSource = enabled
+                ? new[] { GoalieFreeAgents.Skaters, GoalieFreeAgents.Goalies } : new[] { GoalieFreeAgents.Skaters },
+                SelectedItem = enabled || n.GmRole == GoalieFreeAgents.Skaters ? n.GmRole : null,
+                HorizontalAlignment = HorizontalAlignment.Stretch };
+            if (!enabled) ToolTip.SetTip(role, "Enable Goalie recruitment in campaign settings to choose Goalies for this node.");
             role.SelectionChanged += (_, _) => { if (role.SelectedItem is not string value || value == n.GmRole) return; Checkpoint(); n.GmRole = value; Validate(); };
             inspector.Children.Add(role);
             Count("Players to recruit", n.GmChoices, 1, 20, v => n.GmChoices = v);

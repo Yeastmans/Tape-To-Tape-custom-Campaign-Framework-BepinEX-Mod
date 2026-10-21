@@ -242,6 +242,7 @@ internal sealed partial class TeamEditorView : UserControl
         reserved.UnionWith(RelicOpponentInteractions.All.Select(i => i.SettingKey));
         reserved.UnionWith(new[] { "No Effects Bench", "No Effects Superstars", "Glasses" });
         reserved.Add("Number Style"); // Team look → Name & numbers
+        reserved.Add(GoalieFeatureOptions.ReserveKey); // Behavior control belongs only to playable squads.
         // Remaining fields flow in name-width columns instead of stretching across the page.
         var extras = new WrapPanel { Orientation = Orientation.Horizontal };
         foreach (var key in doc.Fields.Keys.Concat(new[] { "Description", "Squad Template", "Squad Head", "Stat Scale", "Bench Size", "Bench Head", "No Bench Bonus", "Transition Primary", "Transition Secondary", "Transition Tertiary" }).Distinct(StringComparer.OrdinalIgnoreCase).Where(k => !UpgradeCleanup.Retired(k) && !reserved.Contains(k) && !k.StartsWith("Bicep", StringComparison.OrdinalIgnoreCase))) extras.Children.Add(new StackPanel { Spacing = 3, Width = 300, Margin = new Thickness(0, 0, StudioTheme.SpaceMd, StudioTheme.SpaceSm), Children = { Label(key.ToUpperInvariant()), Field(key) } });

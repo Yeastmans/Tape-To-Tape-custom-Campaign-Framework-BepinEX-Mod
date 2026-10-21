@@ -16,7 +16,7 @@ public sealed class SquadBehavior
         "superstar_screen" or "bench_screen" or "gm_intro" or "oldschool_intro" or "auto_bench" => "Starting choices",
         "four_skaters" or "three_skaters" or "trio_draft" or "two_lines" or "line_stamina" or "no_bench_quests" or "no_bench_snapshots" or "solo_lock" or "gauntlet_draft" or "no_pause_lineup" => "Roster and bench",
         "speedrun" or "eliminator" or "goal_only_mode" or "no_injuries" or "solo_control" or "manual_poke" or "tchel_offside" or "retro_skating" or "violence" or "slapshot_ai" or "sinbin_goal" => "Squad match rules",
-        "gm_contracts" or "gm_rewards" or "gm_reroll" or "stat_rewards" or "solo_rewards" or "no_ability_offers" or "slapshot_rewards" or "gauntlet_scaling" or "no_relic_rewards" => "Recruitment and rewards",
+        "gm_contracts" or "gm_rewards" or "gm_reroll" or "reserve_goalie" or "stat_rewards" or "solo_rewards" or "no_ability_offers" or "slapshot_rewards" or "gauntlet_scaling" or "no_relic_rewards" => "Recruitment and rewards",
         "gm_map" or "no_generated_gm" or "oldschool_map" or "training_map" or "solo_map" or "gauntlet_opponents" or "referee_opponents" or "no_angus_curse" or "no_injury_curse" or "no_eliminator_curse" => "Maps and opponents",
         _ => "Presentation and identity"
     };
@@ -35,6 +35,7 @@ public static class SquadBehaviors
         new SquadBehavior("gm_contracts", "Limited free-agent contracts", "Use native GM contract generation, countdown, expiry and replacement eligibility. Starting skaters receive four-match contracts except those recognized as Angus/lead by the squad; the goalie is excluded. New recruitment uses the Free agents player and talent pools. Start a new run to change starting contracts; this does not add GM map nodes or change match rewards.", "generalmanager"),
         new SquadBehavior("gm_rewards", "GM match reward mix", "On: replace the node's saved match rewards with 0 normal talent selections and 1 relic selection. Off: use the node's saved counts. Inherit: On for GM, Off for other presets. Bonus-reward relics still apply.", "generalmanager"),
         new SquadBehavior("gm_reroll", "Refresh rewards after recruitment", "Reroll skater node rewards after a GM signing.", "generalmanager"),
+        new SquadBehavior("reserve_goalie", "Reserve goalie", "Allow this playable squad to keep a reserve goalie. Starts Off and applies only to this squad."),
         new SquadBehavior("gm_intro", "Skip squad-menu exit transition", "Skip the squad menu's exit transition when starting a run, as GM does. This does not enable contracts or decide which starting screens appear.", "generalmanager"),
         new SquadBehavior("gm_map", "GM map recruitment rules", "Keep GM recruitment nodes and native recruitment counts on inherited maps. Authored maps keep their saved nodes.", "generalmanager"),
         new SquadBehavior("stat_rewards", "Attribute rewards", "Convert skater rewards and matching Coach/Fan events to attribute rewards.", "statrewards"),
@@ -105,7 +106,7 @@ public static class SquadBehaviors
     private static bool ConfiguredValue(string template, SquadBehavior behavior, Func<string, string> read)
     {
         string value = (read(behavior.Key) ?? "").Trim().ToLowerInvariant();
-        if (value == "on" || value == "yes" || value == "true") return true;
+        if (value == "on" || value == "yes" || value == "true" || (behavior.Id == GoalieFeatureOptions.ReserveBehaviorId && value == "1")) return true;
         if (value == "off" || value == "no" || value == "false") return false;
         return behavior.Templates.Contains(SquadTemplatePolicy.Identity(template), StringComparer.OrdinalIgnoreCase);
     }

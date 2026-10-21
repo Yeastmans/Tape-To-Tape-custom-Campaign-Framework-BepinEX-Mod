@@ -13,6 +13,10 @@ public sealed partial class CampaignWorkspace
 
     private Control GoalieFreeAgentsPanel()
     {
+        var recruitment = new CheckBox { Name = "GoalieRecruitment", Content = "Enable goalie recruitment at Goalies nodes",
+            IsChecked = GoalieFeatureOptions.Recruitment(settings) };
+        fields[GoalieFeatureOptions.RecruitmentKey] = () => recruitment.IsChecked == true ? "On" : "Off";
+        recruitment.IsCheckedChanged += (_, _) => { message.Text = "Unsaved goalie recruitment setting"; mapEditor?.RefreshGoalieRecruitment(); };
         selectedGoalieAgents = GoalieFreeAgents.SelectedFiles(directory).Select(p => Path.GetFileName(p)).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var list = new StackPanel { Name = "GoalieFreeAgents", Spacing = StudioTheme.SpaceSm };
         void Refresh()
@@ -63,6 +67,7 @@ public sealed partial class CampaignWorkspace
         refreshRosters.Add(Refresh); Refresh();
         return InsetPoolPanel.Frame(new StackPanel { Spacing = StudioTheme.SpaceMd, Children = {
             new TextBlock { Text = "Goalies", FontSize = 20 },
+            recruitment,
             new TextBlock { Text = "Set a General Manager node's Recruit role to Goalies to use this campaign pool. Recruited goalies replace your current goalie and stay until replaced again. Edit each goalie's stats and talents in the goalie editor. Check candidates, then Save campaign; an empty pool offers no goalies. Unchecked goalies remain editable.", TextWrapping = TextWrapping.Wrap },
             new WrapPanel { Children = { import, create } }, InsetPoolPanel.List(list, 440, "GoalieFreeAgentPoolScroll")
         } }, "GoalieFreeAgentPoolPanel");
