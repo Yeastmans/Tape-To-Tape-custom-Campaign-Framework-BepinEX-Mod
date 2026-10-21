@@ -20,7 +20,7 @@ internal static partial class CampaignSharing
     internal const string HeadBundle = "_heads";
     // Local-only folders: save state, Studio backups and removed teams never ship.
     private static readonly string[] SkipFiles = ["save.txt", "save.txt.bak"];
-    private static readonly string[] SkipFolders = [LogoBundle, HeadBundle, "map_backups", "_removed_opponents", "custom_reward_progress"];
+    private static readonly string[] SkipFolders = [LogoBundle, HeadBundle, "map_backups", "_removed_opponents", "custom_reward_progress", GoalieRosterStore.FolderName];
     private static readonly HttpClient http = CreateClient();
 
     internal sealed record CommunityItem(string Name, string Path, long Size, string Modified, CommunityPresentation? Presentation = null);

@@ -148,6 +148,7 @@ public static class GoalieRosterStore
         string token = matches[0];
         try
         {
+            Ordinary(token);
             var journal = Deserialize<Journal>(File.ReadAllText(token));
             var state = Validate(journal, token);
             if (state.RunId != runId || state.CampaignId != CampaignIdentity(campaignFolder)) return null;

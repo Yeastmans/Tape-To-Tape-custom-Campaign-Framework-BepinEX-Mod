@@ -1,0 +1,23 @@
+using System.IO.Compression;
+using System.Reflection;
+using CampaignCore;
+
+string fixture = Path.Combine(Path.GetTempPath(), "ccf-goalie-share-" + Guid.NewGuid().ToString("N"));
+string campaign = Path.Combine(fixture, "campaigns", "Authored");
+string privateFolder = Path.Combine(campaign, GoalieRosterStore.FolderName);
+Directory.CreateDirectory(privateFolder);
+File.WriteAllText(Path.Combine(campaign, "campaign.txt"), "Name = Authored\n");
+File.WriteAllText(Path.Combine(campaign, "author-art.txt"), "authored content retained");
+string recovery = Path.Combine(privateFolder, "r-previous.record");
+File.WriteAllText(recovery, "private recovery bytes");
+File.WriteAllText(Path.Combine(privateFolder, "r-prepared.record"), "private prepared bytes");
+File.WriteAllText(Path.Combine(privateFolder, "supplement.txt"), "private snapshot metadata");
+byte[] before = File.ReadAllBytes(recovery);
+string output = Path.Combine(fixture, "package.zip");
+var sharing = Assembly.Load("T2T Campaign Studio").GetType("CampaignCreator.CampaignSharing", true);
+sharing.GetMethod("Zip", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, new object[] { campaign, output, fixture });
+using var zip = ZipFile.OpenRead(output);
+if (zip.Entries.Any(e => e.FullName.Split('/').Contains(GoalieRosterStore.FolderName))) throw new Exception("Private goalie checkpoint leaked into campaign ZIP");
+if (!zip.Entries.Any(e => e.FullName == "Authored/author-art.txt") || !zip.Entries.Any(e => e.FullName == "Authored/campaign.txt")) throw new Exception("Authored content was lost");
+if (!File.ReadAllBytes(recovery).SequenceEqual(before) || !File.Exists(Path.Combine(privateFolder, "r-prepared.record"))) throw new Exception("Sharing changed local recovery records");
+Console.WriteLine("PASS 3 actual CampaignSharing ZIP checks: private records excluded, authored content retained, local recovery unchanged");

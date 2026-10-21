@@ -288,5 +288,8 @@ internal static class GoalieRecruitChoices
 [HarmonyPatch(typeof(DeserializerV2), "DeserializeFromModel")]
 internal static class GoalieRecruitLoaded
 {
-    [HarmonyPostfix] private static void Postfix(RunData __0) => GoalieRecruitment.Restore(__0);
+    [HarmonyPostfix] private static void Postfix(RunData __0)
+    {
+        if (!GoaliePersistenceBridge.Enabled) GoalieRecruitment.Restore(__0);
+    }
 }

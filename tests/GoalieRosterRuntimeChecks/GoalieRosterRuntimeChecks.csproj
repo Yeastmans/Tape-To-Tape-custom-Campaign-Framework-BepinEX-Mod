@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><AllowUnsafeBlocks>true</AllowUnsafeBlocks></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../../src/CampaignCore/CampaignCore.csproj" />
+    <Compile Include="../../src/CustomCampaignFramework/GoalieNativeSnapshot.cs" Link="GoalieNativeSnapshot.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/GoalieNativeGraph.cs" Link="GoalieNativeGraph.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/GoalieOperationQueue.cs" Link="GoalieOperationQueue.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/GoalieCheckpointTransaction.cs" Link="GoalieCheckpointTransaction.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/GoalieNativeTask.cs" Link="GoalieNativeTask.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/GoalieNativeAdmission.cs" Link="GoalieNativeAdmission.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/GoalieNativeCheckpoint.cs" Link="GoalieNativeCheckpoint.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/GoalieRosterRuntime.cs" Link="GoalieRosterRuntime.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/GoaliePersistenceBridge.cs" Link="GoaliePersistenceBridge.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/GoaliePersistenceContracts.cs" Link="GoaliePersistenceContracts.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/NativeCompatibility.cs" Link="NativeCompatibility.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/JerseyLogoManagedTargets.cs" Link="JerseyLogoManagedTargets.cs" />
+    <Compile Include="../../src/ModCompatibility/Shared/NativeCompatibilityProfile.cs" Link="NativeCompatibilityProfile.cs" />
+  </ItemGroup>
+</Project>

@@ -25,5 +25,6 @@ public sealed class MatchRuleRunner : MonoBehaviour
     private void Update()
     {
         OffsideMatch.Tick();
+        GoaliePersistenceBridge.Tick();
     }
 }

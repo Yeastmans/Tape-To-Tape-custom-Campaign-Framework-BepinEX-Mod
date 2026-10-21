@@ -1787,6 +1787,7 @@ public class Plugin : BasePlugin
 
         var harmony = new Harmony("com.mods.customcampaign");
         harmony.PatchAll();
+        GoaliePersistenceContracts.Install();
         CustomRewardGoalRules.Install();
         CustomRewardCapabilities.Install();
         CustomRewardDataCapabilities.Install();

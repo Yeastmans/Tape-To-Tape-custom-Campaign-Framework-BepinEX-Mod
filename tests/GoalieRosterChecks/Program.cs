@@ -8,7 +8,7 @@ Directory.CreateDirectory(root);
 GoalieRosterState State(string run = "run-1") => new() {
     CampaignId = GoalieRosterStore.CampaignIdentity(root), RunId = run, SquadId = "squad-1", ReserveEnabled = true,
     NativeFingerprint = "native-run-payload-sha256", Active = new() { PlayerId = "active", NativePayload = "{\"earned\":72}", Supplemental = "Recruit Pass Read = 81\n" },
-    Reserve = new() { PlayerId = "reserve", NativePayload = "{\"earned\":63}", Supplemental = "Jersey Logo Away = none\n", Contract = new() { Duration = 3, PlayedMatches = 1, LastMatchKey = "match-1" } },
+    Reserve = new() { PlayerId = "reserve", NativePayload = "{\"earned\":63}", Supplemental = "Jersey Logo Away = none\n", Contract = new() { Duration = 3, PlayedMatches = 1, LastMatchKey = "match-1", AwaitingReplacement = true } },
     ArmedAttemptToken = "armed-attempt", ProcessedAttemptTokens = new[] { "previous-attempt" }
 };
 string token = GoalieRosterStore.Prepare(root, State());
@@ -16,10 +16,20 @@ string marker = GoalieRosterStore.Marker(token), checkpoint = GoalieRosterStore.
 GoalieRosterStore.Commit(token, checkpoint);
 var loaded = GoalieRosterStore.Load(root, "run-1", checkpoint);
 Check(loaded.Active.NativePayload == State().Active.NativePayload && loaded.Reserve.NativePayload == State().Reserve.NativePayload
+    && loaded.Active.Supplemental == "Recruit Pass Read = 81\n" && loaded.Reserve.Supplemental == "Jersey Logo Away = none\n"
+    && loaded.ReserveEnabled && loaded.SquadId == "squad-1" && loaded.Reserve.Contract.Duration == 3
+    && loaded.Reserve.Contract.LastMatchKey == "match-1" && loaded.Reserve.Contract.AwaitingReplacement
     && loaded.Reserve.Contract.PlayedMatches == 1 && loaded.ArmedAttemptToken == "armed-attempt"
     && loaded.ProcessedAttemptTokens.SequenceEqual(new[] { "previous-attempt" }), "FullStateRoundTrip");
 Check(GoalieRosterStore.Load(root, "run-2", checkpoint) == null, "NoCrossRunRestore");
 Check(GoalieRosterStore.Load(Path.Combine(root, "other"), "run-1", checkpoint) == null, "NoCrossCampaignRestore");
+string foreignFolder = Path.Combine(root, "other", GoalieRosterStore.FolderName);
+Directory.CreateDirectory(foreignFolder);
+File.Copy(token, Path.Combine(foreignFolder, Path.GetFileName(token)));
+Check(GoalieRosterStore.Load(Path.Combine(root, "other"), "run-1", checkpoint) == null, "ExistingForeignRecordRejectedByCampaignOwnership");
+var directClone = loaded.Clone(); directClone.Reserve.Contract.Duration = 99; directClone.Active.PlayerId = "different";
+directClone.ProcessedAttemptTokens[0] = "different";
+Check(loaded.Reserve.Contract.Duration == 3 && loaded.Active.PlayerId == "active" && loaded.ProcessedAttemptTokens[0] == "previous-attempt", "DirectCloneDetachesRecordsContractsAndLedger");
 loaded.ProcessedAttemptTokens[0] = "changed";
 Check(GoalieRosterStore.Load(root, "run-1", checkpoint).ProcessedAttemptTokens[0] == "previous-attempt", "NoSharedMutableLedger");
 var before = File.ReadAllBytes(token);
@@ -61,3 +71,10 @@ foreach (string stage in new[] { "prepare:before-write", "prepare:after-write", 
     Check(GoalieRosterStore.Load(root, "run-1", checkpoint) != null, stage + " retains matching previous checkpoint");
 }
 Console.WriteLine($"PASS {checks} goalie roster store checks; fixtures {root}");
+string outside = Path.Combine(root, "linked-target.record");
+File.Copy(token, outside); byte[] outsideBytes = File.ReadAllBytes(outside);
+File.Delete(token);
+File.CreateSymbolicLink(token, outside);
+Check(GoalieRosterStore.Load(root, "run-1", checkpoint) == null, "SelectedLinkedRecordRejected");
+Check(File.ReadAllBytes(outside).SequenceEqual(outsideBytes), "SelectedLinkTargetPreserved");
+Console.WriteLine($"PASS {checks} goalie roster store checks including selected-path guard");
