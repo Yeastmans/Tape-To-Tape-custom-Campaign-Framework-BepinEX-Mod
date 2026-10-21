@@ -85,3 +85,7 @@ tests/GoalieFreeAgentChecks/*
 tests/GoalieFeatureEditorChecks/*
 !tests/GoalieFeatureEditorChecks/GoalieFeatureEditorChecks.csproj
 !tests/GoalieFeatureEditorChecks/Program.cs
+!tests/GoalieRosterChecks/
+tests/GoalieRosterChecks/*
+!tests/GoalieRosterChecks/GoalieRosterChecks.csproj
+!tests/GoalieRosterChecks/Program.cs
