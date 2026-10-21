@@ -65,6 +65,7 @@ internal static class JerseyLogoNativeHooks
         internal SkaterData[] Candidates;
         internal IntPtr Renderer, Owner;
         internal Selection Selection;
+        internal bool StartsPreview;
     }
     [ThreadStatic] private static Handoff handoff;
     private static readonly Dictionary<IntPtr, Selection> lists = new(), composites = new();
@@ -136,10 +137,15 @@ internal static class JerseyLogoNativeHooks
             else if (kind == ForwardOwner) unknown = WorldTarget(new Forward(Ptr(state, 0x18)).skeletonAnimation);
             else if (kind == GoalieOwner) unknown = WorldTarget(new Goaltender.Goaltender(Ptr(state, 0x18)).skeletonAnimation);
             if (unknown?.Alive != true) return null;
-            return JerseyLogoRequests.Start(kind, new JerseyLogoRequests.Request { Renderer = unknown.Pointer, Context = -1, Goalie = kind == GoalieOwner || (kind == World && Flag(state, 0x44)) || (kind == Graphic && Flag(state, 0x40)), Roots = new Roots { Target = unknown } });
+            targets[unknown.Pointer] = unknown;
+            var native = JerseyLogoRequests.BeginNative(unknown.Pointer, Pointer(unknown.Skin),
+                kind == GoalieOwner || (kind == World && Flag(state, 0x44)) || (kind == Graphic && Flag(state, 0x40)),
+                context, new Roots { Target = unknown });
+            return JerseyLogoRequests.Start(kind, native);
         }
         Target target; Selection selected = null; object owner = null; IntPtr ownerPtr = IntPtr.Zero; Skin skin;
         bool goalie;
+        bool newPreview = false;
         if (kind == ForwardOwner)
         {
             ownerPtr = Ptr(state, 0x18); if (ownerPtr == IntPtr.Zero) return null;
@@ -164,16 +170,19 @@ internal static class JerseyLogoNativeHooks
             skin = composite == IntPtr.Zero ? null : new Skin(composite);
             goalie = Flag(state, kind == World ? 0x44 : 0x40);
             var parent = JerseyLogoRequests.Current?.Operation.Request;
-            if (parent != null && parent.Renderer == target.Pointer && parent.Roots is Roots saved && parent.Goalie == goalie)
+            newPreview = kind == Graphic && handoff?.StartsPreview == true && handoff.Renderer == target.Pointer && handoff.Selection?.Context == context;
+            if (newPreview)
+            { selected = handoff.Selection; owner = handoff.Root; ownerPtr = handoff.Owner; }
+            else if (parent != null && parent.Renderer == target.Pointer && parent.Roots is Roots saved && parent.Goalie == goalie)
             { selected = saved.Selection; owner = saved.Owner; ownerPtr = parent.Owner; }
-            else if (composites.TryGetValue(composite, out var found) && found.Context == context) selected = found;
             else if (handoff?.Renderer == target.Pointer && handoff.Selection?.Context == context)
             { selected = handoff.Selection; owner = handoff.Root; ownerPtr = handoff.Owner; }
+            else if (composites.TryGetValue(composite, out var found) && found.Context == context) selected = found;
         }
         if (!target.Alive) return null;
         var roots = new Roots { Target = target, Selection = selected, Owner = owner, Composite = skin };
         var player = selected?.Player?.Pointer ?? IntPtr.Zero;
-        var inherited = kind is World or Graphic ? JerseyLogoRequests.Current?.Operation.Request : null;
+        var inherited = !newPreview && (kind is World or Graphic) ? JerseyLogoRequests.Current?.Operation.Request : null;
         var request = JerseyLogoRequests.Begin(target.Pointer, Pointer(skin), player, ownerPtr, goalie, context, selected?.Choice ?? default, roots, inherited);
         // Keep the exact newly constructed composite rooted across suspension.
         targets[target.Pointer] = target;
@@ -275,7 +284,7 @@ internal static class JerseyLogoNativeHooks
         {
             // A native UI clear/identity update is a real new native write. It
             // invalidates older authored work; it never acquires its override.
-            JerseyLogoRequests.Begin(target.Pointer, Pointer(target.Skin), IntPtr.Zero, IntPtr.Zero, goalie, context, default, new Roots { Target = target });
+            JerseyLogoRequests.BeginNative(target.Pointer, Pointer(target.Skin), goalie, context, new Roots { Target = target });
         }
         return JerseyLogoRequests.FinalLogo(request, target.Pointer, Pointer(target.Skin), goalie, ref texture);
     }
@@ -316,6 +325,48 @@ internal static class JerseyLogoNativeHooks
         => OwnerLogoScope(WorldTarget(__instance.skeletonAnimation), __instance.Pointer, __instance.goaltenderData, out __state);
     private static void OwnerLogoFinalizer(JerseyLogoRequests.Scope __state) => __state?.Dispose();
 
+    // Pinned UpdatePlayerSkeleton passes home=true and onlyHead=false into
+    // GetForwardSkin, then the same player/composite into graphic ApplySkin.
+    private static void SelectedPlayerScope(SelectedPlayerUI __instance, ForwardData forwardData, out Handoff __state)
+    {
+        __state = handoff;
+        if (!Enabled) return;
+        try
+        {
+            ObserveContext();
+            var target = new Target { Graphic = __instance.skeletonGraphic };
+            if (!target.Alive) { handoff = null; return; }
+            // Selection change retires the previous preview even if native setup fails.
+            JerseyLogoRequests.BeginNative(target.Pointer, Pointer(target.Skin), false, context, new Roots { Target = target });
+            if (forwardData == null) { handoff = null; return; }
+            handoff = new Handoff { Root = __instance, Owner = __instance.Pointer, Renderer = target.Pointer,
+                Selection = Select(forwardData, true, __instance), StartsPreview = true };
+        }
+        catch (Exception ex) { handoff = null; Warn(ex); }
+    }
+    private static void SelectedPlayerFinalizer(Handoff __state) => handoff = __state;
+    private static void SelectedPlayerLogoScope(SelectedPlayerUI __instance, ForwardData _forwardData, out JerseyLogoRequests.Scope __state)
+    {
+        __state = null;
+        if (!Enabled || _forwardData == null) return;
+        try
+        {
+            ObserveContext();
+            var target = new Target { Graphic = __instance.skeletonGraphic };
+            if (!target.Alive || __instance.currentForwardData?.Pointer != _forwardData.Pointer) return;
+            var active = JerseyLogoRequests.Current?.Operation.Request;
+            // An already executing stale owner must not acquire a newer generation.
+            var request = active?.Renderer == target.Pointer && active.Owner == __instance.Pointer && active.Player == _forwardData.Pointer
+                ? active : JerseyLogoRequests.FindOwner(target.Pointer, __instance.Pointer, _forwardData.Pointer);
+            if (request?.Roots is not Roots roots || roots.Selection?.Home != true || request.Goalie) return;
+            if (ReferenceEquals(active, request)) return;
+            // No skin equality here: the exact request may still be waiting for its
+            // composite. FinalLogo checks that equality before replacing the texture.
+            __state = JerseyLogoRequests.Enter(JerseyLogoRequests.Start(0, request), IntPtr.Zero);
+        }
+        catch (Exception ex) { Warn(ex); }
+    }
+
     internal static void Install()
     {
         if (Enabled || detours.Count > 0) return;
@@ -328,7 +379,10 @@ internal static class JerseyLogoNativeHooks
             var contracts = JsonSerializer.Deserialize<RawNativeHookContract[]>(new StreamReader(stream).ReadToEnd());
             if (profile.GameHash != "92E73E6D0BE549DD8C695302B7AAE6A77CBBF4DE27F27D26ED01F4B3DABC5B8D" || profile.MetadataHash != "1009F63178E260153CBBF224338BDC9124F9468D0F462F7A58327F638188914A")
                 throw new InvalidDataException("Jersey adapters require pinned build 26085704.");
-            ValidateContracts(contracts, profile.RawHooks);
+            JerseyLogoManagedTargets.ValidateBeforeInstall(contracts, profile.RawHooks, profile.NamedHooks);
+            // Resolve the complete named plan (including patch callbacks) before any
+            // native mutation. Installation consumes these same resolved targets.
+            var managed = ResolveManaged();
             foreach (var dependency in new[] {
                 ("MainScriptsAssembly", "7F83636ADC1951E9BE9CE73D3DE3D2BEC7EC707A2AC17A72A0745E733EEF51F3"),
                 ("spine-csharp", "895B13B3EC6AF4B9D27B389C7188321770750B516371F2B2A442BBFDB7253973"),
@@ -346,7 +400,7 @@ internal static class JerseyLogoNativeHooks
             }
             // No patch is installed until every actual target has passed.
             foreach (var contract in contracts) InstallRaw(module.BaseAddress, contract);
-            harmony = new Harmony("EndlessMode.JerseyLogo"); InstallManaged(harmony);
+            harmony = new Harmony("EndlessMode.JerseyLogo"); InstallManaged(harmony, managed);
             Enabled = true; Receipt("installed", "");
         }
         catch (Exception ex)
@@ -363,10 +417,6 @@ internal static class JerseyLogoNativeHooks
             if (!rollbackFailed) callbacks.Clear();
             Receipt(rollbackFailed ? "rollback-incomplete-disabled" : "blocked", ex.Message); Warn(ex);
         }
-    }
-    internal static void ValidateContracts(RawNativeHookContract[] expected, IEnumerable<RawNativeHookContract> approved)
-    {
-        RawNativeHookContract.RequireExactSet(expected, approved, "jersey-logo");
     }
     private static void InstallRaw(IntPtr module, RawNativeHookContract contract)
     {
@@ -400,23 +450,27 @@ internal static class JerseyLogoNativeHooks
         else throw new InvalidDataException("Unknown jersey callback kind.");
         installed.Add(contract);
     }
-    private static void InstallManaged(Harmony h)
+    private sealed class ManagedPatch
     {
-        void Patch(string name, Type[] args, string prefix = null, string postfix = null)
+        internal MethodInfo Target;
+        internal HarmonyMethod Prefix, Postfix, Finalizer;
+    }
+    private static ManagedPatch[] ResolveManaged()
+    {
+        HarmonyMethod Callback(string name)
         {
-            var target = typeof(T2TSkeletonExtensions).GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.DeclaredOnly, null, args, null) ?? throw new MissingMethodException(name);
-            h.Patch(target, prefix == null ? null : new HarmonyMethod(typeof(JerseyLogoNativeHooks), prefix), postfix == null ? null : new HarmonyMethod(typeof(JerseyLogoNativeHooks), postfix));
+            if (string.IsNullOrEmpty(name)) return null;
+            return new HarmonyMethod(typeof(JerseyLogoNativeHooks).GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic)
+                ?? throw new MissingMethodException("Jersey patch callback: " + name));
         }
-        h.Patch(AccessTools.DeclaredMethod(typeof(SkinHelper), "GetSkinForForward", new[] { typeof(SkeletonData), typeof(ForwardData), typeof(bool), typeof(bool), typeof(bool), typeof(bool) }), postfix: new HarmonyMethod(typeof(JerseyLogoNativeHooks), nameof(ForwardComposite)));
-        h.Patch(AccessTools.DeclaredMethod(typeof(SkinHelper), "GetSkinForGoalie", new[] { typeof(SkeletonData), typeof(GoaltenderData), typeof(bool) }), postfix: new HarmonyMethod(typeof(JerseyLogoNativeHooks), nameof(GoalieComposite)));
-        Patch("SetLogo", new[] { typeof(SkeletonRenderer), typeof(Texture2D), typeof(bool) }, nameof(WorldLogo), nameof(WorldLogoDone));
-        Patch("SetLogo", new[] { typeof(SkeletonGraphic), typeof(Texture), typeof(bool) }, nameof(GraphicLogo), nameof(GraphicLogoDone));
-        Patch("OverrideSlotWithCustomizationMaterial", new[] { typeof(SkeletonGraphic), typeof(Skin), typeof(TeamColorsData), typeof(string), typeof(Il2CppSystem.Collections.Generic.Dictionary<Texture, Material>) }, postfix: nameof(GraphicMaterialPostfix));
-        Patch("SetupSkeletonSlots", new[] { typeof(Skeleton), typeof(T2TSkeletonExtensions.CustomizationFlags), typeof(bool) }, postfix: nameof(SlotsPostfix));
-        foreach (var owner in new[] { (typeof(Forward), nameof(ForwardLogoScope)), (typeof(Goaltender.Goaltender), nameof(GoalieLogoScope)) })
-            h.Patch(AccessTools.DeclaredMethod(owner.Item1, "InitializeLogo", new[] { typeof(TeamData) }),
-                prefix: new HarmonyMethod(typeof(JerseyLogoNativeHooks), owner.Item2), finalizer: new HarmonyMethod(typeof(JerseyLogoNativeHooks), nameof(OwnerLogoFinalizer)));
-        Patch("SetupSkeletonSlotsMaterials", new[] { typeof(bool), typeof(SkeletonRenderer), typeof(Material), typeof(T2TSkeletonExtensions.CustomizationFlags) }, postfix: nameof(MaterialsPostfix));
+        return JerseyLogoManagedTargets.Required.Select(c => new ManagedPatch {
+            Target = JerseyLogoManagedTargets.Resolve(c, AppDomain.CurrentDomain.GetAssemblies()),
+            Prefix = Callback(c.Prefix), Postfix = Callback(c.Postfix), Finalizer = Callback(c.Finalizer)
+        }).ToArray();
+    }
+    private static void InstallManaged(Harmony h, ManagedPatch[] plan)
+    {
+        foreach (var patch in plan) h.Patch(patch.Target, prefix: patch.Prefix, postfix: patch.Postfix, finalizer: patch.Finalizer);
     }
     private static void Receipt(string status, string reason)
     {

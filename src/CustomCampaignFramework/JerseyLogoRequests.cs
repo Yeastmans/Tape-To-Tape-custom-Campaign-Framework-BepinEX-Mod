@@ -64,6 +64,13 @@ internal static class JerseyLogoRequests
         if (renderer != IntPtr.Zero) latest[renderer] = request;
         return request;
     }
+    // Unknown resumed work owns a native-only generation, never a global authored selection.
+    internal static Request BeginNative(IntPtr renderer, IntPtr composite, bool goalie, long requestContext, object roots)
+        => Begin(renderer, composite, IntPtr.Zero, IntPtr.Zero, goalie, requestContext, default, roots);
+    [MethodImpl(MethodImplOptions.Synchronized)]
+    internal static Request FindOwner(IntPtr renderer, IntPtr owner, IntPtr player)
+        => owner != IntPtr.Zero && player != IntPtr.Zero && latest.TryGetValue(renderer, out var request)
+            && IsCurrent(request) && request.Owner == owner && request.Player == player ? request : null;
     [MethodImpl(MethodImplOptions.Synchronized)]
     internal static Request Find(IntPtr renderer, IntPtr owner, IntPtr player, IntPtr skin)
         => latest.TryGetValue(renderer, out var request) && IsCurrent(request) && request.Owner == owner && request.Player == player && request.Composite == skin ? request : null;

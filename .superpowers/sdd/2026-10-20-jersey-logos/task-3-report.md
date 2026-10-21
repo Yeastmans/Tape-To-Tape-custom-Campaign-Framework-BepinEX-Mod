@@ -112,3 +112,72 @@ Result: exit 0, **0 errors**, one pre-existing `Plugin.cs:8430 CS0168` unused `e
 ## Changed files
 
 New: JerseyLogoRuntime.cs, JerseyLogoRequests.cs, JerseyLogoNativeHooks.cs, Assets/jersey-logo-targets.json; source-linked runtime test project/Program/NativeDoubles; this report. Existing: CampaignAppearanceRuntime.cs, ExportAppearanceRuntime.cs, AppearanceDecalRuntime.cs, HeadAppearanceRuntime.cs, runtime csproj, NativeCompatibility.cs, shared NativeCompatibilityProfile.cs, .gitignore, existing CampaignLogoResolutionChecks Program/project now precisely allowlisted. Foundation/evidence files were read, not rewritten.
+
+
+## Review fix round 1 — scoped from eed2fad
+
+Addressed all three Important findings in task-3-review.md. The review base remains `eed2fad`; no earlier commits were rewritten.
+
+1. **Complete named prerequisite before mutation.** Added `JerseyLogoManagedTargets.cs` as the single required named manifest: assembly, declaring type, method, static/instance, return/parameter types and exact patch callbacks. Its 11 entries feed both compatibility validation and the resolved patch plan; there is no second literal install inventory. `NamedHooks` is a distinct shared profile field, not a guessed metadata interpretation of raw/internal functions. The baseline/profile named sets must agree, and the feature's entire expected named set must match before any callback installation. All 11 native-facing methods and patch callbacks are resolved before the first `InstallRaw`. Existing raw full-body/prologue/binary/dependency checks, exact comparison-site coverage semantics, and all-or-zero rollback remain intact. No baseline/profile was generated or edited.
+2. **Unknown resumed native ownership.** Replaced the never-current ad hoc request with source-linked `BeginNative`, advancing ownership with the current context, default choice, and exact renderer. No authored/global lookup occurs. B's native SetLogo executes; authored A is stale and cannot reclaim the renderer. Native clear/identity writes use that same explicit policy.
+3. **SelectedPlayerUI owner/home lifecycle.** Added exact named scopes for `UpdatePlayerSkeleton(ForwardData, TeamData, bool)` and `InitializeLogo(ForwardData, TeamData)`. The first retires previous preview ownership and supplies the verified home selection/owner to the inner graphic operation. A reentrant new preview takes precedence over an older executing scope, even for the same player. The second only recovers the exact renderer/owner/argument-player whose pointer also equals `currentForwardData`, and whose saved selection is home. It reuses the pending/completed request; composite equality remains required at final substitution. A mismatched pending composite passes the native texture without invalidating its upcoming request. Actual unscoped SkaterSkeletonUI.ClearLogo/team-identity writes still advance native ownership. No blanket UI override or global player lookup was added.
+
+The new regression scenarios use multiline assertions with distinct diagnostic messages. No unrelated existing suite was rerun. The extra single-purpose manifest file was approved by the controller to keep validation, method resolution, installation and final-audit inputs together.
+
+### Bounded native evidence added
+
+Reused canonical `jersey-binding-evidence/41c0350.asm` and `41c0940.asm`, and the exact pinned dump under `artifacts/game-update-26085704-20261020/reward-review/dump`. Two additional read-only captures were written under this checkout's `artifacts/four-features/jersey-review1/`, never into canonical evidence:
+
+- `41bfd90.asm` (UpdateSelected), SHA256 `7DC8308ACFEBF66F3DC53C64B4101E5F77769E0E08541AA97967ACD276F537AA`: stores currentForwardData at `0x41BFDF5`; calls UpdatePlayerSkeleton at `0x41BFEC7`; contains no InitializeLogo call.
+- `40d2a80.asm` (GetForwardSkin), SHA256 `FA6D999D2F51AE2566529694E445060976FC2ED514F972438CAC7D40B87C09F3`: constructs a distinct Skin, calls GetSkins at `0x40D2C99` and AddSkins at `0x40D2CE0`, returns that composite. It does not call GetSkinForForward, explaining why the existing composite hook alone cannot capture this surface.
+- Existing UpdatePlayerSkeleton capture stores currentForwardData at `0x41C03B5`, supplies `useHomeUniform=true` at `0x41C0465`, `onlyHead=false` at `0x41C0462`, invokes GetForwardSkin at `0x41C0473`, and passes the result and exact player into graphic ApplySkin at `0x41C0865`. Existing InitializeLogo capture calls graphic SetLogo at `0x41C0A80` with its real skeletonGraphic and exact player-derived custom-uniform decision.
+
+Exact capture script, passed on standard input to `python -` from the checkout:
+
+```python
+from pathlib import Path
+root=Path(r'C:/Users/kiran/Desktop/tape to tape mods')
+source=root/'artifacts/followup-four-features-20261020/capture_native.py'
+ns={'__file__':str(source)}
+exec(source.read_text().split('patterns = {')[0],ns)
+d,index=ns['d'],ns['index']; binary=d.Bin()
+out=Path.cwd()/'artifacts/four-features/jersey-review1';out.mkdir(parents=True,exist_ok=True)
+for a in [0x41bfd90,0x40d2a80]:
+    s='\n'.join(d.disasm(index,binary,a));(out/f'{a:x}.asm').write_text(s);print(s)
+```
+
+Exit 0; capture prefix verifies the previously pinned GameAssembly/metadata hashes. No additional raw detour or ABI was introduced.
+
+### Focused verification commands and outputs
+
+Commands run in the assigned publish-checkout, with the explicit dotnet executable:
+
+```powershell
+& 'C:/Program Files/dotnet/dotnet.exe' run --project tests/JerseyLogoRuntimeChecks -c Release --nologo
+```
+
+Initial red: exit 1 after adding regressions, with CS0117 for absent BeginNative/FindOwner and CS0103/CS0246 for absent named manifest/contract policy (plus dependent target-typed-new errors). This was an API-level red, not a native execution repro. After implementing the policies: exit 0, `32 passed; 0 failed.`
+
+Added fresh metadata resolution and the self-review reentrant-preview regression; final command:
+
+```powershell
+& 'C:/Program Files/dotnet/dotnet.exe' run --project tests/JerseyLogoRuntimeChecks -c Release -- 'C:/Users/kiran/Desktop/tape to tape mods/artifacts/game-update-26085704-20261020/interop-generation/interop' 'installer/bepinex/BepInEx/core'
+```
+
+Exit 0, `34 passed; 0 failed.` New cases: unknown resumed B permits native texture/rejects late authored A; completed/pending image and none preserve their exact request; different owner/player is rejected; native clear retires the saved preview; reentrant same-player preview starts a new generation; all raw contracts present but named set empty/missing/altered installs zero callbacks; all 11 exact named signatures resolve in fresh interop. MetadataLoadContext reads assembly metadata only and executes no game code. Production gate, request and resolution policy sources are linked into the harness. The native adapter, Harmony invocation/finalizers and actual Unity rendering are not executed by these tests; the clear case tests the shared policy invoked by the adapter, not a live ClearLogo call.
+
+```powershell
+& 'C:/Program Files/dotnet/dotnet.exe' build src/CustomCampaignFramework/CustomCampaignFramework.csproj -c Release '-p:InteropLive=C:/Users/kiran/Desktop/tape to tape mods/artifacts/game-update-26085704-20261020/interop-generation/interop' '-p:InteropDir=C:/Users/kiran/Desktop/tape to tape mods/artifacts/game-update-26085704-20261020/interop-generation/interop' -o artifacts/four-features/jersey-runtime-candidate --nologo
+Get-FileHash 'artifacts/four-features/jersey-runtime-candidate/CustomCampaignFramework.dll' -Algorithm SHA256
+git diff --check
+```
+
+Final build exit 0, 0 errors, 1 pre-existing `Plugin.cs:8430 CS0168` warning. Candidate SHA256 `595A5517747D4FB8FB2DA7EB6B16F0798182DA2AA5F03231978DE28A633D74AE`. Diff check exit 0, no output. Candidate remains uninstalled.
+
+### Integration handoff and remaining limits
+
+The final required inventory is **21 unchanged raw contracts plus 11 named managed contracts**. New named contracts are SelectedPlayerUI.UpdatePlayerSkeleton RVA `0x41C0350` and SelectedPlayerUI.InitializeLogo RVA `0x41C0940`; the other nine retain their exact target/signature/callback semantics. Required named definitions and resolver are in `JerseyLogoManagedTargets.Required`; raw definitions remain in embedded `Assets/jersey-logo-targets.json`. Final profile/audit must consume both, produce complete paired baseline/runtime NamedHooks and RawHooks, and verify native target bytes/ABI/provider support for all relevant methods, including the pre-existing internal failure observer. Neither source manifest nor metadata-only test is final native compatibility approval.
+
+Current shipped baseline remains unintegrated and feature installation remains disabled. All earlier native-execution, relocation/unwind, failure/cancellation, Unity liveness/decode and human-output limitations remain. InitializeLogo invocation frequency/order in gameplay is still unobserved; this patch handles its verified ownership when invoked. Unknown resumed operations remain native-only, unavailable/changed bindings are not guessed, current-skin mismatch does not repair native SetSkin ordering, and unmatched clear/identity paths stay native. No final profile generation, live install, game launch, save mutation, push, source sync or original mirror edit occurred.
+
+Fix files: new `src/CustomCampaignFramework/JerseyLogoManagedTargets.cs`; changed JerseyLogoNativeHooks.cs, JerseyLogoRequests.cs, NativeCompatibility.cs, shared NativeCompatibilityProfile.cs, runtime-check project/Program.cs, and this report. No generated capture, bin/obj or candidate DLL is included in the commit.

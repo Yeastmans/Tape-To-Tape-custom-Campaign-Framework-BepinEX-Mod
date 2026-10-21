@@ -23,6 +23,7 @@ public sealed class NativeCompatibilityProfile
     public string FlowBytes { get; set; } = "410FB6C60A4758";
     public List<NativeComparisonSite> Sites { get; set; } = new();
     public List<RawNativeHookContract> RawHooks { get; set; } = new();
+    public List<NamedManagedHookContract> NamedHooks { get; set; } = new();
 
     public void Validate(string gameHash, string baselineId)
     {
@@ -98,4 +99,30 @@ public sealed class RawNativeHookContract
     public string Identity { get; set; } = "";
     public string NativeSignature { get; set; } = "";
     public int AliasCount { get; set; }
+}
+
+// Exact managed entry contract; distinct from unnamed/raw native callbacks.
+public sealed class NamedManagedHookContract
+{
+    public string Feature { get; set; } = "";
+    public string Id { get; set; } = "";
+    public string Assembly { get; set; } = "";
+    public string DeclaringType { get; set; } = "";
+    public string Method { get; set; } = "";
+    public bool IsStatic { get; set; }
+    public string ReturnType { get; set; } = "";
+    public string[] Parameters { get; set; } = Array.Empty<string>();
+    public string Prefix { get; set; } = "";
+    public string Postfix { get; set; } = "";
+    public string Finalizer { get; set; } = "";
+
+    public static void RequireExactSet(IEnumerable<NamedManagedHookContract> expected, IEnumerable<NamedManagedHookContract> approved, string feature)
+    {
+        if (expected == null || approved == null) throw new InvalidDataException("Missing named managed contracts.");
+        var wanted = expected.OrderBy(c => c.Id, StringComparer.Ordinal).ToArray();
+        var actual = approved.Where(c => c.Feature == feature).OrderBy(c => c.Id, StringComparer.Ordinal).ToArray();
+        if (wanted.Length == 0 || wanted.Length != wanted.Select(c => c.Id).Distinct().Count()
+            || !wanted.Select(c => JsonSerializer.Serialize(c)).SequenceEqual(actual.Select(c => JsonSerializer.Serialize(c))))
+            throw new InvalidDataException("Named callbacks have not passed final compatibility integration: " + feature);
+    }
 }

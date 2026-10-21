@@ -4,7 +4,7 @@ using Data;
 using UnityEngine;
 int passed=0, failed=0;
 void Check(string name, Action test) { try { test(); passed++; Console.WriteLine("PASS "+name); } catch(Exception e) { failed++; Console.WriteLine("FAIL "+name+": "+e.Message); } }
-void Assert(bool value) { if(!value) throw new Exception("Assertion failed"); }
+void Assert(bool value, string reason = "Assertion failed") { if(!value) throw new Exception(reason); }
 CampaignDocument Doc(string s) => new(s.Replace(";", "\n"));
 string root=Path.Combine(Path.GetTempPath(), "jersey-runtime-"+Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(Path.Combine(root,"logos"));
@@ -46,12 +46,93 @@ Check("SupersededOwnerCannotReclaimThroughNestedWorld",()=>{var a=Operation();va
 Check("AuthoredAThenNativeBRejectsLateOwnerA",()=>{var p=Forward();Bind(p,team);var authored=JerseyLogoRuntime.Resolve(p,false).Texture;var a=Operation(texture:authored);var b=Operation();Texture incoming=new Texture2D(2,2,TextureFormat.RGBA32,false);using(var scope=JerseyLogoRequests.Enter(a,new(1000)))Assert(!JerseyLogoRequests.FinalLogo(a.Request,new(100),new(5),false,ref incoming));using(var scope=JerseyLogoRequests.Enter(b,new(3000)))Assert(JerseyLogoRequests.FinalLogo(b.Request,new(100),new(5),false,ref incoming)&&incoming!=authored);});
 Check("ExplicitNoneRejectsGoalieInlineOverwrite",()=>{var p=Goalie();Bind(p,Doc("Jersey Logo From = none"));var blank=JerseyLogoRuntime.Resolve(p,false).Texture;var r=JerseyLogoRequests.Begin(new(150),new(5),new(1),new(2),true,JerseyLogoRuntime.Context,new(blank),new object());var o=JerseyLogoRequests.Start(2,r);Texture incoming=new Texture2D(2,2,TextureFormat.RGBA32,false);using(var scope=JerseyLogoRequests.Enter(o,new(1000)))Assert(JerseyLogoRequests.FinalLogo(r,new(150),new(5),true,ref incoming)&&incoming==blank);});
 Check("MismatchedSkinNeverReceivesLatestArtwork",()=>{var p=Forward();Bind(p,team);var o=Operation(texture:JerseyLogoRuntime.Resolve(p,false).Texture);Texture native=new Texture2D(2,2,TextureFormat.RGBA32,false), incoming=native;using(var scope=JerseyLogoRequests.Enter(o,new(1000)))Assert(!JerseyLogoRequests.CanApply(o.Request,new(9))&&JerseyLogoRequests.FinalLogo(o.Request,new(100),new(9),false,ref incoming)&&incoming==native);});
+Check("UnknownResumeSupersedesAuthoredWithoutSuppressingNative", () =>
+{
+    var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+    var authored = Request(700, 5, texture);
+    var unknown = JerseyLogoRequests.BeginNative(new(700), new(6), false, JerseyLogoRuntime.Context, new object());
+    Texture native = new Texture2D(2, 2, TextureFormat.RGBA32, false), incoming = native;
+    Assert(JerseyLogoRequests.FinalLogo(unknown, new(700), new(6), false, ref incoming), "Unknown native B must invoke SetLogo");
+    Assert(incoming == native && !unknown.Choice.Override, "Unknown B must never acquire authored selection");
+    Assert(!JerseyLogoRequests.FinalLogo(authored, new(700), new(5), false, ref incoming), "Late authored A must be rejected after unknown B");
+});
+Check("SelectedPreviewLogoPreservesPendingAndCompletedImageAndNone", () =>
+{
+    foreach (bool none in new[] { false, true })
+    foreach (bool pending in new[] { false, true })
+    {
+        var player = Forward();
+        Bind(player, none ? Doc("Jersey Logo From = none") : team);
+        var choice = JerseyLogoRuntime.Resolve(player, false);
+        var request = JerseyLogoRequests.Begin(new(701), new(15), player.Pointer, new(702), false,
+            JerseyLogoRuntime.Context, choice, new object());
+        var saved = JerseyLogoRequests.FindOwner(new(701), new(702), player.Pointer);
+        Assert(saved == request, "Exact preview owner/player must recover its request even before the new composite is installed");
+        Assert(JerseyLogoRequests.FindOwner(new(701), new(703), player.Pointer) == null, "Another preview owner must not recover this request");
+        Assert(JerseyLogoRequests.FindOwner(new(701), new(702), new(9999)) == null, "Changed selected player must not recover this request");
+        Texture native = new Texture2D(2, 2, TextureFormat.RGBA32, false), incoming = native;
+        Assert(JerseyLogoRequests.FinalLogo(saved, new(701), new(pending ? 14 : 15), false, ref incoming), "Exact preview logo call must remain valid");
+        Assert(incoming == (pending ? native : choice.Texture), "Only the matching composite may receive image or explicit none");
+        Assert(JerseyLogoRequests.IsCurrent(request) && JerseyLogoRequests.CanApply(request, new(15)), "InitializeLogo must preserve pending completion ownership");
+        JerseyLogoRequests.BeginNative(new(701), new(15), false, JerseyLogoRuntime.Context, new object());
+        Assert(JerseyLogoRequests.FindOwner(new(701), new(702), player.Pointer) == null, "Real unscoped clear must invalidate saved preview ownership");
+        Assert(!JerseyLogoRequests.CanApply(request, new(15)), "Late completion after native clear must be rejected");
+    }
+});
+Check("ReentrantPreviewStartsNewGenerationForSameOwnerAndPlayer", () =>
+{
+    var old = Operation(renderer: 705, texture: new Texture2D(2, 2, TextureFormat.RGBA32, false));
+    using (JerseyLogoRequests.Enter(old, new(3000)))
+    {
+        JerseyLogoRequests.BeginNative(new(705), new(5), false, JerseyLogoRuntime.Context, new object());
+        var next = Request(705, 16, new Texture2D(2, 2, TextureFormat.RGBA32, false));
+        Assert(next != old.Request && JerseyLogoRequests.IsCurrent(next), "Explicit new preview must not inherit the executing old generation");
+        Texture incoming = old.Request.Choice.Texture;
+        Assert(!JerseyLogoRequests.FinalLogo(old.Request, new(705), new(5), false, ref incoming), "Old scoped SetLogo must remain rejected after reentrant preview selection");
+    }
+});
 Check("ContextRetirementPreservesInflightAndDisplayedTextures",()=>{var p=Forward();Bind(p,team);var texture=JerseyLogoRuntime.Resolve(p,false).Texture;var o=Operation(texture:texture);JerseyLogoRequests.Bridge(o,new(2000));JerseyLogoRequests.DidDisplay(new(100),texture);JerseyLogoRequests.RetireContext(JerseyLogoRuntime.Context+1);Assert(!JerseyLogoRequests.IsCurrent(o.Request)&&JerseyLogoRequests.RetainedTextures().Contains(texture));JerseyLogoRequests.Complete(o,true);Assert(JerseyLogoRequests.RetainedTextures().Contains(texture));JerseyLogoRequests.ForgetRenderer(new(100));});
 
 Check("ContentChangeInvalidatesSamePathCache",()=>{var p=Forward();Bind(p,team);var before=JerseyLogoRuntime.Resolve(p,false).Texture;File.WriteAllBytes(Path.Combine(root,"logos","home.png"),new byte[]{9});Assert(JerseyLogoRuntime.Resolve(p,false).Texture!=before);});
 Check("FrozenBindingsIgnoreLaterDocumentMutation",()=>{var p=Forward();var doc=Doc("Jersey Logo From = home");Bind(p,doc);var before=JerseyLogoRuntime.Resolve(p,false).Texture;doc.Set("Jersey Logo From","none");Assert(JerseyLogoRuntime.Resolve(p,false).Texture==before);});
 Check("ContextCollectionWaitsForRendererDestruction",()=>{var p=Forward();Bind(p,team);var texture=JerseyLogoRuntime.Resolve(p,false).Texture;JerseyLogoRequests.DidDisplay(new(999),texture);Plugin.ModFolder=Path.Combine(root,"newcontext");JerseyLogoRuntime.EnsureContext();Assert(!texture.Destroyed&&!JerseyLogoRuntime.Resolve(p,false).Override);JerseyLogoRequests.ForgetRenderer(new(999));JerseyLogoRuntime.Collect();Assert(texture.Destroyed);});
 Check("UnintegratedAndChangedNativeContractsFailClosed",()=>{var expected=System.Text.Json.JsonSerializer.Deserialize<RawNativeHookContract[]>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"jersey-logo-targets.json")));bool denied=false;try{RawNativeHookContract.RequireExactSet(expected,Array.Empty<RawNativeHookContract>(),"jersey-logo");}catch(InvalidDataException){denied=true;}Assert(denied);RawNativeHookContract.RequireExactSet(expected,expected,"jersey-logo");Assert(expected.Length==21&&expected.Single(c=>c.Kind=="builder-fault").AliasCount==0);var copy=System.Text.Json.JsonSerializer.Deserialize<RawNativeHookContract[]>(System.Text.Json.JsonSerializer.Serialize(expected));copy[0].Sha256="changed";denied=false;try{RawNativeHookContract.RequireExactSet(expected,copy,"jersey-logo");}catch(InvalidDataException){denied=true;}Assert(denied);});
+Check("RawCompleteNamedMissingOrAlteredInstallsNothing", () =>
+{
+    var raw = System.Text.Json.JsonSerializer.Deserialize<RawNativeHookContract[]>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "jersey-logo-targets.json")));
+    var required = JerseyLogoManagedTargets.Required;
+    foreach (var approved in new[] { Array.Empty<NamedManagedHookContract>(), required.Skip(1).ToArray(),
+        System.Text.Json.JsonSerializer.Deserialize<NamedManagedHookContract[]>(System.Text.Json.JsonSerializer.Serialize(required)) })
+    {
+        if (approved.Length == required.Length) approved[0].ReturnType = "System.Int32";
+        int installs = 0;
+        try
+        {
+            JerseyLogoManagedTargets.ValidateBeforeInstall(raw, raw, approved);
+            installs++;
+        }
+        catch (InvalidDataException) { }
+        Assert(installs == 0, "Complete raw contracts with missing/altered named contracts must install zero callbacks");
+    }
+    JerseyLogoManagedTargets.ValidateBeforeInstall(raw, raw, required);
+    Assert(required.Length == 11 && required.Select(c => c.Id).Distinct().Count() == 11, "All nine existing and two selected-preview targets must be required exactly once");
+});
+if (args.Length == 2)
+{
+    Check("NamedManifestResolvesExactFreshInteropSignatures", () =>
+    {
+        var assemblies = Directory.GetFiles(args[0], "*.dll").Concat(Directory.GetFiles(args[1], "*.dll"))
+            .Concat(Directory.GetFiles(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "*.dll"));
+        using var metadata = new System.Reflection.MetadataLoadContext(new System.Reflection.PathAssemblyResolver(assemblies), "System.Private.CoreLib");
+        var game = metadata.LoadFromAssemblyPath(Path.Combine(Path.GetFullPath(args[0]), "MainScriptsAssembly.dll"));
+        foreach (var contract in JerseyLogoManagedTargets.Required)
+        {
+            var target = JerseyLogoManagedTargets.Resolve(contract, new[] { game });
+            Assert(target != null, "Fresh metadata target must match: " + contract.Id);
+        }
+        Console.WriteLine("Resolved all 11 exact managed contracts against fresh interop without executing game code.");
+    });
+}
 } finally { Directory.Delete(root,true); }
 Console.WriteLine($"{passed} passed; {failed} failed.");
 return failed==0?0:1;
