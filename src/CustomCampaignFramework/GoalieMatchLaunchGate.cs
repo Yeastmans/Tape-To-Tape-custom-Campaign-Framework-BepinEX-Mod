@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using CampaignCore;
 using Data;
 using HarmonyLib;
@@ -68,6 +69,10 @@ internal static class GoalieMatchLaunchGate
     // Hydrating an Armed record never fabricates proof that it did not launch.
     private static readonly Dictionary<string, Unlaunched> UnlaunchedAttempts = new();
     private static readonly Dictionary<IntPtr, Preview> Previews = new();
+    // Only the gate can commit permission for a particular emitted object.
+    // Weak keys retain this fact for captured origins without keeping them alive.
+    private static readonly ConditionalWeakTable<LaunchOrigin, object> PermittedOrigins = new();
+    private static readonly object PermissionCommitted = new();
     private static long generation;
     [ThreadStatic] private static Pending permit;
 
@@ -103,7 +108,7 @@ internal static class GoalieMatchLaunchGate
         try {
             var roster = GoaliePersistenceBridge.Roster;
             var saved = roster.Selection;
-            return origin != null && !Plugin.IsDefaultMode && GameManager.GameType == ScriptableStates.GameType.Rogue
+            return origin != null && PermittedOrigins.TryGetValue(origin, out _) && !Plugin.IsDefaultMode && GameManager.GameType == ScriptableStates.GameType.Rogue
                 && campaign?.Pointer == origin.Campaign.Pointer && campaign.Pointer == CampaignUtil.CampaignState?.Pointer
                 && campaign.runData?.Pointer == origin.Run.Pointer && campaign.runData.teamData?.Pointer == origin.HomeTeam.Pointer
                 && homeTeam?.Pointer == origin.HomeTeam.Pointer && homeTeam.id == origin.attempt.HomeTeamId
@@ -188,13 +193,18 @@ internal static class GoalieMatchLaunchGate
                 if (allowed.Preview.Menu.Pointer != menu?.Pointer || allowed.Entry != entry || allowed.Input?.Pointer != input?.Pointer) return false;
                 permit = null;
                 if (allowed.Used || !Valid(allowed) || !Saved(allowed)) return false;
-                LaunchAuthorized?.Invoke(new LaunchOrigin(allowed.Attempt, allowed.Campaign, allowed.Run, allowed.Team,
+                var origin = new LaunchOrigin(allowed.Attempt, allowed.Campaign, allowed.Run, allowed.Team,
                     allowed.Node, allowed.Goalie, allowed.Preview.Menu, allowed.Input, allowed.Generation, allowed.Entry, allowed.Receipt.Checkpoint.CheckpointId,
-                    allowed.Receipt.OperationId, allowed.Folder));
+                    allowed.Receipt.OperationId, allowed.Folder);
+                LaunchAuthorized?.Invoke(origin);
                 // A consumer can synchronously close the preview or change its
                 // ownership. The native body has still not run at this point.
                 if (!Valid(allowed) || !Saved(allowed)) return false;
                 allowed.Used = true; UnlaunchedAttempts.Remove(allowed.Attempt.Token);
+                // This is the final action before permitting the native body.
+                // A throw or withheld handoff never registers its escaped origin;
+                // a later retry creates another object and cannot upgrade it.
+                PermittedOrigins.Add(origin, PermissionCommitted);
                 return true;
             }
             if (menu == null || menu.m_IsExiting || !menu.IsShown || !menu.gameObject.activeInHierarchy) return false;

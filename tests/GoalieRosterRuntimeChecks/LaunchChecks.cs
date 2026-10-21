@@ -46,6 +46,51 @@ static class LaunchChecks
         GoaliePersistenceBridge.Hydrated(new DeserializerV2(), loaded, model); campaign.runData = loaded;
     }
     static STS.Map.MapNode OtherDestination() { var node = new STS.Map.MapNode(); node.Node.NodeIndex = 6; return node; }
+    static void OriginPermissionChecks(Action<bool, string> check) {
+        var rejected = new List<(string Mode, bool Reuse, bool Destination, bool RetryReuse, bool RetryDestination)>();
+        foreach (string mode in new[] { "throwing-subscriber", "cancel-no-write" }) {
+            var (campaign, menu) = Setup();
+            GoalieMatchLaunchGate.LaunchOrigin retained = null;
+            void Capture(GoalieMatchLaunchGate.LaunchOrigin origin) => retained = origin;
+            void Withhold(GoalieMatchLaunchGate.LaunchOrigin _) {
+                if (mode == "throwing-subscriber") throw new InvalidOperationException("Subscriber failed after capture");
+                ES3.FailStore = true;
+                menu.OnCancelInput(new());
+            }
+            GoalieMatchLaunchGate.LaunchAuthorized += Capture;
+            GoalieMatchLaunchGate.LaunchAuthorized += Withhold;
+            try { menu.StartMatch(); FinishAll(campaign); }
+            finally { ES3.FailStore = false; GoalieMatchLaunchGate.LaunchAuthorized -= Withhold; }
+            var withheld = retained;
+            string token = Roster.Selection.ArmedAttemptToken;
+            check(menu.Starts == 0 && withheld != null && Roster.Selection.Attempt.Lifecycle == "Armed",
+                "WithheldOriginEscapesWhileSavedIntentRemainsArmed_" + mode);
+            campaign.runData.currentNodePoint.x = 2; campaign.runData.currentNodePoint.y = 3;
+            bool reuse = GoalieMatchLaunchGate.TryReuseOrigin(withheld, campaign, campaign.runData.teamData);
+            bool destination = GoalieMatchLaunchGate.MatchesDestination(withheld, campaign, menu.currentMapNode, campaign.runData.teamData);
+            Console.WriteLine($"Retained origin {mode}: reuse={reuse}, destination={destination}");
+
+            // A later valid launch of the same saved token must not upgrade the
+            // escaped object. The cancellation retry must reconcile first.
+            campaign.runData.currentNodePoint.x = 0; campaign.runData.currentNodePoint.y = 0;
+            menu.ShowMenu(menu.currentMapNode);
+            for (int retry = 0; retry < 3 && menu.Starts == 0; retry++) { menu.StartMatch(); FinishAll(campaign); }
+            GoalieMatchLaunchGate.LaunchAuthorized -= Capture;
+            check(menu.Starts == 1 && retained != withheld && Roster.Selection.ArmedAttemptToken == token,
+                "FreshPermittedOriginPreservesSameAttemptAfterWithheldHandoff_" + mode);
+            campaign.runData.currentNodePoint.x = 2; campaign.runData.currentNodePoint.y = 3;
+            check(GoalieMatchLaunchGate.TryReuseOrigin(retained, campaign, campaign.runData.teamData)
+                && GoalieMatchLaunchGate.MatchesDestination(retained, campaign, menu.currentMapNode, campaign.runData.teamData),
+                "FreshPermittedOriginCanObserveDestinationAndRematch_" + mode);
+            rejected.Add((mode, reuse, destination,
+                GoalieMatchLaunchGate.TryReuseOrigin(withheld, campaign, campaign.runData.teamData),
+                GoalieMatchLaunchGate.MatchesDestination(withheld, campaign, menu.currentMapNode, campaign.runData.teamData)));
+        }
+        foreach (var result in rejected) {
+            check(!result.Reuse && !result.Destination, "WithheldOriginCannotBorrowExpectedDestination_" + result.Mode);
+            check(!result.RetryReuse && !result.RetryDestination, "WithheldOriginPermanentlyInvalidAfterSuccessfulRetry_" + result.Mode);
+        }
+    }
     static void CancellationChecks(Action<bool, string> check) {
         var (eventCampaign, eventMenu) = Setup();
         void CancelDuringOrigin(GoalieMatchLaunchGate.LaunchOrigin _) => eventMenu.OnCancelInput(new());
@@ -281,6 +326,7 @@ static class LaunchChecks
             menu.StartMatch(); check(menu.Starts == 1 && campaign.Repository.Saves == 0, "NativeBehaviorPreserved_" + bypass);
         }
         CancellationChecks(check);
+        OriginPermissionChecks(check);
         Plugin.IsDefaultMode = false; GameManager.GameType = ScriptableStates.GameType.Rogue;
         GoalieMatchLaunchGate.LaunchAuthorized -= origins.Add;
         GoaliePersistenceBridge.SaveCompleted -= receipts.Add;

@@ -1,6 +1,6 @@
 # Task4b implementer report
 
-Status: **DONE — ready for independent full4b review**, with native/human validation and final combined activation still pending. Full review base `2bf85d2430ab66ae52b48b47e4e37661db5f127f`, branch `feature/four-approved-features-20261020`. Earlier partial checkpoint commits `741ba73051635ca7858688c2b58308777ca860d5` and `67cbce07f6e0bb0838c2f9239996ac0f01079669` are included in the review scope; this final report replaces their NEEDS_CONTEXT status.
+Status: **DONE — review I1 fixed, ready for scoped re-review**, with native/human validation and final combined activation still pending. Fix-round base `1c97c063373578d068b6ec9e269eaaf56675185b`; full review base `2bf85d2430ab66ae52b48b47e4e37661db5f127f`, branch `feature/four-approved-features-20261020`. Earlier partial checkpoint commits `741ba73051635ca7858688c2b58308777ca860d5` and `67cbce07f6e0bb0838c2f9239996ac0f01079669` are included in the review scope; this final report replaces their NEEDS_CONTEXT status.
 
 ## Approved policy and implementation
 
@@ -59,3 +59,25 @@ Fresh pinned wrapper build:
 
 Self-review covered the full changed production implementation and approved cancellation transitions, exact save ownership and reconciliation, replay and roster invariants, pending/reentrant cancellation, lost-runtime-witness limits, no native forward collection changes, no actual play/debit inference and no partial activation. Final exact-set native audit must inspect OnDestroy body/aliases, callable structure, Harmony ordering and wrapper reentry; then human validation must cover rendered Cancel/recovery UI, Save/Continue/rematch and real4c lifecycle. No game, install, real-save mutation, canonical sync, push or release occurred. Independent full4b review is next;4c has not been implemented. Source/build slot is released on report delivery.
 `47d00e52db6f14fd137950c30310abbebbc7fd1f` completes the approved cancellation implementation/tests/final interface and manifest on top of the two partial checkpoint commits. Final staged diff check passed and the working tree was clean after this implementation commit. Full review remains BASE2bf85d2430ab66ae52b48b47e4e37661db5f127f through the final report receipt commit.
+
+## Review fix round1 — Important I1
+
+Review base: `1c97c063373578d068b6ec9e269eaaf56675185b`. The early synchronous LaunchAuthorized event allowed a subscriber to retain an origin even when a later subscriber threw or cancellation caused final validation to withhold startup. Saved Armed state was insufficient to distinguish that escaped object from a permitted origin, particularly after cancellation's proven no-write rollback.
+
+GoalieMatchLaunchGate now owns a private weak-key permission registry. It registers the exact emitted object only after final Valid/Saved checks, single-use permit consumption and removal of the never-launched witness, immediately before returning true to the native body. TryReuseOrigin requires registry membership; MatchesDestination delegates to that same check. Provisional/withheld objects are never registered, and later retries create distinct objects, so a successful retry cannot upgrade an escaped origin. Weak keys avoid retaining abandoned objects. Event consumers may still capture the provisional origin before synchronous native startup, but must validate it after destination selection. Gate permission is not proof of original-body completion or play.
+
+The new source-linked checks retain an origin in a first subscriber and then either throw in a later subscriber or invoke ordinary Cancel with native store failure. Both cases verify zero native starts with the persisted intent still Armed, then simulate selection of the expected destination. They also retry the same token successfully and verify that the old object stays invalid while the new permitted object passes destination/rematch checks. Existing positive rematch and other runtime checks remain intact.
+
+Exact commands below were executed from the checkout working directory named above. Logs are under `artifacts/four-features/goalie-task4b/`.
+
+```powershell
+& 'C:/Program Files/dotnet/dotnet.exe' run --project tests/GoalieRosterRuntimeChecks -c Release 2>&1 | Tee-Object artifacts/four-features/goalie-task4b/review-i1-red.log; exit $LASTEXITCODE
+& 'C:/Program Files/dotnet/dotnet.exe' run --project tests/GoalieRosterRuntimeChecks -c Release 2>&1 | Tee-Object artifacts/four-features/goalie-task4b/review-i1-green.log; exit $LASTEXITCODE
+& 'C:/Program Files/dotnet/dotnet.exe' build src/CustomCampaignFramework/CustomCampaignFramework.csproj -c Release '-p:InteropLive=C:/Users/kiran/Desktop/tape to tape mods/artifacts/game-update-26085704-20261020/interop-generation/interop' '-p:InteropDir=C:/Users/kiran/Desktop/tape to tape mods/artifacts/game-update-26085704-20261020/interop-generation/interop' '-p:OutputPath=../../artifacts/four-features/goalie-task4b-native-20261020/' 2>&1 | Tee-Object artifacts/four-features/goalie-task4b/review-i1-wrapper.log; exit $LASTEXITCODE
+```
+
+- RED against unchanged production gate: both modes logged `reuse=True, destination=True`; failed `WithheldOriginCannotBorrowExpectedDestination_throwing-subscriber`, exit -532462766. Both scenarios completed, including fresh permitted retry positives, before the expected rejection assertion failed.
+- GREEN with the permission registry: both modes logged `reuse=False, destination=False`; all **285 runtime assertions passed**, exit0. Ten new assertions cover both failure modes and fresh permitted retries. Existing CS0649 Away/Export fixture warnings remain.
+- Fresh pinned wrapper: **build succeeded, zero errors**, one existing Plugin.cs8431 CS0168 warning. Candidate DLL SHA256 `48F994CD9990E2E4BAEEAC8E7CF567C1C7D9DB24A5A54EAA718E0B96709EFDED`. This supersedes the earlier candidate hash above in the same candidate-only output directory. Minor M1 was explicitly deferred; no warning cleanup or unrelated suites were performed.
+
+Native/API consequences: managed System.Runtime.CompilerServices.ConditionalWeakTable only; no native methods/hooks/ABIs, persistent schema, public API signature, save receipt, cancellation lifecycle or installation/profile changes. Interface and native manifest now explicitly distinguish provisional event handoff from gate-committed permission. Cross-task live-play/completion, final native audit and human validation remain pending. Hooks remain off. No game, install, real saves, canonical sync, push or release. Source/build ownership is released for scoped re-review on delivery.
