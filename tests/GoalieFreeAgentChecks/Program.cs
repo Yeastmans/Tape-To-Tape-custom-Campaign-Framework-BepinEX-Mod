@@ -18,6 +18,7 @@ Check(new CampaignDocument(saved).Get("Node gm").Split('|').Length == 13, "exist
 Check(map.Validate([]).Count == 0, "goalie recruitment map structure validates");
 Check(GoalieFeatureOptions.ValidateNodes(false, [map]).Any(e => e.Contains("Layer 1, node 1") && e.Contains("enable", StringComparison.OrdinalIgnoreCase)), "disabled recruitment names incompatible goalie node");
 Check(GoalieFeatureOptions.ValidateNodes(true, [map]).Count == 0, "enabled recruitment accepts goalie node");
+Check(GoalieFeatureOptions.ValidateNodes(false, [map], 2).Single().StartsWith("Map 2, Layer 1, node 1"), "map-specific validation keeps its actual map number");
 foreach (bool recruitment in new[] { false, true })
 foreach (bool reserve in new[] { false, true })
 {

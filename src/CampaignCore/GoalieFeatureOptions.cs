@@ -15,10 +15,13 @@ public static class GoalieFeatureOptions
     private static bool Enabled(string value) => (value ?? "").Trim().ToLowerInvariant() is "on" or "yes" or "true" or "1";
 
     public static IReadOnlyList<string> ValidateNodes(bool recruitmentEnabled, IEnumerable<MapLayout> layouts)
+        => ValidateNodes(recruitmentEnabled, layouts, 1);
+
+    public static IReadOnlyList<string> ValidateNodes(bool recruitmentEnabled, IEnumerable<MapLayout> layouts, int firstMapNumber)
     {
         if (recruitmentEnabled) return Array.Empty<string>();
         var errors = new List<string>();
-        int mapIndex = 0;
+        int mapIndex = firstMapNumber - 1;
         foreach (var layout in layouts)
         {
             mapIndex++;

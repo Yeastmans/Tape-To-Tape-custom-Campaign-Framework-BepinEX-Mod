@@ -33,6 +33,9 @@ Check(imported.GmRole == GoalieFreeAgents.Goalies && Role().SelectedItem == null
 Check(!standalone.TrySaveMap(out string invalid) && invalid.Contains("Layer 1, node 1") && invalid.Contains("Enable recruitment"), "invalid imported node blocks map save with named guidance");
 Check(new CampaignDocument(File.ReadAllText(mapFile)).Get("Recruit role gm") == GoalieFreeAgents.Goalies, "rejected save preserves imported node file");
 dialog.Close(); Pump();
+var compatibleMap = MapLayout.Parse(File.ReadAllText(mapFile));
+compatibleMap.Nodes.Single(n => n.Id == "gm").GmRole = GoalieFreeAgents.Skaters;
+File.WriteAllText(mapFile, compatibleMap.Serialize());
 
 CampaignWorkspace OpenWorkspace()
 {
@@ -52,23 +55,42 @@ var node = editor.CurrentLayout!.Nodes.Single(n => n.Id == "gm");
 typeof(MapEditorView).GetMethod("OpenNodeDetails", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(editor, [node]); Pump();
 dialog = owner.OwnedWindows.Single();
 Check(Role().Items.Cast<string>().SequenceEqual([GoalieFreeAgents.Skaters, GoalieFreeAgents.Goalies]), "unsaved On immediately exposes Goalies choice");
+Role().SelectedItem = GoalieFreeAgents.Goalies; Pump();
+Check(node.GmRole == GoalieFreeAgents.Goalies && editor.HasUnsavedChanges, "Goalies role remains an unsaved map draft");
 recruitment.IsChecked = false; Pump();
 Check(Role().Items.Cast<string>().SequenceEqual([GoalieFreeAgents.Skaters]) && node.GmRole == GoalieFreeAgents.Goalies, "draft Off refreshes choices without mutating unsaved node");
 Check(!editor.TrySaveMap(out invalid) && invalid.Contains("Goalies"), "map save reads current campaign draft");
 recruitment.IsChecked = true; Pump();
-Check(editor.TrySaveMap(out string valid), "enabled campaign draft permits goalie node: " + valid);
+Check(!editor.TrySaveMap(out string valid) && valid.Contains("Save campaign", StringComparison.OrdinalIgnoreCase), "Save maps rejects unsaved-On campaign gate: " + valid);
+Check(!GoalieFeatureOptions.Recruitment(new CampaignDocument(File.ReadAllText(configFile)))
+    && MapLayout.Parse(File.ReadAllText(mapFile)).Nodes.Single(n => n.Id == "gm").GmRole == GoalieFreeAgents.Skaters,
+    "rejected map-only save leaves compatible Off and Skaters files");
 dialog.Close(); Pump();
-typeof(CampaignWorkspace).GetMethod("ShowSection", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(workspace, [4]); Pump();
+node.Outgoing.Clear();
 Click(workspace, "Save campaign");
+Check(GoalieFeatureOptions.Recruitment(new CampaignDocument(File.ReadAllText(configFile)))
+    && MapLayout.Parse(File.ReadAllText(mapFile)).Nodes.Single(n => n.Id == "gm").GmRole == GoalieFreeAgents.Skaters
+    && node.Outgoing.Count == 0 && workspace.HasUnsavedChanges,
+    "failed map write leaves compatible On and Skaters files while retaining the draft");
+node.Outgoing.Add("boss");
+Click(workspace, "Save campaign");
+Check(GoalieFeatureOptions.Recruitment(new CampaignDocument(File.ReadAllText(configFile)))
+    && MapLayout.Parse(File.ReadAllText(mapFile)).Nodes.Single(n => n.Id == "gm").GmRole == GoalieFreeAgents.Goalies,
+    "campaign Save writes compatible On and Goalies pair");
+typeof(CampaignWorkspace).GetMethod("ShowSection", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(workspace, [4]); Pump();
 Check(GoalieFeatureOptions.Recruitment(new CampaignDocument(File.ReadAllText(configFile))), "campaign setting saves and reopens");
 workspace = OpenWorkspace();
 recruitment = workspace.GetVisualDescendants().OfType<CheckBox>().Single(c => c.Name == "GoalieRecruitment");
 Check(recruitment.IsChecked == true, "saved campaign checkbox reopens On");
 recruitment.IsChecked = false; Pump(); Click(workspace, "Save campaign");
 Check(GoalieFeatureOptions.Recruitment(new CampaignDocument(File.ReadAllText(configFile))), "campaign save rejects incompatible saved goalie node");
-var skaterLayout = MapLayout.Parse(File.ReadAllText(mapFile));
-skaterLayout.Nodes.Single(n => n.Id == "gm").GmRole = GoalieFreeAgents.Skaters;
-File.WriteAllText(mapFile, skaterLayout.Serialize());
+typeof(CampaignWorkspace).GetMethod("ShowSection", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(workspace, [2]); Pump();
+editor = workspace.GetVisualDescendants().OfType<MapEditorView>().Single();
+node = editor.CurrentLayout!.Nodes.Single(n => n.Id == "gm");
+typeof(MapEditorView).GetMethod("OpenNodeDetails", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(editor, [node]); Pump();
+dialog = owner.OwnedWindows.Single();
+Role().SelectedItem = GoalieFreeAgents.Skaters; Pump();
+dialog.Close(); Pump();
 Click(workspace, "Save campaign");
 Check(!GoalieFeatureOptions.Recruitment(new CampaignDocument(File.ReadAllText(configFile)))
     && MapLayout.Parse(File.ReadAllText(mapFile)).Nodes.Single(n => n.Id == "gm").GmRole == GoalieFreeAgents.Skaters,

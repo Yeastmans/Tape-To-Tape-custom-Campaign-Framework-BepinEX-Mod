@@ -513,8 +513,15 @@ public sealed class MapEditorView : UserControl
         }
         for (int i = 0; i < drafts.Count; i++)
         {
-            var errors = drafts[i].Layout == null ? null : ValidateLayout(drafts[i].Layout!);
+            var errors = drafts[i].Layout == null ? null : ValidateLayout(drafts[i].Layout!, i + 1);
             if (errors == null || errors.Count > 0) { error = $"Map {i + 1} not saved: " + (errors == null ? "No layout." : string.Join("  ", errors.Take(4))); message.Text = error; return false; }
+        }
+        var savedGoalieErrors = GoalieFeatureOptions.ValidateNodes(GoalieFeatureOptions.Recruitment(config), RewardLayouts);
+        if (savedGoalieErrors.Count > 0)
+        {
+            error = "Save campaign settings to enable goalie recruitment before saving Goalies nodes. " + string.Join("  ", savedGoalieErrors.Take(3));
+            message.Text = error;
+            return false;
         }
         string? reserve = RewardValidation != null ? RewardValidation(RewardLayouts)
             : string.Join("\n", CampaignRewardBudget.Calculate(contentRoot, campaignDir, layouts: RewardLayouts).SelectMany(b => b.Errors));
@@ -551,14 +558,14 @@ public sealed class MapEditorView : UserControl
         dirty = false; message.Text = "Maps saved. Changes apply to new runs.";
         return true;
     }
-    private List<string> ValidateLayout(MapLayout layout)
+    private List<string> ValidateLayout(MapLayout layout, int mapNumber)
         => layout.Validate(teamNames.Keys).Concat(MapPlacementBounds.Validate(layout)).Concat(MapCatalog.ValidateSource(layout, sourceCatalog))
-            .Concat(GoalieFeatureOptions.ValidateNodes(RecruitmentEnabled, new[] { layout }))
+            .Concat(GoalieFeatureOptions.ValidateNodes(RecruitmentEnabled, new[] { layout }, mapNumber))
             .Concat(layout.Nodes.Where(n => n.Type is "Elite" or "Boss" && n.Stadium.Length > 0
                 && !NodeSettingsWindow.Stadiums.Any(s => s.Id == n.Stadium))
                 .Select(n => $"Stadium '{n.Stadium}' is unavailable. Choose a current stadium."))
             .Distinct().ToList();
-    private void Validate() { if (map == null) return; var errors = ValidateLayout(map); message.Text = errors.Count == 0 ? map.VanillaRandom ? NativeGenerationMessage : "Unsaved map · all nodes connect from entry to boss." : string.Join("  ", errors.Take(3)); }
+    private void Validate() { if (map == null) return; var errors = ValidateLayout(map, currentStage + 1); message.Text = errors.Count == 0 ? map.VanillaRandom ? NativeGenerationMessage : "Unsaved map · all nodes connect from entry to boss." : string.Join("  ", errors.Take(3)); }
     private double BuilderRowScale => Math.Max(1, ((map?.Nodes.GroupBy(n => n.Layer).Select(g => g.Count()).DefaultIfEmpty(1).Max() ?? 1) - 1)
         * (MapNodePlacement.Height + MapNodePlacement.Gap) / ((MapPlacementBounds.PairBottomY - MapPlacementBounds.PairTopY) * MapNodePlacement.Units));
     private Point NodePosition(MapLayoutNode n)

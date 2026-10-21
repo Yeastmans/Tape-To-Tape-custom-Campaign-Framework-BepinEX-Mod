@@ -714,20 +714,32 @@ public sealed partial class CampaignWorkspace : UserControl
         freeAgentTalentWeights?.Validate();
         var rewardErrors = RewardBudgets().SelectMany(b => b.Errors).ToArray();
         if (rewardErrors.Length > 0) throw new InvalidOperationException(string.Join("\n", rewardErrors));
+        string configFile = Path.Combine(directory, "campaign.txt");
+        var updated = new CampaignDocument(File.ReadAllText(configFile));
+        foreach (var field in fields) if (field.Value() != settings.Get(field.Key)) updated.Set(field.Key, field.Value());
+        if (!CampaignActSequence.TryParse(updated.Get("Act Sequence", CampaignActSequence.Default), out _))
+            throw new ArgumentException(CampaignActSequence.ValidationMessage);
         SaveStartingPools();
         nativeFreeAgents?.Save();
         if (mapEditor != null && (currentSection == MapSection || mapEditor.HasUnsavedChanges))
         {
+            // Enabling first keeps every persisted map valid if a later map write fails.
+            // Disabling waits until the edited maps have removed all Goalies roles.
+            if (GoalieRecruitmentDraft && !GoalieFeatureOptions.Recruitment(new CampaignDocument(File.ReadAllText(configFile))))
+            {
+                var enabled = new CampaignDocument(File.ReadAllText(configFile));
+                enabled.Set(GoalieFeatureOptions.RecruitmentKey, fields[GoalieFeatureOptions.RecruitmentKey]());
+                enabled.Save(configFile);
+            }
             if (!mapEditor.TrySaveMap(out string error)) throw new InvalidOperationException(error);
         }
         if (freeAgentsDirty) { FreeAgentContent.Save(root, directory, selectedBaseAgents, selectedCustomAgents); freeAgentsDirty = false; }
         if (goalieAgentsDirty) { SelectedPlayerPool.Save(GoalieFreeAgents.DirectoryPath(directory), selectedGoalieAgents.Order(StringComparer.OrdinalIgnoreCase)); goalieAgentsDirty = false; }
-        var updated = new CampaignDocument(File.ReadAllText(Path.Combine(directory, "campaign.txt")));
-        CustomRewardCatalog.BundleLibrary(root, directory);
+        // TrySaveMap can update Act Sequence; retain that write when campaign controls did not change it.
+        updated = new CampaignDocument(File.ReadAllText(configFile));
         foreach (var field in fields) if (field.Value() != settings.Get(field.Key)) updated.Set(field.Key, field.Value());
-        if (!CampaignActSequence.TryParse(updated.Get("Act Sequence", CampaignActSequence.Default), out _))
-            throw new ArgumentException(CampaignActSequence.ValidationMessage);
-        updated.Save(Path.Combine(directory, "campaign.txt"));
+        CustomRewardCatalog.BundleLibrary(root, directory);
+        updated.Save(configFile);
         settings = updated;
         if (rewardDirty)
         {
