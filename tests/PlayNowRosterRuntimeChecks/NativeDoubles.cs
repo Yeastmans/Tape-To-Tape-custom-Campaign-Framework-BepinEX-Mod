@@ -44,7 +44,7 @@ namespace EndlessMode
 
 namespace UnityEngine { public class Object { public static void Destroy(object value) { } } }
 namespace HarmonyLib {
-    public class HarmonyPatch : Attribute { public HarmonyPatch(Type t,string name) {} }
+    public class HarmonyPatch : Attribute { public HarmonyPatch(Type t,string name) {} public HarmonyPatch(Type t,string name,Type[] args) {} }
     public class HarmonyPrefix : Attribute {} public class HarmonyPostfix : Attribute {} public class HarmonyFinalizer : Attribute {}
     public class HarmonyMethod { public HarmonyMethod(Type t,string name) {} }
     public class Harmony { public void Patch(object original,HarmonyMethod prefix=null,HarmonyMethod postfix=null,HarmonyMethod finalizer=null) {} }

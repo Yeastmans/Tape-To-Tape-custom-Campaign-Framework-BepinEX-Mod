@@ -127,3 +127,20 @@ after this audit and still match the reviewed inputs.
 
 No game launch, install, publication, save edit or authored-content edit is part of
 this compatibility work. Native/custom gameplay and visual acceptance remain pending.
+
+
+## Four-feature integration candidate (not Revision 23)
+
+The isolated candidate under build/FourFeatureCandidate now uses baseline ID
+0D16BE041548C631DD4B32BC2C9339604D30BBBED2B89225FDE596323C70F060.
+Its 1,448 protected methods retain the earlier protected contracts and add the actual manual hooks, native save/serializer APIs and called semantic dependencies. The comparison manifest remains 137 sites and 109 native queries. The paired profile carries 46 named contracts (jersey 11, checkpoint 8, menu 7, launch 6, completion 14) and 21 exact jersey raw callbacks, including the unnamed two-pointer failure helper at 0x9D38F0.
+
+The final runtime SHA256 is
+3E480DC35C81FF4E68640EEEEFBCD0E4D3FAC5DA812FEF4B34924D8A3DB63E77.
+Canonical artifacts/followup-four-features-20261020/final-integration holds the exact source/compiled/manual/raw audits, dependency and payload hashes, and FINAL-RECEIPT.json. The 80 manual targets include 34 Play Now registrations beyond the 46 named contracts. Fresh compiled wrappers resolve 2,062 interop/provider callable references with zero issues, including typed Handcuffs, ES3/type APIs, generic promise factories and UniTask.Status. These are structural/static checks; native execution is not claimed.
+
+The goalie startup transaction resolves and checks the complete 35-target lifecycle before mutation, verifies the existing actual custom-retention observer, subscribes both observations, installs 14 completion finalizers with Priority.First, and publishes capability flags only after the installed plan audit succeeds. Rollback disables before unsubscribe/unpatch and includes a partially failing patch call. The Play Now Team.Initialize hook now explicitly selects (TeamData,bool,bool); the fresh compiled audit discovered its previous ambiguous overload selection.
+
+New native captures close the OnDestroy body/cleanup and overtime wrapper/state-machine linkage gaps. JsonUtility's exact injected icall and native Single schema are recorded, but emitted Unity float spelling remains unexecuted. Direct caller evidence does not prove every interface/virtual initialization chronology or nesting. Play Now legacy outer close/discard wiring and retained strong-registry lifetime remain bounded native acceptance concerns; no invented discard or timeout cleanup was introduced. See native-review.md and docs/FOUR-FEATURE-CANDIDATE.md for precise limits. Later goalie Studio re-export still clears headSkin by existing convention.
+
+The exact self-contained Studio publish passes GameArtPackageChecks using its actual publish and runtime seam paths. No install, game, real save, push or release occurred. Independent integration and whole-branch review, followed by human/native acceptance, remain pending. Earlier receipts above retain their historical payload identities and are not reused as proof for this candidate.

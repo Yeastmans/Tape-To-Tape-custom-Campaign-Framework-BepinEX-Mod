@@ -24,15 +24,15 @@ The editor writes four when a new custom duration is enabled. Disabled, absent, 
 
 ## Release validation
 
-The goalie policy, durable launch, actual participation and completion adapters are implemented behind the pending combined runtime compatibility gate. They remain disabled until the complete installation and native dependency audit is reviewed. Pure policy checks, boundary doubles and wrapper builds are not native gameplay proof.
+The local four-feature candidate integrates goalie policy, durable launch, actual participation and completion under one transactional startup gate. Missing prerequisites or failed installation disable the entire goalie capability. Independent integration and whole-branch review remain pending; Revision 23 does not contain these additions. Pure policy checks, boundary doubles and wrapper builds are not native gameplay proof.
 
 Opening a preview or initializing the goalie does not use a contract match. A saved attempt is charged only after actual home-goalie play and successful campaign completion. Normal rematches and overtime shootout rounds keep the original attempt. Canceling an unstarted preview uses no matches; changing its destination or starting goalie replaces the canceled attempt with a new saved one. After process loss, an armed attempt may already have started: resume its original match and goalie when prompted.
 
 Goalie earned state and boss bonuses return to the original active goalie before contract expiry can promote a reserve. If participation, departure protection or saving cannot be verified, the roster requires recovery through the main menu and Continue before another match. A locally saved completion can remain committed even when the native platform save fails; the warning distinguishes that result from a verified successful save.
 
-Policy and lifecycle adapters, the actual Studio controls, upgrade cleanup, portable campaign sharing, existing recruitment controls and two-line placement have focused automated checks. Native bodies and layouts were inspected on Steam roguelite build **26020247**. These checks do not replace observing gameplay on the published installer.
+Policy and lifecycle adapters, the actual Studio controls, upgrade cleanup, portable campaign sharing, existing recruitment controls and two-line placement have focused automated checks. The integrated candidate pins native bodies, metadata and wrapper contracts for Steam build **26085704**. These checks do not replace observing gameplay on the published installer.
 
-Human validation remains pending. On a disposable new run made with the published build:
+Human validation remains pending. After installation is separately authorized, use a disposable new run on the exact reviewed build containing these features:
 
 1. Give one starter a two-match contract and another a four-match contract. Disable GM behavior. Play only the first skater for one match; confirm only that contract loses a match.
 2. Put the first skater on the bench for a match. Confirm the remaining duration stays unchanged. Play them again and confirm the native departure notification and roster removal, without a departure-preventing relic.

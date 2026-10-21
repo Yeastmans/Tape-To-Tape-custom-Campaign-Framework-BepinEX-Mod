@@ -86,31 +86,12 @@ internal static class GoaliePersistenceBridge
     }
     internal static void Tick() { if (Enabled) Queue.Tick(); }
 
-    // Called only through the complete pinned manifest/startup gate.
-    internal static void InstallAfterCompatibilityReview(Harmony harmony)
+    internal static void SetEnabled(bool enabled) => Enabled = enabled;
+    internal static void Preflight()
     {
-        if (Enabled) return;
         GoalieNativeCheckpoint.RequireProfile(ES3Settings.defaultSettings);
         GoalieNativeAdmission.Preflight();
         PreflightPromises();
-        var installed = new List<(MethodInfo Native, MethodInfo Patch)>();
-        var targets = GoaliePersistenceContracts.Resolve();
-        try
-        {
-            MatchRuleRunner.Install();
-            foreach (var target in targets)
-            {
-                harmony.Patch(target.Native, target.Prefix == null ? null : new HarmonyMethod(target.Prefix), target.Postfix == null ? null : new HarmonyMethod(target.Postfix));
-                if (target.Prefix != null) installed.Add((target.Native, target.Prefix));
-                if (target.Postfix != null) installed.Add((target.Native, target.Postfix));
-            }
-            Enabled = true;
-        }
-        catch
-        {
-            foreach (var hook in installed) harmony.Unpatch(hook.Native, hook.Patch);
-            throw;
-        }
     }
     private static void PreflightPromises()
     {

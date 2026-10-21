@@ -62,10 +62,8 @@ internal static class GoaliePersistenceContracts
             || constructors[0].GetParameters()[3].ParameterType.FullName != "Tape2Tape.Customization.ILogoRepository")
             throw new MissingMethodException("Native injected deserializer constructor contract changed.");
     }
-    internal static void Install()
+    internal static NativeCompatibilityProfile Preflight()
     {
-        if (GoaliePersistenceBridge.Enabled) return;
-        try
         {
             if (!OperatingSystem.IsWindows() || IntPtr.Size != 8) throw new PlatformNotSupportedException("Audited Windows x64 required.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().Single(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
@@ -83,8 +81,8 @@ internal static class GoaliePersistenceContracts
                 if (Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(assembly.Location))) != dependency.Item2)
                     throw new InvalidDataException("Goalie native dependency changed: " + dependency.Item1);
             }
-            GoaliePersistenceBridge.InstallAfterCompatibilityReview(new Harmony("EndlessMode.GoalieCheckpoint"));
+            GoaliePersistenceBridge.Preflight();
+            return profile;
         }
-        catch (Exception ex) { Plugin.Log.LogWarning("[GoalieCheckpoint] Adapter unavailable: " + ex.Message); }
     }
 }

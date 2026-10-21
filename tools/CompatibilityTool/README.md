@@ -36,3 +36,9 @@ Use separate staging output paths first, review both generated files, then repla
 `dotnet run --project .\tools\CompatibilityTool -c Release -- --help` lists both commands. Unknown commands and wrong argument counts exit with code 2. Invalid inputs, native compatibility failures or output errors exit with code 1 and a concise error message. Success exits with code 0. No diagnostic-report command or gameplay fixtures are included.
 
 The shipping build wrapper is documented in [README_BUILD.md](../../README_BUILD.md). Baseline generation is a reviewed maintenance operation, not part of automatic end-user compatibility updates.
+
+## Integrated four-feature inventory
+
+Assets/four-feature-contracts.json in ModCompatibility is embedded as FourFeatureContracts.json. Baseline generation includes its exact 46 source-owned named hook contracts, 21 jersey raw contracts and protected native callable groups. Verification preserves both contract sets and rejects missing, extra or altered contracts. The raw adapters have reviewed absolute RVAs and closed generic/unnamed identities, so this candidate requires the exact reviewed 26085704 GameAssembly and metadata; it does not infer relocation from an address-only update. Generated interop files are build provenance, while runtime structural preflight and the existing component-specific provider gates remain authoritative.
+
+The final four-feature pair contains 1,448 protected native methods, 137 comparison sites and 109 query calls. Protected methods include dependencies and overloads; they are not an installed hook count. Actual installation-path coverage is recorded separately in the candidate's source, compiled, manual and raw audits. Generate and verify into separate staging paths before promoting the pair. Keep prior release receipts unchanged.

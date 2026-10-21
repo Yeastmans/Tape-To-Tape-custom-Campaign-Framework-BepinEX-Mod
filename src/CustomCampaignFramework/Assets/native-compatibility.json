@@ -1,6 +1,6 @@
 {
   "RuntimeContract": "t2t-native-v2-20261020",
-  "BaselineId": "6285FD523E1268A704A2C267336617580C89210AC0BFE5339934B1C553AF3EFC",
+  "BaselineId": "0D16BE041548C631DD4B32BC2C9339604D30BBBED2B89225FDE596323C70F060",
   "Build": "26085704",
   "GameHash": "92E73E6D0BE549DD8C695302B7AAE6A77CBBF4DE27F27D26ED01F4B3DABC5B8D",
   "MetadataHash": "1009F63178E260153CBBF224338BDC9124F9468D0F462F7A58327F638188914A",
@@ -1381,6 +1381,969 @@
       "Target": 69466128,
       "Bytes": "E84279C5FF",
       "Method": "AI.AIStates.BreakawayState$$DetermineShotType::System.Void DetermineShotType()"
+    }
+  ],
+  "RawHooks": [
+    {
+      "Feature": "jersey-logo",
+      "Id": "1-bridge",
+      "Kind": "bridge",
+      "Scope": 1,
+      "Rva": 50301008,
+      "Size": 896,
+      "Sha256": "2F706D2DC42D3AB568ACB08943D6878A9EE9176E8CDA9962144119DD97191BE2",
+      "Prologue": "405741574883EC38498B40200F2974242048895C2458498BD84889742468488B",
+      "Identity": "Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask\u003CForward.\u003CInitializeSkin\u003Ed__155\u003E$$SetStateMachine",
+      "NativeSignature": "void Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_Forward__InitializeSkin_d__155___SetStateMachine (Skaters_Forward__InitializeSkin_d__155_o* stateMachine, Cysharp_Threading_Tasks_CompilerServices_IStateMachineRunnerPromise_o** runnerPromiseFieldRef, const MethodInfo_2FF8850* method);",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "1-result",
+      "Kind": "result",
+      "Scope": 1,
+      "Rva": 50303008,
+      "Size": 128,
+      "Sha256": "79B6CBDEE1A73E228AC3627C4C10C43CA70D599EBDB78048CFB1433437267AAB",
+      "Prologue": "40534883EC20803DFB1BC90500488BD97529488D0D8FBF8105E8821D7EFDF083",
+      "Identity": "Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask\u003CForward.\u003CInitializeSkin\u003Ed__155\u003E$$SetResult",
+      "NativeSignature": "void Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_Forward__InitializeSkin_d__155___SetResult (Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_TStateMachine__o* __this, const MethodInfo_2FF9020* method);",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "1-fault",
+      "Kind": "fault",
+      "Scope": 1,
+      "Rva": 50303136,
+      "Size": 96,
+      "Sha256": "3772BFDDCB9E5B7645D516A11DB645D9739A0343C7A83DD858C98B09DA9276DD",
+      "Prologue": "48895C2408574883EC20803D781BC90500488BDA488BF97518488D0D00ED7C05",
+      "Identity": "Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask\u003CForward.\u003CInitializeSkin\u003Ed__155\u003E$$SetException",
+      "NativeSignature": "void Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_Forward__InitializeSkin_d__155___SetException (Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_TStateMachine__o* __this, System_Exception_o* exception, const MethodInfo_2FF90A0* method);",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "2-bridge",
+      "Kind": "bridge",
+      "Scope": 2,
+      "Rva": 50339184,
+      "Size": 864,
+      "Sha256": "3FE7960211BB33D93B3FCE2A0606585DA109C1E0FCD0EA8DAC5AC9E8565DFCBF",
+      "Prologue": "405741574883EC28498B402048895C2448498BD84889742458488BF248C74424",
+      "Identity": "Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask\u003CGoaltender.\u003CInitializeSkin\u003Ed__91\u003E$$SetStateMachine",
+      "NativeSignature": "void Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_Goaltender__InitializeSkin_d__91___SetStateMachine (Goaltender_Goaltender__InitializeSkin_d__91_o* stateMachine, Cysharp_Threading_Tasks_CompilerServices_IStateMachineRunnerPromise_o** runnerPromiseFieldRef, const MethodInfo_3001D70* method);",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "2-result",
+      "Kind": "result",
+      "Scope": 2,
+      "Rva": 50341120,
+      "Size": 128,
+      "Sha256": "9D1F6D03E362BE0820B14AD1FC86A0CC483AEB7ADF5E1B5F3E57135E0BB7172F",
+      "Prologue": "40534883EC20803DAA87C80500488BD97529488D0DAF2A8105E8A2887DFDF083",
+      "Identity": "Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask\u003CGoaltender.\u003CInitializeSkin\u003Ed__91\u003E$$SetResult",
+      "NativeSignature": "void Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_Goaltender__InitializeSkin_d__91___SetResult (Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_TStateMachine__o* __this, const MethodInfo_3002500* method);",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "2-fault",
+      "Kind": "fault",
+      "Scope": 2,
+      "Rva": 50341248,
+      "Size": 80,
+      "Sha256": "735A789F7FBB25EC40D688B8F14A5D6F092B70CDCFCEC352BFE63B4BD90D077B",
+      "Prologue": "48895C2408574883EC20803D2787C80500488BDA488BF97518488D0D20587C05",
+      "Identity": "Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask\u003CGoaltender.\u003CInitializeSkin\u003Ed__91\u003E$$SetException",
+      "NativeSignature": "void Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_Goaltender__InitializeSkin_d__91___SetException (Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_TStateMachine__o* __this, System_Exception_o* exception, const MethodInfo_3002580* method);",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "3-bridge",
+      "Kind": "bridge",
+      "Scope": 3,
+      "Rva": 50811712,
+      "Size": 896,
+      "Sha256": "CA8894405459EC9BFF9161FB0D159451C8D32AF25B374DFF5B79F3816108E634",
+      "Prologue": "405741574883EC38498B40200F2974242048895C2458498BD84889742468488B",
+      "Identity": "Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask\u003CT2TSkeletonExtensions.\u003CApplySkinAsync\u003Ed__20\u003E$$SetStateMachine",
+      "NativeSignature": "void Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_T2TSkeletonExtensions__ApplySkinAsync_d__20___SetStateMachine (Skaters_T2TSkeletonExtensions__ApplySkinAsync_d__20_o* stateMachine, Cysharp_Threading_Tasks_CompilerServices_IStateMachineRunnerPromise_o** runnerPromiseFieldRef, const MethodInfo_3075340* method);",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "3-result",
+      "Kind": "result",
+      "Scope": 3,
+      "Rva": 50813712,
+      "Size": 128,
+      "Sha256": "42D41496637DDC1E2570603DF37BB78B163D893443653AAE68751B7FBB6C71DE",
+      "Prologue": "40534883EC20803D8558C10500488BD97529488D0D9FF47905E8925276FDF083",
+      "Identity": "Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask\u003CT2TSkeletonExtensions.\u003CApplySkinAsync\u003Ed__20\u003E$$SetResult",
+      "NativeSignature": "void Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_T2TSkeletonExtensions__ApplySkinAsync_d__20___SetResult (Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_TStateMachine__o* __this, const MethodInfo_3075B10* method);",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "3-fault",
+      "Kind": "fault",
+      "Scope": 3,
+      "Rva": 50813840,
+      "Size": 96,
+      "Sha256": "BFD11070C99ECBDE9CEF002EE61C573A1B94C1516ECBD9C213504773419A90DF",
+      "Prologue": "48895C2408574883EC20803D0258C10500488BDA488BF97518488D0D10227505",
+      "Identity": "Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask\u003CT2TSkeletonExtensions.\u003CApplySkinAsync\u003Ed__20\u003E$$SetException",
+      "NativeSignature": "void Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_T2TSkeletonExtensions__ApplySkinAsync_d__20___SetException (Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_TStateMachine__o* __this, System_Exception_o* exception, const MethodInfo_3075B90* method);",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "4-bridge",
+      "Kind": "bridge",
+      "Scope": 4,
+      "Rva": 50817728,
+      "Size": 896,
+      "Sha256": "1990F8E89369BFC4D2674B13554AF56D5D6FF331AA8BE053CBDC807C34DAC428",
+      "Prologue": "405741574883EC38498B40200F2974242048895C2458498BD84889742468488B",
+      "Identity": "Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask\u003CT2TSkeletonExtensions.\u003CApplySkinAsync\u003Ed__24\u003E$$SetStateMachine",
+      "NativeSignature": "void Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_T2TSkeletonExtensions__ApplySkinAsync_d__24___SetStateMachine (Skaters_T2TSkeletonExtensions__ApplySkinAsync_d__24_o* stateMachine, Cysharp_Threading_Tasks_CompilerServices_IStateMachineRunnerPromise_o** runnerPromiseFieldRef, const MethodInfo_3076AC0* method);",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "4-result",
+      "Kind": "result",
+      "Scope": 4,
+      "Rva": 50819728,
+      "Size": 128,
+      "Sha256": "F3591A6095BCEC3CB45383B601058D03EE8F24E2BDA43B59F3B6CC214032CB17",
+      "Prologue": "40534883EC20803D1B41C10500488BD97529488D0D1FDD7905E8123B76FDF083",
+      "Identity": "Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask\u003CT2TSkeletonExtensions.\u003CApplySkinAsync\u003Ed__24\u003E$$SetResult",
+      "NativeSignature": "void Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_T2TSkeletonExtensions__ApplySkinAsync_d__24___SetResult (Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_TStateMachine__o* __this, const MethodInfo_3077290* method);",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "4-fault",
+      "Kind": "fault",
+      "Scope": 4,
+      "Rva": 50819856,
+      "Size": 96,
+      "Sha256": "EDAB88B7C876C3E1B216F7A7D78EECB83183A2D87BF4D31DD88A2C9D89C18146",
+      "Prologue": "48895C2408574883EC20803D9840C10500488BDA488BF97518488D0D900A7505",
+      "Identity": "Cysharp.Threading.Tasks.CompilerServices.AsyncUniTask\u003CT2TSkeletonExtensions.\u003CApplySkinAsync\u003Ed__24\u003E$$SetException",
+      "NativeSignature": "void Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_T2TSkeletonExtensions__ApplySkinAsync_d__24___SetException (Cysharp_Threading_Tasks_CompilerServices_AsyncUniTask_TStateMachine__o* __this, System_Exception_o* exception, const MethodInfo_3077310* method);",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "5-move",
+      "Kind": "move",
+      "Scope": 5,
+      "Rva": 58125136,
+      "Size": 5856,
+      "Sha256": "5920670CE43BD46FF75E7CF308DAF6C57E5259FF3AC59B58392AF9D03BD2699D",
+      "Prologue": "488BC44889480853565741544155415641574881EC600100000F2970B80F2978",
+      "Identity": "BenchPlayerSkins.\u003CApplyLiveOccupants\u003Ed__16$$MoveNext",
+      "NativeSignature": "void(state*, MethodInfo*) [unboxed native pointer; metadata by-value spelling is misleading]",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "7-move",
+      "Kind": "move",
+      "Scope": 7,
+      "Rva": 62640576,
+      "Size": 2672,
+      "Sha256": "3AA0C4864428BCFDB14B820B170F50FF1E2C414C7F3D6F3AE65CAFC292D1C597",
+      "Prologue": "488BC44889480853565741544155415641574881EC100100000F2970B80F2978",
+      "Identity": "Movements.MovementStates.KnockoutState.\u003CReapplySkin\u003Ed__115$$MoveNext",
+      "NativeSignature": "void(state*, MethodInfo*) [unboxed native pointer; metadata by-value spelling is misleading]",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "2-move",
+      "Kind": "move",
+      "Scope": 2,
+      "Rva": 63038400,
+      "Size": 2784,
+      "Sha256": "374039A7FB2DC4944589D60115BBA8DBA250AD6A118729477A45C9990EA1E13B",
+      "Prologue": "488BC44889480853565741544155415641574881EC000100000F2970B80F2978",
+      "Identity": "Goaltender.Goaltender.\u003CInitializeSkin\u003Ed__91$$MoveNext",
+      "NativeSignature": "void(state*, MethodInfo*) [unboxed native pointer; metadata by-value spelling is misleading]",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "1-move",
+      "Kind": "move",
+      "Scope": 1,
+      "Rva": 67563520,
+      "Size": 2656,
+      "Sha256": "69630BFE31468AE5D3E6714044C5192200F60720B168C9373A1D837BAC0DA2FD",
+      "Prologue": "48894C240853565741544155415641574881ECB00000000F29B424A000000048",
+      "Identity": "Skaters.Forward.\u003CInitializeSkin\u003Ed__155$$MoveNext",
+      "NativeSignature": "void(state*, MethodInfo*) [unboxed native pointer; metadata by-value spelling is misleading]",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "6-move",
+      "Kind": "move",
+      "Scope": 6,
+      "Rva": 67662560,
+      "Size": 4048,
+      "Sha256": "DFA82A7DA28C1C257AA25DD0D9CC04948E451C5F19B933785748ECF193FEDD31",
+      "Prologue": "488BC44889480853565741544155415641574881ECD00000000F2970B80F2978",
+      "Identity": "Skaters.PenaltyBoxSystem.\u003CShowBoxSeat\u003Ed__39$$MoveNext",
+      "NativeSignature": "void(state*, MethodInfo*) [unboxed native pointer; metadata by-value spelling is misleading]",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "3-move",
+      "Kind": "move",
+      "Scope": 3,
+      "Rva": 68028672,
+      "Size": 4448,
+      "Sha256": "8259340F327EEFA7F1F1EDC7DD33067BC056FB021821B4E3B286AC384F6F7578",
+      "Prologue": "488BC44889480853565741544155415641574881ECA00000000F2970B80F2978",
+      "Identity": "Skaters.T2TSkeletonExtensions.\u003CApplySkinAsync\u003Ed__20$$MoveNext",
+      "NativeSignature": "void(state*, MethodInfo*) [unboxed native pointer; metadata by-value spelling is misleading]",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "4-move",
+      "Kind": "move",
+      "Scope": 4,
+      "Rva": 68034368,
+      "Size": 3904,
+      "Sha256": "51AB2922A621D521AC16A0F83C9ED9757DE69F6708806B3ECC73AA09E4597EAC",
+      "Prologue": "48894C240853565741544155415641574883EC700F29742460488BF9803D70E9",
+      "Identity": "Skaters.T2TSkeletonExtensions.\u003CApplySkinAsync\u003Ed__24$$MoveNext",
+      "NativeSignature": "void(state*, MethodInfo*) [unboxed native pointer; metadata by-value spelling is misleading]",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "8-move",
+      "Kind": "move",
+      "Scope": 8,
+      "Rva": 71565728,
+      "Size": 2464,
+      "Sha256": "6C9149DFDDB5F7E44F9D7FC09E4D55A79F246DAC7013FE7C3B66F312F941B24F",
+      "Prologue": "48894C240853565741544155415641574881ECF00000000F29B424E000000048",
+      "Identity": "Tape2Tape.Hockey.UI.SkaterAndSkin.\u003CApplySkinAsync\u003Ed__3$$MoveNext",
+      "NativeSignature": "void(state*, MethodInfo*) [unboxed native pointer; metadata by-value spelling is misleading]",
+      "AliasCount": 1
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "0-builder-fault",
+      "Kind": "builder-fault",
+      "Scope": 0,
+      "Rva": 10303728,
+      "Size": 172,
+      "Sha256": "B8ABD3FD71EDB8F4D70EE472BD9AF4DEF43AC30CF32A65876A0EBB0C19FDAEAA",
+      "Prologue": "48895C2408574883EC20803DDB9F2A0800488BFA488BD97518488D0DE0ADEB07",
+      "Identity": "internal-native:26085704:0x9D38F0",
+      "NativeSignature": "void(builder_fields_pointer, exception_object_pointer); Windows x64; no metadata MethodInfo",
+      "AliasCount": 0
+    }
+  ],
+  "NamedHooks": [
+    {
+      "Feature": "jersey-logo",
+      "Id": "forward-composite",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Skaters.SkinHelper",
+      "Method": "GetSkinForForward",
+      "IsStatic": true,
+      "ReturnType": "Spine.Skin",
+      "Parameters": [
+        "Spine.SkeletonData",
+        "Data.ForwardData",
+        "System.Boolean",
+        "System.Boolean",
+        "System.Boolean",
+        "System.Boolean"
+      ],
+      "Prefix": "",
+      "Postfix": "ForwardComposite",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "goalie-composite",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Skaters.SkinHelper",
+      "Method": "GetSkinForGoalie",
+      "IsStatic": true,
+      "ReturnType": "Spine.Skin",
+      "Parameters": [
+        "Spine.SkeletonData",
+        "Data.GoaltenderData",
+        "System.Boolean"
+      ],
+      "Prefix": "",
+      "Postfix": "GoalieComposite",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "world-logo",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Skaters.T2TSkeletonExtensions",
+      "Method": "SetLogo",
+      "IsStatic": true,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "Spine.Unity.SkeletonRenderer",
+        "UnityEngine.Texture2D",
+        "System.Boolean"
+      ],
+      "Prefix": "WorldLogo",
+      "Postfix": "WorldLogoDone",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "graphic-logo",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Skaters.T2TSkeletonExtensions",
+      "Method": "SetLogo",
+      "IsStatic": true,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "Spine.Unity.SkeletonGraphic",
+        "UnityEngine.Texture",
+        "System.Boolean"
+      ],
+      "Prefix": "GraphicLogo",
+      "Postfix": "GraphicLogoDone",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "graphic-material",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Skaters.T2TSkeletonExtensions",
+      "Method": "OverrideSlotWithCustomizationMaterial",
+      "IsStatic": true,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "Spine.Unity.SkeletonGraphic",
+        "Spine.Skin",
+        "Data.TeamColorsData",
+        "System.String",
+        "Il2CppSystem.Collections.Generic.Dictionary\u003CUnityEngine.Texture,UnityEngine.Material\u003E"
+      ],
+      "Prefix": "",
+      "Postfix": "GraphicMaterialPostfix",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "slots",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Skaters.T2TSkeletonExtensions",
+      "Method": "SetupSkeletonSlots",
+      "IsStatic": true,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "Spine.Skeleton",
+        "Skaters.T2TSkeletonExtensions\u002BCustomizationFlags",
+        "System.Boolean"
+      ],
+      "Prefix": "",
+      "Postfix": "SlotsPostfix",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "forward-logo",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Skaters.Forward",
+      "Method": "InitializeLogo",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "Data.TeamData"
+      ],
+      "Prefix": "ForwardLogoScope",
+      "Postfix": "",
+      "Finalizer": "OwnerLogoFinalizer"
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "goalie-logo",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Goaltender.Goaltender",
+      "Method": "InitializeLogo",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "Data.TeamData"
+      ],
+      "Prefix": "GoalieLogoScope",
+      "Postfix": "",
+      "Finalizer": "OwnerLogoFinalizer"
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "world-material",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Skaters.T2TSkeletonExtensions",
+      "Method": "SetupSkeletonSlotsMaterials",
+      "IsStatic": true,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "System.Boolean",
+        "Spine.Unity.SkeletonRenderer",
+        "UnityEngine.Material",
+        "Skaters.T2TSkeletonExtensions\u002BCustomizationFlags"
+      ],
+      "Prefix": "",
+      "Postfix": "MaterialsPostfix",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "selected-player-skeleton",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "SelectedPlayerUI",
+      "Method": "UpdatePlayerSkeleton",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "Data.ForwardData",
+        "Data.TeamData",
+        "System.Boolean"
+      ],
+      "Prefix": "SelectedPlayerScope",
+      "Postfix": "",
+      "Finalizer": "SelectedPlayerFinalizer"
+    },
+    {
+      "Feature": "jersey-logo",
+      "Id": "selected-player-logo",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "SelectedPlayerUI",
+      "Method": "InitializeLogo",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "Data.ForwardData",
+        "Data.TeamData"
+      ],
+      "Prefix": "SelectedPlayerLogoScope",
+      "Postfix": "",
+      "Finalizer": "OwnerLogoFinalizer"
+    },
+    {
+      "Feature": "goalie-checkpoint",
+      "Id": "goalie-save",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "State.RunDataRepositoryV2",
+      "Method": "SaveToPersistentStorage",
+      "IsStatic": false,
+      "ReturnType": "Il2CppSystem.Threading.Tasks.Task\u003CSystem.Boolean\u003E",
+      "Parameters": [
+        "State.RunDataModelV2"
+      ],
+      "Prefix": "SavePrefix",
+      "Postfix": "",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-checkpoint",
+      "Id": "goalie-load",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "State.RunDataRepositoryV2",
+      "Method": "LoadFromPersistentStorage",
+      "IsStatic": false,
+      "ReturnType": "Il2CppSystem.Threading.Tasks.Task\u003CState.RunDataModelV2\u003E",
+      "Parameters": [],
+      "Prefix": "LoadPrefix",
+      "Postfix": "",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-checkpoint",
+      "Id": "goalie-serialize",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "ES3",
+      "Method": "Serialize",
+      "IsStatic": true,
+      "ReturnType": "Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray\u003CSystem.Byte\u003E",
+      "Parameters": [
+        "Il2CppSystem.Object",
+        "ES3Types.ES3Type",
+        "ES3Settings"
+      ],
+      "Prefix": "SerializePrefix",
+      "Postfix": "",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-checkpoint",
+      "Id": "goalie-deserialize",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "ES3",
+      "Method": "Deserialize",
+      "IsStatic": true,
+      "ReturnType": "Il2CppSystem.Object",
+      "Parameters": [
+        "ES3Types.ES3Type",
+        "Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray\u003CSystem.Byte\u003E",
+        "ES3Settings"
+      ],
+      "Prefix": "DeserializePrefix",
+      "Postfix": "DeserializePostfix",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-checkpoint",
+      "Id": "goalie-store",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "ES3",
+      "Method": "StoreCachedFile",
+      "IsStatic": true,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "System.String"
+      ],
+      "Prefix": "StorePrefix",
+      "Postfix": "",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-checkpoint",
+      "Id": "goalie-cache",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "ES3File",
+      "Method": "CacheFile",
+      "IsStatic": true,
+      "ReturnType": "ES3File",
+      "Parameters": [
+        "ES3Settings"
+      ],
+      "Prefix": "CachePrefix",
+      "Postfix": "",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-checkpoint",
+      "Id": "goalie-fresh",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "State.CampaignState",
+      "Method": "ApplyNewRunStartEffects",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [],
+      "Prefix": "",
+      "Postfix": "FreshPostfix",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-checkpoint",
+      "Id": "goalie-hydrate",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "State.DeserializerV2",
+      "Method": "DeserializeFromModel",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "Data.RunData",
+        "State.RunDataModelV2"
+      ],
+      "Prefix": "",
+      "Postfix": "HydratedPostfix",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-roster-menu",
+      "Id": "goalie-menu-init",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Tape2Tape.Hockey.UI.LineupMenu",
+      "Method": "InitData",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "Il2CppSystem.Object"
+      ],
+      "Prefix": "",
+      "Postfix": "Initialize",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-roster-menu",
+      "Id": "goalie-menu-cards",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Tape2Tape.Hockey.UI.LineupMenu",
+      "Method": "LoadCurrentTeam",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [],
+      "Prefix": "",
+      "Postfix": "Refresh",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-roster-menu",
+      "Id": "goalie-menu-pick",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Tape2Tape.Hockey.UI.LineupMenu",
+      "Method": "OnTogglePlayerCard",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "Tape2Tape.Customization.UI.SkaterCard"
+      ],
+      "Prefix": "Pick",
+      "Postfix": "",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-roster-menu",
+      "Id": "goalie-menu-back",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Tape2Tape.Hockey.UI.LineupMenu",
+      "Method": "TryLeaveMenu",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "System.Boolean"
+      ],
+      "Prefix": "Leave",
+      "Postfix": "",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-roster-menu",
+      "Id": "goalie-menu-recruit",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Tape2Tape.Hockey.UI.EventChoiceMenu",
+      "Method": "OnItemClicked",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "BishopGames.UI.AbstractNavigable"
+      ],
+      "Prefix": "RecruitClick",
+      "Postfix": "",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-roster-menu",
+      "Id": "goalie-menu-legacy-open",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "EventChoicePanel",
+      "Method": "ShowMenu",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "STS.Map.MapNode",
+        "STS.Map.EventNode"
+      ],
+      "Prefix": "",
+      "Postfix": "LegacyShown",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-roster-menu",
+      "Id": "goalie-menu-legacy-close",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "EventChoicePanel",
+      "Method": "HideMenu",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [],
+      "Prefix": "LegacyLeave",
+      "Postfix": "",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-match-launch",
+      "Id": "goalie-launch-start",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "MatchPreviewMenu",
+      "Method": "StartMatch",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [],
+      "Prefix": "StartPrefix",
+      "Postfix": "",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-match-launch",
+      "Id": "goalie-launch-input",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "MatchPreviewMenu",
+      "Method": "OnStartInput",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "Tape2Tape.Customization.UI.UIInputShortcutBase"
+      ],
+      "Prefix": "InputPrefix",
+      "Postfix": "",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-match-launch",
+      "Id": "goalie-launch-show",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "MatchPreviewMenu",
+      "Method": "ShowMenu",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "STS.Map.MapNode"
+      ],
+      "Prefix": "ShowPrefix",
+      "Postfix": "ShowPostfix",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-match-launch",
+      "Id": "goalie-launch-back",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "MatchPreviewMenu",
+      "Method": "BackToMap",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [],
+      "Prefix": "BackPrefix",
+      "Postfix": "",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-match-launch",
+      "Id": "goalie-launch-cancel",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "MatchPreviewMenu",
+      "Method": "OnCancelInput",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "Tape2Tape.Customization.UI.UIInputShortcutBase"
+      ],
+      "Prefix": "CancelPrefix",
+      "Postfix": "",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-match-launch",
+      "Id": "goalie-launch-destroy",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "MatchPreviewMenu",
+      "Method": "OnDestroy",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [],
+      "Prefix": "DestroyPrefix",
+      "Postfix": "",
+      "Finalizer": ""
+    },
+    {
+      "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-boss",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "STS.Map.BossMapNode",
+      "Method": "LaunchMatch",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [],
+      "Prefix": "NodePrefix",
+      "Postfix": "",
+      "Finalizer": "NodeFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-challenge",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "STS.Map.ChallengeMapNode",
+      "Method": "LaunchMatch",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [],
+      "Prefix": "NodePrefix",
+      "Postfix": "",
+      "Finalizer": "NodeFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-elite",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "STS.Map.EliteMapNode",
+      "Method": "LaunchMatch",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [],
+      "Prefix": "NodePrefix",
+      "Postfix": "",
+      "Finalizer": "NodeFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-initialize",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "State.GameModeControllers.GameControllerBase",
+      "Method": "InitializeGoaltenders",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [],
+      "Prefix": "InitializePrefix",
+      "Postfix": "",
+      "Finalizer": "InitializeFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-goalie",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Goaltender.Goaltender",
+      "Method": "Initialize",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "Data.GoaltenderData",
+        "System.Boolean"
+      ],
+      "Prefix": "GoaliePrefix",
+      "Postfix": "",
+      "Finalizer": "GoalieFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-faceoff",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "GameManager",
+      "Method": "OnFaceoff",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "Events.FaceoffArgs"
+      ],
+      "Prefix": "",
+      "Postfix": "",
+      "Finalizer": "NormalPlayFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-puckdrop",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "GameManager",
+      "Method": "OnPuckDropLaunch",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [],
+      "Prefix": "",
+      "Postfix": "",
+      "Finalizer": "NormalPlayFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-shootout",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "State.GameModeControllers.Shootout.InRoundState",
+      "Method": "OnEnter",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [],
+      "Prefix": "",
+      "Postfix": "",
+      "Finalizer": "ShootoutPlayFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-normal-restart",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "State.GameModeControllers.NormalMatch.NormalMatchGameModeController",
+      "Method": "OnRestart",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [],
+      "Prefix": "",
+      "Postfix": "",
+      "Finalizer": "RestartFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-shootout-restart",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "State.GameModeControllers.Shootout.ShootoutGameModeController",
+      "Method": "OnRestart",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [],
+      "Prefix": "",
+      "Postfix": "",
+      "Finalizer": "RestartFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-overtime",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "GameLoader",
+      "Method": "SwitchToShootout",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "System.Int32"
+      ],
+      "Prefix": "SwitchPrefix",
+      "Postfix": "",
+      "Finalizer": "SwitchFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-departure",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Rogue.FreeAgents.FreeAgentManager",
+      "Method": "HandleFreeAgentsLeaving",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [],
+      "Prefix": "DeparturePrefix",
+      "Postfix": "",
+      "Finalizer": "DepartureFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-context",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "State.EndOfGame.EndOfGameFlowController",
+      "Method": "Initialize",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [],
+      "Prefix": "",
+      "Postfix": "",
+      "Finalizer": "FlowFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-update",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "State.EndOfGame.Steps.CampaignUpdateStep",
+      "Method": "Execute",
+      "IsStatic": false,
+      "ReturnType": "Cysharp.Threading.Tasks.UniTask",
+      "Parameters": [
+        "State.EndOfGame.EndOfGameContext"
+      ],
+      "Prefix": "UpdatePrefix",
+      "Postfix": "",
+      "Finalizer": "UpdateFinalizer"
     }
   ]
 }

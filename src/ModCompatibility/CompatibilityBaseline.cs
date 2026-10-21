@@ -297,6 +297,14 @@ public sealed class CompatibilityBaseline
             if (image.SharedMethodCount(method.Rva) != expectedShared) throw new InvalidDataException("Changed free-agent talent dependency sharing: " + name);
             protectedMethods.Add(image.Identity(method));
         }
+        var features = ReviewedFeatureContracts.Read();
+        p.RawHooks = features.RawHooks; p.NamedHooks = features.NamedHooks;
+        features.Validate(image, p);
+        foreach (string name in features.ProtectedMethods) {
+            var matches = image.Find(name).ToArray();
+            if (matches.Length == 0) throw new InvalidDataException("Missing reviewed feature dependency: " + name);
+            foreach (var method in matches) protectedMethods.Add(image.Identity(method));
+        }
         foreach(var name in protectedMethods.Order())
         {
             var method=image.Resolve(name);
@@ -311,6 +319,7 @@ public sealed class CompatibilityBaseline
     {
         if(Profile.RuntimeContract!=NativeCompatibilityProfile.Contract || string.IsNullOrWhiteSpace(Id)) throw new InvalidDataException("Unsupported compatibility baseline.");
         if(!SquadCalls.SequenceEqual(image.SquadCallInventory())) throw new InvalidDataException("The game's squad behavior checks changed. A mod repair is required.");
+        ReviewedFeatureContracts.Read().Validate(image, Profile);
         int done=0;
         foreach(var contract in Methods)
         {
@@ -320,6 +329,7 @@ public sealed class CompatibilityBaseline
             if(++done%20==0) progress?.Report($"Checking mod compatibility: {done}/{Methods.Count} native methods");
         }
         var result=new NativeCompatibilityProfile { BaselineId=Id,Build=build,GameHash=image.GameHash,MetadataHash=image.MetadataHash,
+            RawHooks=Profile.RawHooks, NamedHooks=Profile.NamedHooks,
             SurfaceRva=checked((int)image.Resolve("Arena.IceSetup$$SwitchIceType").Rva),
             FlowRva=checked((int)image.Instructions(image.Resolve(FlowMethod).Rva)[FlowIndex].IP) };
         foreach(var c in Sites)

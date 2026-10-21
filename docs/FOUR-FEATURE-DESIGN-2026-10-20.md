@@ -2,7 +2,7 @@
 
 2026-10-20. Revised design approved by the user after confirming campaign-level
 recruitment and per-playable-squad reserve settings, both off by default.
-Implementation planning is next. Revision 23 is already published independently;
+Implementation is integrated in the local four-feature candidate; independent integration/whole-branch review and human/native validation remain. Revision 23 is already published independently;
 none of these additions is included in it.
 
 ## Confirmed requirements

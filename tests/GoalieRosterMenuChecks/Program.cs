@@ -11,7 +11,6 @@ int checks = 0;
 void Check(bool value, string name) { if (!value) throw new Exception(name); Console.WriteLine("PASS " + name); checks++; }
 BridgeDoubleHooks.Enable();
 typeof(GoalieRosterMenu).GetField("installed", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, true);
-typeof(GoalieRosterMenu).GetField("attempted", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, true);
 Plugin.IsDefaultMode = false;
 CampaignState Fresh(bool reserve = true) {
     Plugin.ModFolder = Path.Combine(Path.GetTempPath(), "ccf-menu-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(Plugin.ModFolder);

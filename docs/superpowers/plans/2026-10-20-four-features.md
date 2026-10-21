@@ -62,6 +62,6 @@ Stage all new native evidence below `artifacts/followup-four-features-20261020`,
 
 ## Plan review and execution
 
-The user approved the revised written design. These implementation plans await review and execution-method selection. Recommended method: **subagent-driven**, with one implementer at a time and a fresh reviewer at each component boundary, because save recovery and native hooks warrant independent review. The alternative is implementation by the main agent with one independent final review.
+The user approved the revised design and task-by-task implementation with independent component reviews. All component units are implemented and independently reviewed. Final integration has produced the local build/FourFeatureCandidate runtime and self-contained Studio, with exact audit and source/payload receipt under artifacts/followup-four-features-20261020/final-integration.
 
-This planning pass changes documentation only. The canonical workspace has no Git metadata, so the documents are not yet committed; include them with the isolated implementation history without modifying the dirty mirror.
+Independent integration review and whole-branch review remain mandatory before controller-owned selective canonical promotion. Native/human gameplay acceptance remains pending. Revision 23 and the protected dirty mirror remain unchanged. No new installation or publication is authorized by this status update.

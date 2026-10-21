@@ -46,8 +46,9 @@ internal static class GoalieRosterMenu
         internal Il2CppSystem.Action<AbstractMenu> Closed, Destroying;
     }
     internal static Selection Current;
-    private static bool installed, attempted;
-    internal static bool Enabled { get { EnsureInstalled(); return installed && GoaliePersistenceBridge.Enabled; } }
+    private static bool installed;
+    internal static bool Enabled => installed && GoaliePersistenceBridge.Enabled;
+    internal static void SetInstalled(bool value) => installed = value;
     internal const string Feature = "goalie-roster-menu";
     internal static readonly NamedManagedHookContract[] Required = {
         Hook("init", typeof(LineupMenu), "InitData", "System.Void", new[] { "Il2CppSystem.Object" }, "Initialize", false),
@@ -61,31 +62,10 @@ internal static class GoalieRosterMenu
     private static NamedManagedHookContract Hook(string id, Type type, string method, string result, string[] parameters, string patch, bool prefix)
         => new() { Feature = Feature, Id = "goalie-menu-" + id, Assembly = "MainScriptsAssembly", DeclaringType = type.FullName,
             Method = method, ReturnType = result, Parameters = parameters, Prefix = prefix ? patch : "", Postfix = prefix ? "" : patch };
-    private static void EnsureInstalled()
-    {
-        if (attempted || !GoaliePersistenceBridge.Enabled) return;
-        attempted = true;
-        var harmony = new Harmony("EndlessMode.GoalieRosterMenu");
-        var hooks = new List<(MethodInfo Target, MethodInfo Patch)>();
-        try {
-            var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().Single(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-            var profile = NativeCompatibility.Load(module.FileName);
-            NamedManagedHookContract.RequireExactSet(Required, profile.NamedHooks, Feature);
-            // Resolve the complete set before installing any hook.
-            var resolved = Required.Select(c => (Contract: c, Target: JerseyLogoManagedTargets.Resolve(c, AppDomain.CurrentDomain.GetAssemblies()),
-                Patch: AccessTools.Method(typeof(GoalieRosterMenu), c.Prefix.Length > 0 ? c.Prefix : c.Postfix))).ToArray();
-            foreach (var h in resolved) {
-                if (h.Patch == null) throw new MissingMethodException(h.Contract.Id);
-                harmony.Patch(h.Target, h.Contract.Prefix.Length > 0 ? new HarmonyMethod(h.Patch) : null,
-                    h.Contract.Postfix.Length > 0 ? new HarmonyMethod(h.Patch) : null);
-                hooks.Add((h.Target, h.Patch));
-            }
-            installed = true;
-        } catch (Exception ex) {
-            foreach (var h in hooks) harmony.Unpatch(h.Target, h.Patch);
-            Plugin.Log.LogWarning("[GoalieRoster] Controls unavailable: " + ex.Message);
-        }
-    }
+    internal static (MethodInfo Native, MethodInfo Prefix, MethodInfo Postfix)[] Resolve()
+        => Required.Select(c => (JerseyLogoManagedTargets.Resolve(c, AppDomain.CurrentDomain.GetAssemblies()),
+            c.Prefix.Length == 0 ? null : AccessTools.Method(typeof(GoalieRosterMenu), c.Prefix) ?? throw new MissingMethodException(c.Prefix),
+            c.Postfix.Length == 0 ? null : AccessTools.Method(typeof(GoalieRosterMenu), c.Postfix) ?? throw new MissingMethodException(c.Postfix))).ToArray();
     internal static bool Valid(Selection s) => s != null && !s.Finished && ReferenceEquals(Current, s)
         && s.Campaign?.runData?.Pointer == s.Run && s.Campaign.Pointer == CampaignUtil.CampaignState?.Pointer
         && string.Equals(s.Folder, Plugin.ModFolder, StringComparison.OrdinalIgnoreCase)

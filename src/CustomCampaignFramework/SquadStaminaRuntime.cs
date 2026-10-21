@@ -42,7 +42,7 @@ internal static class SquadStaminaRuntime
 
 // Team.Initialize uses Unity Instantiate, not TeamData.Clone. Bind the exact
 // invocation input before its stamina initializer and retire it on every exit.
-[HarmonyPatch(typeof(Team), nameof(Team.Initialize))]
+[HarmonyPatch(typeof(Team), nameof(Team.Initialize), new[] { typeof(TeamData), typeof(bool), typeof(bool) })]
 internal static class PlayNowTeamInitialization
 {
     [ThreadStatic] private static Frame current;
