@@ -313,7 +313,12 @@ internal static class GoaliePersistenceBridge
     private static void FreshPostfix(CampaignState __instance)
     {
         if (!Enabled || Plugin.IsDefaultMode || __instance?.runData?.teamData?.goalie == null) return;
-        try { Roster.Fresh(__instance.runData, Plugin.ModFolder, SquadBehaviorRuntime.Enabled(__instance.runData.squadId, GoalieFeatureOptions.ReserveBehaviorId, false)); }
+        try {
+            if (Roster.Owns(__instance.runData, Plugin.ModFolder)) return;
+            Roster.Fresh(__instance.runData, Plugin.ModFolder,
+                SquadBehaviorRuntime.Enabled(__instance.runData.squadId, GoalieFeatureOptions.ReserveBehaviorId, false),
+                GoalieContractRuntime.Sign(SquadPoolRuntime.Team(__instance.runData.squadId)?.Goalie?.Fields, __instance.runData.teamData.goalie.id));
+        }
         catch (Exception ex) { Warn("Fresh goalie roster unavailable: " + ex.Message); }
     }
 }

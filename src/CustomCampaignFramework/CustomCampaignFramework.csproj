@@ -36,6 +36,7 @@
     <Compile Include="../CampaignCore/GoalieFeatureOptions.cs" Link="Core/GoalieFeatureOptions.cs" />
     <Compile Include="../CampaignCore/GoalieRecruitSnapshots.cs" Link="Core/GoalieRecruitSnapshots.cs" />
     <Compile Include="../CampaignCore/GoalieRosterState.cs" Link="Core/GoalieRosterState.cs" />
+    <Compile Include="../CampaignCore/GoalieContractPolicy.cs" Link="Core/GoalieContractPolicy.cs" />
     <Compile Include="../CampaignCore/GoalieRosterStore.cs" Link="Core/GoalieRosterStore.cs" />
     <Compile Include="../CampaignCore/FreeAgentAbilities.cs" Link="Core/FreeAgentAbilities.cs" />
     <EmbeddedResource Include="../../assets/reward-pools/normal_run_pool.tsv" LogicalName="NormalRewardPools.tsv" />

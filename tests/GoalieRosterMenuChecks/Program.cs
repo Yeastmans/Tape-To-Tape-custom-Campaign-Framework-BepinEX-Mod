@@ -115,13 +115,18 @@ Check(later.Generation != resumed.Generation && later.ConsumedOfferIds.Length ==
 state = Fresh();
 File.WriteAllText(Path.Combine(Plugin.ModFolder, "campaign.txt"), "Goalie Recruitment = On");
 var pool = GoalieFreeAgents.DirectoryPath(Plugin.ModFolder); Directory.CreateDirectory(pool);
-for (int i = 0; i < 5; i++) File.WriteAllText(Path.Combine(pool, "goalie" + i + ".txt"), "Position = Goalie");
+for (int i = 0; i < 5; i++) File.WriteAllText(Path.Combine(pool, "goalie" + i + ".txt"), "Position = Goalie\nCustom Contract = yes\nContract Matches = 6\n");
 var mapNode = new STS.Map.MapNode(); GoalieRecruitment.Selected(state, mapNode);
 var gmNode = new GeneralManagerEvent();
 Check(GoalieRecruitment.Choices(gmNode, 0) && gmNode.eventChoices.Count == 2, "ActualOfferGenerationUsesAuthoredGoaliePool");
 var actual = GoalieRecruitment.Current; var selectedOffer = actual.Offers[0];
+Check(selectedOffer.Contract?.Duration == 6 && gmNode.eventChoices[0].translatedButtonName.Contains("6 played-match contract"), "GeneratedOfferDisplaysActualFrozenSignedDuration");
+foreach (var file in Directory.GetFiles(pool)) File.WriteAllText(file, "Position = Goalie\nCustom Contract = yes\nContract Matches = 99\n");
+var exposed = selectedOffer.Contract; exposed.Duration = 22;
+Check(selectedOffer.Contract.Duration == 6, "OfferContractCannotBeMutatedThroughExposedSnapshot");
 var gm = new EventChoiceMenu { SourceNode = gmNode }; gm.m_Items.Add(new() { ChoiceData = gmNode.eventChoices[0] });
 GoalieRosterMenu.RecruitClick(gm, gm.m_Items[0].Navigable); selection = GoalieRosterMenu.Current; Click(selection, 0); Click(selection, 0);
+Check(roster.Selection.Active.Contract?.Duration == 6 && roster.Selection.Active.Contract.PlayedMatches == 0, "ConfirmedOfferSignsFrozenDurationDespiteAuthorEdits");
 string consumedId = selectedOffer.Id; string generation = roster.Selection.RecruitmentVisit.Generation;
 roster.TryRecruit(state, new GoaltenderData { id = "replacement-after-signing" }, GoalieSlot.Active, roster.Selection.Revision);
 GoalieRecruitment.Selected(state, mapNode);
@@ -192,4 +197,36 @@ foreach (string exit in new[] { "cancel", "swap", "preparation-failure", "refres
         "ParentNormalPresentationAndForwardEditsRestored_" + exit);
 }
 
+// Signing into reserve has a visible two-slot result when the active is expired.
+foreach (string protection in new[] { "none", "native", "custom", "unknown-native", "unknown-custom" }) {
+    state = Fresh();
+    roster.Fresh(state.runData, Plugin.ModFolder, true, new() { Duration = 4, PlayedMatches = 4, LastMatchKey = "completed", AwaitingReplacement = true });
+    state.SaveRunData();
+    state.runData.teamData.NativeHandcuffs = protection == "native";
+    state.runData.teamData.FailProtection = protection == "unknown-native";
+    CustomRewardCampaignRules.Fail = protection == "unknown-custom";
+    if (protection == "custom") CustomRewardCampaignRules.Rules.Add(new() { Trigger = "Contract expiry", Effect = CustomRewardEffects.KeepFreeAgents });
+    pair = Offer(state); pair.Offer.Contract = GoalieContractPolicy.Sign(6);
+    selection = Recruit(state, pair); int beforeSaves = state.Repository.Saves;
+    Click(selection, 1);
+    if (protection.StartsWith("unknown")) {
+        Click(selection, 1);
+        Check(!pair.Offer.Taken && state.Repository.Saves == beforeSaves && selection.Menu.m_Header.m_Title.text.Contains("could not be verified"), "UnknownProtectionBlocksDeferredReserveSigning_" + protection);
+        selection.Menu.TryLeaveMenu(false);
+    } else {
+        Check(!pair.Offer.Taken && selection.Menu.m_Header.m_Title.text.Contains(protection == "none" ? "becomes active" : "remains active"), "DeferredReplacementResultShownBeforeConfirmation_" + protection);
+        Click(selection, 1);
+        var result = roster.Selection;
+        Check(pair.Offer.Taken && result.Active != null && result.RecruitmentVisit.ConsumedOfferIds.Length == 1
+            && (protection == "none" ? result.Active.PlayerId == "candidate" && result.Reserve == null && result.Active.Contract.Duration == 6 && result.Active.Contract.PlayedMatches == 0
+                : result.Active.PlayerId == "active" && result.Active.Contract.PlayedMatches == 4 && result.Reserve.PlayerId == "candidate"), "DeferredReplacementHonorsKnownProtectionAndPreservesSigningLedger_" + protection);
+    }
+    CustomRewardCampaignRules.Rules.Clear(); CustomRewardCampaignRules.Fail = false;
+}
+state = Fresh();
+roster.Fresh(state.runData, Plugin.ModFolder, true, new() { Duration = 4, PlayedMatches = 4, AwaitingReplacement = true }); state.SaveRunData();
+pair = Offer(state); selection = Recruit(state, pair); Click(selection, 1);
+state.runData.teamData.NativeHandcuffs = true; Click(selection, 1);
+Check(!pair.Offer.Taken && selection.Menu.m_Header.m_Title.text.Contains("remains active"), "ChangedProtectionRequiresNewConfirmationOfUpdatedResult");
+Click(selection, 1); Check(pair.Offer.Taken && roster.Selection.Active.PlayerId == "active" && roster.Selection.Reserve.PlayerId == "candidate", "UpdatedProtectedResultCanBeConfirmed");
 Console.WriteLine($"PASS {checks} source-linked goalie menu checks");

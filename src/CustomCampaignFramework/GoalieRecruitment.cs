@@ -55,7 +55,8 @@ internal static class GoalieRecruitment
         internal string Id;
         internal GoaltenderData Candidate;
         internal bool Taken, Unresolved;
-        internal GoalieContractState Contract { get; set; } // Task 4 supplies the signed snapshot.
+        private GoalieContractState contract;
+        internal GoalieContractState Contract { get => contract?.Clone(); set => contract = value?.Clone(); }
     }
     internal static bool IsCurrent(Visit value) => value != null && ReferenceEquals(visit, value)
         && value.Selection.Matches(CampaignUtil.CampaignState);
@@ -172,11 +173,12 @@ internal static class GoalieRecruitment
                 // The selectable offer owns a complete detached candidate; no
                 // run save or supplemental file is written until confirmation.
                 GoalieNativeSnapshot.Capture(goalie);
-                var offer = new Offer { Visit = current, Revision = revision, Candidate = goalie, Id = offerId };
+                var offer = new Offer { Visit = current, Revision = revision, Candidate = goalie, Id = offerId,
+                    Contract = GoalieContractRuntime.Sign(cfg.Fields, goalie.id) };
                 current.Offers.Add(offer);
                 cards.Add(new EventChoice
                 {
-                    translatedButtonName = "Recruit " + goalie.FullName + " — choose goalie slot",
+                    translatedButtonName = "Recruit " + goalie.FullName + " — " + GoalieContractRuntime.OfferText(offer.Contract) + " — choose goalie slot",
                     interactable = true, nodeType = NodeType.GeneralManager, ChoiceType = EEventChoiceType.Skater,
                     Skater = goalie, choicesTermParams = new Il2CppSystem.Collections.Generic.List<EventTermParam>(),
                     onSelection = (Action)(() => BeginSelection(offer))

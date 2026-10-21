@@ -1,0 +1,61 @@
+using System.Reflection;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
+using CampaignCore;
+using CampaignCreator;
+string root=Path.GetFullPath(args.Length > 0 ? args[0] : Path.Combine("artifacts", "four-features", "goalie-contract-editor", Guid.NewGuid().ToString("N")));Directory.CreateDirectory(root);
+AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions {UseHeadlessDrawing=false}).SetupWithoutStarting();
+var window=new Window{Width=1100,Height=1000};var readers=new Dictionary<string,Func<string>>();int changed=0,checks=0;
+void Check(bool ok,string message){if(!ok)throw new Exception(message);checks++;Console.WriteLine("PASS "+message);}
+if(args.Length>1)Check(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(typeof(App).Assembly.Location)).SequenceEqual(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(Path.Combine(args[1],"T2T Campaign Studio.dll")))),"Editor checks use the exact packaged Studio assembly");
+Control Open(CampaignDocument doc,string role="skater"){
+ readers.Clear();changed=0;string file=Path.Combine(root,"library","players","Contract player.txt");Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+ var data=Activator.CreateInstance(typeof(App).Assembly.GetType("CampaignCreator.GameData")!,[root]);
+ var view=(Control)Activator.CreateInstance(typeof(App).Assembly.GetType("CampaignCreator.PlayerEditorView")!,BindingFlags.Instance|BindingFlags.NonPublic,null,
+  [window,doc,data,file,role,(Action)(()=>changed++),(Action<string,Func<string>>)((k,r)=>readers[k]=r),(Action)(()=>{}),null,(Action)(()=>{}),(Action)(()=>{}),new TextBlock(),null],null)!;
+ window.Content=view;window.Show();Dispatcher.UIThread.RunJobs();view.GetVisualDescendants().OfType<TabControl>().Single().SelectedIndex=1;Dispatcher.UIThread.RunJobs();return view;
+}
+var document=new CampaignDocument("Name = Contract Player\nSpeed = 77\n");var editor=Open(document);
+CheckBox Toggle()=>editor.GetVisualDescendants().OfType<CheckBox>().Single(x=>x.Name=="PlayerCustomContract");
+NumericUpDown Matches()=>editor.GetVisualDescendants().OfType<NumericUpDown>().Single(x=>x.Name=="PlayerContractMatches");
+Check(Toggle().IsChecked==false&&!Matches().IsEnabled&&changed==0,"Old player opens with contract off and no dirty state");
+Toggle().IsChecked=true;Matches().Value=11;Check(Matches().IsEnabled&&changed>0,"Toggle enables duration and edits mark player dirty");
+foreach(var key in new[]{PlayerContractOptions.EnabledKey,PlayerContractOptions.MatchesKey})document.Set(key,readers[key]());
+string saved=Path.Combine(root,"saved-player.txt");document.Save(saved);document=new CampaignDocument(File.ReadAllText(saved));editor=Open(document);
+Check(Toggle().IsChecked==true&&Matches().Value==11&&changed==0,"Duration survives save and reopening");
+Check(document.Get("Speed")=="77","Saving contract leaves other player fields intact");
+Toggle().IsChecked=false;Check(!Matches().IsEnabled&&readers[PlayerContractOptions.MatchesKey]()=="11"&&readers[PlayerContractOptions.EnabledKey]()=="no","Turning off retains chosen duration for later use");
+Toggle().IsChecked=true;Matches().Value=0;Check(Matches().Value==1,"Zero is clamped to one played match");
+Matches().Value=int.MaxValue;Check(readers[PlayerContractOptions.MatchesKey]()=="2147483647","Integer duration round-trips without arbitrary truncation");
+Check(Matches().ParsingNumberStyle==System.Globalization.NumberStyles.Integer,"Fractional text is not accepted as an integer duration");
+Matches().Value=11;Dispatcher.UIThread.RunJobs();window.CaptureRenderedFrame()!.Save(Path.Combine(root,"player-contract.png"));
+editor=Open(new CampaignDocument("Name = Goalie\nPosition = Goalie\n"),"goalie");Check(editor.GetVisualDescendants().OfType<CheckBox>().Any(x=>x.Name=="PlayerCustomContract"),"Goalies expose custom contract control");
+Check(Toggle().IsChecked==false && !Matches().IsEnabled && changed==0,"Goalie contract defaults off without dirty state");
+Toggle().IsChecked=true;
+var goalieDoc=new CampaignDocument("Name = Goalie\nPosition = Goalie\n");
+foreach(var key in new[]{PlayerContractOptions.EnabledKey,PlayerContractOptions.MatchesKey})goalieDoc.Set(key,readers[key]());
+Check(PlayerContractOptions.Duration(goalieDoc)==4,"Enabling and saving goalie signs default four played matches");
+Matches().Value=9;
+foreach(var key in new[]{PlayerContractOptions.EnabledKey,PlayerContractOptions.MatchesKey})goalieDoc.Set(key,readers[key]());
+editor=Open(goalieDoc,"goalie");
+Check(Toggle().IsChecked==true && Matches().Value==9 && changed==0,"Goalie explicit duration reopens unchanged");
+Check(editor.GetVisualDescendants().OfType<TextBlock>().Any(x=>(x.Text??"").Contains("permanent until replaced")),"Goalie off help explains permanent replacement policy");
+var signed=GoalieContractPolicy.Sign(PlayerContractOptions.Duration(goalieDoc)!.Value);
+goalieDoc.Set(PlayerContractOptions.MatchesKey,"2");
+Check(signed.Duration==9 && signed.PlayedMatches==0,"Authored changes cannot rewrite previously signed duration");
+Toggle().IsChecked=false;
+foreach(var key in new[]{PlayerContractOptions.EnabledKey,PlayerContractOptions.MatchesKey})goalieDoc.Set(key,readers[key]());
+Check(PlayerContractOptions.Duration(goalieDoc)==null,"Goalie toggle off retains permanent behavior");
+new UpgradeCleanup().Clean(goalieDoc,"player","goalie");
+Check(goalieDoc.Get(PlayerContractOptions.MatchesKey)=="9","Goalie cleanup preserves disabled chosen duration");
+var cleanup=new UpgradeCleanup();cleanup.Clean(document,"player","skater");Check(document.Get(PlayerContractOptions.EnabledKey)=="yes"&&document.Get(PlayerContractOptions.MatchesKey)=="11","Upgrade cleanup preserves contract settings");
+foreach(string value in new[]{"0","-1","2.5","bad"}){var d=new CampaignDocument($"Name = Invalid\nCustom Contract = yes\nContract Matches = {value}\n");cleanup.Clean(d,"player","skater");Check(d.Get(PlayerContractOptions.MatchesKey)=="","Cleanup rejects invalid duration: "+value);}
+var off=new CampaignDocument("Name = Disabled\nCustom Contract = no\nContract Matches = 31\n");cleanup.Clean(off,"player","skater");Check(off.Get(PlayerContractOptions.MatchesKey)=="31"&&PlayerContractOptions.Duration(off)==null,"Cleanup preserves disabled user's duration without enabling it");
+Check(FieldSchema.Kind(PlayerContractOptions.EnabledKey)==FieldKind.Boolean&&FieldSchema.Kind(PlayerContractOptions.MatchesKey)==FieldKind.Number,"Shared field schema identifies toggle and numeric duration");
+string campaign=Path.Combine(root,"campaigns","Contracts");Directory.CreateDirectory(Path.Combine(campaign,"player_teams","Example","players"));File.WriteAllText(Path.Combine(campaign,"campaign.txt"),"Act Sequence = 1,2,3\n");File.WriteAllText(Path.Combine(campaign,"player_teams","Example","team.txt"),"Name = Example\n");document.Save(Path.Combine(campaign,"player_teams","Example","players","Center.txt"));
+var sharing=typeof(App).Assembly.GetType("CampaignCreator.CampaignSharing")!;string zip=Path.Combine(root,"contracts.zip");sharing.GetMethod("Zip",BindingFlags.Static|BindingFlags.NonPublic)!.Invoke(null,[campaign,zip,root]);string imported=Path.Combine(root,"imported");Directory.CreateDirectory(imported);sharing.GetMethod("Install",BindingFlags.Static|BindingFlags.NonPublic)!.Invoke(null,[zip,imported,"Imported Contracts"]);
+var restored=new CampaignDocument(File.ReadAllText(Path.Combine(imported,"campaigns","Imported Contracts","player_teams","Example","players","Center.txt")));Check(PlayerContractOptions.Duration(restored)==11,"Campaign sharing preserves per-skater duration");
+window.Close();Console.WriteLine($"PASS: {checks} contract editor, upgrade and portable-content checks.");

@@ -68,9 +68,10 @@ internal static class CustomRewardGrants
 [HarmonyPatch(typeof(Rogue.FreeAgents.FreeAgentManager), "HandleFreeAgentsLeaving")]
 internal static class CustomRewardContractRetention
 {
+    internal static bool Prevents(Data.TeamData team) => !Plugin.IsDefaultMode
+        && CustomRewardCampaignRules.Owned(team, "Contract expiry").Any(d => d.Effect == CustomRewardEffects.KeepFreeAgents);
     // Native Handcuffs skips every removal in this method. No contracts are
     // altered and no departed player is restored from an old save.
     [HarmonyPrefix] private static bool Prefix(Rogue.FreeAgents.FreeAgentManager __instance)
-        => Plugin.IsDefaultMode || !CustomRewardCampaignRules.Owned(__instance._campaignState?.runData?.teamData, "Contract expiry")
-            .Any(d => d.Effect == CustomRewardEffects.KeepFreeAgents);
+        => Plugin.IsDefaultMode || !Prevents(__instance._campaignState?.runData?.teamData);
 }

@@ -33,6 +33,7 @@ internal static class GoalieRosterMenu
         internal long Revision;
         internal GoalieRosterState Snapshot;
         internal GoalieRecruitment.Offer Offer;
+        internal bool? DeparturePrevention;
         internal GoaltenderData Active, Reserve;
         internal TeamData Preview;
         internal LineupMenu Menu, Parent;
@@ -197,11 +198,23 @@ internal static class GoalieRosterMenu
         if (s.Offer == null && (index != 1 || s.Reserve == null)) return false;
         var slot = index == 0 ? GoalieSlot.Active : GoalieSlot.Reserve;
         __0.Toggle.SetSelected(false, false);
-        if (s.Confirming != slot) {
+        bool? prevention = null;
+        if (s.Offer != null && slot == GoalieSlot.Reserve && GoalieContractPolicy.Expired(s.Snapshot.Active)) {
+            if (!GoalieContractRuntime.TryDepartureProtection(s.Campaign, out bool prevented)) {
+                s.Confirming = null; s.DeparturePrevention = null;
+                Title(s, "Departure protection could not be verified. No signing made. Try again or go back.");
+                return false;
+            }
+            prevention = prevented;
+        }
+        if (s.Confirming != slot || s.DeparturePrevention != prevention) {
             s.Confirming = slot;
+            s.DeparturePrevention = prevention;
             string occupant = index == 0 ? s.Active.FullName : s.Reserve?.FullName;
+            string result = prevention == false ? $" {s.Offer.Candidate.FullName} becomes active; expired {s.Active.FullName} leaves and Reserve is empty."
+                : prevention == true ? $" Departure prevention applies: {s.Active.FullName} remains active; {s.Offer.Candidate.FullName} stays in Reserve." : "";
             Title(s, s.Offer == null ? $"Swap {s.Active.FullName} with {s.Reserve.FullName}? Select Reserve again to confirm; Back cancels."
-                : $"{(occupant == null ? "Fill empty reserve" : "Replace " + occupant)} with {s.Offer.Candidate.FullName}? Select {slot} again to confirm; Back cancels.");
+                : $"{(occupant == null ? "Fill empty reserve" : "Replace " + occupant)} with {s.Offer.Candidate.FullName} ({GoalieContractRuntime.OfferText(s.Offer.Contract)})?{result} Select {slot} again to confirm; Back cancels.");
             return false;
         }
         s.Saving = true; Title(s, "Saving goalie roster…");
@@ -218,7 +231,7 @@ internal static class GoalieRosterMenu
             } else { s.Confirming = null; Title(s, result.Message); }
         }
         bool accepted = s.Offer != null
-            ? GoaliePersistenceBridge.Roster.TryRecruit(s.Campaign, s.Offer.Candidate, slot, s.Revision, Completed, s.Offer.Contract, s.Offer.Visit.Ledger, s.Offer.Id)
+            ? GoaliePersistenceBridge.Roster.TryRecruit(s.Campaign, s.Offer.Candidate, slot, s.Revision, Completed, s.Offer.Contract, s.Offer.Visit.Ledger, s.Offer.Id, s.DeparturePrevention)
             : GoaliePersistenceBridge.Roster.TrySwap(s.Campaign, s.Revision, Completed);
         if (!accepted) { s.Saving = false; s.Confirming = null; Title(s, "Goalie selection changed or could not be prepared. Go back and reopen."); }
         return false;

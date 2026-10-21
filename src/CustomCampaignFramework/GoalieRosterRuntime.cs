@@ -103,13 +103,17 @@ internal sealed class GoalieRosterRuntime
     // transaction was accepted; only its completion determines consumption.
     internal bool TryRecruit(CampaignState campaign, GoaltenderData candidate, GoalieSlot slot, long expectedRevision,
         Action<ChangeResult> completed = null, GoalieContractState signedContract = null,
-        GoalieRecruitmentVisitState signingVisit = null, string offerId = null)
+        GoalieRecruitmentVisitState signingVisit = null, string offerId = null, bool? expectedDeparturePrevention = null)
     {
         if (!CanEdit(campaign) || changing || state.Revision != expectedRevision || candidate == null
             || (slot != GoalieSlot.Active && slot != GoalieSlot.Reserve) || slot == GoalieSlot.Reserve && !state.ReserveEnabled) return false;
         try {
             var proposed = Capture(campaign.runData, Plugin.ModFolder);
             if (candidate.id == proposed.Active.PlayerId || candidate.id == proposed.Reserve?.PlayerId) return false;
+            bool reconcile = slot == GoalieSlot.Reserve && GoalieContractPolicy.Expired(proposed.Active);
+            bool prevented = false;
+            if (reconcile && (!GoalieContractRuntime.TryDepartureProtection(campaign, out prevented)
+                || expectedDeparturePrevention.HasValue && expectedDeparturePrevention.Value != prevented)) return false;
             if (signingVisit != null) {
                 signingVisit.Validate();
                 string witness = RecruitmentWitness(campaign);
@@ -125,6 +129,7 @@ internal sealed class GoalieRosterRuntime
             }
             var recruit = GoalieNativeSnapshot.Capture(candidate); recruit.Contract = signedContract?.Clone();
             if (slot == GoalieSlot.Active) proposed.Active = recruit; else proposed.Reserve = recruit;
+            if (reconcile) proposed = GoalieContractPolicy.ReconcileDeparture(proposed, prevented);
             return SaveChange(campaign, proposed, completed);
         } catch (Exception ex) { Plugin.Log.LogError("[GoalieRoster] Recruitment preparation failed: " + ex); return false; }
     }
@@ -216,11 +221,12 @@ internal sealed class GoalieRosterRuntime
         }
         return true;
     }
-    internal void Fresh(RunData nativeRun, string campaignFolder, bool reserveEnabled)
+    internal void Fresh(RunData nativeRun, string campaignFolder, bool reserveEnabled, GoalieContractState signedContract = null)
     {
         var initial = new GoalieRosterState { CampaignId = GoalieRosterStore.CampaignIdentity(campaignFolder),
             RunId = nativeRun.runID, SquadId = nativeRun.squadId, ReserveEnabled = reserveEnabled,
             NativeFingerprint = "uncheckpointed", Active = GoalieNativeSnapshot.Capture(nativeRun.teamData.goalie) };
+        initial.Active.Contract = signedContract?.Clone();
         initial.Validate();
         run = nativeRun; folder = System.IO.Path.GetFullPath(campaignFolder); state = initial; changing = false; changeOwner = null; UnavailableReason = null;
     }

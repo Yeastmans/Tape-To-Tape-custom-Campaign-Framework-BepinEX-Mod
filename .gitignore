@@ -114,3 +114,10 @@ tests/GoalieRosterMenuChecks/*
 !tests/GoalieRosterMenuChecks/GoalieRosterMenuChecks.csproj
 !tests/GoalieRosterMenuChecks/Program.cs
 !tests/GoalieRosterMenuChecks/NativeUiDoubles.cs
+
+!tests/GoalieRosterChecks/ContractChecks.cs
+!tests/GoalieRosterRuntimeChecks/ContractSigningChecks.cs
+!tests/PlayerContractEditorChecks/
+tests/PlayerContractEditorChecks/*
+!tests/PlayerContractEditorChecks/Checks.csproj
+!tests/PlayerContractEditorChecks/Program.cs

@@ -50,6 +50,7 @@ if "menu" in sys.argv:
     parts.append("static GoaltenderData Candidate(PlayerConfig cfg, object team, string id, GoaltenderData template) => new() { id = id };")
 parts.append("}")
 parts.append(body(recruitment, "internal static class GoalieRecruitLoaded"))
+parts.append(body((source / "CustomRewardGrants.cs").read_text(encoding="utf-8-sig"), "internal static class CustomRewardContractRetention"))
 output = Path(sys.argv[1])
 output.parent.mkdir(parents=True, exist_ok=True)
 output.write_text("\n".join(parts), encoding="utf-8")

@@ -177,6 +177,7 @@ internal sealed class PlayerEditorView : UserControl
         Control attributes;
         if (role == "goalie")
         {
+            details.Children.Add(new PlayerContractEditor(doc, register, changed, goalie: true));
             var page = new Grid { ColumnDefinitions = new ColumnDefinitions("3*,2*"), ColumnSpacing = StudioTheme.SpaceLg, Margin = new Thickness(0,8,0,0) };
             var stats = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*"), RowDefinitions = new RowDefinitions("Auto,Auto,Auto,Auto,Auto"), ColumnSpacing = StudioTheme.SpaceMd, RowSpacing = 6, VerticalAlignment = VerticalAlignment.Top };
             var keys = roleDetails.Where(k => k != "Goalie Talents").ToArray();
@@ -187,7 +188,8 @@ internal sealed class PlayerEditorView : UserControl
             stats.Width = 540;
             page.Children.Add(new Viewbox { Child = stats, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, VerticalAlignment = VerticalAlignment.Top });
             var talents = Field("Goalie Talents", true); Grid.SetColumn(talents, 1); page.Children.Add(talents);
-            attributes = page;
+            details.Children.Add(page);
+            attributes = new ScrollViewer { Content = details };
         }
         else
         {

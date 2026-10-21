@@ -177,9 +177,9 @@ namespace Il2CppSystem.Collections.Generic {
 
 namespace Il2CppSystem { public class Action { System.Action callback; public void Invoke() => callback(); public static implicit operator Action(System.Action value) => new() { callback = value }; } }
 namespace EndlessMode {
-    static partial class Plugin { internal static void LoadPlayerFile(string file, PlayerConfig config) {} }
-    class PlayerConfig {}
-    static class SquadPoolRuntime { public static object Team(State.Squad squad) => null; }
+    static partial class Plugin { internal static void LoadPlayerFile(string file, PlayerConfig config) { config.Fields = new CampaignCore.CampaignDocument(System.IO.File.ReadAllText(file)); } }
+
+    static partial class SquadPoolRuntime { public static object Team(State.Squad squad) => null; }
     static class CustomMapLayout { public static string RecruitRoleFor(STS.Map.MapNode node) => CampaignCore.GoalieFreeAgents.Goalies; }
     static class TwoLineContracts { public static void ReplaceChoices(STS.Map.EventNode node, System.Collections.Generic.List<STS.Map.EventChoice> choices) { node.eventChoices = choices; } }
 }

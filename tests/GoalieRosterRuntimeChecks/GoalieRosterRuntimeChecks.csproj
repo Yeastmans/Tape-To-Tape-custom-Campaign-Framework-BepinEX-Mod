@@ -8,6 +8,7 @@
     <Compile Include="../../src/CustomCampaignFramework/GoalieNativeTask.cs" Link="GoalieNativeTask.cs" />
     <Compile Include="../../src/CustomCampaignFramework/GoalieNativeAdmission.cs" Link="GoalieNativeAdmission.cs" />
     <Compile Include="../../src/CustomCampaignFramework/GoalieNativeCheckpoint.cs" Link="GoalieNativeCheckpoint.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/GoalieContractRuntime.cs" Link="GoalieContractRuntime.cs" />
     <Compile Include="../../src/CustomCampaignFramework/GoalieRosterRuntime.cs" Link="GoalieRosterRuntime.cs" />
     <Compile Include="../../src/CustomCampaignFramework/GoaliePersistenceBridge.cs" Link="GoaliePersistenceBridge.cs" />
     <Compile Include="../../src/CustomCampaignFramework/GoaliePersistenceContracts.cs" Link="GoaliePersistenceContracts.cs" />

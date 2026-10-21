@@ -92,3 +92,5 @@ Reject(() => visitClone.Validate(), "DuplicateRecruitmentConsumptionRejected");
 visitClone = visitReload.Clone(); visitClone.RecruitmentVisit.Quota = 0;
 Reject(() => visitClone.Validate(), "InvalidSavedRecruitmentQuotaRejected");
 Console.WriteLine($"PASS {checks} goalie roster store checks including recruitment ledger");
+ContractChecks.Run(Check);
+Console.WriteLine($"PASS {checks} goalie store and contract policy checks");
