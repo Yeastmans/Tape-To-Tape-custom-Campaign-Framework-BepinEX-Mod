@@ -8,7 +8,7 @@ using Tape2Tape.Customization.UI;
 namespace UnityEngine {
     public class MonoBehaviour : Il2CppSystem.Object { public void StartCoroutine(IEnumerator routine) { while (routine.MoveNext()) {} } }
     public class CanvasGroup { public float alpha = 1; public bool interactable = true, blocksRaycasts = true; }
-    public class GameObject { public bool Active; public void SetActive(bool value) => Active = value; }
+    public class GameObject { public bool Active = true; public bool activeSelf => Active; public void SetActive(bool value) => Active = value; }
     public static class Object {
         public static LineupMenu CurrentMenu;
         public static int Destroyed;
@@ -31,8 +31,19 @@ namespace BishopGames.UI {
         public void Unregister(Il2CppSystem.Action<T> value) => Actions.Remove(value);
         public void Invoke(T value) { foreach (var a in Actions.ToArray()) a.Invoke(value); }
     }
-    public class AbstractNavigable : Il2CppSystem.Object { }
-    public class Toggle { public bool IsSelected; public void SetSelected(bool on, bool invokeSelectionEvent = true) => IsSelected = on; }
+    public class AbstractNavigable : Il2CppSystem.Object {
+        public event System.Action Clicked;
+        public void Click() => Clicked?.Invoke();
+    }
+    public class Toggle {
+        public bool IsSelected, CanToggle = true;
+        public event System.Action SelectionChanged;
+        public void SetSelected(bool on, bool invokeSelectionEvent = true) {
+            if (!CanToggle) return;
+            IsSelected = on; if (invokeSelectionEvent) SelectionChanged?.Invoke();
+        }
+        public void OnNavigableClicked() { if (CanToggle) SetSelected(!IsSelected); }
+    }
     public class AbstractMenu : UnityEngine.MonoBehaviour { public bool IsHiding; public SingleEvent<AbstractMenu> OnDestroy = new(), OnHidingCompleted = new(); }
     public class UIModule : Il2CppSystem.Object { }
 }
@@ -49,17 +60,33 @@ namespace Tape2Tape.Customization.UI {
         public AbstractNavigable Navigable = new();
         public Text m_PositionLetter = new(), m_SkaterName = new(), m_FreeAgentDuration = new();
         public UnityEngine.GameObject m_FreeAgentDurationContainer = new();
-        public void SetLocked(bool value, bool force) => Locked = value;
+        public SkaterCard() { Navigable.Clicked += Toggle.OnNavigableClicked; }
+        public void SetLocked(bool value, bool force) { Locked = value; Toggle.CanToggle = !value; }
     }
     public class SkaterCardList {
         public List<SkaterCard> m_SkaterCards = new(); public List<AbstractNavigable> Navigables = new();
-        public void Clear() { m_SkaterCards.Clear(); Navigables.Clear(); }
+        public UnityEngine.GameObject gameObject = new();
+        public event System.Action<SkaterCard> OnSkaterCardToggled;
+        private readonly Dictionary<SkaterCard, System.Action> subscriptions = new();
+        public void Clear() {
+            foreach (var pair in subscriptions) pair.Key.Toggle.SelectionChanged -= pair.Value;
+            subscriptions.Clear(); m_SkaterCards.Clear(); Navigables.Clear();
+        }
         public void Refresh(Il2CppSystem.Collections.Generic.IReadOnlyList<SkaterDataForUI> cards) {
-            Clear(); foreach (var item in cards) { var card = new SkaterCard { CurrentSkaterData = item }; m_SkaterCards.Add(card); Navigables.Add(card.Navigable); }
+            Clear(); foreach (var item in cards) {
+                var card = new SkaterCard { CurrentSkaterData = item };
+                card.m_PositionLetter.text = item.ActivePosition == ESkaterPosition.Goalie ? "G" : "C";
+                card.m_SkaterName.text = (item.Skater as GoaltenderData)?.FullName ?? "Empty";
+                card.m_FreeAgentDurationContainer.SetActive(false); card.m_FreeAgentDuration.text = "";
+                System.Action handler = () => OnSkaterCardToggled?.Invoke(card);
+                subscriptions.Add(card, handler); card.Toggle.SelectionChanged += handler;
+                m_SkaterCards.Add(card); Navigables.Add(card.Navigable);
+            }
         }
     }
     public class TeamRosterData {
         public TeamData OriginalTeamData; public TeamData TemporaryTeamData = new(); public GoaltenderData m_G;
+        public List<SkaterData> PendingForwards = new(), BenchPlayers = new();
         public bool HasChanged; public void UpdateTemporaryTeamData() { TemporaryTeamData.goalie = m_G; }
     }
     public class T2TUIModule : UIModule {
@@ -79,10 +106,35 @@ namespace Tape2Tape.Hockey.UI {
         public TeamRosterData Team; public bool m_HideBench, m_AreSkatersLocked;
         public SkaterCardList m_ActivePlayersList = new(), m_BenchPlayersList = new();
         public Il2CppSystem.Collections.Generic.List<SkaterDataForUI> m_ActiveSkaters = new(), m_BenchSkaters = new();
-        public Header m_Header = new(); public int FirstSelections, Refreshes;
-        public void SelectFirstPlayer() => FirstSelections++;
+        public Header m_Header = new(); public int FirstSelections, Refreshes, ToggleCallbacks, NativeMutations;
+        public bool FailNextFocus;
+        public AbstractNavigable Focused;
+        public LineupMenu() { m_ActivePlayersList.OnSkaterCardToggled += TogglePlayerCard; m_BenchPlayersList.OnSkaterCardToggled += TogglePlayerCard; }
+        private void TogglePlayerCard(SkaterCard card) { ToggleCallbacks++; if (GoalieRosterMenu.Pick(this, card)) NativeMutations++; }
+        public void Focus(AbstractNavigable navigable) { Focused = navigable; } // Native selection-change refreshes comparison only.
+        public void SelectFirstPlayer() {
+            FirstSelections++;
+            if (FailNextFocus) { FailNextFocus = false; throw new InvalidOperationException("native focus preparation failed"); }
+            Focus(m_ActivePlayersList.Navigables.FirstOrDefault());
+        }
         public void TryLeaveMenu(bool fromBack) { if (!GoalieRosterMenu.Leave(this)) return; IsHiding = true; OnHidingCompleted.Invoke(this); }
-        public void LoadCurrentTeam() { Refreshes++; m_ActivePlayersList.Refresh(new Il2CppSystem.Collections.Generic.List<SkaterDataForUI> { new(Team.OriginalTeamData, Team.OriginalTeamData.goalie, ESkaterPosition.Goalie, null, null, EStatBonusesPreviewMode.None, null) }); GoalieRosterMenu.Refresh(this); }
+        public void LoadCurrentTeam() {
+            Refreshes++; m_Header.m_Title.text = "Lineup";
+            m_ActiveSkaters.Clear(); m_BenchSkaters.Clear();
+            m_ActiveSkaters.Add(new(Team.OriginalTeamData, Team.m_G ?? Team.OriginalTeamData.goalie, ESkaterPosition.Goalie, null, null, EStatBonusesPreviewMode.None, null));
+            foreach (var forward in Team.PendingForwards) m_ActiveSkaters.Add(new(Team.OriginalTeamData, forward, ESkaterPosition.C, null, null, EStatBonusesPreviewMode.None, null));
+            m_ActivePlayersList.Refresh(m_ActiveSkaters);
+            // Native 0x43894ad policy branch skips bench population; 0x4389e0f
+            // deactivates the object. The visible branch refreshes, not SetActive(true).
+            if (m_HideBench) { m_BenchPlayersList.Clear(); m_BenchPlayersList.gameObject.SetActive(false); }
+            else {
+                foreach (var forward in Team.BenchPlayers) m_BenchSkaters.Add(new(Team.OriginalTeamData, forward, ESkaterPosition.C, null, null, EStatBonusesPreviewMode.None, null));
+                m_BenchPlayersList.Refresh(m_BenchSkaters);
+            }
+            foreach (var card in m_ActivePlayersList.m_SkaterCards.Concat(m_BenchPlayersList.m_SkaterCards))
+                card.SetLocked(m_AreSkatersLocked || card.CurrentSkaterData.ActivePosition == ESkaterPosition.Goalie, true);
+            GoalieRosterMenu.Refresh(this);
+        }
     }
     public class EventChoiceItem { public AbstractNavigable Navigable = new(); public STS.Map.EventChoice ChoiceData; }
     public class EventChoiceMenu : AbstractMenu {

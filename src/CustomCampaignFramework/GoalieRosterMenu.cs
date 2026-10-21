@@ -39,6 +39,7 @@ internal static class GoalieRosterMenu
         internal EventChoiceMenu Gm;
         internal EventChoicePanel Legacy;
         internal bool Ready, Saving, Finished, Committed, Unresolved, Destroyed;
+        internal bool ParentPolicyCaptured, ParentHideBench, ParentBenchVisible;
         internal string Status;
         internal GoalieSlot? Confirming;
         internal Il2CppSystem.Action<AbstractMenu> Closed, Destroying;
@@ -100,6 +101,11 @@ internal static class GoalieRosterMenu
         var s = new Selection { Campaign = state, Run = state.runData.Pointer, Folder = Plugin.ModFolder, Offer = offer, Gm = gm, Legacy = legacy, Parent = parent };
         Current = s;
         try {
+            if (parent != null) {
+                s.ParentHideBench = parent.m_HideBench;
+                s.ParentBenchVisible = parent.m_BenchPlayersList.gameObject.activeSelf;
+                s.ParentPolicyCaptured = true;
+            }
             if (!GoaliePersistenceBridge.Roster.CanEdit(state)) { Finish(s); return; }
             s.Snapshot = GoaliePersistenceBridge.Roster.Capture(state.runData, Plugin.ModFolder); s.Revision = s.Snapshot.Revision;
             s.Active = GoalieNativeSnapshot.Restore(s.Snapshot.Active);
@@ -305,6 +311,13 @@ internal static class GoalieRosterMenu
             // Parent owns canonical TeamData; refreshing renders the committed
             // active goalie and its binding, without reapplying authored config.
             s.Parent.Team.m_G = s.Campaign.runData.teamData.goalie;
+            // A native refresh while the subview is open can deactivate the
+            // bench object. LoadCurrentTeam's visible branch only repopulates
+            // it; restore both prior policy and visibility before rebuilding.
+            if (s.ParentPolicyCaptured) {
+                s.Parent.m_HideBench = s.ParentHideBench;
+                s.Parent.m_BenchPlayersList.gameObject.SetActive(s.ParentBenchVisible);
+            }
             s.Parent.Team.UpdateTemporaryTeamData();
             s.Parent.LoadCurrentTeam(); s.Parent.SelectFirstPlayer();
         }
