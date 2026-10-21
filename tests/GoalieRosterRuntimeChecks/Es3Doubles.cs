@@ -9,6 +9,7 @@ namespace Il2CppSystem {
         public Object() { NativeRegistry.Values[Pointer] = this; }
         public Object(IntPtr pointer) { Pointer = pointer; }
         public Type GetIl2CppType() => new() { Managed = GetType() };
+        public T Cast<T>() where T : class => (T)(object)this;
         public T TryCast<T>() where T : class => this as T;
     }
     public class String : Object { public string Value; public static implicit operator String(string value) => new() { Value = value }; public static implicit operator string(String value) => value?.Value; }

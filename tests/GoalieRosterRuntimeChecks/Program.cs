@@ -66,4 +66,5 @@ CheckpointChecks.Run(Check);
 ForwardingChecks.Run(Check);
 BridgeChecks.Run(Check);
 LegacyChecks.Run(Check);
+TransitionChecks.Run(Check);
 Console.WriteLine($"PASS {checks} source-linked goalie runtime checks using native boundary doubles");

@@ -18,7 +18,7 @@ namespace EndlessMode;
 internal static class GoalieRecruitment
 {
     internal const string IdPrefix = "CCF_GFA_";
-    private sealed class Selection
+    internal sealed class Selection
     {
         internal IntPtr State, Run, Team, Blueprint;
         internal string RunId, Folder;
@@ -35,12 +35,60 @@ internal static class GoalieRecruitment
                 && string.Equals(Plugin.ModFolder, Folder, StringComparison.OrdinalIgnoreCase);
         }
     }
-    private sealed class Visit
+    internal sealed class Visit
     {
         internal Selection Selection;
         internal IntPtr Node;
+        internal GeneralManagerEvent Event;
+        internal int Hires;
+        internal GoalieRecruitmentVisitState Ledger;
+        internal Offer Pending;
+        internal EventChoicePanel Legacy;
+        internal List<Offer> Offers = new();
         internal HashSet<string> Offered = new(StringComparer.Ordinal);
         internal int Revision;
+    }
+    internal sealed class Offer
+    {
+        internal Visit Visit;
+        internal int Revision;
+        internal string Id;
+        internal GoaltenderData Candidate;
+        internal bool Taken, Unresolved;
+        internal GoalieContractState Contract { get; set; } // Task 4 supplies the signed snapshot.
+    }
+    internal static bool IsCurrent(Visit value) => value != null && ReferenceEquals(visit, value)
+        && value.Selection.Matches(CampaignUtil.CampaignState);
+    internal static bool Valid(Offer offer) => offer != null && IsCurrent(offer.Visit)
+        && !offer.Taken && !offer.Unresolved && offer.Revision == offer.Visit.Revision
+        && GoalieRosterRuntime.HasRecruitmentWitness(CampaignUtil.CampaignState, offer.Visit.Ledger?.Witness);
+    internal static Visit Current => visit;
+    internal static GoalieRecruitmentVisitState VisitLedger(CampaignState state, int quota)
+    {
+        string witness = GoalieRosterRuntime.RecruitmentWitness(state);
+        var saved = GoaliePersistenceBridge.Roster.Selection?.RecruitmentVisit;
+        if (saved?.Witness == witness) return saved.Clone();
+        var result = new GoalieRecruitmentVisitState { Witness = witness, Generation = Guid.NewGuid().ToString("N"), Quota = quota };
+        result.Validate(); return result;
+    }
+    internal static bool BeginSelection(Offer offer)
+    {
+        if (!GoalieRosterMenu.Enabled || !Valid(offer) || offer.Visit.Pending != null) return false;
+        offer.Visit.Pending = offer; return true;
+    }
+    internal static void Cancel(Offer offer)
+    {
+        if (offer != null && ReferenceEquals(offer.Visit.Pending, offer)) offer.Visit.Pending = null;
+    }
+    internal static void Consumed(Offer offer)
+    {
+        if (offer == null || offer.Taken) return;
+        // Exact accepted offer remains consumed even if the user changed nodes
+        // while its asynchronous native save was completing.
+        offer.Taken = true; offer.Visit.Hires++;
+        var saved = GoaliePersistenceBridge.Roster.Selection?.RecruitmentVisit;
+        if (saved?.Generation == offer.Visit.Ledger.Generation) { offer.Visit.Ledger = saved.Clone(); offer.Visit.Hires = saved.ConsumedOfferIds.Length; }
+        offer.Visit.Revision++; Cancel(offer);
     }
     private static Selection selected;
     private static Visit visit;
@@ -92,47 +140,49 @@ internal static class GoalieRecruitment
                 return false;
             }
             if (visit == null || visit.Node != node.Pointer || !ReferenceEquals(visit.Selection, selected))
-                visit = new Visit { Selection = selected, Node = node.Pointer };
+            {
+                var ledger = VisitLedger(CampaignUtil.CampaignState, node.NumTimesToOfferChoices);
+                visit = new Visit { Selection = selected, Node = node.Pointer, Event = node, Ledger = ledger,
+                    Hires = ledger.ConsumedOfferIds.Length, Offered = new HashSet<string>(ledger.OfferedPoolIds, StringComparer.Ordinal) };
+            }
             var current = visit;
             int revision = ++current.Revision;
-            if (choicesMade >= node.NumTimesToOfferChoices) { TwoLineContracts.ReplaceChoices(node, cards); return false; }
+            current.Offers.Clear();
+            if (!GoalieRosterMenu.Enabled || !GoaliePersistenceBridge.Roster.CanEdit(CampaignUtil.CampaignState))
+            {
+                Plugin.Log.LogWarning("[GoalieRecruit] " + (GoaliePersistenceBridge.Roster.UnavailableReason ?? "Goalie roster controls unavailable until compatibility review."));
+                TwoLineContracts.ReplaceChoices(node, cards); return false;
+            }
+            if (current.Hires >= current.Ledger.Quota) { TwoLineContracts.ReplaceChoices(node, cards); return false; }
             var state = CampaignUtil.CampaignState;
             var team = state.runData.teamData;
             var config = SquadPoolRuntime.Team(state.GetCurrentSquad());
             // Native GM offers two candidates. Short or empty authored pools stay short.
             var files = GoalieFreeAgents.SelectedFiles(selected.Folder)
                 .Select(file => (File: file, Id: IdPrefix + SelectedPlayerPool.PlayerId(GoalieFreeAgents.DirectoryPath(selected.Folder), Path.GetFileName(file))))
-                .Where(p => !MatchesPool(team.goalie, p.Id) && !current.Offered.Contains(p.Id))
+                .Where(p => !MatchesPool(team.goalie, p.Id) && !MatchesPoolId(GoaliePersistenceBridge.Roster.Selection?.Reserve?.PlayerId, p.Id) && !current.Offered.Contains(p.Id))
                 .OrderBy(_ => Guid.NewGuid()).Take(2).ToArray();
             foreach (var file in files)
             {
                 var cfg = new PlayerConfig(); Plugin.LoadPlayerFile(file.File, cfg);
                 // A prepared offer must never overwrite supplemental state for a
                 // previously saved recruit made from the same authored template.
-                var goalie = Candidate(cfg, config, file.Id + "_" + Guid.NewGuid().ToString("N"), state.GetCurrentSquad()?.startingTeam?.goalie);
-                var snapshot = Snapshot(goalie);
-                // Prepare durable supplemental state before exposing a selectable
-                // card. An unwritable snapshot cannot consume a signing choice.
-                GoalieRecruitSnapshots.Save(current.Selection.Folder, current.Selection.RunId, goalie.id, snapshot);
-                bool taken = false;
+                string offerId = GoalieRosterStore.Hash(current.Ledger.Generation + ":" + current.Hires.ToString(CultureInfo.InvariantCulture) + ":" + file.Id);
+                var goalie = Candidate(cfg, config, file.Id + "_" + offerId, state.GetCurrentSquad()?.startingTeam?.goalie);
+                // The selectable offer owns a complete detached candidate; no
+                // run save or supplemental file is written until confirmation.
+                GoalieNativeSnapshot.Capture(goalie);
+                var offer = new Offer { Visit = current, Revision = revision, Candidate = goalie, Id = offerId };
+                current.Offers.Add(offer);
                 cards.Add(new EventChoice
                 {
-                    translatedButtonName = "Recruit " + goalie.FullName + " — replaces current goalie",
+                    translatedButtonName = "Recruit " + goalie.FullName + " — choose goalie slot",
                     interactable = true, nodeType = NodeType.GeneralManager, ChoiceType = EEventChoiceType.Skater,
                     Skater = goalie, choicesTermParams = new Il2CppSystem.Collections.Generic.List<EventTermParam>(),
-                    onSelection = (Action)(() =>
-                    {
-                        if (taken || !ReferenceEquals(visit, current) || current.Revision != revision
-                            || !current.Selection.Matches(CampaignUtil.CampaignState)) return;
-                        try
-                        {
-                            team.goalie = goalie; taken = true; current.Revision++;
-                            Plugin.Log.LogInfo("[GoalieRecruit] Recruited " + goalie.FullName + " into the active goalie slot.");
-                        }
-                        catch (Exception ex) { Plugin.Log.LogError("[GoalieRecruit] Signing failed; current goalie retained: " + ex); }
-                    })
+                    onSelection = (Action)(() => BeginSelection(offer))
                 });
                 current.Offered.Add(file.Id);
+                current.Ledger.OfferedPoolIds = current.Offered.OrderBy(id => id, StringComparer.Ordinal).ToArray();
             }
         }
         catch (Exception ex)
@@ -144,8 +194,9 @@ internal static class GoalieRecruitment
         return cards.Count > 0;
     }
 
-    internal static bool MatchesPool(GoaltenderData goalie, string poolId)
-        => goalie?.id == poolId || (goalie?.id ?? "").StartsWith(poolId + "_", StringComparison.Ordinal);
+    internal static bool MatchesPool(GoaltenderData goalie, string poolId) => MatchesPoolId(goalie?.id, poolId);
+    internal static bool MatchesPoolId(string id, string poolId)
+        => id == poolId || (id ?? "").StartsWith(poolId + "_", StringComparison.Ordinal);
 
     internal static bool HasAuthoredTalents(PlayerConfig cfg)
         => cfg.Talents.Count > 0 || cfg.Fields.Fields.ContainsKey("Goalie Talents") || cfg.Fields.Fields.ContainsKey("Talents");

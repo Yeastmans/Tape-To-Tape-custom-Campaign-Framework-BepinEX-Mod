@@ -13,7 +13,11 @@ namespace EndlessMode;
 internal static class LineupInitialRoster
 {
     [HarmonyPostfix]
-    internal static void Postfix(LineupMenu __instance) => LineupPreviewRoster.FillInactiveLine(__instance);
+    internal static void Postfix(LineupMenu __instance)
+    {
+        LineupPreviewRoster.FillInactiveLine(__instance);
+        GoalieRosterMenu.EntryLabel(__instance);
+    }
 }
 
 [HarmonyPatch(typeof(LineupMenu), "LoadCurrentTeam")]

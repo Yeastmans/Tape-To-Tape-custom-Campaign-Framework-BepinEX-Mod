@@ -107,3 +107,10 @@ tests/GoalieRosterRuntimeChecks/*
 tests/GoalieSharingChecks/*
 !tests/GoalieSharingChecks/GoalieSharingChecks.csproj
 !tests/GoalieSharingChecks/Program.cs
+
+!tests/GoalieRosterRuntimeChecks/TransitionChecks.cs
+!tests/GoalieRosterMenuChecks/
+tests/GoalieRosterMenuChecks/*
+!tests/GoalieRosterMenuChecks/GoalieRosterMenuChecks.csproj
+!tests/GoalieRosterMenuChecks/Program.cs
+!tests/GoalieRosterMenuChecks/NativeUiDoubles.cs

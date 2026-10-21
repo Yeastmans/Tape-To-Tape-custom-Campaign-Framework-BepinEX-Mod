@@ -35,6 +35,29 @@ public sealed class GoalieRecord
     }
 }
 
+// Optional in V1 checkpoints written before goalie menu integration. Missing
+// means no known consumed goalie signing; it does not infer a reserve roster.
+[DataContract]
+public sealed class GoalieRecruitmentVisitState
+{
+    [DataMember(Order = 1)] public string Witness { get; set; } = "";
+    [DataMember(Order = 2)] public string Generation { get; set; } = "";
+    [DataMember(Order = 3)] public int Quota { get; set; }
+    [DataMember(Order = 4)] public string[] ConsumedOfferIds { get; set; } = Array.Empty<string>();
+    [DataMember(Order = 5)] public string[] OfferedPoolIds { get; set; } = Array.Empty<string>();
+    public GoalieRecruitmentVisitState Clone() => new() { Witness = Witness, Generation = Generation, Quota = Quota,
+        ConsumedOfferIds = ConsumedOfferIds?.ToArray(), OfferedPoolIds = OfferedPoolIds?.ToArray() };
+    public void Validate()
+    {
+        if (string.IsNullOrWhiteSpace(Witness) || !Guid.TryParseExact(Generation, "N", out _) || Quota < 1
+            || ConsumedOfferIds == null || OfferedPoolIds == null || ConsumedOfferIds.Length > Quota
+            || ConsumedOfferIds.Any(string.IsNullOrWhiteSpace) || OfferedPoolIds.Any(string.IsNullOrWhiteSpace)
+            || ConsumedOfferIds.Distinct(StringComparer.Ordinal).Count() != ConsumedOfferIds.Length
+            || OfferedPoolIds.Distinct(StringComparer.Ordinal).Count() != OfferedPoolIds.Length)
+            throw new InvalidDataException("Invalid goalie recruitment visit checkpoint.");
+    }
+}
+
 [DataContract]
 public sealed class GoalieRosterState
 {
@@ -52,11 +75,14 @@ public sealed class GoalieRosterState
     [DataMember(Order = 11)] public string ArmedAttemptToken { get; set; } = "";
     [DataMember(Order = 12)] public string[] ProcessedAttemptTokens { get; set; } = Array.Empty<string>();
 
+    [DataMember(Order = 13)] public GoalieRecruitmentVisitState RecruitmentVisit { get; set; }
+
     public GoalieRosterState Clone()
     {
         var result = (GoalieRosterState)MemberwiseClone();
         result.Active = Active?.Clone(); result.Reserve = Reserve?.Clone();
         result.ProcessedAttemptTokens = ProcessedAttemptTokens?.ToArray();
+        result.RecruitmentVisit = RecruitmentVisit?.Clone();
         return result;
     }
     public void Validate()
@@ -68,7 +94,7 @@ public sealed class GoalieRosterState
             || ProcessedAttemptTokens.Distinct(StringComparer.Ordinal).Count() != ProcessedAttemptTokens.Length
             || ProcessedAttemptTokens.Contains(ArmedAttemptToken, StringComparer.Ordinal))
             throw new InvalidDataException("Invalid or unsupported goalie roster checkpoint.");
-        Active.Validate(); Reserve?.Validate();
+        Active.Validate(); Reserve?.Validate(); RecruitmentVisit?.Validate();
         if (Reserve != null && (!ReserveEnabled || Active.PlayerId == Reserve.PlayerId))
             throw new InvalidDataException("Invalid goalie slot ownership or capacity.");
     }

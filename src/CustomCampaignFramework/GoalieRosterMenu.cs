@@ -1,0 +1,323 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using BepInEx.Unity.IL2CPP.Utils.Collections;
+using BishopGames.Module;
+using BishopGames.UI;
+using BishopGames.Catalogs;
+using CampaignCore;
+using Data;
+using HarmonyLib;
+using State;
+using STS.Map;
+using Tape2Tape;
+using Tape2Tape.Customization.UI;
+using Tape2Tape.Hockey.UI;
+using UnityEngine;
+
+namespace EndlessMode;
+
+// One native LineupMenu, with a detached preview and a one/two-card active row.
+// SkaterCardList.Refresh owns click/toggle listeners and controller navigation.
+// No TeamRosterData edit/apply operation is used for goalie ownership changes.
+internal static class GoalieRosterMenu
+{
+    internal sealed class Selection
+    {
+        internal CampaignState Campaign;
+        internal IntPtr Run;
+        internal string Folder;
+        internal long Revision;
+        internal GoalieRosterState Snapshot;
+        internal GoalieRecruitment.Offer Offer;
+        internal GoaltenderData Active, Reserve;
+        internal TeamData Preview;
+        internal LineupMenu Menu, Parent;
+        internal EventChoiceMenu Gm;
+        internal EventChoicePanel Legacy;
+        internal bool Ready, Saving, Finished, Committed, Unresolved, Destroyed;
+        internal string Status;
+        internal GoalieSlot? Confirming;
+        internal Il2CppSystem.Action<AbstractMenu> Closed, Destroying;
+    }
+    internal static Selection Current;
+    private static bool installed, attempted;
+    internal static bool Enabled { get { EnsureInstalled(); return installed && GoaliePersistenceBridge.Enabled; } }
+    internal const string Feature = "goalie-roster-menu";
+    internal static readonly NamedManagedHookContract[] Required = {
+        Hook("init", typeof(LineupMenu), "InitData", "System.Void", new[] { "Il2CppSystem.Object" }, "Initialize", false),
+        Hook("cards", typeof(LineupMenu), "LoadCurrentTeam", "System.Void", Array.Empty<string>(), "Refresh", false),
+        Hook("pick", typeof(LineupMenu), "OnTogglePlayerCard", "System.Void", new[] { "Tape2Tape.Customization.UI.SkaterCard" }, "Pick", true),
+        Hook("back", typeof(LineupMenu), "TryLeaveMenu", "System.Void", new[] { "System.Boolean" }, "Leave", true),
+        Hook("recruit", typeof(EventChoiceMenu), "OnItemClicked", "System.Void", new[] { "BishopGames.UI.AbstractNavigable" }, "RecruitClick", true),
+        Hook("legacy-open", typeof(EventChoicePanel), "ShowMenu", "System.Void", new[] { "STS.Map.MapNode", "STS.Map.EventNode" }, "LegacyShown", false),
+        Hook("legacy-close", typeof(EventChoicePanel), "HideMenu", "System.Void", Array.Empty<string>(), "LegacyLeave", true)
+    };
+    private static NamedManagedHookContract Hook(string id, Type type, string method, string result, string[] parameters, string patch, bool prefix)
+        => new() { Feature = Feature, Id = "goalie-menu-" + id, Assembly = "MainScriptsAssembly", DeclaringType = type.FullName,
+            Method = method, ReturnType = result, Parameters = parameters, Prefix = prefix ? patch : "", Postfix = prefix ? "" : patch };
+    private static void EnsureInstalled()
+    {
+        if (attempted || !GoaliePersistenceBridge.Enabled) return;
+        attempted = true;
+        var harmony = new Harmony("EndlessMode.GoalieRosterMenu");
+        var hooks = new List<(MethodInfo Target, MethodInfo Patch)>();
+        try {
+            var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().Single(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
+            var profile = NativeCompatibility.Load(module.FileName);
+            NamedManagedHookContract.RequireExactSet(Required, profile.NamedHooks, Feature);
+            // Resolve the complete set before installing any hook.
+            var resolved = Required.Select(c => (Contract: c, Target: JerseyLogoManagedTargets.Resolve(c, AppDomain.CurrentDomain.GetAssemblies()),
+                Patch: AccessTools.Method(typeof(GoalieRosterMenu), c.Prefix.Length > 0 ? c.Prefix : c.Postfix))).ToArray();
+            foreach (var h in resolved) {
+                if (h.Patch == null) throw new MissingMethodException(h.Contract.Id);
+                harmony.Patch(h.Target, h.Contract.Prefix.Length > 0 ? new HarmonyMethod(h.Patch) : null,
+                    h.Contract.Postfix.Length > 0 ? new HarmonyMethod(h.Patch) : null);
+                hooks.Add((h.Target, h.Patch));
+            }
+            installed = true;
+        } catch (Exception ex) {
+            foreach (var h in hooks) harmony.Unpatch(h.Target, h.Patch);
+            Plugin.Log.LogWarning("[GoalieRoster] Controls unavailable: " + ex.Message);
+        }
+    }
+    internal static bool Valid(Selection s) => s != null && !s.Finished && ReferenceEquals(Current, s)
+        && s.Campaign?.runData?.Pointer == s.Run && s.Campaign.Pointer == CampaignUtil.CampaignState?.Pointer
+        && string.Equals(s.Folder, Plugin.ModFolder, StringComparison.OrdinalIgnoreCase)
+        && GoaliePersistenceBridge.Roster.CanEdit(s.Campaign)
+        && (s.Offer == null || GoalieRecruitment.Valid(s.Offer) && ReferenceEquals(s.Offer.Visit.Pending, s.Offer));
+    internal static void Open(CampaignState state)
+    {
+        var parent = UnityEngine.Object.FindObjectOfType<LineupMenu>();
+        if (parent?.Team?.OriginalTeamData?.Pointer == state?.runData?.teamData?.Pointer) Open(state, null, null, null, parent);
+    }
+    internal static void Open(CampaignState state, GoalieRecruitment.Offer offer, EventChoiceMenu gm, EventChoicePanel legacy, LineupMenu parent = null)
+    {
+        if (!Enabled || Current != null || GoaliePersistenceBridge.Roster.Busy || state?.runData?.teamData == null) return;
+        var s = new Selection { Campaign = state, Run = state.runData.Pointer, Folder = Plugin.ModFolder, Offer = offer, Gm = gm, Legacy = legacy, Parent = parent };
+        Current = s;
+        try {
+            if (!GoaliePersistenceBridge.Roster.CanEdit(state)) { Finish(s); return; }
+            s.Snapshot = GoaliePersistenceBridge.Roster.Capture(state.runData, Plugin.ModFolder); s.Revision = s.Snapshot.Revision;
+            s.Active = GoalieNativeSnapshot.Restore(s.Snapshot.Active);
+            s.Reserve = s.Snapshot.Reserve == null ? null : GoalieNativeSnapshot.Restore(s.Snapshot.Reserve);
+            s.Preview = UnityEngine.Object.Instantiate(state.runData.teamData);
+            s.Preview.goalie = s.Active;
+            if (gm != null) { gm.m_IsTakenOver = true; gm.SetVisibility(false, true); }
+            if (legacy != null) SetLegacyVisible(legacy, false);
+            if (parent != null) {
+                // Reuse the current native menu: UIModule can retain menus by
+                // type, so opening a second LineupMenu is not an isolation boundary.
+                s.Menu = parent; WatchClose(s); Configure(s); s.Ready = true; parent.SelectFirstPlayer(); return;
+            }
+            // UIModule is not a MonoBehaviour; a known active menu owns the coroutine.
+            MonoBehaviour host = gm != null ? gm : legacy != null ? legacy : parent;
+            if (host == null) host = UnityEngine.Object.FindObjectOfType<LineupMenu>();
+            if (host == null) throw new InvalidOperationException("Open the campaign lineup to manage goalies.");
+            host.StartCoroutine(Show(s).WrapToIl2Cpp());
+        } catch (Exception ex) { Fail(s, ex); }
+    }
+    private static IEnumerator Show(Selection s)
+    {
+        Cysharp.Threading.Tasks.UniTask<LineupMenu>.Awaiter awaiter;
+        try { awaiter = BishopModule.Get<UIModule>().Cast<T2TUIModule>().ShowMenuAsync<LineupMenu>(MenuDefinitionCatalogReference.Lineup,
+            new LineupMenu.Metadata { Team = s.Preview, LockPlayers = true, IsHomeTeam = true }).GetAwaiter(); }
+        catch (Exception ex) { Fail(s, ex); yield break; }
+        while (true) {
+            bool ready;
+            try { ready = awaiter.IsCompleted; } catch (Exception ex) { Fail(s, ex); yield break; }
+            if (ready) break; yield return null;
+        }
+        try {
+            s.Menu = awaiter.GetResult() ?? throw new InvalidOperationException("The goalie menu did not open.");
+            WatchClose(s);
+            if (!Valid(s)) { s.Menu.TryLeaveMenu(false); yield break; }
+            if (s.Gm != null) s.Gm.m_MenuOverSelf = s.Menu;
+            Configure(s); s.Ready = true; s.Menu.SelectFirstPlayer();
+        } catch (Exception ex) { Fail(s, ex); }
+    }
+    private static void WatchClose(Selection s)
+    {
+        s.Closed = (Action<AbstractMenu>)(_ => Finish(s));
+        s.Destroying = (Action<AbstractMenu>)(_ => { s.Destroyed = true; Finish(s); });
+        s.Menu.OnHidingCompleted.Register(s.Closed, "GoalieRosterMenu"); s.Menu.OnDestroy.Register(s.Destroying, "GoalieRosterMenu");
+    }
+    private static void Initialize(LineupMenu __instance)
+    {
+        var s = Current;
+        if (s?.Preview?.Pointer != __instance?.Team?.OriginalTeamData?.Pointer) return;
+        s.Menu = __instance; __instance.m_HideBench = true;
+    }
+    internal static void Refresh(LineupMenu __instance)
+    {
+        if (Current?.Menu?.Pointer == __instance?.Pointer && !Current.Finished) Configure(Current);
+        else EntryLabel(__instance);
+    }
+    internal static string ContractText(GoalieRecord record) => record == null ? "Empty" : record.Contract == null ? "Permanent"
+        : record.Contract.AwaitingReplacement ? "Expired — awaiting replacement"
+        : $"{Math.Max(0, record.Contract.Duration - record.Contract.PlayedMatches)} / {record.Contract.Duration} played matches remaining";
+    private static void Configure(Selection s)
+    {
+        var menu = s.Menu;
+        var cards = new Il2CppSystem.Collections.Generic.List<SkaterDataForUI>();
+        cards.Add(new SkaterDataForUI(s.Preview, s.Active, ESkaterPosition.Goalie, null, null, EStatBonusesPreviewMode.None, null));
+        if (s.Snapshot.ReserveEnabled) cards.Add(new SkaterDataForUI(s.Preview, s.Reserve, ESkaterPosition.Goalie, null, null, EStatBonusesPreviewMode.None, null));
+        menu.m_ActiveSkaters = cards; menu.m_BenchSkaters.Clear();
+        menu.m_ActivePlayersList.Refresh(cards.Cast<Il2CppSystem.Collections.Generic.IReadOnlyList<SkaterDataForUI>>());
+        menu.m_BenchPlayersList.Clear(); menu.m_HideBench = true;
+        for (int i = 0; i < menu.m_ActivePlayersList.m_SkaterCards.Count; i++) {
+            var card = menu.m_ActivePlayersList.m_SkaterCards[i];
+            card.SetLocked(s.Saving || s.Unresolved || s.Offer == null && (i == 0 || s.Reserve == null), true);
+            if (card.m_PositionLetter != null) card.m_PositionLetter.text = i == 0 ? "Active" : "Reserve";
+            if (card.m_SkaterName != null) card.m_SkaterName.text = (i == 0 ? s.Active.FullName : s.Reserve?.FullName) ?? "Empty reserve";
+            card.m_FreeAgentDurationContainer?.SetActive(true);
+            if (card.m_FreeAgentDuration != null) card.m_FreeAgentDuration.text = ContractText(i == 0 ? s.Snapshot.Active : s.Snapshot.Reserve);
+        }
+        Title(s, s.Status ?? (s.Offer == null ? "Goalies — select the reserve to swap" : "Choose a slot for " + s.Offer.Candidate.FullName));
+    }
+    private static void Title(Selection s, string title) { s.Status = title; if (s.Menu?.m_Header?.m_Title != null) s.Menu.m_Header.m_Title.text = title; }
+    internal static bool Pick(LineupMenu __instance, SkaterCard __0)
+    {
+        var s = Current;
+        if (s?.Menu?.Pointer != __instance?.Pointer) return !Entry(__instance, __0);
+        if (!Valid(s) || !s.Ready || s.Saving || s.Unresolved || __instance.IsHiding || __0?.Toggle?.IsSelected != true) return false;
+        int index = -1;
+        for (int i = 0; i < __instance.m_ActivePlayersList.m_SkaterCards.Count; i++)
+            if (__instance.m_ActivePlayersList.m_SkaterCards[i].Pointer == __0.Pointer) index = i;
+        if (index < 0 || index > 1 || index == 1 && !s.Snapshot.ReserveEnabled) return false;
+        if (s.Offer == null && (index != 1 || s.Reserve == null)) return false;
+        var slot = index == 0 ? GoalieSlot.Active : GoalieSlot.Reserve;
+        __0.Toggle.SetSelected(false, false);
+        if (s.Confirming != slot) {
+            s.Confirming = slot;
+            string occupant = index == 0 ? s.Active.FullName : s.Reserve?.FullName;
+            Title(s, s.Offer == null ? $"Swap {s.Active.FullName} with {s.Reserve.FullName}? Select Reserve again to confirm; Back cancels."
+                : $"{(occupant == null ? "Fill empty reserve" : "Replace " + occupant)} with {s.Offer.Candidate.FullName}? Select {slot} again to confirm; Back cancels.");
+            return false;
+        }
+        s.Saving = true; Title(s, "Saving goalie roster…");
+        void Completed(GoalieRosterRuntime.ChangeResult result) {
+            s.Saving = false;
+            if (result.Receipt?.Reconciled == true) { s.Committed = true; if (s.Offer != null) GoalieRecruitment.Consumed(s.Offer); }
+            if (result.Outcome == GoalieRosterRuntime.ChangeOutcome.Committed) {
+                s.Committed = true; if (s.Offer != null) GoalieRecruitment.Consumed(s.Offer);
+                if (s.Finished) return;
+                Title(s, result.Message); s.Menu.TryLeaveMenu(false);
+            } else if (result.Outcome == GoalieRosterRuntime.ChangeOutcome.Unresolved) {
+                s.Unresolved = true; if (s.Offer != null) s.Offer.Unresolved = true;
+                Title(s, result.Message);
+            } else { s.Confirming = null; Title(s, result.Message); }
+        }
+        bool accepted = s.Offer != null
+            ? GoaliePersistenceBridge.Roster.TryRecruit(s.Campaign, s.Offer.Candidate, slot, s.Revision, Completed, s.Offer.Contract, s.Offer.Visit.Ledger, s.Offer.Id)
+            : GoaliePersistenceBridge.Roster.TrySwap(s.Campaign, s.Revision, Completed);
+        if (!accepted) { s.Saving = false; s.Confirming = null; Title(s, "Goalie selection changed or could not be prepared. Go back and reopen."); }
+        return false;
+    }
+    internal static bool Leave(LineupMenu __instance)
+    {
+        var s = Current;
+        if (s?.Menu?.Pointer != __instance?.Pointer) return true;
+        if (s.Saving) return false;
+        if (s.Parent != null) { Finish(s); return false; }
+        return true;
+    }
+    private static bool Entry(LineupMenu menu, SkaterCard card)
+    {
+        var campaign = CampaignUtil.CampaignState;
+        if (!Enabled || Current != null || menu?.Team?.OriginalTeamData?.Pointer != campaign?.runData?.teamData?.Pointer
+            || card?.CurrentSkaterData.ActivePosition != ESkaterPosition.Goalie || card.Toggle?.IsSelected != true
+            || Plugin.IsDefaultMode || T2TUtils.IsInMatch || GameManager.GameType != ScriptableStates.GameType.Rogue) return false;
+        card.Toggle.SetSelected(false, false);
+        if (!GoaliePersistenceBridge.Roster.CanEdit(campaign)) {
+            if (menu.m_Header?.m_Title != null) menu.m_Header.m_Title.text = GoaliePersistenceBridge.Roster.UnavailableReason ?? "Goalie roster unavailable.";
+            return true;
+        }
+        Open(campaign, null, null, null, menu); return true;
+    }
+    internal static void EntryLabel(LineupMenu menu)
+    {
+        if (!Enabled || menu?.Team?.OriginalTeamData?.Pointer != CampaignUtil.CampaignState?.runData?.teamData?.Pointer
+            || Plugin.IsDefaultMode || T2TUtils.IsInMatch || GameManager.GameType != ScriptableStates.GameType.Rogue) return;
+        if (menu.m_ActivePlayersList?.m_SkaterCards == null) return;
+        foreach (var card in menu.m_ActivePlayersList.m_SkaterCards)
+            if (card.CurrentSkaterData.ActivePosition == ESkaterPosition.Goalie) {
+                card.SetLocked(false, true);
+                if (card.m_PositionLetter != null) card.m_PositionLetter.text = "Manage goalies";
+            }
+    }
+    internal static bool RecruitClick(EventChoiceMenu __instance, AbstractNavigable __0)
+    {
+        var visit = GoalieRecruitment.Current;
+        if (!Enabled || !GoalieRecruitment.IsCurrent(visit) || __instance.SourceNode?.Pointer != visit.Node) return true;
+        if (__instance.IgnoreInput || Current != null || __0 == null) return false;
+        foreach (var item in __instance.m_Items) if (item.Navigable?.Pointer == __0.Pointer) {
+            if (!item.ChoiceData.interactable) return false;
+            var offer = visit.Offers.FirstOrDefault(o => o.Candidate.Pointer == item.ChoiceData.Skater?.Pointer);
+            if (GoalieRecruitment.BeginSelection(offer)) Open(CampaignUtil.CampaignState, offer, __instance, null);
+            return false;
+        }
+        return false;
+    }
+    private static void LegacyShown(EventChoicePanel __instance, EventNode __1)
+    {
+        var visit = GoalieRecruitment.Current;
+        if (GoalieRecruitment.IsCurrent(visit) && visit.Node == __1?.Pointer) visit.Legacy = __instance;
+    }
+    private static bool LegacyLeave(EventChoicePanel __instance)
+    {
+        var visit = GoalieRecruitment.Current;
+        if (!GoalieRecruitment.IsCurrent(visit) || visit.Legacy?.Pointer != __instance.Pointer) return true;
+        if (Current?.Legacy?.Pointer == __instance.Pointer) return false;
+        if (visit.Pending == null) return true;
+        Open(CampaignUtil.CampaignState, visit.Pending, null, __instance); return false;
+    }
+    internal static void Finish(Selection s)
+    {
+        if (s == null || s.Finished) return; s.Finished = true;
+        if (s.Menu != null && s.Closed != null) { s.Menu.OnHidingCompleted.Unregister(s.Closed); s.Menu.OnDestroy.Unregister(s.Destroying); }
+        if (ReferenceEquals(Current, s)) Current = null;
+        if (s.Offer != null && !s.Saving) GoalieRecruitment.Cancel(s.Offer);
+        bool currentVisit = s.Offer != null && GoalieRecruitment.IsCurrent(s.Offer.Visit);
+        if (s.Gm != null) {
+            s.Gm.m_IsTakenOver = false;
+            if (s.Gm.m_MenuOverSelf?.Pointer == s.Menu?.Pointer) s.Gm.m_MenuOverSelf = null;
+            if (currentVisit && !s.Gm.m_IsExiting) {
+                s.Gm.SetVisibility(true, true);
+                if (s.Committed) {
+                    s.Gm.m_ChoicesMade = s.Offer.Visit.Hires;
+                    if (s.Offer.Visit.Event.NextChoices(s.Offer.Visit.Hires)) s.Gm.GoToNextSetOfChoices();
+                    else { s.Gm.m_IsExiting = true; s.Gm.Exit(); }
+                } else s.Gm.SelectDefaultItem();
+            }
+        }
+        if (s.Legacy != null && currentVisit) {
+            SetLegacyVisible(s.Legacy, true);
+            if (s.Committed) {
+                if (s.Offer.Visit.Event.NextChoices(s.Offer.Visit.Hires)) { s.Legacy.ClearChoicesButtons(); s.Legacy.InitializeChoicesButtons(s.Offer.Visit.Event.eventChoices); }
+                else s.Legacy.HideMenu();
+            }
+        }
+        if (!s.Destroyed && s.Parent != null && s.Campaign?.runData?.Pointer == s.Run && !s.Parent.IsHiding) {
+            // Parent owns canonical TeamData; refreshing renders the committed
+            // active goalie and its binding, without reapplying authored config.
+            s.Parent.Team.m_G = s.Campaign.runData.teamData.goalie;
+            s.Parent.Team.UpdateTemporaryTeamData();
+            s.Parent.LoadCurrentTeam(); s.Parent.SelectFirstPlayer();
+        }
+        if (s.Preview != null) UnityEngine.Object.Destroy(s.Preview);
+        if (s.Active != null) UnityEngine.Object.Destroy(s.Active);
+        if (s.Reserve != null) UnityEngine.Object.Destroy(s.Reserve);
+    }
+    private static void SetLegacyVisible(EventChoicePanel panel, bool visible)
+    { if (panel._canvasGroup != null) { panel._canvasGroup.alpha = visible ? 1 : 0; panel._canvasGroup.interactable = visible; panel._canvasGroup.blocksRaycasts = visible; } }
+    private static void Fail(Selection s, Exception ex)
+    {
+        Plugin.Log.LogError("[GoalieRoster] Menu preparation failed: " + ex);
+        if (s.Menu != null && !s.Menu.IsHiding) s.Menu.TryLeaveMenu(false);
+        Finish(s);
+    }
+}

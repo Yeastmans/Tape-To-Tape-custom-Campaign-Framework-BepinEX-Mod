@@ -24,6 +24,13 @@ internal static class GoaliePersistenceBridge
     [ThreadStatic] private static object bypass;
     [ThreadStatic] private static SaveRequest serializing;
     [ThreadStatic] private static bool readingSelection;
+    [ThreadStatic] private static SaveCaller caller;
+    private sealed class SaveCaller { internal CampaignState Campaign; internal object Token; internal bool Claimed; }
+    internal static void SaveCampaign(CampaignState campaign, object token)
+    {
+        var previous = caller; caller = new SaveCaller { Campaign = campaign, Token = token };
+        try { campaign.SaveRunData(); } finally { caller = previous; }
+    }
 
     internal sealed class SaveReceipt
     {
@@ -31,7 +38,10 @@ internal static class GoaliePersistenceBridge
         internal Il2CppSystem.Threading.Tasks.Task<bool> Proxy, Original;
         internal Il2CppSystem.Exception NativeError;
         internal bool NativeResult, Reconciled;
-        internal GoalieRosterState Checkpoint;
+        internal GoalieRosterState Checkpoint, Admission;
+        internal IntPtr RunPointer, RepositoryPointer;
+        internal bool NoLocalWrite;
+        internal object CallerToken;
         // Local persisted-pair proof only; never a Steam/cloud replication claim.
         internal bool Durable => NativeError == null && NativeResult && Reconciled;
     }
@@ -48,7 +58,8 @@ internal static class GoaliePersistenceBridge
         internal ES3Settings PersistedSettings;
         internal GoalieNativeCheckpoint Cached;
         internal int Serialized;
-        internal bool UnexpectedReplacement;
+        internal bool UnexpectedReplacement, StoreAttempted;
+        internal GoalieNativeCheckpoint Before;
     }
     private sealed class LoadRequest
     {
@@ -130,6 +141,13 @@ internal static class GoaliePersistenceBridge
         var request = new SaveRequest { Repository = __instance, Path = __instance._fileName, Folder = System.IO.Path.GetFullPath(Plugin.ModFolder) };
         request.Operation = new GoalieNativeTask<bool>(() => StartSave(request), op => FinishSave(request));
         request.Receipt.OperationId = request.Operation.Id; request.Receipt.Proxy = request.Operation.Proxy;
+        request.Receipt.RepositoryPointer = __instance.Pointer;
+        var callingRun = caller?.Campaign?.runData;
+        if (caller != null && !caller.Claimed && caller.Campaign._runDataRepository?.Pointer == __instance.Pointer
+            && callingRun?.runID == __0?.runID && callingRun?.squadId == __0?.squadId)
+        {
+            caller.Claimed = true; request.Receipt.CallerToken = caller.Token; request.Receipt.RunPointer = callingRun.Pointer;
+        }
         request.Frozen = GoalieNativeAdmission.Freeze(__0, request.Path, out var nativeError);
         if (nativeError != null)
         {
@@ -150,6 +168,7 @@ internal static class GoaliePersistenceBridge
                     throw new InvalidDataException("Admitted native model and goalie snapshot differ.");
                 request.Companion = new GoalieCheckpointTransaction(request.Operation.Id, request.Folder, frozenRoster);
                 request.Receipt.AttemptToken = request.Companion.AttemptToken;
+                request.Receipt.RunPointer = run.Pointer; request.Receipt.Admission = frozenRoster.Clone();
             }
         }
         catch (Exception ex) { request.Receipt.Failure = "Companion capture unavailable: " + ex.Message; Warn(request.Receipt.Failure); }
@@ -162,7 +181,13 @@ internal static class GoaliePersistenceBridge
     private static Il2CppSystem.Threading.Tasks.Task<bool> StartSave(SaveRequest request)
     {
         owner = request; bypass = request; serializing = request;
-        try { return request.Repository.SaveToPersistentStorage(request.Frozen.Model); }
+        try {
+            // Read immediately before this queued operation starts; an earlier
+            // queued save may have replaced the physical container since admission.
+            try { request.Before = GoalieNativeCheckpoint.Persisted(request.Folder, request.Path, new ES3Settings(request.Path, ES3Settings.defaultSettings)); }
+            catch { /* No proven previous checkpoint means failure stays unresolved. */ }
+            return request.Repository.SaveToPersistentStorage(request.Frozen.Model);
+        }
         finally { bypass = null; serializing = null; }
     }
     private static bool SerializePrefix(Il2CppSystem.Object __0, ES3Types.ES3Type __1, ES3Settings __2, ref Il2CppStructArray<byte> __result)
@@ -181,7 +206,9 @@ internal static class GoaliePersistenceBridge
     }
     private static void StorePrefix(string __0)
     {
-        if (owner is not SaveRequest request || __0 != request.Path || request.Companion == null || request.Receipt.Failure != null) return;
+        if (owner is not SaveRequest request || __0 != request.Path) return;
+        request.StoreAttempted = true;
+        if (request.Companion == null || request.Receipt.Failure != null) return;
         try
         {
             var cached = GoalieNativeCheckpoint.Cached(request.Folder, request.Path);
@@ -213,6 +240,12 @@ internal static class GoaliePersistenceBridge
             }
         }
         catch (Exception ex) { request.Receipt.Failure = "Persisted checkpoint reconciliation failed: " + ex.Message; Warn(request.Receipt.Failure); }
+        request.Receipt.NoLocalWrite = !request.StoreAttempted;
+        if (!request.Receipt.Reconciled && request.Before != null && !request.UnexpectedReplacement)
+            try {
+                var after = GoalieNativeCheckpoint.Persisted(request.Folder, request.Path, new ES3Settings(request.Path, ES3Settings.defaultSettings));
+                request.Receipt.NoLocalWrite = after.Fingerprint == request.Before.Fingerprint && after.Marker == request.Before.Marker;
+            } catch { /* Unknown readback cannot authorize rollback/reuse. */ }
         // Retain all prepared records on false/fault/cancel or ambiguous readback.
         owner = null;
         op.Published = _ => Notify(SaveCompleted, request.Receipt);

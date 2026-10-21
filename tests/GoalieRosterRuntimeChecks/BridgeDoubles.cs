@@ -43,11 +43,12 @@ namespace Il2CppInterop.Runtime {
 namespace ES3Internal { public class ES3Data : Il2CppSystem.Object { public ES3Types.ES3Type type; public Il2CppStructArray<byte> bytes; } }
 public class ES3File : Il2CppSystem.Object {
     public static readonly Dictionary<string, ES3File> cachedFiles = new();
+    internal static bool FailPhysicalRead;
     internal static readonly Dictionary<string, Dictionary<string, ES3Internal.ES3Data>> persisted = new();
     public Dictionary<string, ES3Internal.ES3Data> cache = new(); public ES3Settings settings;
     internal static Dictionary<string, ES3Internal.ES3Data> Copy(Dictionary<string, ES3Internal.ES3Data> source)
         => source.ToDictionary(p => p.Key, p => new ES3Internal.ES3Data { type = p.Value.type, bytes = new(p.Value.bytes.ToArray()) });
-    public ES3File(ES3Settings settings, bool read) { this.settings = settings; if (read && persisted.TryGetValue(settings.path, out var value)) cache = Copy(value); }
+    public ES3File(ES3Settings settings, bool read) { this.settings = settings; if (read && FailPhysicalRead) throw new IOException("physical read failed"); if (read && persisted.TryGetValue(settings.path, out var value)) cache = Copy(value); }
     public bool KeyExists(string key) => cache.ContainsKey(key);
     public Il2CppSystem.Object Load(string key) { var value = cache[key]; return ES3.Deserialize(value.type, value.bytes, settings); }
     public static ES3File CacheFile(ES3Settings settings) {
@@ -57,6 +58,7 @@ public class ES3File : Il2CppSystem.Object {
 }
 public static partial class ES3 {
     internal static bool FailMarker, FailStore, WrongMarkerReadback;
+    internal static System.Action AfterStore;
     internal static Il2CppSystem.Exception AdmissionError;
     public static void Save(string key, Il2CppSystem.Object value, ES3Settings settings) {
         if (!ES3File.cachedFiles.TryGetValue(settings.path, out var file)) ES3File.cachedFiles[settings.path] = file = new(settings, false);
@@ -69,10 +71,20 @@ public static partial class ES3 {
         BridgeDoubleHooks.Call("StorePrefix", new object[] { path });
         if (FailStore) throw new IOException("native store failure");
         ES3File.persisted[path] = ES3File.Copy(ES3File.cachedFiles[path].cache);
+        AfterStore?.Invoke();
     }
 }
 namespace State {
-    public class CampaignState { public Data.RunData runData; public void ApplyNewRunStartEffects() {} }
+    public partial class CampaignState : Il2CppSystem.Object {
+        public Data.RunData runData; public RunDataRepositoryV2 Repository = new();
+        public RunDataRepositoryV2 _runDataRepository => Repository;
+        public void ApplyNewRunStartEffects() {}
+        public void SaveRunData() {
+            runData.teamState = new() { goaltenderState = runData.teamData.goalie.SaveState(), forwardStates = runData.teamState.forwardStates, relicStates = runData.teamState.relicStates };
+            Repository.SaveToPersistentStorage(new() { runID = runData.runID, squadId = runData.squadId,
+                team = new() { skaters = new() { new SerializerV2().SerializeToModel(runData.teamData.goalie) } }, teamState = runData.teamState });
+        }
+    }
     public class RunDataRepositoryV2 : Il2CppSystem.Object {
         public string _fileName = "RunDataV2.es3";
         public object _talentRepository { get; } = new(); public object _relicRepository { get; } = new(); public object _abilityRepository { get; } = new();
@@ -108,8 +120,12 @@ namespace State {
 }
 namespace Tape2Tape { public static class CampaignUtil { public static State.CampaignState CampaignState; } }
 namespace EndlessMode {
-    static class Plugin { internal static string ModFolder; internal static bool IsDefaultMode; internal static LogDouble Log = new(); }
+    static partial class Plugin { internal static string ModFolder; internal static bool IsDefaultMode; internal static LogDouble Log = new(); }
     class LogDouble { internal void LogError(string value) {} internal void LogWarning(string value) {} }
     static class MatchRuleRunner { internal static void Install() {} }
     static class SquadBehaviorRuntime { internal static bool ReserveEnabled; internal static bool Enabled(string squad, string behavior, bool native) => ReserveEnabled; }
 }
+
+namespace Tape2Tape { public static class T2TUtils { public static bool IsInMatch; } }
+namespace ScriptableStates { public enum GameType { Rogue, QuickPlay } }
+public static class GameManager { public static ScriptableStates.GameType GameType = ScriptableStates.GameType.Rogue; }

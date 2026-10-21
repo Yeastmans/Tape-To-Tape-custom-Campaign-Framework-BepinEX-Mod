@@ -161,3 +161,5 @@ namespace Tape2Tape.Hockey.UI
         public void LoadOffers() { m_Items = SourceNode.eventChoices.Select(c => new EventChoiceItem { ChoiceData = c }).ToList(); }
     }
 }
+
+namespace EndlessMode { static class GoalieRosterMenu { internal static void EntryLabel(LineupMenu menu) {} } }

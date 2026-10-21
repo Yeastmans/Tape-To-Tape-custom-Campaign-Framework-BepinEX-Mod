@@ -38,6 +38,16 @@ parts.append(re.search(r'internal const string IdPrefix = .*?;', recruitment).gr
 parts.append(re.search(r'internal static bool IsRecruit\(.*?;', recruitment).group())
 for signature in ("internal static CampaignDocument Snapshot(", "internal static void Restore("):
     parts.append(body(recruitment, signature))
+if "menu" in sys.argv:
+    parts.insert(1, "using System.IO; using System.Collections.Generic; using State; using Tape2Tape; using STS.Map; using Rogue.NPC.GeneralManagerNPC;")
+    for signature in ("internal sealed class Selection", "internal sealed class Visit", "internal sealed class Offer", "internal static bool BeginSelection(", "internal static void Cancel(", "internal static void Consumed(", "internal static GoalieRecruitmentVisitState VisitLedger(", "internal static void Selected(", "internal static bool Choices("):
+        parts.append(body(recruitment, signature))
+    for signature in ("internal static bool IsCurrent(", "internal static bool Valid("):
+        start = recruitment.index(signature); parts.append(recruitment[start:recruitment.index(";", start)+1])
+    for signature in ("internal static bool MatchesPool(", "internal static bool MatchesPoolId("):
+        start = recruitment.index(signature); parts.append(recruitment[start:recruitment.index(";", start)+1])
+    parts.append("private static Selection selected; private static Visit visit; internal static Visit Current => visit; internal static bool IsGoalieNode => selected?.Matches(CampaignUtil.CampaignState) == true;")
+    parts.append("static GoaltenderData Candidate(PlayerConfig cfg, object team, string id, GoaltenderData template) => new() { id = id };")
 parts.append("}")
 parts.append(body(recruitment, "internal static class GoalieRecruitLoaded"))
 output = Path(sys.argv[1])

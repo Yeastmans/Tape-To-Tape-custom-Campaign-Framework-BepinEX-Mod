@@ -28,6 +28,7 @@ namespace Data {
         public static TeamColorsData Default { get; } = new();
     }
     public class GoaltenderData : SkaterData {
+        public string FullName => id;
         public string id, OriginalId, name, helmetAwaySkin, flavorTextLoc, perkFlavorTextLoc, powerupTextLoc;
         public int skill, heightInches, weightKg;
         public float passReadSkill;
@@ -45,8 +46,9 @@ namespace Data {
         }
         public void LoadState(State.SkaterState state) { Earned = state; HasGoldenHelmet = state.HasGoldenHelmet; }
     }
-    public class TeamData { public GoaltenderData goalie; }
-    public class RunData : Il2CppSystem.Object { public string runID, squadId; public TeamData teamData; public State.TeamState teamState; }
+    public partial class TeamData : Il2CppSystem.Object { public GoaltenderData goalie; }
+    public class Point { public float x, y; }
+    public partial class RunData : Il2CppSystem.Object { public string currentMap; public int CurrentAct; public Point currentNodePoint = new(); public string runID, squadId; public TeamData teamData; public State.TeamState teamState; }
 }
 namespace State {
     public class SkaterDataModelV2 : Il2CppSystem.Object { }

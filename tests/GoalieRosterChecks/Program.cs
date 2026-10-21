@@ -78,3 +78,17 @@ File.CreateSymbolicLink(token, outside);
 Check(GoalieRosterStore.Load(root, "run-1", checkpoint) == null, "SelectedLinkedRecordRejected");
 Check(File.ReadAllBytes(outside).SequenceEqual(outsideBytes), "SelectedLinkTargetPreserved");
 Console.WriteLine($"PASS {checks} goalie roster store checks including selected-path guard");
+
+var withVisit = State();
+withVisit.RecruitmentVisit = new() { Witness = "saved-native-route", Generation = Guid.NewGuid().ToString("N"), Quota = 2,
+    ConsumedOfferIds = new[] { "offer-1" }, OfferedPoolIds = new[] { "pool-a", "pool-b" } };
+var visitToken = GoalieRosterStore.Prepare(root, withVisit);
+var visitReload = GoalieRosterStore.Load(root, withVisit.RunId, GoalieRosterStore.Hash(GoalieRosterStore.Marker(visitToken)));
+Check(visitReload.RecruitmentVisit.ConsumedOfferIds.SequenceEqual(new[] { "offer-1" }) && visitReload.RecruitmentVisit.Quota == 2, "RecruitmentConsumptionRoundTripsWithSameCheckpoint");
+var visitClone = visitReload.Clone(); visitClone.RecruitmentVisit.ConsumedOfferIds[0] = "mutated";
+Check(visitReload.RecruitmentVisit.ConsumedOfferIds[0] == "offer-1", "RecruitmentLedgerCloneHasNoMutableAliases");
+visitClone.RecruitmentVisit.ConsumedOfferIds = new[] { "same", "same" };
+Reject(() => visitClone.Validate(), "DuplicateRecruitmentConsumptionRejected");
+visitClone = visitReload.Clone(); visitClone.RecruitmentVisit.Quota = 0;
+Reject(() => visitClone.Validate(), "InvalidSavedRecruitmentQuotaRejected");
+Console.WriteLine($"PASS {checks} goalie roster store checks including recruitment ledger");
