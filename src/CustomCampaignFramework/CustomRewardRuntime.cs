@@ -86,6 +86,9 @@ internal static class CustomRewardRuntime
     private static readonly List<Action> removeModifiers = new();
     private static readonly CustomRewardProgress progress = new();
     private static bool loaded, eventsBound, creating;
+    private static string definitionsScope;
+    private static bool definitionSourcesReady;
+    private static long definitionGeneration;
     private static string run = "";
     private static bool inMatch;
     [ThreadStatic] private static PassingArg currentPass;
@@ -124,6 +127,9 @@ internal static class CustomRewardRuntime
         creating = true;
         try {
             if (!loaded) {
+                definitionSourcesReady = false;
+                string scope = Plugin.IsDefaultMode ? null : DefinitionScope();
+                bool sourcesReady = true;
                 var snapshot = new Dictionary<string, CustomRewardDefinition>(StringComparer.OrdinalIgnoreCase);
                 if (!Plugin.IsDefaultMode) {
                     var authored = new Dictionary<string, CustomRewardDefinition>(StringComparer.OrdinalIgnoreCase);
@@ -138,7 +144,7 @@ internal static class CustomRewardRuntime
                             if (!authored.ContainsKey(d.Id)) CustomRewardExport.AddSnapshot(snapshot, d);
                     foreach (var d in authored.Values) snapshot[d.Id] = d;
                 }
-                CustomRewardLifecycle.LoadRetained(snapshot);
+                sourcesReady &= CustomRewardLifecycle.LoadRetained(snapshot);
                 string exports = Path.Combine(Plugin.ModContentRoot, "play_now_overrides");
                 if (Directory.Exists(exports)) foreach (string file in Directory.EnumerateFiles(exports, "*.txt")) {
                     try {
@@ -149,9 +155,12 @@ internal static class CustomRewardRuntime
                                 throw new ArgumentException("Conflicting custom reward identity in export: " + d.Name);
                         }
                         foreach (var d in items) snapshot[d.Id] = d;
-                    } catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Export " + Path.GetFileName(file) + ": " + ex.Message); }
+                    } catch (Exception ex) { sourcesReady = false; Plugin.Log.LogError("[CustomRewards] Export " + Path.GetFileName(file) + ": " + ex.Message); }
                 }
                 Definitions.Clear(); foreach (var pair in snapshot) Definitions.Add(pair.Key, pair.Value);
+                definitionsScope = scope;
+                definitionSourcesReady = sourcesReady;
+                definitionGeneration++;
                 loaded = true;
             }
             if (Definitions.Count == 0) return;
@@ -247,6 +256,36 @@ internal static class CustomRewardRuntime
             }
         } catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Loading definitions: " + ex); }
         finally { creating = false; }
+    }
+    // A false legacy ownership query is not evidence that loading succeeded.
+    // Only the goalie decision asks for this stricter, campaign-scoped result.
+    // Native artwork/carrier failures after publication do not invalidate the
+    // definition snapshot used to classify actual owned reward identities.
+    internal static bool EnsureDefinitionsForRetention(out long generation)
+    {
+        generation = 0;
+        if (Plugin.IsDefaultMode || creating) return false;
+        string scope = DefinitionScope();
+        if (loaded && definitionsScope != scope) return false;
+        // Retry an incomplete same-campaign snapshot on the explicit readiness
+        // path, without changing the legacy prefix's own loading behavior.
+        if (loaded && !definitionSourcesReady) loaded = false;
+        EnsureAssets();
+        generation = definitionGeneration;
+        return definitionsScope == scope && DefinitionsForRetentionCurrent(generation);
+    }
+    internal static bool DefinitionsForRetentionCurrent(long generation)
+    {
+        return !Plugin.IsDefaultMode && loaded && !creating && definitionSourcesReady
+            && generation == definitionGeneration && definitionsScope == DefinitionScope();
+    }
+    internal static void DefinitionSourceUnavailable()
+    {
+        definitionSourcesReady = false;
+    }
+    private static string DefinitionScope()
+    {
+        return Path.GetFullPath(Plugin.ModFolder).ToUpperInvariant() + "\n" + Path.GetFullPath(Plugin.ModContentRoot).ToUpperInvariant();
     }
     private static Sprite Icon(CustomRewardDefinition d)
     {

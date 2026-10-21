@@ -15,6 +15,7 @@ typeof(GoalieRosterMenu).GetField("attempted", BindingFlags.NonPublic | BindingF
 Plugin.IsDefaultMode = false;
 CampaignState Fresh(bool reserve = true) {
     Plugin.ModFolder = Path.Combine(Path.GetTempPath(), "ccf-menu-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(Plugin.ModFolder);
+    RetentionRegistryFixture.Reset();
     var goalie = new GoaltenderData { id = "active" };
     var state = CampaignUtil.CampaignState = new CampaignState { currentNode = new(), runData = new RunData { runID = Guid.NewGuid().ToString("N"), currentMap = "{\"act\":1,\"path\":[]}", squadId = "squad", teamData = new() { goalie = goalie }, teamState = new() { goaltenderState = goalie.SaveState() } } };
     GoalieNativeSnapshot.Deserializer = new();
@@ -205,7 +206,7 @@ foreach (string protection in new[] { "none", "native", "custom", "unknown-nativ
     state.runData.teamData.NativeHandcuffs = protection == "native";
     state.runData.teamData.FailProtection = protection == "unknown-native";
     CustomRewardCampaignRules.Fail = protection == "unknown-custom";
-    if (protection == "custom") CustomRewardCampaignRules.Rules.Add(new() { Trigger = "Contract expiry", Effect = CustomRewardEffects.KeepFreeAgents });
+    if (protection == "custom") { CustomRewardRuntime.EnsureAssets(); RetentionRegistryFixture.Protect(state.runData.teamData); }
     pair = Offer(state); pair.Offer.Contract = GoalieContractPolicy.Sign(6);
     selection = Recruit(state, pair); int beforeSaves = state.Repository.Saves;
     Click(selection, 1);
@@ -221,7 +222,7 @@ foreach (string protection in new[] { "none", "native", "custom", "unknown-nativ
             && (protection == "none" ? result.Active.PlayerId == "candidate" && result.Reserve == null && result.Active.Contract.Duration == 6 && result.Active.Contract.PlayedMatches == 0
                 : result.Active.PlayerId == "active" && result.Active.Contract.PlayedMatches == 4 && result.Reserve.PlayerId == "candidate"), "DeferredReplacementHonorsKnownProtectionAndPreservesSigningLedger_" + protection);
     }
-    CustomRewardCampaignRules.Rules.Clear(); CustomRewardCampaignRules.Fail = false;
+    CustomRewardRuntime.Definitions.Clear(); CustomRewardCampaignRules.Fail = false;
 }
 state = Fresh();
 roster.Fresh(state.runData, Plugin.ModFolder, true, new() { Duration = 4, PlayedMatches = 4, AwaitingReplacement = true }); state.SaveRunData();
@@ -229,4 +230,17 @@ pair = Offer(state); selection = Recruit(state, pair); Click(selection, 1);
 state.runData.teamData.NativeHandcuffs = true; Click(selection, 1);
 Check(!pair.Offer.Taken && selection.Menu.m_Header.m_Title.text.Contains("remains active"), "ChangedProtectionRequiresNewConfirmationOfUpdatedResult");
 Click(selection, 1); Check(pair.Offer.Taken && roster.Selection.Active.PlayerId == "active" && roster.Selection.Reserve.PlayerId == "candidate", "UpdatedProtectedResultCanBeConfirmed");
+state = Fresh();
+roster.Fresh(state.runData, Plugin.ModFolder, true, new() { Duration = 4, PlayedMatches = 4, AwaitingReplacement = true }); state.SaveRunData();
+string brokenDefinitions = Path.Combine(Plugin.ModFolder, "broken.txt");
+File.WriteAllText(brokenDefinitions, "Export Custom Reward broken = not-base64");
+pair = Offer(state); selection = Recruit(state, pair); int beforeDefinitionFailure = state.Repository.Saves;
+var retainedActive = state.runData.teamData.goalie;
+Click(selection, 1); Click(selection, 1);
+Check(!pair.Offer.Taken && state.Repository.Saves == beforeDefinitionFailure && state.runData.teamData.goalie.Pointer == retainedActive.Pointer
+    && roster.Selection.Reserve == null && roster.Selection.RecruitmentVisit == null
+    && selection.Menu.m_Header.m_Title.text.Contains("could not be verified"), "SwallowedLoaderFailureCannotConsumeSigningOrRemoveExpiredActive");
+File.Delete(brokenDefinitions);
+Click(selection, 1); Check(!pair.Offer.Taken && selection.Menu.m_Header.m_Title.text.Contains("becomes active"), "RecoveredRegistryRequiresOrdinaryReplacementConfirmation");
+Click(selection, 1); Check(pair.Offer.Taken && roster.Selection.Active.PlayerId == "candidate" && roster.Selection.RecruitmentVisit.ConsumedOfferIds.Length == 1, "RecoveredRegistryAllowsExactlyOneSigning");
 Console.WriteLine($"PASS {checks} source-linked goalie menu checks");

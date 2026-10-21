@@ -111,14 +111,4 @@ namespace Data {
         }
     }
 }
-namespace EndlessMode {
-    static class CustomRewardCampaignRules {
-        internal static readonly List<CampaignCore.CustomRewardDefinition> Rules = new();
-        internal static bool Fail;
-        internal static IEnumerable<CampaignCore.CustomRewardDefinition> Owned(Data.TeamData team, string trigger) {
-            if (Fail) throw new InvalidOperationException("custom retention unavailable");
-            return Rules.Where(rule => rule.Trigger == trigger);
-        }
-    }
-}
 namespace HarmonyLib { public class HarmonyPrefix : System.Attribute {} }

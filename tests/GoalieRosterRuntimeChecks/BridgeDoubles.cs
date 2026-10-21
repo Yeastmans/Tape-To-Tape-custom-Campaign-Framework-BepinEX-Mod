@@ -121,7 +121,7 @@ namespace State {
 namespace Tape2Tape { public static class CampaignUtil { public static State.CampaignState CampaignState; } }
 namespace EndlessMode {
     static partial class Plugin { internal static string ModFolder; internal static bool IsDefaultMode; internal static LogDouble Log = new(); }
-    class LogDouble { internal readonly List<string> Warnings = new(); internal void LogError(string value) {} internal void LogWarning(string value) { Warnings.Add(value); } }
+    class LogDouble { internal readonly List<string> Warnings = new(); internal readonly List<string> Errors = new(); internal void LogError(string value) { Errors.Add(value); } internal void LogWarning(string value) { Warnings.Add(value); } }
     static class MatchRuleRunner { internal static void Install() {} }
     static class SquadBehaviorRuntime { internal static bool ReserveEnabled; internal static bool Enabled(string squad, string behavior, bool native) => ReserveEnabled; }
 }

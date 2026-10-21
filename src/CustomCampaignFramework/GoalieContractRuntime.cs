@@ -32,7 +32,8 @@ internal static class GoalieContractRuntime
                 || campaign?.Pointer != CampaignUtil.CampaignState?.Pointer || campaign?.runData?.teamData == null
                 || !GoaliePersistenceBridge.Roster.Owns(campaign.runData, Plugin.ModFolder)) return false;
             var team = campaign.runData.teamData;
-            prevented = CustomRewardContractRetention.Prevents(team) || team.HaveRelicCached<Rogue.Handcuffs>();
+            if (!CustomRewardContractRetention.TryPrevents(team, out bool customPrevented)) return false;
+            prevented = customPrevented || team.HaveRelicCached<Rogue.Handcuffs>();
             return true;
         } catch (Exception ex) {
             Plugin.Log.LogWarning("[GoalieContracts] Departure protection could not be verified: " + ex.Message);

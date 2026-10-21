@@ -156,13 +156,14 @@ internal static class CustomRewardLifecycle
             return Path.Combine(Plugin.ModContentRoot, "custom_reward_retained", id + ".txt");
         }
     }
-    internal static void LoadRetained(IDictionary<string, CustomRewardDefinition> definitions)
+    internal static bool LoadRetained(IDictionary<string, CustomRewardDefinition> definitions)
     {
-        if (Plugin.IsDefaultMode || !File.Exists(RetainedPath)) return;
+        if (Plugin.IsDefaultMode || !File.Exists(RetainedPath)) return true;
         try {
             foreach (var d in CustomRewardExport.Read(new CampaignDocument(File.ReadAllText(RetainedPath))))
                 if (!definitions.ContainsKey(d.Id)) definitions[d.Id] = d;
-        } catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Retained bench definitions: " + ex.Message); }
+            return true;
+        } catch (Exception ex) { CustomRewardRuntime.DefinitionSourceUnavailable(); Plugin.Log.LogError("[CustomRewards] Retained bench definitions: " + ex.Message); return false; }
     }
     internal static void StoreRetained()
     {

@@ -53,4 +53,19 @@ parts.append(body(recruitment, "internal static class GoalieRecruitLoaded"))
 parts.append(body((source / "CustomRewardGrants.cs").read_text(encoding="utf-8-sig"), "internal static class CustomRewardContractRetention"))
 output = Path(sys.argv[1])
 output.parent.mkdir(parents=True, exist_ok=True)
+# Real loader/ownership logic, with only native carrier construction removed.
+runtime = (source / "CustomRewardRuntime.cs").read_text(encoding="utf-8-sig")
+loader = body(runtime, "internal static void EnsureAssets()")
+asset_start = loader.index("            if (Definitions.Count == 0) return;")
+asset_end = loader.index("        } catch (Exception ex) { Plugin.Log.LogError(\"[CustomRewards] Loading definitions:")
+loader = loader[:asset_start] + "            CreateNativeAssets();\n" + loader[asset_end:]
+parts += ["static partial class CustomRewardRuntime {", re.search(r'internal static readonly Dictionary<string, CustomRewardDefinition> Definitions = .*?;', runtime).group(), loader]
+for signature in ("internal static bool EnsureDefinitionsForRetention(", "internal static bool DefinitionsForRetentionCurrent(", "internal static void DefinitionSourceUnavailable()", "private static string DefinitionScope()"):
+    if signature in runtime:
+        parts.append(body(runtime, signature))
+parts.append("}")
+parts += ["static partial class CustomRewardCampaignRules {", body((source / "CustomRewardCampaignRules.cs").read_text(encoding="utf-8-sig"), "internal static IEnumerable<CustomRewardDefinition> Owned("), "}"]
+lifecycle = (source / "CustomRewardLifecycle.cs").read_text(encoding="utf-8-sig")
+retained_signature = re.search(r'internal static (?:void|bool) LoadRetained\(', lifecycle).group()
+parts += ["static partial class CustomRewardLifecycle {", body(lifecycle, retained_signature), "}"]
 output.write_text("\n".join(parts), encoding="utf-8")

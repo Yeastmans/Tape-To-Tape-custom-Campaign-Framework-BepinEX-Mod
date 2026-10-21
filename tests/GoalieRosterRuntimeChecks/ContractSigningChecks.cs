@@ -42,15 +42,16 @@ static class ContractSigningChecks
         config.Goalie.Fields.Set(PlayerContractOptions.EnabledKey, "no"); config.Goalie.Fields.Set(PlayerContractOptions.MatchesKey, "4");
         roster.NoSelectedRun(); BridgeDoubleHooks.Call("FreshPostfix", new object[] { campaign });
         check(roster.Selection.Active.Contract == null, "DisabledGoalieContractKeepsPermanentStarter");
-                check(GoalieContractRuntime.TryDepartureProtection(campaign, out bool prevented) && !prevented && loaded.teamData.LastRelicQuery == typeof(Rogue.Handcuffs), "UnprotectedDecisionUsesExactTypedNativePredicate");
+        RetentionRegistryFixture.Reset();
+        check(GoalieContractRuntime.TryDepartureProtection(campaign, out bool prevented) && !prevented && loaded.teamData.LastRelicQuery == typeof(Rogue.Handcuffs), "UnprotectedDecisionUsesExactTypedNativePredicate");
         loaded.teamData.NativeHandcuffs = true;
         check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && prevented, "NativeHandcuffsProtectsGoalie");
         loaded.teamData.NativeHandcuffs = false;
-        CustomRewardCampaignRules.Rules.Add(new() { Trigger = "Contract expiry", Effect = CustomRewardEffects.KeepFreeAgents });
+        RetentionRegistryFixture.Protect(loaded.teamData);
         var prefix = typeof(CustomRewardContractRetention).GetMethod("Prefix", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         var manager = new Rogue.FreeAgents.FreeAgentManager { _campaignState = campaign };
         check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && prevented && !(bool)prefix.Invoke(null, new object[] { manager }), "GoalieAndNativeSkaterPrefixShareActualCustomRetentionDecision");
-        CustomRewardCampaignRules.Rules.Clear();
+        CustomRewardRuntime.Definitions.Clear();
         check((bool)prefix.Invoke(null, new object[] { manager }), "AbsentCustomRetentionPreservesOriginalNativeSkaterMethod");
         loaded.teamData.FailProtection = true;
         check(!GoalieContractRuntime.TryDepartureProtection(campaign, out _), "NativeProtectionExceptionIsUnknown");
@@ -65,6 +66,63 @@ static class ContractSigningChecks
         string folder = Plugin.ModFolder; Plugin.ModFolder = null;
         check(!GoalieContractRuntime.TryDepartureProtection(campaign, out _), "UnavailableCampaignFolderCannotBecomeUnprotectedDecision");
         Plugin.ModFolder = folder;
+        RetentionRegistryFixture.Reset();
+        string malformed = Path.Combine(Plugin.ModFolder, "broken.txt");
+        File.WriteAllText(malformed, "Export Custom Reward broken = not-base64"); Plugin.Log.Errors.Clear();
+        bool known = GoalieContractRuntime.TryDepartureProtection(campaign, out _);
+        check(!known && Plugin.Log.Errors.Any(e => e.Contains("Loading definitions")), "SwallowedDefinitionLoadFailureIsUnknownInsteadOfUnprotected");
+        File.Delete(malformed);
+        check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && !prevented, "DefinitionLoaderRecoversAfterBrokenSourceIsRemoved");
+        Directory.CreateDirectory(Path.GetDirectoryName(CustomRewardLifecycle.RetainedPath));
+        File.WriteAllText(CustomRewardLifecycle.RetainedPath, "Export Custom Reward broken = not-base64");
+        CustomRewardLifecycle.LoadRetained(CustomRewardRuntime.Definitions);
+        check(!GoalieContractRuntime.TryDepartureProtection(campaign, out _), "LaterRetainedRestoreFailureInvalidatesEarlierCompleteSnapshot");
+        File.Delete(CustomRewardLifecycle.RetainedPath);
+        check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && !prevented, "LaterRetainedRestoreRecoversAfterRepair");
+        CustomRewardRuntime.DuringOwnership = () => {
+            File.WriteAllText(CustomRewardLifecycle.RetainedPath, "Export Custom Reward broken = not-base64");
+            CustomRewardLifecycle.LoadRetained(CustomRewardRuntime.Definitions);
+        };
+        check(!GoalieContractRuntime.TryDepartureProtection(campaign, out _), "RetainedFailureDuringOwnershipCannotAuthorizeEarlierReadySnapshot");
+        CustomRewardRuntime.DuringOwnership = null; File.Delete(CustomRewardLifecycle.RetainedPath);
+        check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && !prevented, "OwnershipTimeRetainedFailureRecoversOnNextDecision");
+        CustomRewardRuntime.DuringOwnership = () => {
+            CustomRewardRuntime.DefinitionSourceUnavailable();
+            CustomRewardRuntime.EnsureDefinitionsForRetention(out _);
+        };
+        check(!GoalieContractRuntime.TryDepartureProtection(campaign, out _), "ReplacementSnapshotDuringOwnershipCannotCertifyEarlierGeneration");
+        CustomRewardRuntime.DuringOwnership = null;
+        check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && !prevented, "StableReplacementSnapshotCanAuthorizeNextDecision");
+        string originalContentRoot = Plugin.ModContentRoot;
+        CustomRewardRuntime.DuringOwnership = () => Plugin.ModContentRoot = originalContentRoot + "-changed";
+        check(!GoalieContractRuntime.TryDepartureProtection(campaign, out _), "ScopeChangeDuringOwnershipCannotCertifyEarlierSnapshot");
+        CustomRewardRuntime.DuringOwnership = null; Plugin.ModContentRoot = originalContentRoot;
+        check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && !prevented, "RestoredScopeCanAuthorizeMatchingSnapshot");
+        foreach (string source in new[] { "retained", "export" }) {
+            RetentionRegistryFixture.Reset();
+            string owned = RetentionRegistryFixture.SaveAuthoredProtection(loaded.teamData);
+            string failing = source == "retained" ? CustomRewardLifecycle.RetainedPath : Path.Combine(Plugin.ModContentRoot, "play_now_overrides", "broken.txt");
+            Directory.CreateDirectory(Path.GetDirectoryName(failing)); File.WriteAllText(failing, "Export Custom Reward broken = not-base64");
+            Plugin.Log.Errors.Clear(); CustomRewardRuntime.EnsureAssets();
+            check(CustomRewardRuntime.Definitions.ContainsKey(owned) && Plugin.Log.Errors.Any(e => e.Contains(source == "retained" ? "Retained bench definitions" : "Export broken.txt")), "PartialSnapshotRetainsLegacyPublishedDefinitions_" + source);
+            check(!GoalieContractRuntime.TryDepartureProtection(campaign, out _), "PartialDefinitionSourceFailureIsUnknown_" + source);
+            check(!(bool)prefix.Invoke(null, new object[] { manager }), "LegacyPrefixStillUsesItsExistingPartialRegistryDecision_" + source);
+            File.Delete(failing);
+            check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && prevented, "PartialDefinitionLoadRecoversWithKnownOwnedProtection_" + source);
+        }
+        CustomRewardRuntime.FailNativeAssets = true; Plugin.Log.Errors.Clear();
+        check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && prevented && Plugin.Log.Errors.Any(e => e.Contains("native artwork unavailable")), "NativeArtworkFailureDoesNotInvalidateCompleteDefinitionDecision");
+        CustomRewardRuntime.FailNativeAssets = false;
+        string firstCampaign = Plugin.ModFolder;
+        Plugin.ModFolder = Path.Combine(Path.GetTempPath(), "ccf-other-contract-campaign-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(Plugin.ModFolder);
+        roster.Fresh(loaded, Plugin.ModFolder, false);
+        check(roster.Owns(loaded, Plugin.ModFolder) && !GoalieContractRuntime.TryDepartureProtection(campaign, out _), "PriorCampaignRegistryCannotAuthorizeNewOwnedRun");
+        RetentionRegistryFixture.Reset();
+        check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && !prevented, "NewCampaignSnapshotDoesNotInheritPriorProtection");
+        Plugin.ModFolder = firstCampaign; roster.Fresh(loaded, Plugin.ModFolder, false);
+        check(!GoalieContractRuntime.TryDepartureProtection(campaign, out _), "ReturningCampaignRequiresMatchingRegistryScope");
+        RetentionRegistryFixture.Reset();
+        check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && prevented, "NormalRegistryRebindRestoresCurrentCampaignKnownDecision");
         SquadPoolRuntime.Teams.Clear();
     }
 }

@@ -70,6 +70,17 @@ internal static class CustomRewardContractRetention
 {
     internal static bool Prevents(Data.TeamData team) => !Plugin.IsDefaultMode
         && CustomRewardCampaignRules.Owned(team, "Contract expiry").Any(d => d.Effect == CustomRewardEffects.KeepFreeAgents);
+    internal static bool TryPrevents(Data.TeamData team, out bool prevented)
+    {
+        prevented = false;
+        if (team == null || !CustomRewardRuntime.EnsureDefinitionsForRetention(out long generation)) return false;
+        bool decision = Prevents(team);
+        // Owned can invoke run/retained restoration. Never certify an earlier
+        // snapshot after that lookup invalidates or replaces its definitions.
+        if (!CustomRewardRuntime.DefinitionsForRetentionCurrent(generation)) return false;
+        prevented = decision;
+        return true;
+    }
     // Native Handcuffs skips every removal in this method. No contracts are
     // altered and no departed player is restored from an old save.
     [HarmonyPrefix] private static bool Prefix(Rogue.FreeAgents.FreeAgentManager __instance)
