@@ -52,3 +52,4 @@ Pinned fresh runtime build:
 Self-review checked changed production files, exact save ownership/reconciliation reuse, recruitment ledger preservation, no pointer/timestamp identity persistence, immutable captured origin, cleanup of one-use permits and pending handles, absence of actual completion/debit/startup activation, and explicit unsupported/pending boundaries. Final stage includes only owned source/tests/docs plus the exact test allowlist. No game, install, real-save mutation, canonical sync, push or release occurred. Source/build slot released after checkpoint delivery.
 
 EOF-only trailing blank cleanup followed final tests/build; no semantic source change. Final cached diff check passed before checkpoint commit.
+`741ba73051635ca7858688c2b58308777ca860d5` checkpoints the owned source/tests/interfaces/native manifest and this partial report. Working tree was clean after that commit; resume from it for the pending policy ruling.
