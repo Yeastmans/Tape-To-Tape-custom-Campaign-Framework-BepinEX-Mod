@@ -76,8 +76,10 @@ internal static class PlayerExport
         }
         if (role == "goalie")
         {
-            // Goalies use helmetSkin, not the skater headSkin field.
-            obj["headSkin"] = "";
+            // Native goalie customization saves headSkin independently of the
+            // kit's helmetSkin. Face carries that exact identity (or clear),
+            // without skater catalog validation or helmet-variant normalization.
+            obj["headSkin"] = d.Get("Face");
             foreach (var pair in new Dictionary<string, (string field, string fallback)> {
                 ["skin"] = ("Skin", "Body/Customization_colors"), ["awaySkin"] = ("Skin Away", "Body/Customization_colors"),
                 ["helmetSkin"] = ("Helmet Skin", "Helmet/Helmet_Customization_colors"),

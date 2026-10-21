@@ -192,6 +192,10 @@ internal static class GameCustomContent
                 ("blockerSkin", "Blocker Skin"), ("awayBlockerSkin", "Blocker Away"), ("padsSkin", "Pads Skin"), ("awayPadsSkin", "Pads Away"),
                 ("stickSkin", "Stick Skin"), ("awayStickSkin", "Stick Away"), ("logoSkin", "Logo Skin") })
                 Map(json, field);
+            // Blank authored equipment means inherit/default. A known native
+            // empty selection must instead retain the explicit removal choice.
+            if (model.TryGetProperty("helmetSkin", out _) && Text(model, "helmetSkin").Length == 0)
+                doc.Set("Helmet Skin", "none");
         }
         else
         {

@@ -158,6 +158,11 @@ public sealed class UpgradeCleanup
             || key.Equals(FreeAgentTalentPool.ModeKey, StringComparison.OrdinalIgnoreCase)
             || key.Equals(FreeAgentTalentPool.SelectedKey, StringComparison.OrdinalIgnoreCase)) return value;
         string k = key.ToLowerInvariant();
+        // Native goalie headSkin is an independent saved identity, not a
+        // selectable skater face or the authored goalie Helmet Skin equipment.
+        // There is no goalie Face catalog against which to validate it.
+        if (role == "goalie" && k == "face") return value;
+        if (role == "goalie" && k == "helmet skin" && In(value, "none")) return "none";
         // Authored heads are not in the shipped native upgrade catalog. Preserve
         // their identities during upgrades and imports, including when the head
         // project will be installed later; the head loader validates its assets.

@@ -213,4 +213,5 @@ Test("NativeFloatSpellingsUseSingleDomainWithoutWeakeningOtherFields",(root,_)=>
  Assert(PlayNowSaveJournal.Hash(Encoding.UTF8.GetBytes(persisted))!=PlayNowSaveJournal.Hash(Encoding.UTF8.GetBytes(equivalent)),"schema comparison weakened byte fingerprints");
 });
 Test("ActualStudioExportRuntimeSaveReimportUpdate",(root,_)=>StudioBoundaryChecks.Run(root,Assert));
+Test("ActualGoalieHeadSaveImportReexportUpdate",(root,_)=>GoalieHeadRoundtripChecks.Run(root,Assert));
 Console.WriteLine($"{pass} passed; {fail} failed");return fail==0?0:1;
