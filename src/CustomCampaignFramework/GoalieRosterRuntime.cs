@@ -303,10 +303,33 @@ internal sealed class GoalieRosterRuntime
         // Bind the injected native repositories to their actual hydration call.
         GoalieNativeSnapshot.Deserializer = deserializer;
         run = nativeRun; folder = System.IO.Path.GetFullPath(campaignFolder); state = null; changing = false; changeOwner = null;
-        UnavailableReason = "Reserve unavailable: no matching native checkpoint companion.";
+        UnavailableReason = "Reserve unavailable: no matching native checkpoint companion. Restore the matching save and companion, then Continue before editing goalies.";
         try
         {
-            if (selected?.Model?.Pointer != model?.Pointer || selected.Folder != folder || selected.Marker == null) return false;
+            if (selected == null || model == null || selected.Model?.Pointer != model.Pointer || selected.Folder != folder
+                || nativeRun == null || nativeRun.runID != model.runID || nativeRun.squadId != model.squadId) return false;
+            if (!selected.HasMarker)
+            {
+                // Only positively associated marker-free R23 bytes authorize a
+                // baseline. Capture the hydrated late LoadState owner, never
+                // current template contracts/capacity or an inferred attempt.
+                var activeModels = new System.Collections.Generic.List<GoaltenderDataModelV2>();
+                if (model.team?.skaters != null) foreach (var skater in model.team.skaters) { var goalie = skater?.TryCast<GoaltenderDataModelV2>(); if (goalie != null) activeModels.Add(goalie); }
+                if (activeModels.Count != 1 || nativeRun.teamData?.goalie == null
+                    || nativeRun.teamState?.goaltenderState?.Id != nativeRun.teamData.goalie.id) return false;
+                var native = GoalieNativeSnapshot.Capture(nativeRun.teamData.goalie);
+                if (!GoalieNativeSnapshot.Matches(native, activeModels[0], model.teamState?.goaltenderState)
+                    || !GoalieNativeSnapshot.Matches(native, activeModels[0], nativeRun.teamState.goaltenderState)) return false;
+                // Identity-checked R23 omitted appearance precedes baseline capture.
+                GoalieRecruitment.Restore(nativeRun);
+                var baseline = new GoalieRosterState {
+                    CampaignId = GoalieRosterStore.CampaignIdentity(folder), RunId = nativeRun.runID, SquadId = nativeRun.squadId,
+                    ReserveEnabled = false, NativeFingerprint = "uncheckpointed", Active = GoalieNativeSnapshot.Capture(nativeRun.teamData.goalie)
+                };
+                baseline.Validate(); state = baseline; UnavailableReason = null;
+                return true;
+            }
+            if (string.IsNullOrWhiteSpace(selected.Marker)) return false;
             var candidate = GoalieRosterStore.Load(folder, nativeRun.runID, GoalieRosterStore.Hash(selected.Marker));
             if (candidate == null || candidate.NativeFingerprint != selected.Fingerprint || candidate.SquadId != nativeRun.squadId
                 || candidate.RunId != model.runID || candidate.SquadId != model.squadId

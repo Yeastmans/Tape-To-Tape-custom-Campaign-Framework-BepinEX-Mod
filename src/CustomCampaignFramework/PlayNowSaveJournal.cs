@@ -98,7 +98,7 @@ public static class PlayNowSaveJournal
         if (r.Kind == "team")
         {
             if (!PlayNowRosterCodec.TryRead(doc, out var roster, out string error)) throw new InvalidDataException("Invalid saved roster: " + error);
-            var keys = new[] { "leftWingerId", "rightWingerId", "centerId", "leftDefensemenId", "rightDefensemenId", "goalieId" };
+            var keys = PlayNowPositions.NativeFields.Append("goalieId").ToArray();
             var expected = roster.Line1.Append(roster.GoalieId).ToArray();
             for (int i = 0; i < keys.Length; i++)
                 if (!model.RootElement.TryGetProperty(keys[i], out var slot) || slot.GetString() != expected[i])

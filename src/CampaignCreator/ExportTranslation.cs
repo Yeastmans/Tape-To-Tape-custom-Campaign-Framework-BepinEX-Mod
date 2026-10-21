@@ -115,7 +115,7 @@ internal static partial class ExportTranslation
             || team.Get("Opponent Two Lines").Equals("yes", StringComparison.OrdinalIgnoreCase);
         bool stamina = SquadBehaviors.Enabled(team.Get("Squad Template"), "line_stamina", key => team.Get(key));
         string[] positions = RosterLines.Skaters.Concat(["Goalie"]).ToArray();
-        string[] slots = ["leftWingerId", "centerId", "rightWingerId", "leftDefensemenId", "rightDefensemenId", "goalieId"];
+        string[] slots = PlayNowPositions.NativeFields.Append("goalieId").ToArray();
         var rosterFiles = new Dictionary<string, (string File, CampaignDocument Raw)>(StringComparer.OrdinalIgnoreCase);
         foreach (string file in Directory.GetFiles(players, "*.txt", SearchOption.AllDirectories).Order(StringComparer.OrdinalIgnoreCase))
         {

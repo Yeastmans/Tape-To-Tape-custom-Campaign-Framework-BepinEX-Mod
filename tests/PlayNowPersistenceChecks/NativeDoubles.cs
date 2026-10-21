@@ -53,7 +53,7 @@ namespace Tape2Tape.Customization.UI {
  public class ForwardCustomizationHandler:UnityEngine.Object {public ForwardData _forwardData;public void LoadForward(){}public void NextFaceSkin(){}public void PrevFaceSkin(){}public void NextStickSkin(){}public void PrevStickSkin(){}}
  public class GoalieCustomizationHandler:UnityEngine.Object {public GoaltenderData _goalieData;public void LoadGoalie(){}}
 }
-namespace HarmonyLib {public class HarmonyMethod {public HarmonyMethod(Type t,string n){}}public class Harmony {public void Patch(object method,HarmonyMethod prefix=null,HarmonyMethod postfix=null,HarmonyMethod finalizer=null){}}public static class AccessTools {public static object Method(Type t,string name)=>t.GetMethod(name);public static object Constructor(Type t,Type[] args)=>t.GetConstructor(args);}}
+namespace HarmonyLib {public class HarmonyMethod {public HarmonyMethod(Type t,string n){}}public class Harmony {public void Patch(object method,HarmonyMethod prefix=null,HarmonyMethod postfix=null,HarmonyMethod finalizer=null){}}public static class AccessTools {public static System.Reflection.ConstructorInfo[] GetDeclaredConstructors(Type t)=>t.GetConstructors();public static object Method(Type t,string name)=>t.GetMethod(name);public static object Constructor(Type t,Type[] args)=>t.GetConstructor(args);}}
 namespace EndlessMode {
  public static class Plugin {public static string ModContentRoot;public static Logger Log=new();} public class Logger {public void LogWarning(object x){}}
  public static class PlayNowTranslation {
@@ -63,3 +63,10 @@ namespace EndlessMode {
   public static void Player(SkaterData player,string id){var doc=Read(id);var model=UnityEngine.JsonUtility.FromJson<ForwardDataModel>(doc.Get("Export Model"));player.headSkin=model.headSkin;player.stickSkin=model.stickSkin;player.bodySkin=model.bodySkin;player.bodyAwaySkin=model.bodyAwaySkin;player.firstName=model.firstName;player.lastName=model.lastName;player.number=model.number;player.speed=model.speed;player.abilityId=model.abilityId;player.talentIds=model.talentIds;PlayNowPlayerSave.RestorePersonal(player,doc);}
  }
 }
+
+namespace Tape2Tape.Customization.UI { public class TeamRosterData {
+ public TeamData OriginalTeamData,TemporaryTeamData;
+ public ForwardData m_LW,m_RW,m_C,m_LD,m_RD; public GoaltenderData m_G;
+ public Il2CppSystem.Collections.Generic.List<ForwardData> m_BenchForwards=new();
+}}
+namespace EndlessMode { public static class NativeSquadBehaviorBridge {public static bool Ready=true;} }

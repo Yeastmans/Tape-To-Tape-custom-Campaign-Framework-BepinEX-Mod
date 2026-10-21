@@ -39,7 +39,7 @@ namespace EndlessMode
     static class PlayNowRosterSave { public static void Clear() {} public static void AcceptLoaded(TeamRepository r, TeamDataModel m, TeamData t) {} public static void Clone(TeamData a,TeamData b) {} }
     static class PlayNowTranslation { internal static Dictionary<string, CampaignDocument> Documents = new(); public static CampaignDocument Read(string id, bool team = false) => Documents.GetValueOrDefault(id); }
     static class Plugin { public static Logger Log = new(); }
-    class Logger { public void LogWarning(object message) { } }
+    class Logger { public readonly List<string> Warnings=new(); public void LogWarning(object message) { Warnings.Add(message.ToString()); } }
 }
 
 namespace UnityEngine { public class Object { public static void Destroy(object value) { } } }

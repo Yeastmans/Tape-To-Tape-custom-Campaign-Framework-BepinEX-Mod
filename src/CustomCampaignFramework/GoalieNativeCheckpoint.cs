@@ -15,6 +15,7 @@ internal sealed class GoalieNativeCheckpoint
     internal readonly ES3Data Entry;
     internal readonly byte[] Bytes;
     internal readonly string Fingerprint, Marker;
+    internal readonly bool HasMarker;
     internal readonly string Folder, Path;
     internal RunDataModelV2 Model { get; private set; }
     private GoalieNativeCheckpoint(string folder, string path, ES3File file)
@@ -28,7 +29,8 @@ internal sealed class GoalieNativeCheckpoint
         Fingerprint = GoalieRosterStore.Hash("ccf-native-bytes-v1:" + type.Length + ":" + type + ":" + Bytes.Length + ":" + Convert.ToBase64String(Bytes));
         // Marker deserialization can recursively visit the ES3 boundary. Only
         // the runData array/type pair is eligible for model association.
-        Marker = file.KeyExists(GoalieRosterStore.MarkerKey)
+        HasMarker = file.KeyExists(GoalieRosterStore.MarkerKey);
+        Marker = HasMarker
             ? (string)file.Load(GoalieRosterStore.MarkerKey)?.TryCast<Il2CppSystem.String>() : null;
     }
     internal static void RequireProfile(ES3Settings settings)

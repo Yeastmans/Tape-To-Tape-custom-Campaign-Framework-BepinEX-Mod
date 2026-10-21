@@ -4,7 +4,7 @@ namespace CampaignCreator;
 
 internal static class RosterLines
 {
-    internal static readonly string[] Skaters = ["Left Wing", "Center", "Right Wing", "Left Defense", "Right Defense"];
+    internal static readonly string[] Skaters = PlayNowPositions.Names;
     internal static string PlayerPosition(string file, CampaignDocument doc, string role)
     {
         string fullPath = Path.GetFullPath(file);

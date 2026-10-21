@@ -22,11 +22,12 @@ internal static class LogoPicker
 
     internal static (Control control, Func<string> read) Create(string root, string value, Action changed,
         string emptyCaption = "No logo selected", string title = "Choose team logo", bool inline = false,
-        string buttonCaption = "Choose logo")
+        string buttonCaption = "Choose logo", Action<Action<string>>? bindPresentation = null)
     {
         string saved = value;
 
         var caption = new TextBlock { Text = saved.Length == 0 ? emptyCaption : Path.GetFileNameWithoutExtension(saved), TextTrimming = TextTrimming.CharacterEllipsis };
+        bindPresentation?.Invoke(source => { saved = source; caption.Text = saved.Length == 0 ? emptyCaption : Path.GetFileNameWithoutExtension(saved); });
         Button? choose = null;
         choose = ActionButton(buttonCaption, async () =>
         {

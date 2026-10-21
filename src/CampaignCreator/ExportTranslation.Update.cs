@@ -12,7 +12,7 @@ internal static partial class ExportTranslation
         public override string ToString() => $"{Name}{(City.Length == 0 ? "" : " · " + City)} · {Modified:g} · {Id}";
     }
 
-    private static readonly string[] ExportRosterSlots = ["leftWingerId", "centerId", "rightWingerId", "leftDefensemenId", "rightDefensemenId", "goalieId"];
+    private static readonly string[] ExportRosterSlots = PlayNowPositions.NativeFields.Append("goalieId").ToArray();
     private static bool SafeExportId(string id) => id.Length > 0 && id.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_');
     private static string SnapshotFolder(string root, string id) => Path.Combine(root, "library", "Exported Teams", id);
     private static string Text(JsonObject model, string key) => model[key]?.GetValue<string>() ?? "";
@@ -84,6 +84,9 @@ internal static partial class ExportTranslation
         var previous = JsonNode.Parse(targetBytes) as JsonObject ?? throw new IOException("The selected team cannot be read.");
         if (Text(previous, "Id") != selected.Id) throw new IOException("The selected team's identity changed. Choose it again.");
         PlayNowRoster? previousRoster = ReadRoster(File.Exists(targetSidecar) ? File.ReadAllText(targetSidecar) : null);
+
+        if (previousRoster != null && !PlayNowPositions.MatchesNative(previousRoster, key => Text(previous, key)))
+            throw new IOException("Saved roster positions disagree with the native team. Re-export as a new team from the authored roster before updating.");
 
         // Inspect every native team before reusing a roster ID. An unreadable team
         // makes reference ownership uncertain, so stop instead of editing a player

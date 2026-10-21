@@ -11,6 +11,7 @@ void Check(bool value, string message)
 void Test(string name, Action run)
 {
     PlayNowRosterRuntime.Clear();
+    Plugin.Log.Warnings.Clear();
     NativeSquadBehaviorBridge.Ready = true;
     PlayNowTranslation.Documents.Clear();
     try
@@ -28,7 +29,7 @@ void Test(string name, Action run)
 (TeamRepository repo, TeamDataModel model, TeamData team) Fixture()
 {
     var r = new TeamRepository();
-    var m = new TeamDataModel { Id = "export", leftWingerId = "p0", rightWingerId = "p1", centerId = "p2", leftDefensemenId = "p3", rightDefensemenId = "p4", goalieId = "g" };
+    var m = new TeamDataModel { Id = "export-"+Guid.NewGuid().ToString("N"), leftWingerId = "p0", rightWingerId = "p2", centerId = "p1", leftDefensemenId = "p3", rightDefensemenId = "p4", goalieId = "g" };
     var t = new TeamData { id = m.Id, goalie = new GoaltenderData { id = "g" } };
     for (int i = 0;
 i < 10;
@@ -37,7 +38,7 @@ i++)
         r.m_forwardRepository.Players.Add(new ForwardData { id = "p" + i });
         if (i < 5) t.forwards.Add(new ForwardData { id = "p" + i });
     }
-    t.lines.Add(new Lineup(t) { leftWinger = "p0", rightWinger = "p1", center = "p2", leftDefensemen = "p3", rightDefensemen = "p4" });
+    t.lines.Add(new Lineup(t) { leftWinger = "p0", rightWinger = "p2", center = "p1", leftDefensemen = "p3", rightDefensemen = "p4" });
     var doc = new CampaignDocument("");
     PlayNowRosterCodec.Write(doc, new PlayNowRoster(Enumerable.Range(0, 5).Select(i => "p" + i).ToArray(), Enumerable.Range(5, 5).Select(i => "p" + i).ToArray(), "g", true));
     PlayNowTranslation.Documents[m.Id] = doc;
@@ -146,6 +147,20 @@ Test("MalformedExtensionKeepsFallback", () =>
     var lines = t.lines;
     Check(!PlayNowRosterRuntime.TryHydrate(r, m, t) && ReferenceEquals(lines, t.lines) && !PlayNowRosterRuntime.TryGet(t, out _), "malformed extension applied");
 });
+Test("RejectedExtensionLogsOncePerRevisionAndAbsentIsQuiet", () =>
+{
+    var (r,m,t)=Fixture();var d=PlayNowTranslation.Documents[m.Id];
+    d.Set(PlayNowRosterCodec.Line2Key,"p5,p5,p7,p8,p9");
+    Check(!PlayNowRosterRuntime.TryHydrate(r,m,t),"malformed accepted");
+    Check(Plugin.Log.Warnings.Count==1 && Plugin.Log.Warnings[0].Contains(m.Id) && Plugin.Log.Warnings[0].Contains("native") && Plugin.Log.Warnings[0].Contains("duplicate"),"actionable malformed diagnostic absent");
+    PlayNowRosterRuntime.TryHydrate(r,m,t);Check(Plugin.Log.Warnings.Count==1,"same revision warning repeated");
+    PlayNowRosterRuntime.CustomTeamsPostfix(r,new NList{t});
+    Check(Plugin.Log.Warnings.Count==1,"native cache completion repeated the same load diagnostic");
+    d.Set(PlayNowRosterCodec.VersionKey,"99");PlayNowRosterRuntime.TryHydrate(r,m,t);
+    Check(Plugin.Log.Warnings.Count==2 && Plugin.Log.Warnings[1].Contains("99"),"unsupported revision diagnostic absent");
+    PlayNowTranslation.Documents[m.Id]=new CampaignDocument("");PlayNowRosterRuntime.TryHydrate(r,m,t);
+    Check(Plugin.Log.Warnings.Count==2,"ordinary absent extension warned");
+});
 Test("MissingGoalieKeepsFallback", () =>
 {
     var (r, m, t) = Fixture();
@@ -161,6 +176,7 @@ Test("LifecycleClearDropsCloneOwnership", () =>
     PlayNowRosterRuntime.Clone(t, c);
     Check(PlayNowRosterRuntime.TryGet(c, out _), "clone initial");
     PlayNowRosterRuntime.Clear();
+    Plugin.Log.Warnings.Clear();
     NativeSquadBehaviorBridge.Ready = true;
     Check(!PlayNowRosterRuntime.TryGet(t, out _) && !PlayNowRosterRuntime.TryGet(c, out _), "lifecycle ownership retained");
 });
@@ -226,7 +242,7 @@ Test("EditorKeepsAbsoluteLinesWhenSourceLine2", () =>
     var (r,m,t)=Fixture(); Check(PlayNowRosterRuntime.TryHydrate(r,m,t), "hydrate"); t.activeLineNumber=2;
     var editor=new Tape2Tape.Customization.UI.TeamRosterData { OriginalTeamData=t,TemporaryTeamData=NativeClone(t,""),m_G=t.goalie };
     PlayNowRosterContext.Constructed(editor);
-    Check(t.activeLineNumber==2 && editor.TemporaryTeamData.activeLineNumber==1 && editor.m_LW.id=="p0" && editor.m_BenchForwards.Select(p=>p.id).SequenceEqual(new[] {"p7","p5","p6","p8","p9"}),"editor renumbered absolute lines");
+    Check(t.activeLineNumber==2 && editor.TemporaryTeamData.activeLineNumber==1 && editor.m_LW.id=="p0" && editor.m_BenchForwards.Select(p=>p.id).SequenceEqual(new[] {"p6","p5","p7","p8","p9"}),"editor renumbered absolute lines");
     PlayNowRosterContext.Prefix(editor,out var state); Check(PlayNowRosterContext.Active,"valid editor scope missing");
     var error=new InvalidOperationException("native failure"); Check(ReferenceEquals(error,PlayNowRosterContext.Finalizer(error,state)),"finalizer swallowed native failure");
     PlayNowRosterContext.Finalizer(null,state); Check(!PlayNowRosterContext.Active,"double cleanup leaked");
@@ -281,7 +297,7 @@ Test("LockedPreviewUsesCurrentAndInactiveLines", () =>
     var (r,m,t)=Fixture(); Check(PlayNowRosterRuntime.TryHydrate(r,m,t),"hydrate"); t.activeLineNumber=2;
     var editor=new Tape2Tape.Customization.UI.TeamRosterData {OriginalTeamData=t,TemporaryTeamData=NativeClone(t,""),m_G=t.goalie};
     PlayNowRosterContext.Constructed(editor); PlayNowRosterContext.RefreshLocked(editor);
-    Check(editor.m_LW.id=="p5" && editor.m_C.id=="p7" && editor.m_BenchForwards.Select(p=>p.id).SequenceEqual(new[]{"p2","p0","p1","p3","p4"}),"locked preview duplicated current line");
+    Check(editor.m_LW.id=="p5" && editor.m_C.id=="p6" && editor.m_BenchForwards.Select(p=>p.id).SequenceEqual(new[]{"p1","p0","p2","p3","p4"}),"locked preview duplicated current line");
 });
 Test("UnrelatedTemporaryRosterCannotBorrowContext", () =>
 {

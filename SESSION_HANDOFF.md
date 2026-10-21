@@ -1,3 +1,13 @@
+# Consolidated final-review corrections — review pending
+
+The corrected local four-feature candidate is build/FourFeatureCandidate-FinalReview/{runtime,studio-publish}. Its exact source, payload and audit identity is recorded in canonical artifacts/followup-four-features-20261020/final-review-fixes/FINAL-RECEIPT.json. See docs/FOUR-FEATURE-CANDIDATE.md and .superpowers/sdd/2026-10-20-four-features/final-fix-report.md for the fixes and validation limits.
+
+The correction unifies Play Now LW/C/RW/LD/RD wire order across export/runtime/save/reimport/update, preserves native C/LW/RW/LD/RD bench presentation, restores proven marker-free R23 Active recruitment with default-off reserve and no inferred contract/attempt, exposes malformed roster fallback diagnostics, resets jersey image captions, and previews validated embedded kit pixels. Required save/reopen controls also exposed duplicate generic jersey readers; those fields now stay owned by the dedicated picker. Incompatible earlier local candidate v1 data requires a new export from authored content, not a guessed second-line migration.
+
+Independent corrected-range review and controller-owned selective promotion remain pending. Native gameplay, installation, release, push, real saves, original R23 payloads and original final-integration evidence remain untouched. Native goalie head/mask retention on a later Studio re-export is still a separate unanswered scope item. Strong ownership registries remain retained until an audited cleanup event exists. No bound on their memory use is established.
+
+---
+
 # Final four-feature integration candidate - 20 October 2026
 
 The approved Play Now lines, home/away jersey logos, campaign goalie reserve/recruitment and goalie contract components are integrated in the isolated feature/four-approved-features-20261020 checkout. Candidate: build/FourFeatureCandidate; exact evidence: canonical artifacts/followup-four-features-20261020/final-integration. Runtime and self-contained Studio are local review artifacts. Revision 23 remains the published release.

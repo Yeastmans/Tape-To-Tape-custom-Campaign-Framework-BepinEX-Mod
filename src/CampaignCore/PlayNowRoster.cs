@@ -3,6 +3,19 @@ using System.Linq;
 
 namespace CampaignCore;
 
+/// <summary>Version 1 wire order: LW, C, RW, LD, RD. Native bench display is separately C, LW, RW, LD, RD.</summary>
+public static class PlayNowPositions
+{
+    public const int LeftWing = 0, Center = 1, RightWing = 2, LeftDefense = 3, RightDefense = 4;
+    public static string[] Names => new[] { "Left Wing", "Center", "Right Wing", "Left Defense", "Right Defense" };
+    public static string[] NativeFields => new[] { "leftWingerId", "centerId", "rightWingerId", "leftDefensemenId", "rightDefensemenId" };
+    public static T[] FromNamed<T>(T leftWing, T center, T rightWing, T leftDefense, T rightDefense)
+        => new[] { leftWing, center, rightWing, leftDefense, rightDefense };
+    public static bool MatchesNative(PlayNowRoster roster, Func<string, string> read)
+        => NativeFields.Select(read).SequenceEqual(roster.Line1) && read("goalieId") == roster.GoalieId;
+    public static T[] NativeBench<T>(T[] wire) => new[] { wire[Center], wire[LeftWing], wire[RightWing], wire[LeftDefense], wire[RightDefense] };
+}
+
 /// <summary>The two authored skater lines and active goalie in an exported Play Now team.</summary>
 public sealed class PlayNowRoster
 {

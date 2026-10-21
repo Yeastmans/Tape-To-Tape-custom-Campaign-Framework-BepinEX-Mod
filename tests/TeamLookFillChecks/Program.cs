@@ -166,4 +166,18 @@ var freshPlayer = new CampaignDocument("Name = New skater\nPosition = Center\n")
 DefaultPlayerLook.Apply(root, freshPlayer);
 Check(freshPlayer.Get("Logo From") == "" && freshPlayer.Get("Jersey Logo From") == ""
     && freshPlayer.Get("Jersey Logo Away From") == "", "Default look does not assign personal logo overrides to new players");
+string embeddedFile=Path.Combine(root,"default-image.png");
+using(var image=new Avalonia.Media.Imaging.RenderTargetBitmap(new PixelSize(2,3)))image.Save(embeddedFile);
+byte[] embeddedBytes=File.ReadAllBytes(embeddedFile);string embeddedHash=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(embeddedBytes)).ToLowerInvariant();
+foreach(bool slotAway in new[]{false,true}) {
+    string prefix=JerseyLogoOptions.Prefix(slotAway);
+    copiedHome.Set(JerseyLogoOptions.Field(slotAway),embeddedFile);copiedHome.Set(prefix+" Mode","embedded");copiedHome.Set(prefix+" ID","custom_t2t_"+embeddedHash+".png");copiedHome.Set(prefix+" SHA256",embeddedHash);copiedHome.Set(prefix+" PNG",Convert.ToBase64String(embeddedBytes));
+}
+DefaultPlayerLook.Save(root, key => copiedHome.Get(key));
+var embeddedTeam = new CampaignDocument("Team Name = Embedded default\n");
+DefaultPlayerLook.ApplyTeamLook(root, embeddedTeam, freshTeamDirectory);
+foreach(bool slotAway in new[]{false,true}) {
+    string prefix=JerseyLogoOptions.Prefix(slotAway);
+    Check(embeddedTeam.Get(JerseyLogoOptions.Field(slotAway))==embeddedFile && new[]{"Mode","ID","SHA256","PNG"}.All(suffix=>embeddedTeam.Get(prefix+" "+suffix)==copiedHome.Get(prefix+" "+suffix)),"New team retains custom image and complete embedded default kit "+slotAway);
+}
 window.Close();

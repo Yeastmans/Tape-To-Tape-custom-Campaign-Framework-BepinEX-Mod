@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Data;
+using CampaignCore;
 using HarmonyLib;
 using Tape2Tape.Customization.UI;
 
@@ -85,12 +86,12 @@ internal static class PlayNowRosterContext
             foreach (var p in source.forwards) if (p != null && p.id == id) return p;
             throw new InvalidOperationException("Validated exported roster player disappeared.");
         }
-        roster.m_LW = Player(active[0]); roster.m_RW = Player(active[1]);
-        roster.m_C = Player(active[2]); roster.m_LD = Player(active[3]);
-        roster.m_RD = Player(active[4]);
+        roster.m_LW = Player(active[PlayNowPositions.LeftWing]); roster.m_RW = Player(active[PlayNowPositions.RightWing]);
+        roster.m_C = Player(active[PlayNowPositions.Center]); roster.m_LD = Player(active[PlayNowPositions.LeftDefense]);
+        roster.m_RD = Player(active[PlayNowPositions.RightDefense]);
         roster.m_BenchForwards.Clear();
         // Native UpdateMultiLineTeam consumes bench indexes C,LW,RW,LD,RD.
-        foreach (int slot in new[] { 2, 0, 1, 3, 4 }) roster.m_BenchForwards.Add(Player(bench[slot]));
+        foreach (string id in PlayNowPositions.NativeBench(bench)) roster.m_BenchForwards.Add(Player(id));
     }
     internal static void Install(Harmony harmony)
     {

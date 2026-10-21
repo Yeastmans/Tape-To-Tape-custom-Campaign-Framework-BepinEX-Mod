@@ -21,6 +21,19 @@ internal static class PlayNowRosterRuntime
         internal int ParentInstanceId;
     }
     private static readonly Dictionary<IntPtr, Owner> Owners = new();
+    private static readonly Dictionary<string, string> RejectedRevisions = new(StringComparer.Ordinal);
+    internal static bool ReadExtension(string teamId, CampaignDocument document, out PlayNowRoster roster)
+    {
+        if (PlayNowRosterCodec.TryRead(document, out roster, out string error)) { RejectedRevisions.Remove(teamId); return true; }
+        if (error.Length == 0) { RejectedRevisions.Remove(teamId); return false; }
+        string revision = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(document.ToString())));
+        if (!RejectedRevisions.TryGetValue(teamId, out var prior) || prior != revision)
+        {
+            RejectedRevisions[teamId] = revision;
+            Plugin.Log.LogWarning($"[PlayNow] Invalid roster extension for '{teamId}': {error} Keeping native single-line roster; correct or re-export this team.");
+        }
+        return false;
+    }
     private static TeamRepository Repository;
     private static Il2CppSystem.Collections.Generic.List<TeamData> Cache;
 
@@ -86,10 +99,10 @@ internal static class PlayNowRosterRuntime
         for (int i = 0; i < items.Count; i++) yield return items[i];
     }
 
-    private static string[] Ids(Lineup line) => new[] { line.leftWinger, line.rightWinger, line.center, line.leftDefensemen, line.rightDefensemen };
+    private static string[] Ids(Lineup line) => PlayNowPositions.FromNamed(line.leftWinger, line.center, line.rightWinger, line.leftDefensemen, line.rightDefensemen);
     private static Lineup Line(TeamData team, string[] ids) => new(team)
     {
-        leftWinger = ids[0], rightWinger = ids[1], center = ids[2], leftDefensemen = ids[3], rightDefensemen = ids[4]
+        leftWinger = ids[PlayNowPositions.LeftWing], center = ids[PlayNowPositions.Center], rightWinger = ids[PlayNowPositions.RightWing], leftDefensemen = ids[PlayNowPositions.LeftDefense], rightDefensemen = ids[PlayNowPositions.RightDefense]
     };
     private static bool Snapshot(TeamData team, bool stamina, out PlayNowRoster roster)
     {
@@ -122,8 +135,8 @@ internal static class PlayNowRosterRuntime
         try
         {
             var document = PlayNowTranslation.Read(model.Id, true);
-            if (document == null || !PlayNowRosterCodec.TryRead(document, out var roster, out _)) return false;
-            var fallback = new[] { model.leftWingerId, model.rightWingerId, model.centerId, model.leftDefensemenId, model.rightDefensemenId };
+            if (document == null || !ReadExtension(model.Id, document, out var roster)) return false;
+            var fallback = PlayNowPositions.FromNamed(model.leftWingerId, model.centerId, model.rightWingerId, model.leftDefensemenId, model.rightDefensemenId);
             if (!fallback.SequenceEqual(roster.Line1) || model.goalieId != roster.GoalieId || team.goalie == null || team.goalie.id != roster.GoalieId)
             {
                 Plugin.Log.LogWarning($"[PlayNow] Roster/native fallback mismatch for '{model.Id}'; keeping native roster.");

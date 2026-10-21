@@ -16,8 +16,8 @@ internal static class GameCustomContent
     internal static string Folder => Path.Combine(GameSavePaths.Root, "TeamDataModels");
     internal static string Cache(string root) => Path.Combine(root, ".studio-cache", "in-game-custom");
 
-    private static readonly string[] Slots = ["leftWingerId", "rightWingerId", "centerId", "leftDefensemenId", "rightDefensemenId", "goalieId"];
-    private static readonly string[] Positions = ["Left Wing", "Right Wing", "Center", "Left Defense", "Right Defense", "Goalie"];
+    private static readonly string[] Slots = PlayNowPositions.NativeFields.Append("goalieId").ToArray();
+    private static readonly string[] Positions = PlayNowPositions.Names.Append("Goalie").ToArray();
 
     internal static List<Item> Load(string root)
         => Load(root, Folder, Path.Combine(UserContentPaths.Root, "play_now_overrides"));
@@ -66,12 +66,14 @@ internal static class GameCustomContent
                         var live = new CampaignDocument(File.ReadAllText(liveFile));
                         if (PlayNowRosterCodec.TryRead(live, out var roster, out _))
                         {
+                            if (!PlayNowPositions.MatchesNative(roster, key => Text(model, key)))
+                                throw new IOException("Saved roster positions disagree with the native team. Re-export from the authored roster before reimporting; old candidate ordering cannot be guessed safely.");
                             string cacheTeam = Path.Combine(cache, "teams", id);
                             var team = new CampaignDocument(live.ToString());
                             Merge(team, Team(model));
                             PlayNowRosterCodec.Write(team, roster);
                             Write(Path.Combine(cacheTeam, "team.txt"), team, written);
-                            string[] positions = ["Left Wing", "Right Wing", "Center", "Left Defense", "Right Defense"];
+                            string[] positions = PlayNowPositions.Names;
                             foreach (var (pid, position) in roster.Line1.Zip(positions).Concat(roster.Line2.Zip(positions.Select(p => "Line 2 " + p))).Append((roster.GoalieId, "Goalie")))
                             {
                                 string snapshotPlayer = Path.Combine(exportedTeams, id, "players", pid + ".txt");

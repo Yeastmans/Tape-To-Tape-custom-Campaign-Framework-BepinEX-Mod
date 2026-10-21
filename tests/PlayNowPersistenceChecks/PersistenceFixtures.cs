@@ -12,7 +12,7 @@ internal static class PersistenceFixtures {
   var repo=new TeamRepository();repo.m_customTeamRepository._path=root;repo.m_forwardRepository.m_customForwardRepository._persistentDataPath=root;repo.m_goalieRepository._customGoalieRepository._persistentDataPath=root;
   var team=new TeamData{id="t",goalie=new GoaltenderData{id="g"}};team.relics.Add("old-relic");
   for(int i=0;i<10;i++){var p=new ForwardData{id="p"+i};repo.m_forwardRepository.Players.Add(p);if(i<5)team.forwards.Add(p);}
-  team.lines.Add(new Lineup(team){leftWinger="p0",rightWinger="p1",center="p2",leftDefensemen="p3",rightDefensemen="p4"});
+  team.lines.Add(new Lineup(team){leftWinger="p0",rightWinger="p2",center="p1",leftDefensemen="p3",rightDefensemen="p4"});
   var d=new CampaignDocument("");d.Set("Export Version","3");d.Set("Export Relic IDs","old-relic");d.Set("Goal Sound Data","untouched-audio");
   PlayNowRosterCodec.Write(d,new PlayNowRoster(new[]{"p0","p1","p2","p3","p4"},new[]{"p5","p6","p7","p8","p9"},"g",true));
   File.WriteAllText(PlayNowSaveJournal.CompanionPath(side,"team","t"),d.ToString());

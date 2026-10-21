@@ -11,7 +11,7 @@ static CampaignDocument Doc(string second="p5,p6,p7,p8,p9") {
  var d=new CampaignDocument("Export Version = 3\n");
  PlayNowRosterCodec.Write(d,new PlayNowRoster(new[]{"p0","p1","p2","p3","p4"},second.Split(','),"g",true)); return d;
 }
-const string Native="{\"Id\":\"t\",\"leftWingerId\":\"p0\",\"rightWingerId\":\"p1\",\"centerId\":\"p2\",\"leftDefensemenId\":\"p3\",\"rightDefensemenId\":\"p4\",\"goalieId\":\"g\"}";
+const string Native="{\"Id\":\"t\",\"leftWingerId\":\"p0\",\"rightWingerId\":\"p2\",\"centerId\":\"p1\",\"leftDefensemenId\":\"p3\",\"rightDefensemenId\":\"p4\",\"goalieId\":\"g\"}";
 static void Commit(string root,string side,string native,CampaignDocument doc,Action<int> fault=null) => PlayNowSaveJournal.Commit(root,side,"team","t",native,doc,
  PlayNowSaveJournal.Hash(PlayNowSaveJournal.Read(PlayNowSaveJournal.NativePath(root,"team","t"))),
  PlayNowSaveJournal.Hash(PlayNowSaveJournal.Read(PlayNowSaveJournal.CompanionPath(side,"team","t"))),fault:fault);
@@ -31,12 +31,12 @@ void Test(string name,Action<string,string> run){
  finally {if(Directory.Exists(root))Directory.Delete(root,true);}
 }
 Test("NativeSavePersistsEditedBothLines",(root,side)=>{
- var d=Doc("p9,p8,p7,p6,p5");var m=JsonNode.Parse(Native); m["leftWingerId"]="p2";m["centerId"]="p0";
- PlayNowRosterCodec.Write(d,new PlayNowRoster(new[]{"p2","p1","p0","p3","p4"},new[]{"p9","p8","p7","p6","p5"},"g",false));
+ var d=Doc("p9,p8,p7,p6,p5");var m=JsonNode.Parse(Native); m["leftWingerId"]="p1";m["centerId"]="p0";
+ PlayNowRosterCodec.Write(d,new PlayNowRoster(new[]{"p1","p0","p2","p3","p4"},new[]{"p9","p8","p7","p6","p5"},"g",false));
  Commit(root,side,m.ToJsonString(),d);
  var reloaded=new CampaignDocument(File.ReadAllText(PlayNowSaveJournal.CompanionPath(side,"team","t")));
- Assert(PlayNowRosterCodec.TryRead(reloaded,out var r,out _) && r.Line1.SequenceEqual(new[]{"p2","p1","p0","p3","p4"}) && r.Line2.SequenceEqual(new[]{"p9","p8","p7","p6","p5"}) && !r.StaminaEnabled,"restart positions changed");
- Assert(JsonNode.Parse(File.ReadAllText(PlayNowSaveJournal.NativePath(root,"team","t")))[ "leftWingerId"].GetValue<string>()=="p2","native fallback wrong");
+ Assert(PlayNowRosterCodec.TryRead(reloaded,out var r,out _) && r.Line1.SequenceEqual(new[]{"p1","p0","p2","p3","p4"}) && r.Line2.SequenceEqual(new[]{"p9","p8","p7","p6","p5"}) && !r.StaminaEnabled,"restart positions changed");
+ Assert(JsonNode.Parse(File.ReadAllText(PlayNowSaveJournal.NativePath(root,"team","t")))[ "leftWingerId"].GetValue<string>()=="p1","native fallback wrong");
 });
 for(int phase=0;phase<4;phase++) {int p=phase;Test("SaveFailureRecoversPreviousPair_"+p,(root,side)=>{
  Commit(root,side,Native,Doc());var native=File.ReadAllBytes(PlayNowSaveJournal.NativePath(root,"team","t"));var old=File.ReadAllBytes(PlayNowSaveJournal.CompanionPath(side,"team","t"));
@@ -86,10 +86,10 @@ Test("NativeShapedSaveNormalizesLine1AndReloadsBothLines",(root,_)=>{
  (t.lines[1].rightWinger,t.lines[1].rightDefensemen)=(t.lines[1].rightDefensemen,t.lines[1].rightWinger);
  PlayNowRosterSave.Save(repo,t);
  var model=JsonUtility.FromJson<TeamDataModel>(File.ReadAllText(PlayNowSaveJournal.NativePath(root,"team","t")));
- Assert(model.leftWingerId=="p2" && model.rightWingerId=="p1","active Line2 published as native Line1");
+ Assert(model.leftWingerId=="p1" && model.rightWingerId=="p2","active Line2 published as native Line1");
  PlayNowRosterRuntime.Clear();PlayNowTranslation.InvalidateAll();var rawModels=new Il2CppSystem.Collections.Generic.List<TeamDataModel>();rawModels.Add(model);PlayNowRosterSave.TeamModelsPostfix(repo.m_customTeamRepository,rawModels);
  var reloaded=new Data.TeamData{id="t",goalie=t.goalie};foreach(string id in new[]{model.leftWingerId,model.rightWingerId,model.centerId,model.leftDefensemenId,model.rightDefensemenId})reloaded.forwards.Add(repo.m_forwardRepository.Players.First(p=>p.id==id));
- Assert(PlayNowRosterRuntime.TryHydrate(repo,model,reloaded) && reloaded.lines[0].leftWinger=="p2" && reloaded.lines[1].rightWinger=="p9","native-shaped reload changed saved slots");
+ Assert(PlayNowRosterRuntime.TryHydrate(repo,model,reloaded) && reloaded.lines[0].leftWinger=="p1" && reloaded.lines[1].rightWinger=="p9","native-shaped reload changed saved slots");
 });
 Test("ExplicitSecondLinePlayerSaveRetainsIntentAndClears",(root,_)=>{
  var(repo,t)=PersistenceFixtures.Create(root);var p=t.forwards.First(p=>p.id=="p7");
@@ -139,7 +139,7 @@ Test("MissingReplacementRejectsAndBuiltinUsesOwnIdentity",(root,_)=>{
  try{repo.SaveCustomTeam(t);throw new Exception("unsaved replacement accepted");}catch(IOException){}
  Assert(File.ReadAllText(PlayNowSaveJournal.NativePath(root,"team","t"))==old,"dangling reference published");
  repo.m_forwardRepository.Builtins.Add(fresh);repo.m_forwardRepository.Players.Add(fresh);repo.SaveCustomTeam(t);
- Assert(PlayNowRosterCodec.TryRead(PersistenceFixtures.TeamDoc(),out var r,out _) && r.Line2[2]=="replacement","replacement ID lost");
+ Assert(PlayNowRosterCodec.TryRead(PersistenceFixtures.TeamDoc(),out var r,out _) && r.Line2[1]=="replacement","replacement ID lost");
  Assert(!File.Exists(PlayNowSaveJournal.CompanionPath(PlayNowRosterSave.Overrides,"forward","replacement")),"old occupant metadata grafted onto replacement");
 });
 Test("RawTeamRevisionSurvivesAliasedPaletteMutation",(root,_)=>{
@@ -212,4 +212,5 @@ Test("NativeFloatSpellingsUseSingleDomainWithoutWeakeningOtherFields",(root,_)=>
  Reject("{\"id\":\"p\",\"speed\":16777216}","{\"id\":\"p\",\"speed\":16777217}",typeof(ForwardDataModel));
  Assert(PlayNowSaveJournal.Hash(Encoding.UTF8.GetBytes(persisted))!=PlayNowSaveJournal.Hash(Encoding.UTF8.GetBytes(equivalent)),"schema comparison weakened byte fingerprints");
 });
+Test("ActualStudioExportRuntimeSaveReimportUpdate",(root,_)=>StudioBoundaryChecks.Run(root,Assert));
 Console.WriteLine($"{pass} passed; {fail} failed");return fail==0?0:1;

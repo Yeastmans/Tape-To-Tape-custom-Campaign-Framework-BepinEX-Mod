@@ -87,7 +87,7 @@ internal static class PlayNowRosterSave
         {
             if (model == null || !PlayNowSaveJournal.SafeId(model.Id)) continue;
             string path = PlayNowSaveJournal.CompanionPath(Overrides, "team", model.Id);
-            if (!File.Exists(path) || !PlayNowRosterCodec.TryRead(new CampaignDocument(File.ReadAllText(path)), out _, out _)) continue;
+            if (!File.Exists(path) || !PlayNowRosterRuntime.ReadExtension(model.Id, new CampaignDocument(File.ReadAllText(path)), out _)) continue;
             // A warm native cache can share palette objects with an adapted team.
             // Keep its original immutable revision instead of legitimizing those
             // in-memory mutations using a newly read file.
@@ -167,8 +167,8 @@ internal static class PlayNowRosterSave
         if (teamDataModel == null || teamDataModel.Id != f.Revision.Id || __instance._path != f.Revision.Root)
             throw new InvalidDataException("The native writer does not match the exported edit.");
         var r = f.Roster;
-        teamDataModel.leftWingerId = r.Line1[0]; teamDataModel.rightWingerId = r.Line1[1]; teamDataModel.centerId = r.Line1[2];
-        teamDataModel.leftDefensemenId = r.Line1[3]; teamDataModel.rightDefensemenId = r.Line1[4]; teamDataModel.goalieId = r.GoalieId;
+        teamDataModel.leftWingerId = r.Line1[PlayNowPositions.LeftWing]; teamDataModel.rightWingerId = r.Line1[PlayNowPositions.RightWing]; teamDataModel.centerId = r.Line1[PlayNowPositions.Center];
+        teamDataModel.leftDefensemenId = r.Line1[PlayNowPositions.LeftDefense]; teamDataModel.rightDefensemenId = r.Line1[PlayNowPositions.RightDefense]; teamDataModel.goalieId = r.GoalieId;
         f.Document.Set("Export Relic IDs", string.Join(",", Items(teamDataModel.relics)));
         using (var old = JsonDocument.Parse(f.Revision.NativeJson))
             if (!old.RootElement.TryGetProperty("logoId", out var logo) || logo.GetString() != teamDataModel.logoId)

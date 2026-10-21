@@ -291,7 +291,7 @@ string importedTeam = ItemFile(imported.Single(item => ItemFile(item).EndsWith("
 string importedPlayers = Path.Combine(Path.GetDirectoryName(importedTeam)!, "players");
 Check(new CampaignDocument(File.ReadAllText(Path.Combine(importedPlayers, "Line 2 Left Wing - old-player-7.txt"))).Get("Position") == "Line 2 Left Wing",
     "ImportUsesCurrentSavedLineup: reimport follows the live sidecar position instead of the library snapshot");
-Check(File.Exists(Path.Combine(importedPlayers, "Line 2 Right Wing - old-player-6.txt")) && File.Exists(Path.Combine(importedPlayers, "Line 2 Center - old-player-8.txt")), "Reimport maps native LW,RW,C ordering exactly");
+Check(File.Exists(Path.Combine(importedPlayers, "Line 2 Center - old-player-6.txt")) && File.Exists(Path.Combine(importedPlayers, "Line 2 Right Wing - old-player-8.txt")), "Reimport maps canonical LW,C,RW wire order exactly");
 string editedPath = Path.Combine(importFixture.Save, "CustomForward-old-player-7.json");
 var editedNative = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(editedPath))!;
 editedNative["firstName"] = "Edited"; editedNative["speed"] = 42; editedNative["abilityId"] = ""; editedNative["talentIds"] = new System.Text.Json.Nodes.JsonArray();
@@ -313,6 +313,14 @@ var currentTeam = new CampaignDocument(File.ReadAllText(importedTeam));
 Check(currentTeam.Get("Team Name") == "Edited Team" && currentTeam.Get("Team Relics") == "" && currentTeam.Get("Goal Sound Data") == "retained-audio", "Reimport merges current team edits with supplemental fields");
 string loosePlayer = ItemFile(imported.Single(item => ItemFile(item).EndsWith(Path.Combine("players", "old-player-7.txt"))));
 Check(new CampaignDocument(File.ReadAllText(loosePlayer)).Get("Name") == "Edited Second" && File.ReadAllText(oldSnapshot) == "Name = Stale Standalone\n", "Standalone reimport uses current persisted player without rewriting historical snapshot");
+var incompatible = new CampaignDocument(File.ReadAllText(liveSidecarFile));
+PlayNowRosterCodec.TryRead(incompatible,out var incompatibleRoster,out _);
+(incompatibleRoster.Line1[1],incompatibleRoster.Line1[2])=(incompatibleRoster.Line1[2],incompatibleRoster.Line1[1]);
+PlayNowRosterCodec.Write(incompatible,incompatibleRoster);File.WriteAllText(liveSidecarFile,incompatible.ToString());
+try { load.Invoke(null,[importFixture.Library,importFixture.Save]); throw new Exception("Old candidate mismatched v1 positions were silently imported"); }
+catch(TargetInvocationException ex) when(ex.InnerException is IOException) {Check(true,"Incompatible pre-release candidate v1 order requires re-export instead of guessed migration");}
+Reject(()=>Update(Package("newer","newer-player-","Replacement",true),importFixture),"Updating an incompatible candidate order refuses guessed second-line remapping");
+File.WriteAllText(liveSidecarFile,liveSidecar.ToString());
 string pendingJournal = Path.Combine(importFixture.Overrides, "save-journal");Directory.CreateDirectory(pendingJournal);File.WriteAllText(Path.Combine(pendingJournal,"team-old-team.json"),"pending");
 try { load.Invoke(null, [importFixture.Library, importFixture.Save]); throw new Exception("Pending pair was reimported"); }
 catch (TargetInvocationException ex) when (ex.InnerException is IOException) { Check(true, "Reimport rejects an interrupted pair until runtime recovery"); }

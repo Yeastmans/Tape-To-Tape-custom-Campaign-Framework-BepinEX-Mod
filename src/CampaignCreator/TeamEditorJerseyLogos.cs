@@ -32,14 +32,15 @@ internal sealed partial class TeamEditorView
             changed(); RefreshUniform();
         }
         Func<string> pickerRead = () => "";
+        Action<string> present = _ => { };
         var picker = LogoPicker.Create(data.Root, selected is "" or "none" ? "" : selected,
             () => { Set(pickerRead()); mode.SelectedIndex = 2; }, "No image selected", "Choose jersey logo",
-            buttonCaption: "Choose jersey image");
+            buttonCaption: "Choose jersey image", bindPresentation: update => present = update);
         pickerRead = picker.read;
         picker.control.Name = slotAway ? "JerseyLogoImageAway" : "JerseyLogoImageHome";
         mode.SelectionChanged += (_, _) => {
-            if (mode.SelectedIndex == 0) Set("");
-            else if (mode.SelectedIndex == 1) Set("none");
+            if (mode.SelectedIndex == 0) { Set(""); present(""); }
+            else if (mode.SelectedIndex == 1) { Set("none"); present(""); }
             else if (mode.SelectedIndex == 2 && equipment[field] is "" or "none")
                 mode.SelectedIndex = equipment[field].Length == 0 ? 0 : 1;
         };

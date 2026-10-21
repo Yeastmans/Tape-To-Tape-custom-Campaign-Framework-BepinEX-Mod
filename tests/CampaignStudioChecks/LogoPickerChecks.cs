@@ -111,6 +111,50 @@ static class LogoPickerChecks
         equipment["Body"]="Body/Meatballs";
         Check(crest.Invoke(view,[false])==null && crest.Invoke(view,[true]) is Bitmap,
             "Premade skater jersey hides its crest while compatible goalie still previews it");
+        equipment["Body"]="Body/Customization/Customization_colors";
+        foreach(bool slotAway in new[]{false,true}) {
+            kit.SelectedIndex=slotAway?1:0;Pump();
+            equipment=(Dictionary<string,string>)view.GetType().GetField("equipment",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(view)!;
+            string field=JerseyLogoOptions.Field(slotAway), prefix=JerseyLogoOptions.Prefix(slotAway);
+            var embedded=new CampaignDocument("");embedded.Set(field,custom);embedded=LogoExport.Snapshot(embedded,root,slotAway);
+            foreach(var pair in embedded.Fields)equipment[pair.Key]=pair.Value;
+            Click(window,"Save opponent");
+            typeof(MainWindow).GetMethod("OpenFile",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(window,[team]);Pump();
+            view=window.GetVisualDescendants().Single(v=>v.GetType().Name=="TeamEditorView");
+            kit=window.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.TabStrip>().Single(t=>t.Name=="TeamKitTabs");kit.SelectedIndex=slotAway?1:0;Pump();
+            equipment=(Dictionary<string,string>)view.GetType().GetField("equipment",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(view)!;
+            string originalIdentity=Value("Logo From"), other=Value(JerseyLogoOptions.Field(!slotAway));
+            byte[] pixels=File.ReadAllBytes(custom);File.Delete(custom);
+            view.GetType().GetField("logoSource",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(view, "");
+            Check(crest.Invoke(view,[false]) is Bitmap,"Embedded kit previews after original file deletion: "+slotAway);
+            using(var replacement=new RenderTargetBitmap(new PixelSize(7,9)))replacement.Save(custom);
+            Check(crest.Invoke(view,[false]) is Bitmap kept && kept.PixelSize.Width==24,"Embedded pixels take precedence over replaced path: "+slotAway);
+            var newer=new CampaignDocument("");newer.Set(field,custom);newer=LogoExport.Snapshot(newer,root,slotAway);
+            foreach(var pair in newer.Fields)equipment[pair.Key]=pair.Value;
+            Check(crest.Invoke(view,[false]) is Bitmap changed && changed.PixelSize.Width==7,"Embedded content change invalidates same-source preview cache: "+slotAway);
+            Check(Value("Logo From")==originalIdentity && Value(JerseyLogoOptions.Field(!slotAway))==other,"Preview preserves identity and opposite kit");
+            File.WriteAllBytes(custom,pixels);
+        }
+        foreach(bool slotAway in new[]{false,true})
+        foreach(int modeIndex in new[]{0,1}) {
+            kit.SelectedIndex=slotAway?1:0;Pump();
+            var selector=window.GetVisualDescendants().OfType<ComboBox>().Single(c=>c.Name==(slotAway?"JerseyLogoModeAway":"JerseyLogoModeHome"));
+            Click(window,"Choose jersey image");dialog=window.OwnedWindows.Single(w=>w.Title=="Choose jersey logo");
+            tabs=dialog.GetVisualDescendants().OfType<TabControl>().Single();tabs.SelectedIndex=1;Pump();
+            list=dialog.GetVisualDescendants().OfType<ListBox>().Single();list.SelectedItem=list.Items.Cast<object>().Single(i=>i.ToString()=="Native crest");Pump();Click(dialog,"Use logo");
+            view=window.GetVisualDescendants().Single(v=>v.GetType().Name=="TeamEditorView");
+            selector=window.GetVisualDescendants().OfType<ComboBox>().Single(c=>c.Name==(slotAway?"JerseyLogoModeAway":"JerseyLogoModeHome"));
+            selector.SelectedIndex=modeIndex;Pump();
+            var picker=window.GetVisualDescendants().OfType<Control>().Single(c=>c.Name==(slotAway?"JerseyLogoImageAway":"JerseyLogoImageHome"));
+            Check(picker.GetVisualDescendants().OfType<TextBlock>().Any(t=>t.Text=="No image selected"),"Image caption resets for kit "+slotAway+" mode "+modeIndex);
+            Check(Value(JerseyLogoOptions.Field(slotAway))==(modeIndex==0?"":"none"),"Caption reset preserves authored mode: actual="+Value(JerseyLogoOptions.Field(slotAway))+", selected="+selector.SelectedIndex);
+            Click(window,"Save opponent");
+            typeof(MainWindow).GetMethod("OpenFile",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(window,[team]);Pump();
+            view=window.GetVisualDescendants().Single(v=>v.GetType().Name=="TeamEditorView");
+            kit=window.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.TabStrip>().Single(t=>t.Name=="TeamKitTabs");kit.SelectedIndex=slotAway?1:0;Pump();
+            picker=window.GetVisualDescendants().OfType<Control>().Single(c=>c.Name==(slotAway?"JerseyLogoImageAway":"JerseyLogoImageHome"));
+            Check(picker.GetVisualDescendants().OfType<TextBlock>().Any(t=>t.Text=="No image selected"),"Reopened caption reflects saved mode");
+        }
         window.Close();
     }
     static void Pump(){for(int i=0;i<6;i++){Dispatcher.UIThread.RunJobs();Thread.Sleep(20);}}

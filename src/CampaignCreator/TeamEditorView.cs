@@ -198,6 +198,11 @@ internal sealed partial class TeamEditorView : UserControl
         var settings = new StackPanel { Spacing = StudioTheme.SpaceMd, HorizontalAlignment = HorizontalAlignment.Left, MaxWidth = 1100 };
         // Keep every existing field accessible, including legacy and mod-specific settings.
         var reserved = new HashSet<string>(new[] { "Team Name", "City", "Abbreviation", "Logo From", "Team Relics", "Relics" }.Concat(FieldSchema.TeamColors).Concat(FieldSchema.EquipmentColors()).Concat(new[] { "Body", "Body Away", "Socks", "Socks Away", "Helmet", "Helmet Away", "Gloves", "Gloves Away", "Pants", "Pants Away", "Skates", "Skates Away", "Stick", "Stick Color", "Stick Away Color" }), StringComparer.OrdinalIgnoreCase);
+        foreach (bool kitAway in new[] { false, true })
+        {
+            reserved.Add(JerseyLogoOptions.Field(kitAway));
+            foreach (string suffix in new[] { "Mode", "ID", "SHA256", "PNG" }) reserved.Add(JerseyLogoOptions.Prefix(kitAway) + " " + suffix);
+        }
         reserved.Add("Squad Template"); reserved.Add("Template Squad");
         reserved.Add("Starting Relics Mode");
         reserved.UnionWith(new[] {VanillaCopyData.OpponentId,VanillaCopyData.SquadId,"Vanilla Opponent Roles","Vanilla Starting Relics"});
@@ -489,9 +494,11 @@ internal sealed partial class TeamEditorView : UserControl
         var team = new CampaignDocument("");
         team.Set("Logo From", Value("Logo From"));
         team.Set(JerseyLogoOptions.Field(away), Value(JerseyLogoOptions.Field(away)));
-        var choice = JerseyLogoOptions.Resolve(new CampaignDocument(""), team, away);
-        string source = choice.Mode == JerseyLogoMode.Image ? choice.Source : "";
-        if (source != logoSource) { logoSource = source; logoBitmap?.Dispose(); logoBitmap = null; try { logoBitmap = LogoExport.Preview(data.Root, source); } catch { } }
+        foreach (string prefix in new[] { "Export Logo", JerseyLogoOptions.Prefix(away) })
+            foreach (string suffix in new[] { "Mode", "ID", "SHA256", "PNG" })
+                team.Set(prefix + " " + suffix, Value(prefix + " " + suffix));
+        string source = team.ToString(); // Includes selected kit and complete embedded content identity.
+        if (source != logoSource) { logoSource = source; logoBitmap?.Dispose(); logoBitmap = null; try { logoBitmap = LogoExport.Preview(data.Root, team, away); } catch { } }
         return logoBitmap;
     }
     private void RefreshUniform()

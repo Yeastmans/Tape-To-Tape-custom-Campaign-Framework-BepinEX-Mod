@@ -120,6 +120,20 @@ internal static class LogoExport
             if (value.Length > 0) target.Set(prefix + " " + suffix, value);
         }
     }
+    // Preview shares export validation and embedded precedence; the caller's
+    // document and the other kit remain untouched.
+    internal static Bitmap? Preview(string root, CampaignDocument team, bool away)
+    {
+        var effective = new CampaignDocument(team.ToString());
+        if (JerseyLogoOptions.Read(team, away).Mode == JerseyLogoMode.Inherit)
+        {
+            effective.Set(JerseyLogoOptions.Field(away), team.Get("Logo From"));
+            CopyIdentityToJersey(team, effective, away);
+        }
+        if (JerseyLogoOptions.Read(effective, away).Mode != JerseyLogoMode.Image) return null;
+        var snapshot = Snapshot(effective, root, away);
+        return new Bitmap(new MemoryStream(Convert.FromBase64String(snapshot.Get(JerseyLogoOptions.Prefix(away) + " PNG"))));
+    }
     internal static Bitmap? Preview(string root, string source)
     {
         var file = FindFile(root, source);
