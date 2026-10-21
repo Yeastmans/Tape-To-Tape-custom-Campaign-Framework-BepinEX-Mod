@@ -76,6 +76,7 @@ public sealed class GoalieRosterState
     [DataMember(Order = 12)] public string[] ProcessedAttemptTokens { get; set; } = Array.Empty<string>();
 
     [DataMember(Order = 13)] public GoalieRecruitmentVisitState RecruitmentVisit { get; set; }
+    [DataMember(Order = 14)] public GoalieMatchAttempt Attempt { get; set; }
 
     public GoalieRosterState Clone()
     {
@@ -83,6 +84,7 @@ public sealed class GoalieRosterState
         result.Active = Active?.Clone(); result.Reserve = Reserve?.Clone();
         result.ProcessedAttemptTokens = ProcessedAttemptTokens?.ToArray();
         result.RecruitmentVisit = RecruitmentVisit?.Clone();
+        result.Attempt = Attempt?.Clone();
         return result;
     }
     public void Validate()
@@ -94,7 +96,10 @@ public sealed class GoalieRosterState
             || ProcessedAttemptTokens.Distinct(StringComparer.Ordinal).Count() != ProcessedAttemptTokens.Length
             || ProcessedAttemptTokens.Contains(ArmedAttemptToken, StringComparer.Ordinal))
             throw new InvalidDataException("Invalid or unsupported goalie roster checkpoint.");
-        Active.Validate(); Reserve?.Validate(); RecruitmentVisit?.Validate();
+        Active.Validate(); Reserve?.Validate(); RecruitmentVisit?.Validate(); Attempt?.Validate();
+        if (Attempt != null && (Attempt.Token != ArmedAttemptToken || Attempt.CampaignId != CampaignId
+            || Attempt.RunId != RunId || Attempt.SquadId != SquadId || Attempt.SourceRevision > Revision))
+            throw new InvalidDataException("Goalie attempt does not own its roster checkpoint.");
         if (Reserve != null && (!ReserveEnabled || Active.PlayerId == Reserve.PlayerId))
             throw new InvalidDataException("Invalid goalie slot ownership or capacity.");
     }

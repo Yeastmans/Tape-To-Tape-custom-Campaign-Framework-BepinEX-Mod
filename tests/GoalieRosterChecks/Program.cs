@@ -94,3 +94,36 @@ Reject(() => visitClone.Validate(), "InvalidSavedRecruitmentQuotaRejected");
 Console.WriteLine($"PASS {checks} goalie roster store checks including recruitment ledger");
 ContractChecks.Run(Check);
 Console.WriteLine($"PASS {checks} goalie store and contract policy checks");
+var attemptState = withVisit.Clone();
+attemptState.Attempt = new GoalieMatchAttempt(attemptState, "campaign-home-team", "route-before-match", 2, 4, 7, "STS.Map.EliteMapNode");
+attemptState.ArmedAttemptToken = attemptState.Attempt.Token;
+string matchRecord = GoalieRosterStore.Prepare(root, attemptState);
+var matchReload = GoalieRosterStore.Load(root, attemptState.RunId, GoalieRosterStore.Hash(GoalieRosterStore.Marker(matchRecord)));
+Check(matchReload?.Attempt != null && matchReload.Attempt.Token == attemptState.ArmedAttemptToken
+    && matchReload.Attempt.CampaignId == attemptState.CampaignId && matchReload.Attempt.RunId == "run-1" && matchReload.Attempt.SquadId == "squad-1"
+    && matchReload.Attempt.HomeTeamId == "campaign-home-team" && matchReload.Attempt.GoalieId == "active"
+    && matchReload.Attempt.SourceRevision == 0 && matchReload.Attempt.SourceCheckpointId == ""
+    && matchReload.Attempt.RouteWitness == "route-before-match" && matchReload.Attempt.Act == 2
+    && matchReload.Attempt.NodeIndex == 4 && matchReload.Attempt.LayerIndex == 7 && matchReload.Attempt.NodeType == "STS.Map.EliteMapNode"
+    && matchReload.Attempt.Lifecycle == "Armed", "ExactImmutableAttemptRoundTripsWithDestinationAndOwnership");
+Check(matchReload.RecruitmentVisit.ConsumedOfferIds.SequenceEqual(new[] { "offer-1" })
+    && matchReload.ProcessedAttemptTokens.SequenceEqual(new[] { "previous-attempt" }) && matchReload.Reserve.Contract.PlayedMatches == 1,
+    "ArmingPreservesRecruitmentConsumptionPriorAttemptsAndBenchContract");
+var attemptClone = matchReload.Clone();
+Check(!ReferenceEquals(attemptClone.Attempt, matchReload.Attempt) && attemptClone.Attempt.Same(matchReload.Attempt), "AttemptCloneKeepsDetachedImmutableProvenance");
+attemptClone.ArmedAttemptToken = Guid.NewGuid().ToString("N"); Reject(() => attemptClone.Validate(), "AttemptCannotBelongToAnotherArmedToken");
+attemptClone = matchReload.Clone(); attemptClone.RunId = "foreign-run"; Reject(() => attemptClone.Validate(), "AttemptCannotBelongToAnotherRun");
+attemptClone = matchReload.Clone(); attemptClone.SquadId = "foreign-squad"; Reject(() => attemptClone.Validate(), "AttemptCannotBelongToAnotherSquad");
+attemptClone = matchReload.Clone(); attemptClone.CampaignId = "foreign-campaign"; Reject(() => attemptClone.Validate(), "AttemptCannotBelongToAnotherCampaign");
+attemptClone = matchReload.Clone(); attemptClone.ProcessedAttemptTokens = new[] { attemptClone.Attempt.Token }; Reject(() => attemptClone.Validate(), "ProcessedAttemptCannotBeArmedAfterReload");
+var laterAttempt = new GoalieMatchAttempt(matchReload, "campaign-home-team", "route-before-match", 2, 4, 7, "STS.Map.EliteMapNode");
+Check(laterAttempt.Token != matchReload.Attempt.Token && laterAttempt.SourceCheckpointId == matchReload.CheckpointId
+    && laterAttempt.SourceRevision == matchReload.Revision, "NewAttemptHasDistinctIdentityAndSavedOwnerGeneration");
+var consumed = GoalieContractPolicy.CompleteMatch(matchReload, matchReload.ArmedAttemptToken, new[] { "active" }, true);
+Check(consumed.Attempt == null && consumed.ArmedAttemptToken == "" && consumed.ProcessedAttemptTokens.Contains(matchReload.Attempt.Token)
+    && consumed.RecruitmentVisit.ConsumedOfferIds.SequenceEqual(new[] { "offer-1" }), "CompletionConsumesContextAndTokenTogetherWithoutLosingRecruitmentLedger");
+string consumedRecord = GoalieRosterStore.Prepare(root, consumed);
+var consumedReload = GoalieRosterStore.Load(root, consumed.RunId, GoalieRosterStore.Hash(GoalieRosterStore.Marker(consumedRecord)));
+Check(consumedReload.Attempt == null && GoalieContractPolicy.CompleteMatch(consumedReload, matchReload.Attempt.Token, Array.Empty<string>(), false).Attempt == null,
+    "ProcessedAttemptReplayAfterCheckpointReloadCannotResurrectContext");
+Console.WriteLine($"PASS {checks} goalie store, contract and attempt checks");

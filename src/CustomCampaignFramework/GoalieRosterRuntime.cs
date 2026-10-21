@@ -44,7 +44,8 @@ internal sealed class GoalieRosterRuntime
                 || run.teamData.goalie?.Pointer != active.Goalie.Pointer || checkpoint == null
                 || checkpoint.CampaignId != proposed.CampaignId || checkpoint.RunId != proposed.RunId || checkpoint.SquadId != proposed.SquadId
                 || checkpoint.Active.PlayerId != proposed.Active.PlayerId || checkpoint.Reserve?.PlayerId != proposed.Reserve?.PlayerId
-                || checkpoint.Revision <= proposed.Revision) return false;
+                || checkpoint.Revision <= proposed.Revision || checkpoint.ArmedAttemptToken != proposed.ArmedAttemptToken
+                || (proposed.Attempt == null ? checkpoint.Attempt != null : !proposed.Attempt.Same(checkpoint.Attempt))) return false;
             roster.state = checkpoint.Clone(); finished = true; return true;
         }
         internal Mutation(GoalieRosterRuntime roster, RunData run, GoalieRosterState proposed, DeserializerV2 deserializer)
@@ -161,6 +162,21 @@ internal sealed class GoalieRosterRuntime
             (proposed.Active, proposed.Reserve) = (proposed.Reserve, proposed.Active);
             return SaveChange(campaign, proposed, completed);
         } catch (Exception ex) { Plugin.Log.LogError("[GoalieRoster] Swap preparation failed: " + ex); return false; }
+    }
+    internal bool TryArmMatch(CampaignState campaign, GoalieMatchAttempt attempt, Action<ChangeResult> completed)
+    {
+        if (!CanEdit(campaign) || changing || attempt == null) return false;
+        try {
+            var proposed = Capture(campaign.runData, Plugin.ModFolder);
+            attempt.Validate();
+            if (attempt.CampaignId != proposed.CampaignId || attempt.RunId != proposed.RunId || attempt.SquadId != proposed.SquadId
+                || attempt.GoalieId != proposed.Active.PlayerId || attempt.HomeTeamId != campaign.runData.teamData.id
+                || proposed.ProcessedAttemptTokens.Contains(attempt.Token)
+                || proposed.Attempt != null && !proposed.Attempt.Same(attempt)
+                || proposed.Attempt == null && proposed.ArmedAttemptToken.Length != 0) return false;
+            proposed.Attempt = attempt.Clone(); proposed.ArmedAttemptToken = attempt.Token;
+            return SaveChange(campaign, proposed, completed);
+        } catch (Exception ex) { Plugin.Log.LogError("[GoalieLaunch] Attempt preparation failed: " + ex); return false; }
     }
     private bool SaveChange(CampaignState campaign, GoalieRosterState proposed, Action<ChangeResult> completed)
     {

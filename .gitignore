@@ -123,3 +123,5 @@ tests/PlayerContractEditorChecks/*
 !tests/PlayerContractEditorChecks/Program.cs
 
 !tests/GoalieRosterRuntimeChecks/RetentionRegistryDoubles.cs
+
+!tests/GoalieRosterRuntimeChecks/LaunchChecks.cs

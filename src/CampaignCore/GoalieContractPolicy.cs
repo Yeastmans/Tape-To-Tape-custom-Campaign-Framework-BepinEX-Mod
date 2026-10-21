@@ -40,7 +40,7 @@ public static class GoalieContractPolicy
             if (contract.PlayedMatches < int.MaxValue) contract.PlayedMatches++;
             contract.LastMatchKey = matchKey;
         }
-        next.ArmedAttemptToken = "";
+        next.ArmedAttemptToken = ""; next.Attempt = null;
         next.ProcessedAttemptTokens = next.ProcessedAttemptTokens.Concat(new[] { matchKey }).ToArray();
         return ReconcileDeparture(next, departurePrevented);
     }

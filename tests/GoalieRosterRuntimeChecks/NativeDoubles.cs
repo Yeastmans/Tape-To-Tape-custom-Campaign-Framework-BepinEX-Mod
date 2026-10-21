@@ -46,7 +46,7 @@ namespace Data {
         }
         public void LoadState(State.SkaterState state) { Earned = state; HasGoldenHelmet = state.HasGoldenHelmet; }
     }
-    public partial class TeamData : Il2CppSystem.Object { public GoaltenderData goalie; }
+    public partial class TeamData : Il2CppSystem.Object { public string id; public GoaltenderData goalie; }
     public class Point { public float x, y; }
     public partial class RunData : Il2CppSystem.Object { public string currentMap; public int CurrentAct; public Point currentNodePoint = new(); public string runID, squadId; public TeamData teamData; public State.TeamState teamState; }
 }
