@@ -2,7 +2,7 @@
 
 ## Approved requirement and scope
 
-The user answered yes to item13: after an in-game goalie mask/head edit and Studio import, a later export must preserve the edited mask/head. This report covers that follow-up only. Source baseline: 7af880d5e2d355015a87c069945e859058554838, feature/four-approved-features-20261020. The implementation commit is recorded in the external FINAL-RECEIPT.json after this report is committed. The earlier four-feature reports, receipts, candidates and release remain preserved.
+The user answered yes to item13: after an in-game goalie mask/head edit and Studio import, a later export must preserve the edited mask/head. This report covers that follow-up only. Source baseline: 7af880d5e2d355015a87c069945e859058554838, feature/four-approved-features-20261020. The implementation commit is recorded in the external versioned FINAL-RECEIPT-<commit>.json after this report is committed. The earlier four-feature reports, receipts, candidates and release remain preserved.
 
 Evidence root: C:/Users/kiran/Desktop/tape to tape mods/artifacts/followup-four-features-20261020/goalie-head-roundtrip.
 
@@ -35,6 +35,10 @@ Native host objects and JsonUtility are managed doubles in this suite; the produ
 
 An additional local CampaignStudioChecks --import-values run is **failed**, excluded from green results: after 12 import assertions it throws MissingMethodException at ImportValueChecks.cs:33-35. Its Activator call supplies 13 arguments ending emptyLabel/emptyHint/customColors nulls; EquipmentStylePicker.cs:53 has 14 constructor parameters including trailing Action<bool>? selectCustomColors. The production constructor file matches baseline7af (Git blob 3d1847447c7d9ae1847918a7b899d1998589447b). The preexisting local ImportValueChecks.cs is ignored/untracked and absent from that commit (current blob b0100fff349f6837cca7d43a002913200a638d0c); it was read/run, not edited here, so no Git baseline equivalence or baseline execution is claimed for that local fixture. Its unrelated constructor repair remains outside this follow-up. The new production goalie regression directly covers the changed import logic.
 
+## Ordinary goalie editor save source proof
+
+The existing local --import-values fixture stops before control construction, so it provides no editor result. Separate current-source inspection establishes the ordinary unchanged-save path: PlayerEditorView.cs binds values directly to doc.Fields, includes Helmet Skin in goalie equipment, and registers its save reader as values[key] (lines 68-79). The special none/head normalization there applies only to skater Helmet/Helmet Away. Its Face normalization/reader registration at line 218 runs only for non-goalies. EquipmentStylePicker.Refresh (lines 159-190) may replace its local display variable with blank when the current goalie none choice is not among displayed equipment options, but does not call write; updating guards the selection handlers during refresh. Thus an unchanged opening/save retains the imported underlying Helmet Skin=none and untouched goalie Face. This is a source proof of save preservation, not an executed UI assertion. The existing goalie picker can show its generic Nothing selected presentation for none; this follow-up does not expand that UI or weaken the underlying explicit-clear value.
+
 ## Changed files
 
 - src/CampaignCreator/PlayerExport.cs: preserve exact native goalie head identity/clear.
@@ -65,7 +69,7 @@ dotnet publish src/CampaignCreator/CampaignCreator.csproj -c Release -r win-x64 
 dotnet run --project tests/GameArtPackageChecks -c Release -- build/GoalieHeadRoundtrip/studio-publish build/FourFeatureCandidate-FinalReview/runtime/CustomCampaignFramework.dll
 ```
 
-The external source-manifest.json, payload-manifest.json and FINAL-RECEIPT.json record actual paths/hashes, source commit, command results and runtime reuse. Existing final-review-fixes/FINAL-RECEIPT.json remains historical runtime identity/evidence; it is not rewritten.
+The external versioned source manifest, payload manifest and FINAL-RECEIPT-<commit>.json record actual paths/hashes, source commit, command results and runtime reuse. Existing final-review-fixes/FINAL-RECEIPT.json remains historical runtime identity/evidence; it is not rewritten.
 
 ## Limits and ownership
 
