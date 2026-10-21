@@ -128,4 +128,4 @@ namespace EndlessMode {
 
 namespace Tape2Tape { public static class T2TUtils { public static bool IsInMatch; } }
 namespace ScriptableStates { public enum GameType { Rogue, QuickPlay } }
-public static class GameManager { public static ScriptableStates.GameType GameType = ScriptableStates.GameType.Rogue; }
+public partial class GameManager : Il2CppSystem.Object { public static ScriptableStates.GameType GameType = ScriptableStates.GameType.Rogue; }

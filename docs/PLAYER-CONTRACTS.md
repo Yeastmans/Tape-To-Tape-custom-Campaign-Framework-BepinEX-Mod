@@ -24,7 +24,11 @@ The editor writes four when a new custom duration is enabled. Disabled, absent, 
 
 ## Release validation
 
-The goalie policy, authoring and signing unit is implemented behind the pending runtime compatibility gate. The durable launch and actual-participation/completion units remain required before goalie match accounting is enabled. Pure policy checks, boundary doubles and wrapper builds are not native gameplay proof.
+The goalie policy, durable launch, actual participation and completion adapters are implemented behind the pending combined runtime compatibility gate. They remain disabled until the complete installation and native dependency audit is reviewed. Pure policy checks, boundary doubles and wrapper builds are not native gameplay proof.
+
+Opening a preview or initializing the goalie does not use a contract match. A saved attempt is charged only after actual home-goalie play and successful campaign completion. Normal rematches and overtime shootout rounds keep the original attempt. Canceling an unstarted preview uses no matches; changing its destination or starting goalie replaces the canceled attempt with a new saved one. After process loss, an armed attempt may already have started: resume its original match and goalie when prompted.
+
+Goalie earned state and boss bonuses return to the original active goalie before contract expiry can promote a reserve. If participation, departure protection or saving cannot be verified, the roster requires recovery through the main menu and Continue before another match. A locally saved completion can remain committed even when the native platform save fails; the warning distinguishes that result from a verified successful save.
 
 Policy and lifecycle adapters, the actual Studio controls, upgrade cleanup, portable campaign sharing, existing recruitment controls and two-line placement have focused automated checks. Native bodies and layouts were inspected on Steam roguelite build **26020247**. These checks do not replace observing gameplay on the published installer.
 
@@ -36,5 +40,6 @@ Human validation remains pending. On a disposable new run made with the publishe
 4. Recruit an enabled skater in both GM and non-GM campaigns. Confirm the offer and signed contract agree. Repeat with the toggle off and confirm ordinary game behavior. Test a selected bench player and superstar at run start.
 5. On a two-line squad, expire a skater on each line, including the last custom contract. Confirm the other positions survive and a recruit can fill either vacancy. Check Continue after the departure.
 6. Repeat with a native departure-preventing effect and confirm the game retains that effect. Check normal campaigns and Play Now for unintended changes.
+7. For goalies, verify normal play, shootout and overtime, one unused reserve, rematch, canceled preview replacement, Save/Continue and frozen duration. Expire the starter on a boss win and confirm the starter receives the boss bonus before the reserve is promoted. Repeat with Handcuffs/custom retention, then remove protection; cover an expired reserve, no reserve and later replacement.
 
 The release process does not launch the installed game, modify real saves, or mark these observations as passed.

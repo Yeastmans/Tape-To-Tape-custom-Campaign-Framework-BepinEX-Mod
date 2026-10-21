@@ -99,7 +99,7 @@ namespace EndlessMode {
     }
 }
 namespace Rogue { public class Handcuffs {} }
-namespace Rogue.FreeAgents { public class FreeAgentManager { public State.CampaignState _campaignState; } }
+namespace Rogue.FreeAgents { public class FreeAgentManager : Il2CppSystem.Object { public State.CampaignState _campaignState; } }
 namespace Data {
     public partial class TeamData {
         public bool NativeHandcuffs, FailProtection;

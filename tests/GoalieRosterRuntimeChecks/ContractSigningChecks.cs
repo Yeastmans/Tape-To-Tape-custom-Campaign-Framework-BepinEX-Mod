@@ -50,9 +50,9 @@ static class ContractSigningChecks
         RetentionRegistryFixture.Protect(loaded.teamData);
         var prefix = typeof(CustomRewardContractRetention).GetMethod("Prefix", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         var manager = new Rogue.FreeAgents.FreeAgentManager { _campaignState = campaign };
-        check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && prevented && !(bool)prefix.Invoke(null, new object[] { manager }), "GoalieAndNativeSkaterPrefixShareActualCustomRetentionDecision");
+        check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && prevented && !(bool)prefix.Invoke(null, new object[] { manager, true }), "GoalieAndNativeSkaterPrefixShareActualCustomRetentionDecision");
         CustomRewardRuntime.Definitions.Clear();
-        check((bool)prefix.Invoke(null, new object[] { manager }), "AbsentCustomRetentionPreservesOriginalNativeSkaterMethod");
+        check((bool)prefix.Invoke(null, new object[] { manager, true }), "AbsentCustomRetentionPreservesOriginalNativeSkaterMethod");
         loaded.teamData.FailProtection = true;
         check(!GoalieContractRuntime.TryDepartureProtection(campaign, out _), "NativeProtectionExceptionIsUnknown");
         loaded.teamData.FailProtection = false; CustomRewardCampaignRules.Fail = true;
@@ -60,8 +60,8 @@ static class ContractSigningChecks
         CustomRewardCampaignRules.Fail = false;
         check(!GoalieContractRuntime.TryDepartureProtection(new CampaignState { runData = loaded }, out _), "ForeignCampaignCannotSupplyDepartureDecision");
         Plugin.IsDefaultMode = true;
-        check(!GoalieContractRuntime.TryDepartureProtection(campaign, out _) && (bool)prefix.Invoke(null, new object[] { manager }), "DefaultModeDoesNotGainGoalieContractOrCustomRetention");
-        check((bool)prefix.Invoke(null, new object[] { null }), "DefaultModeRetentionPrefixDoesNotReadNativeManager");
+        check(!GoalieContractRuntime.TryDepartureProtection(campaign, out _) && (bool)prefix.Invoke(null, new object[] { manager, true }), "DefaultModeDoesNotGainGoalieContractOrCustomRetention");
+        check((bool)prefix.Invoke(null, new object[] { null, true }), "DefaultModeRetentionPrefixDoesNotReadNativeManager");
         Plugin.IsDefaultMode = false;
         string folder = Plugin.ModFolder; Plugin.ModFolder = null;
         check(!GoalieContractRuntime.TryDepartureProtection(campaign, out _), "UnavailableCampaignFolderCannotBecomeUnprotectedDecision");
@@ -106,7 +106,7 @@ static class ContractSigningChecks
             Plugin.Log.Errors.Clear(); CustomRewardRuntime.EnsureAssets();
             check(CustomRewardRuntime.Definitions.ContainsKey(owned) && Plugin.Log.Errors.Any(e => e.Contains(source == "retained" ? "Retained bench definitions" : "Export broken.txt")), "PartialSnapshotRetainsLegacyPublishedDefinitions_" + source);
             check(!GoalieContractRuntime.TryDepartureProtection(campaign, out _), "PartialDefinitionSourceFailureIsUnknown_" + source);
-            check(!(bool)prefix.Invoke(null, new object[] { manager }), "LegacyPrefixStillUsesItsExistingPartialRegistryDecision_" + source);
+            check(!(bool)prefix.Invoke(null, new object[] { manager, true }), "LegacyPrefixStillUsesItsExistingPartialRegistryDecision_" + source);
             File.Delete(failing);
             check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && prevented, "PartialDefinitionLoadRecoversWithKnownOwnedProtection_" + source);
         }

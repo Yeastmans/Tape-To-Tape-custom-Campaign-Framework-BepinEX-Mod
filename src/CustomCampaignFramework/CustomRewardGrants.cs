@@ -83,6 +83,10 @@ internal static class CustomRewardContractRetention
     }
     // Native Handcuffs skips every removal in this method. No contracts are
     // altered and no departed player is restored from an old save.
-    [HarmonyPrefix] private static bool Prefix(Rogue.FreeAgents.FreeAgentManager __instance)
-        => Plugin.IsDefaultMode || !Prevents(__instance._campaignState?.runData?.teamData);
+    [HarmonyPrefix] private static bool Prefix(Rogue.FreeAgents.FreeAgentManager __instance, bool __runOriginal = true)
+    {
+        bool allowed = Plugin.IsDefaultMode || !Prevents(__instance._campaignState?.runData?.teamData);
+        GoalieContractRuntime.ObserveRetention(__instance, !allowed, __runOriginal);
+        return allowed;
+    }
 }

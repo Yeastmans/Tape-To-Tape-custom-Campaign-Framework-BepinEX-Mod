@@ -9,6 +9,11 @@ namespace EndlessMode;
 // adapters must establish durable attempt authority before invoking policy.
 internal static class GoalieContractRuntime
 {
+    // Observation only. The existing custom prefix still owns native/skater
+    // behavior; a scoped completion consumer independently requires readiness.
+    internal static event Action<Rogue.FreeAgents.FreeAgentManager, bool, bool> RetentionEvaluated;
+    internal static void ObserveRetention(Rogue.FreeAgents.FreeAgentManager manager, bool prevented, bool originalAllowed)
+        => RetentionEvaluated?.Invoke(manager, prevented, originalAllowed);
     internal static GoalieContractState Sign(CampaignDocument fields, string playerId)
     {
         int? duration = PlayerContractOptions.Duration(fields);

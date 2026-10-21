@@ -13,7 +13,7 @@ static class LaunchChecks
         catch (TargetInvocationException e) { System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e.InnerException).Throw(); throw; }
     }
     static GoalieRosterRuntime Roster => GoaliePersistenceBridge.Roster;
-    static (CampaignState Campaign, MatchPreviewMenu Menu) Setup(bool deferred = true, bool contract = true) {
+    internal static (CampaignState Campaign, MatchPreviewMenu Menu) Setup(bool deferred = true, bool contract = true) {
         ES3.FailMarker = false; ES3.FailStore = false; ES3.WrongMarkerReadback = false; ES3File.FailPhysicalRead = false;
         ES3.AdmissionError = null; ES3.AfterStore = null;
         Plugin.ModFolder = Path.Combine(Path.GetTempPath(), "ccf-launch-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(Plugin.ModFolder);
@@ -28,7 +28,7 @@ static class LaunchChecks
         var menu = new MatchPreviewMenu { _campaignState = campaign, currentMapNode = new STS.Map.MapNode() };
         menu.ShowMenu(menu.currentMapNode); return (campaign, menu);
     }
-    static void Finish(CampaignState campaign) {
+    internal static void Finish(CampaignState campaign) {
         var source = campaign.Repository.Pending[0]; campaign.Repository.Pending.RemoveAt(0);
         campaign.Repository.Complete(source); GoaliePersistenceBridge.Tick();
     }
@@ -37,7 +37,7 @@ static class LaunchChecks
         while (campaign.Repository.Pending.Count > 0 && remaining-- > 0) Finish(campaign);
         if (remaining <= 0) throw new Exception("Cancellation save loop");
     }
-    static void Reload(CampaignState campaign) {
+    internal static void Reload(CampaignState campaign) {
         var prior = campaign.runData;
         var model = campaign.Repository.LoadFromPersistentStorage().GetAwaiter().GetResult();
         var loaded = new RunData { runID = model.runID, squadId = model.squadId, currentMap = prior.currentMap, CurrentAct = prior.CurrentAct,
@@ -334,7 +334,7 @@ static class LaunchChecks
 }
 namespace STS.Map {
     public class Node : Il2CppSystem.Object { public int LayerIndex = 3, NodeIndex = 2; public string nodeType = "Elite"; }
-    public class MapNode : Il2CppSystem.Object { public Node Node = new(); }
+    public class MapNode : Il2CppSystem.Object { public Node Node = new(); public Il2CppSystem.Object Blueprint = new(); }
 }
 namespace Tape2Tape.Customization.UI { public class UIInputShortcutBase : Il2CppSystem.Object {} }
 class LaunchText { public string text; }

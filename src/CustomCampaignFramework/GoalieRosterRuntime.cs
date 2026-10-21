@@ -256,6 +256,30 @@ internal sealed class GoalieRosterRuntime
         }
         return true;
     }
+    // Separate proven completion boundary. CanEdit deliberately remains a
+    // between-match UI guard; callers must retain the exact played origin.
+    internal bool TryCompleteMatch(CampaignState campaign, GoalieMatchAttempt attempt, string participant, bool prevented,
+        Action<ChangeResult> completed)
+    {
+        if (!GoaliePersistenceBridge.Enabled || Plugin.IsDefaultMode || GameManager.GameType != ScriptableStates.GameType.Rogue || changing || UnavailableReason != null
+            || campaign?.Pointer != CampaignUtil.CampaignState?.Pointer || attempt == null || participant != attempt.GoalieId
+            || !Owns(campaign.runData, Plugin.ModFolder) || !attempt.Same(state?.Attempt)
+            || attempt.Lifecycle != "Armed" || state.ArmedAttemptToken != attempt.Token
+            || campaign.runData.runID != attempt.RunId || campaign.runData.squadId != attempt.SquadId
+            || campaign.runData.teamData?.id != attempt.HomeTeamId) return false;
+        try {
+            var final = Capture(campaign.runData, Plugin.ModFolder);
+            if (final.Active.PlayerId != participant) return false;
+            return SaveChange(campaign, GoalieContractPolicy.CompleteMatch(final, attempt.Token, new[] { participant }, prevented), completed);
+        } catch (Exception ex) { Plugin.Log.LogError("[GoalieContracts] Completion preparation failed: " + ex); return false; }
+    }
+    internal void CompletionUnavailable(CampaignState campaign, GoalieMatchAttempt attempt, string reason)
+    {
+        // Never let an old callback lock a later run or attempt. A completion
+        // failure does not fabricate debit authority from the replay ledger.
+        if (campaign?.runData?.Pointer == run?.Pointer && attempt != null && attempt.Same(state?.Attempt))
+            UnavailableReason = reason;
+    }
     internal void Fresh(RunData nativeRun, string campaignFolder, bool reserveEnabled, GoalieContractState signedContract = null)
     {
         var initial = new GoalieRosterState { CampaignId = GoalieRosterStore.CampaignIdentity(campaignFolder),

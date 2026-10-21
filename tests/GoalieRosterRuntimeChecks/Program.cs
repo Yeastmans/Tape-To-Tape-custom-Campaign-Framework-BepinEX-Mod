@@ -73,3 +73,5 @@ Console.WriteLine($"PASS {checks} source-linked goalie runtime and contract sign
 LaunchChecks.Run(Check);
 
 Console.WriteLine($"PASS {checks} source-linked goalie runtime, contract and launch checks");
+CompletionChecks.Run(Check);
+Console.WriteLine($"PASS {checks} source-linked goalie completion checks");
