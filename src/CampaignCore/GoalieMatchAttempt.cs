@@ -41,7 +41,7 @@ public sealed class GoalieMatchAttempt
             || string.IsNullOrWhiteSpace(RunId) || string.IsNullOrWhiteSpace(SquadId) || string.IsNullOrWhiteSpace(HomeTeamId)
             || string.IsNullOrWhiteSpace(GoalieId) || SourceRevision < 0 || SourceCheckpointId == null
             || SourceRevision > 0 && !Guid.TryParseExact(SourceCheckpointId, "N", out _)
-            || string.IsNullOrWhiteSpace(RouteWitness) || string.IsNullOrWhiteSpace(NodeType) || Lifecycle != "Armed")
+            || string.IsNullOrWhiteSpace(RouteWitness) || string.IsNullOrWhiteSpace(NodeType) || (Lifecycle != "Armed" && Lifecycle != "CanceledBeforeLaunch"))
             throw new InvalidDataException("Invalid goalie match attempt context.");
     }
     public bool Matches(GoalieRosterState state, string homeTeamId, string routeWitness,
@@ -49,10 +49,13 @@ public sealed class GoalieMatchAttempt
         => state != null && CampaignId == state.CampaignId && RunId == state.RunId && SquadId == state.SquadId
             && GoalieId == state.Active?.PlayerId && HomeTeamId == homeTeamId && RouteWitness == routeWitness
             && Act == act && NodeIndex == nodeIndex && LayerIndex == layerIndex && NodeType == nodeType;
-    public bool Same(GoalieMatchAttempt other) => other != null && Version == other.Version && Token == other.Token
+    public GoalieMatchAttempt Rearm() { var result = Clone(); result.Lifecycle = "Armed"; return result; }
+    public GoalieMatchAttempt CanceledBeforeLaunch() { var result = Clone(); result.Lifecycle = "CanceledBeforeLaunch"; return result; }
+    public bool Same(GoalieMatchAttempt other) => SameIntent(other) && Lifecycle == other.Lifecycle;
+    public bool SameIntent(GoalieMatchAttempt other) => other != null && Version == other.Version && Token == other.Token
         && CampaignId == other.CampaignId && RunId == other.RunId && SquadId == other.SquadId
         && HomeTeamId == other.HomeTeamId && GoalieId == other.GoalieId && SourceRevision == other.SourceRevision
         && SourceCheckpointId == other.SourceCheckpointId && RouteWitness == other.RouteWitness
         && Act == other.Act && NodeIndex == other.NodeIndex && LayerIndex == other.LayerIndex
-        && NodeType == other.NodeType && Lifecycle == other.Lifecycle;
+        && NodeType == other.NodeType;
 }

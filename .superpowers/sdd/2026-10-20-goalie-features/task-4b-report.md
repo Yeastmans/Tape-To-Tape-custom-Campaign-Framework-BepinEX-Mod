@@ -1,55 +1,60 @@
-# Task4b partial implementer checkpoint
+# Task4b implementer report
 
-Status: **NEEDS_CONTEXT — unfinished4b, not ready for independent review**. Base `2bf85d2430ab66ae52b48b47e4e37661db5f127f`, branch `feature/four-approved-features-20261020`. All independent implementation and focused checks are complete; the controller requested a coherent checkpoint while the human clarification remains pending. No activation/profile change.
+Status: **DONE — ready for independent full4b review**, with native/human validation and final combined activation still pending. Full review base `2bf85d2430ab66ae52b48b47e4e37661db5f127f`, branch `feature/four-approved-features-20261020`. Earlier partial checkpoint commits `741ba73051635ca7858688c2b58308777ca860d5` and `67cbce07f6e0bb0838c2f9239996ac0f01079669` are included in the review scope; this final report replaces their NEEDS_CONTEXT status.
 
-## Exact outstanding decision and resume instructions
+## Approved policy and implementation
 
-The controller asked the human whether a saved unconsumed attempt from a canceled/unlaunched preview may be durably superseded when selecting another destination or active goalie, or must retain its original context. No answer has arrived. The gate therefore has an explicit pending-policy guard for mismatched saved context, with neutral unavailable text; this is **not** an approved reject-until-restored product policy. TryArmMatch currently supports first arming and exact context reuse only. No retirement/supersession/abandonment debit is implemented. `Lifecycle == Armed` is intent only and does not distinguish an actually started unfinished match from an unlaunched intent after process loss.
+The user answered YES to replacing a canceled preview attempt when choosing a different match or swapping the starting goalie, with no contract debit for the canceled attempt. That exact scope is implemented. Actual started-match abandonment is not inferred or added. The controller confirmed the conservative process-loss provenance boundary below.
 
-Resume this same implementer after the ruling: read the answer, finish the changed-context transition and its save/recovery tests, explicitly distinguish any canceled/unlaunched scope from actual started match/rematch policy, update interfaces/manifest/report, run only changed relevant checks and fresh pinned build, then request the planned independent review. Do not call4b complete, enable contracts, start4c or request review before that work. If the ruling needs durable additional lifecycle state, design it explicitly rather than inferring started status from the armed token.
+- Immutable GoalieMatchAttempt extends existing version1 checkpoint with token, exact campaign/run/squad, campaign-home team and goalie stable IDs, source revision/checkpoint, prelaunch route witness and intended act/native type/index/layer. RecruitmentVisit, signed contracts, reserve progress and run replay ledger survive each transition. No pointer/timestamp/completion-created identity persists.
+- Both native StartMatch and inlined OnStartInput gate before native UI effects, capture exact origin/generation/input/node/run/team/goalie, join repeated clicks and require the exact strict Durable save receipt/admission/token/checkpoint before one original wrapper reentry. Cancel remains usable; no early m_IsExiting or loading block. Native save task has only its existing consumer. Reentry revalidates after origin subscribers, including synchronous cancellation.
+- Same-context retry uses its saved token. Native false/fault/cancel after local write retains saved context and never launches. Unknown persistence makes the roster unavailable and explains Continue recovery. Proven no-write rolls back the exact mutation.
+- Explicit Cancel/BackToMap with an owned never-permitted runtime witness saves CanceledBeforeLaunch via existing Stage/SaveChange. A pending arm save reconciles first, then schedules that cancellation. The native menu can close while the persistent bridge completes it. New input waits for cancellation reconciliation. Same-context retry rearms the same token; a changed-context start atomically appends the canceled token to ProcessedAttemptTokens and saves a distinct new token, without contract progress changes. Local confirmed cancellation/replacement with platform failure remains saved; replacement still needs its own successful Durable receipt before launch. No-write rollback restores both old context and retirement ledger.
+- Pure CompleteMatch clears token/context together, rejects an unconsumed CanceledBeforeLaunch attempt, and treats retired canceled tokens as run-level replay no-ops. No actual participation/completion/debit caller is added. ProcessedAttemptTokens now contains completed **and retired canceled** keys; membership is not proof of a charge.
+- LaunchAuthorized exposes a detached immutable attempt and exact runtime origin for4c. TryReuseOrigin/MatchesDestination require that explicit unconsumed Armed origin and expected native destination after SetCurrentNode. Continue returns to map, rehydrates the context and gets a new runtime origin only from a successful gated preview. No initialization-generated identity or mutable-current-token binding. Direct node/scene starts without this origin are unowned for4c.
 
-## Implemented independent work
+The final interface/lifecycle/activation contract is `task-4b-interfaces.md`; every new native method/property/UI dependency and limit is in `task-4b-native-manifest.md`. Six native method contracts/seven patches are declared resolve-only, with no installer/startup invocation or HarmonyPatch attributes. Compatibility profile remains unchanged. Do not activate4a signing,4b launch or4c completion independently.
 
-- Optional immutable versioned GoalieMatchAttempt extends the existing version1 checkpoint: token; campaign/run/squad; stable campaign-home team/goalie IDs; originating revision/checkpoint; intended act/type/index/layer; prelaunch route witness; Armed lifecycle. Context round-trips with recruitment consumption, contracts and run replay ledger. Task4a pure completion clears token/context together; no new completion caller.
-- Roster.TryArmMatch reuses reviewed Stage/SaveChange and exact native receipt transaction. Mutation.Complete additionally checks matching token/context. Same-context retries save the same token. Reconciled local commit with native false/fault/cancel remains saved and cannot launch. Unknown readback uses existing unavailable/reload recovery and truthful preview UI.
-- Paired manual StartMatch/OnStartInput gates precede native UI effects and retain method/menu/input/generation/run/team/goalie/node context. Duplicate clicks suppress into one pending save. ShowMenu replacement, Cancel, BackToMap, destruction, node/route/run/squad/goalie/visibility changes prevent stale reentry. Exact Durable receipt/admission/checkpoint/context permits one original wrapper invocation only. No early m_IsExiting assignment, loading block or second native task consumption.
-- LaunchAuthorized emits an immutable runtime origin with exact ownership and saved operation/checkpoint. TryReuseOrigin requires that explicit unconsumed origin and currently selected destination for restart/rematch. MatchesDestination adds original node reference/type after native selection. Continue rehydrates saved context, returns to map and obtains a new runtime origin only from a new successful preview gate. Old/processed origins never rebind to later token. These helpers do not certify play or debit.
-- New six-method/seven-patch manual contract set is resolve-only. No installer/startup invocation or compatibility profile edits; final coherent4a/4b/4c activation remains mandatory. Direct node/scene paths without a captured origin cannot authorize4c debit. All new callable/native/UI dependencies and limits are in task-4b-native-manifest.md; detailed4c API/lifecycle contract is in task-4b-interfaces.md.
+## Provenance limitation
 
-## Focused RED/GREEN evidence
+After startup permission is committed, the runtime never-launched witness is removed. Later preview Cancel cannot turn that origin into a canceled unlaunched attempt. After process loss, an Armed record is also ambiguous: same-context retry remains available, but changed-context launch shows "This saved match may already have started. Resume its original match and goalie; a changed attempt cannot be verified." It never invents cancellation or charges abandonment. Saved CanceledBeforeLaunch survives Continue and supports approved replacement. This is an explicit provenance boundary accepted by the controller, not an unresolved product question. Actual native callbacks/UI/save timing remain human validation.
 
-Logs: checkout `artifacts/four-features/goalie-task4b/`. Actual linked production gate, roster, bridge, checkpoint store and policy run in these checks. Native wrappers, native storage/tasks/UI remain boundary doubles; no Harmony installation/native execution/rendered or gameplay proof.
+## RED/GREEN evidence
 
-- `launch-red.log`: after176 pre-existing runtime assertions, ContractedPreviewWaitsBeforeNativeStartSideEffects failed against absent production gate. The native-boundary double entered original startup without a save. First implementation passes this check.
-- `boundaries-red.log`: LateSaveCannotLaunchAfter_squad failed, revealing missing live squad revalidation. Added exact run/squad checks; GREEN.
-- `recovery-red.log`: UnknownPersistenceExplainsContinueRecoveryInPreview failed because CanEdit false suppressed the recovery text. Kept launch blocked while explaining Continue on the surviving exact preview; GREEN. An initial missing-companion fixture reused identical storage across cases and correctly proved NoLocalWrite instead of unknown; gave each setup an independent filename before collecting the meaningful recovery RED.
-- `proof-red.log`: ProofMismatchDoesNotClaimPlatformFailure_receipt-token failed. Strict mismatch already blocked launch, but text incorrectly blamed native platform failure. Durable mismatched proof now explains reload, while actual false/fault/cancel explains saved-local platform failure; GREEN.
-- `attempt-store-red.log`: mutation test temporarily removed DataMember14 serialization, causing ExactImmutableAttemptRoundTripsWithDestinationAndOwnership to fail after76 checks; restored production annotation and87 pass. Mutation backup stayed ignored in evidence folder.
-- `rematch-red.log`: RematchCannotReuseOriginAtDifferentNativeDestination failed; explicit-origin reuse now also requires original act/index/layer after native SetCurrentNode. GREEN.
+Logs are in checkout `artifacts/four-features/goalie-task4b/`. Tests execute linked production gate, roster, bridge, checkpoint store and policy; native methods/tasks/storage/UI are boundary doubles. No Harmony/native/rendered/gameplay claims.
 
-Extra boundaries cover exact input argument/method, same-instance nested wrong entry, consumed permit reuse, one native task result consumption, foreign operation receipts, invalid receipt/admission/checkpoint token/id/caller, successful native save without companion, unknown physical readback, local commit with native false/fault/cancel, Cancel/reopen same-token retry, Continue, consumed origin, legitimate later identity, and base/permanent/PlayNow/zoom pass-through. No generalized suite expansion.
+- `launch-red.log`: missing production gate allowed startup before save after176 prior assertions; initial gate GREEN.
+- `boundaries-red.log`: live squad change could still launch; exact live run/squad check fixed it.
+- `recovery-red.log`: unknown persistence blocked launch but left saving text; surviving exact preview now explains Continue.
+- `proof-red.log`: mismatched proof blocked launch but incorrectly blamed platform failure; text now distinguishes durable proof mismatch from actual platform failure.
+- `attempt-store-red.log`: temporarily removing DataMember14 made exact attempt roundtrip fail; restored annotation passed.
+- `rematch-red.log`: explicit-origin reuse accepted another native destination; now requires original act/index/layer after native selection.
+- `cancellation-red.log`: pending Cancel did not persist unlaunched lifecycle; new observed-cancellation save path fixes it, preserving zero debit.
+- `handoff-cancel-red.log`: cancellation during synchronous origin handoff could reach native startup; post-subscriber revalidation now withholds it and saves cancellation.
+- `cancellation-store-red.log`: temporarily removing the canceled completion guard allowed an unconsumed canceled token to complete; restored guard passes.
 
-## Final verification and candidate
+Focused boundaries additionally cover exact input/method/argument and one startup, duplicate and nested wrong-entry requests, one repository task result consumption, cancellation/reopen/destruction/route/node/run/squad/goalie/visibility changes, foreign/mismatched receipts and missing companion, native false/fault/cancel after local commit, unknown readback, pending cancellation, changed destination, actual between-match goalie swap, cancellation/replacement no-write rollback, canceled Continue, ambiguous Armed Continue, actual permitted origins, later attempts and stale/retired replay, base/permanent/PlayNow/zoom pass-through. Recruitment consumption and both goalie contracts survive replacement.
 
-All commands ran in `C:/Users/kiran/Desktop/tape to tape mods/artifacts/release-r23-26085704-20261020/publish-checkout`, executable `C:/Program Files/dotnet/dotnet.exe`.
+Development-only compile corrections: nested private-field accessibility in initial implementation, shared TeamData.id native double placement for menu fixtures. The initial missing-companion fixture reused identical storage and correctly proved NoLocalWrite rather than unknown; independent filenames made its intended unknown case meaningful. These are documented development issues, not native proof. No unrelated suites were repeated.
 
-| Exact arguments | Result | Evidence |
+## Final verification
+
+Working directory: `C:/Users/kiran/Desktop/tape to tape mods/artifacts/release-r23-26085704-20261020/publish-checkout`. Executable: `C:/Program Files/dotnet/dotnet.exe`.
+
+| Exact arguments | Result | Log |
 | --- | --- | --- |
-| run --project tests/GoalieRosterChecks -c Release |87 pass | store-final.log |
-| run --project tests/GoalieRosterRuntimeChecks -c Release |238 pass (176 existing +62 launch/boundary) | runtime-final.log |
-| run --project tests/GoalieRosterMenuChecks -c Release |130 pass | menu-current.log |
+| run --project tests/GoalieRosterChecks -c Release |92 pass | store-final.log |
+| run --project tests/GoalieRosterRuntimeChecks -c Release |275 pass | cancellation-runtime-green.log |
+| run --project tests/GoalieRosterMenuChecks -c Release |130 pass | menu-final.log |
 
-Total455 focused passing assertions. Menu initially failed compilation because the new source TeamData.id read was represented only in the launch fixture; moved that boundary property to shared NativeDoubles, then130 passed. Initial gate compilation also caught inner private-field access, corrected before meaningful gate GREEN. Those compile failures are harness/implementation development evidence, not native proof. Final source-linked fixture warnings are the existing extracted Away/Export and subset-unused boundary switches (CS0649); no broad suppression. No skater behavior was modified and no unrelated suites were repeated.
+Total497 focused passing assertions. Source-linked fixture warnings remain existing extracted Away/Export and subset-unused boundary switches (CS0649); no broad suppression.
 
-Pinned fresh runtime build:
+Fresh pinned wrapper build:
 
 ```powershell
 & 'C:/Program Files/dotnet/dotnet.exe' build src/CustomCampaignFramework/CustomCampaignFramework.csproj -c Release '-p:InteropLive=C:/Users/kiran/Desktop/tape to tape mods/artifacts/game-update-26085704-20261020/interop-generation/interop' '-p:InteropDir=C:/Users/kiran/Desktop/tape to tape mods/artifacts/game-update-26085704-20261020/interop-generation/interop' '-p:OutputPath=../../artifacts/four-features/goalie-task4b-native-20261020/'
 ```
 
-`wrapper-final.log`:0 errors, one existing Plugin.cs(8431,34) CS0168 warning. Candidate DLL `artifacts/four-features/goalie-task4b-native-20261020/CustomCampaignFramework.dll`, SHA256 `08A539602D6F7999BBEBCCFA5D7BF630D888AEFA5972E65294B51CCB177D13DC`. Build is structural wrapper evidence only, not installed/runtime gameplay proof. PublicR23 outputs/receipts untouched.
+`wrapper-final.log`:0 errors, one existing Plugin.cs(8431,34) CS0168 warning. Candidate `artifacts/four-features/goalie-task4b-native-20261020/CustomCampaignFramework.dll` SHA256 `CDC869FC64C7996F9A68E5B6F33F31D66705455B0AFC6FDB3EA057358935B42D`. This replaces the earlier partial candidate in the same candidate-only folder; publicR23 artifacts/receipts untouched. No semantic source changes followed these checks/build.
 
-Self-review checked changed production files, exact save ownership/reconciliation reuse, recruitment ledger preservation, no pointer/timestamp identity persistence, immutable captured origin, cleanup of one-use permits and pending handles, absence of actual completion/debit/startup activation, and explicit unsupported/pending boundaries. Final stage includes only owned source/tests/docs plus the exact test allowlist. No game, install, real-save mutation, canonical sync, push or release occurred. Source/build slot released after checkpoint delivery.
-
-EOF-only trailing blank cleanup followed final tests/build; no semantic source change. Final cached diff check passed before checkpoint commit.
-`741ba73051635ca7858688c2b58308777ca860d5` checkpoints the owned source/tests/interfaces/native manifest and this partial report. Working tree was clean after that commit; resume from it for the pending policy ruling.
+Self-review covered the full changed production implementation and approved cancellation transitions, exact save ownership and reconciliation, replay and roster invariants, pending/reentrant cancellation, lost-runtime-witness limits, no native forward collection changes, no actual play/debit inference and no partial activation. Final exact-set native audit must inspect OnDestroy body/aliases, callable structure, Harmony ordering and wrapper reentry; then human validation must cover rendered Cancel/recovery UI, Save/Continue/rematch and real4c lifecycle. No game, install, real-save mutation, canonical sync, push or release occurred. Independent full4b review is next;4c has not been implemented. Source/build slot is released on report delivery.

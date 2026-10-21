@@ -28,6 +28,7 @@ public static class GoalieContractPolicy
         // callback cannot consume the new attempt or debit a second time.
         if (state.ProcessedAttemptTokens.Contains(matchKey, StringComparer.Ordinal)) return state.Clone();
         if (state.ArmedAttemptToken != matchKey) throw new InvalidDataException("Completion does not own the armed attempt.");
+        if (state.Attempt?.Lifecycle == "CanceledBeforeLaunch") throw new InvalidDataException("A canceled preview cannot complete a match.");
         if (participantIds == null) throw new ArgumentNullException(nameof(participantIds));
         if (participantIds.Any(id => string.IsNullOrWhiteSpace(id) || id != state.Active.PlayerId && id != state.Reserve?.PlayerId))
             throw new InvalidDataException("Completion contains an unknown goalie participant.");

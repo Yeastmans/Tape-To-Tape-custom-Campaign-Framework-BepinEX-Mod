@@ -127,3 +127,25 @@ var consumedReload = GoalieRosterStore.Load(root, consumed.RunId, GoalieRosterSt
 Check(consumedReload.Attempt == null && GoalieContractPolicy.CompleteMatch(consumedReload, matchReload.Attempt.Token, Array.Empty<string>(), false).Attempt == null,
     "ProcessedAttemptReplayAfterCheckpointReloadCannotResurrectContext");
 Console.WriteLine($"PASS {checks} goalie store, contract and attempt checks");
+var canceledAttempt = matchReload.Clone(); canceledAttempt.Attempt = canceledAttempt.Attempt.CanceledBeforeLaunch();
+string canceledRecord = GoalieRosterStore.Prepare(root, canceledAttempt);
+var canceledReload = GoalieRosterStore.Load(root, canceledAttempt.RunId, GoalieRosterStore.Hash(GoalieRosterStore.Marker(canceledRecord)));
+Check(canceledReload.Attempt.Lifecycle == "CanceledBeforeLaunch" && canceledReload.ArmedAttemptToken == matchReload.Attempt.Token
+    && canceledReload.Attempt.SameIntent(matchReload.Attempt) && !canceledReload.Attempt.Same(matchReload.Attempt),
+    "CanceledLifecyclePersistsWithOriginalImmutableIdentity");
+Check(canceledReload.RecruitmentVisit.ConsumedOfferIds[0] == "offer-1" && canceledReload.Reserve.Contract.PlayedMatches == 1
+    && !canceledReload.ProcessedAttemptTokens.Contains(canceledReload.ArmedAttemptToken), "CancellationAloneDoesNotDebitOrRetireReusableToken");
+Reject(() => GoalieContractPolicy.CompleteMatch(canceledReload, canceledReload.ArmedAttemptToken, new[] { "active" }, true),
+    "CanceledUnlaunchedAttemptCannotAuthorizeCompletion");
+var rearmedAttempt = canceledReload.Attempt.Rearm();
+Check(rearmedAttempt.Same(matchReload.Attempt) && canceledReload.Attempt.Lifecycle == "CanceledBeforeLaunch", "RearmKeepsSameIntentAndLeavesCanceledSnapshotDetached");
+var replacedCanceled = canceledReload.Clone();
+replacedCanceled.ProcessedAttemptTokens = replacedCanceled.ProcessedAttemptTokens.Append(replacedCanceled.ArmedAttemptToken).ToArray();
+replacedCanceled.Attempt = new GoalieMatchAttempt(replacedCanceled, "campaign-home-team", "next-route", 2, 6, 7, "STS.Map.EliteMapNode");
+replacedCanceled.ArmedAttemptToken = replacedCanceled.Attempt.Token;
+string replacementRecord = GoalieRosterStore.Prepare(root, replacedCanceled);
+var replacementReload = GoalieRosterStore.Load(root, replacedCanceled.RunId, GoalieRosterStore.Hash(GoalieRosterStore.Marker(replacementRecord)));
+var oldCanceledReplay = GoalieContractPolicy.CompleteMatch(replacementReload, canceledReload.ArmedAttemptToken, new[] { "reserve" }, false);
+Check(oldCanceledReplay.Attempt.Same(replacementReload.Attempt) && oldCanceledReplay.Reserve.Contract.PlayedMatches == 1
+    && oldCanceledReplay.ProcessedAttemptTokens.Contains(canceledReload.ArmedAttemptToken), "RetiredCanceledReplayAfterReloadCannotDebitOrConsumeNewAttempt");
+Console.WriteLine($"PASS {checks} goalie store, contract, attempt and cancellation checks");

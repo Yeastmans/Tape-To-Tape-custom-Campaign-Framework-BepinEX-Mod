@@ -32,11 +32,128 @@ static class LaunchChecks
         var source = campaign.Repository.Pending[0]; campaign.Repository.Pending.RemoveAt(0);
         campaign.Repository.Complete(source); GoaliePersistenceBridge.Tick();
     }
+    static void FinishAll(CampaignState campaign) {
+        int remaining = 10;
+        while (campaign.Repository.Pending.Count > 0 && remaining-- > 0) Finish(campaign);
+        if (remaining <= 0) throw new Exception("Cancellation save loop");
+    }
+    static void Reload(CampaignState campaign) {
+        var prior = campaign.runData;
+        var model = campaign.Repository.LoadFromPersistentStorage().GetAwaiter().GetResult();
+        var loaded = new RunData { runID = model.runID, squadId = model.squadId, currentMap = prior.currentMap, CurrentAct = prior.CurrentAct,
+            currentNodePoint = new() { x = prior.currentNodePoint.x, y = prior.currentNodePoint.y },
+            teamData = new() { id = prior.teamData.id, goalie = new DeserializerV2().ConvertGoaltenderDataModelToGoaltenderData(model.team.skaters[0]) }, teamState = model.teamState };
+        GoaliePersistenceBridge.Hydrated(new DeserializerV2(), loaded, model); campaign.runData = loaded;
+    }
+    static STS.Map.MapNode OtherDestination() { var node = new STS.Map.MapNode(); node.Node.NodeIndex = 6; return node; }
+    static void CancellationChecks(Action<bool, string> check) {
+        var (eventCampaign, eventMenu) = Setup();
+        void CancelDuringOrigin(GoalieMatchLaunchGate.LaunchOrigin _) => eventMenu.OnCancelInput(new());
+        GoalieMatchLaunchGate.LaunchAuthorized += CancelDuringOrigin;
+        eventMenu.StartMatch(); FinishAll(eventCampaign); GoalieMatchLaunchGate.LaunchAuthorized -= CancelDuringOrigin;
+        check(eventMenu.Starts == 0 && Roster.Selection.Attempt.Lifecycle == "CanceledBeforeLaunch",
+            "CancellationDuringOriginHandoffCannotReachNativeStartup");
+        var (campaign, menu) = Setup(); menu.StartMatch(); string old = Roster.Selection.ArmedAttemptToken;
+        menu.OnCancelInput(new()); menu.ShowMenu(OtherDestination()); menu.StartMatch();
+        check(campaign.Repository.Saves == 1 && menu.Starts == 0, "NewPreviewCannotOvertakePendingCanceledArmSave");
+        Finish(campaign); // arm completion schedules the cancellation save through same coordinator
+        menu.StartMatch();
+        check(campaign.Repository.Saves == 2 && Roster.Busy && menu.Starts == 0, "PendingCancellationSaveSuppressesReplacementClicks");
+        Finish(campaign); menu.StartMatch(); string newer = Roster.Selection.ArmedAttemptToken;
+        check(newer != old && Roster.Selection.ProcessedAttemptTokens.Contains(old), "CancellationRetirementAndNewTokenShareOneProposedCheckpoint");
+        Finish(campaign); check(menu.Starts == 1 && Roster.Selection.Active.Contract.PlayedMatches == 0, "PendingCancellationCannotAutoLaunchOldPreviewOrDebitIt");
+
+        (campaign, menu) = Setup(); menu.StartMatch(); menu.OnCancelInput(new()); FinishAll(campaign); old = Roster.Selection.ArmedAttemptToken;
+        var visit = new GoalieRecruitmentVisitState { Witness = "preserved-visit", Generation = Guid.NewGuid().ToString("N"), Quota = 2,
+            ConsumedOfferIds = new[] { "offer-used" }, OfferedPoolIds = new[] { "goalie-pool" } };
+        var withReserve = Roster.Selection; withReserve.Reserve = GoalieNativeSnapshot.Capture(new GoaltenderData { id = "reserve" });
+        withReserve.Reserve.Contract = GoalieContractPolicy.Sign(7); withReserve.RecruitmentVisit = visit;
+        Roster.Stage(campaign.runData, withReserve, new DeserializerV2()).Publish();
+        check(Roster.TrySwap(campaign, Roster.Selection.Revision), "CanceledPreviewAllowsNormalBetweenMatchGoalieSwap"); FinishAll(campaign);
+        menu.ShowMenu(menu.currentMapNode); menu.StartMatch();
+        check(Roster.Selection.ArmedAttemptToken != old && Roster.Selection.Attempt.GoalieId == "reserve"
+            && Roster.Selection.ProcessedAttemptTokens.Contains(old) && Roster.Selection.Active.Contract.PlayedMatches == 0
+            && Roster.Selection.Reserve.Contract.PlayedMatches == 0 && Roster.Selection.RecruitmentVisit.ConsumedOfferIds[0] == "offer-used",
+            "CanceledGoalieSwapCreatesNewIdentityPreservingBothContractsAndRecruitment");
+        FinishAll(campaign); check(menu.Starts == 1, "ReplacementAfterGoalieSwapLaunchesOnlyAfterSave");
+
+        foreach (string failure in new[] { "false", "fault", "cancel" }) {
+            (campaign, menu) = Setup(); menu.StartMatch(); old = Roster.Selection.ArmedAttemptToken; menu.OnCancelInput(new());
+            Finish(campaign); campaign.Repository.Outcome = failure; Finish(campaign);
+            check(Roster.Selection.Attempt.Lifecycle == "CanceledBeforeLaunch" && !Roster.Busy && Roster.UnavailableReason == null,
+                "LocallyCommittedCancellationSurvivesNativeFailure_" + failure);
+            menu.ShowMenu(OtherDestination()); menu.StartMatch(); newer = Roster.Selection.ArmedAttemptToken; Finish(campaign);
+            check(menu.Starts == 0 && Roster.Selection.ArmedAttemptToken == newer && newer != old
+                && Roster.Selection.ProcessedAttemptTokens.Contains(old) && Roster.Selection.Active.Contract.PlayedMatches == 0,
+                "LocallyCommittedReplacementFailureRetainsExactNewTokenAndRetiredOld_" + failure);
+            campaign.Repository.Outcome = "true"; menu.StartMatch();
+            check(Roster.Selection.ArmedAttemptToken == newer, "ReplacementRetryNeverMintsUnrelatedToken_" + failure);
+            Finish(campaign); check(menu.Starts == 1, "ReplacementRetryLaunchesOnceAfterDurableReceipt_" + failure);
+        }
+
+        (campaign, menu) = Setup(); campaign.Repository.Outcome = "false"; menu.StartMatch(); Finish(campaign); old = Roster.Selection.ArmedAttemptToken;
+        ES3.FailStore = true; menu.OnCancelInput(new()); ES3.FailStore = false;
+        check(!Roster.Busy && Roster.Selection.Attempt.Lifecycle == "Armed" && Roster.Selection.ArmedAttemptToken == old,
+            "ProvenNoWriteCancellationFailureRestoresOriginalArmedContext");
+        campaign.Repository.Outcome = "true"; menu.ShowMenu(OtherDestination()); menu.StartMatch();
+        check(menu.Starts == 0 && Roster.Selection.ArmedAttemptToken == old && Roster.Busy, "NextStartRetriesUnwrittenCancellationBeforeReplacement");
+        FinishAll(campaign); menu.StartMatch(); FinishAll(campaign);
+        check(menu.Starts == 1 && Roster.Selection.ArmedAttemptToken != old, "CancellationRecoveryThenReplacementCanLaunch");
+
+        (campaign, menu) = Setup(); menu.StartMatch(); menu.OnCancelInput(new()); FinishAll(campaign); old = Roster.Selection.ArmedAttemptToken;
+        ES3.FailStore = true; menu.ShowMenu(OtherDestination()); menu.StartMatch(); ES3.FailStore = false;
+        check(Roster.Selection.Attempt.Lifecycle == "CanceledBeforeLaunch" && Roster.Selection.ArmedAttemptToken == old
+            && !Roster.Selection.ProcessedAttemptTokens.Contains(old), "UnwrittenReplacementRollsBackBothRetirementAndNewContext");
+        menu.StartMatch(); FinishAll(campaign); check(menu.Starts == 1 && Roster.Selection.ProcessedAttemptTokens.Contains(old), "RetryAfterUnwrittenReplacementRetiresCanceledTokenOnce");
+
+        (campaign, menu) = Setup(); menu.StartMatch(); menu.OnCancelInput(new()); Finish(campaign);
+        ES3File.FailPhysicalRead = true; Finish(campaign); ES3File.FailPhysicalRead = false;
+        old = Roster.Selection.ArmedAttemptToken; menu.ShowMenu(OtherDestination()); menu.StartMatch();
+        check(menu.Starts == 0 && Roster.UnavailableReason != null && Roster.Selection.ArmedAttemptToken == old
+            && menu.m_DescriptionText.text.Contains("Continue"), "UnknownCancellationReadbackCannotAuthorizeReplacement");
+        Reload(campaign); menu.ShowMenu(OtherDestination()); menu.StartMatch(); FinishAll(campaign);
+        check(menu.Starts == 1 && Roster.Selection.ProcessedAttemptTokens.Contains(old), "ContinueReconcilesActuallySavedCancellationBeforeReplacing");
+
+        (campaign, menu) = Setup(); menu.StartMatch(); menu.OnCancelInput(new()); FinishAll(campaign); old = Roster.Selection.ArmedAttemptToken;
+        Reload(campaign);
+        check(Roster.Selection.Attempt.Lifecycle == "CanceledBeforeLaunch", "DurableCancellationSurvivesNativeContinueHydration");
+        menu.ShowMenu(OtherDestination()); menu.StartMatch(); FinishAll(campaign);
+        check(menu.Starts == 1 && Roster.Selection.ArmedAttemptToken != old && Roster.Selection.Active.Contract.PlayedMatches == 0,
+            "RecoveredCanceledContextCanBeReplacedWithoutDebit");
+        var after = Roster.Selection;
+        check(GoalieContractPolicy.CompleteMatch(after, old, new[] { "launch-goalie" }, true).Active.Contract.PlayedMatches == 0,
+            "DelayedCompletionForRetiredCanceledTokenIsRunLevelNoOp");
+
+        (campaign, menu) = Setup(); menu.StartMatch(); FinishAll(campaign); old = Roster.Selection.ArmedAttemptToken;
+        menu.BackToMap(); menu.ShowMenu(menu.currentMapNode); menu.OnCancelInput(new());
+        check(Roster.Selection.Attempt.Lifecycle == "Armed" && campaign.Repository.Saves == 1, "AlreadyPermittedOriginCannotBecomeCanceledPreview");
+        menu.ShowMenu(OtherDestination()); menu.StartMatch();
+        check(menu.Starts == 1 && Roster.Selection.ArmedAttemptToken == old && campaign.Repository.Saves == 1
+            && menu.m_DescriptionText.text.Contains("may already have started"), "StartedOriginCannotBeSupersededByLaterPreviewCancel");
+
+        (campaign, menu) = Setup(); campaign.Repository.Outcome = "false"; menu.StartMatch(); FinishAll(campaign); old = Roster.Selection.ArmedAttemptToken;
+        Reload(campaign); menu.ShowMenu(menu.currentMapNode); menu.OnCancelInput(new()); menu.ShowMenu(OtherDestination()); menu.StartMatch();
+        check(Roster.Selection.ArmedAttemptToken == old && Roster.Selection.Attempt.Lifecycle == "Armed" && campaign.Repository.Saves == 1
+            && menu.Starts == 0 && menu.m_DescriptionText.text.Contains("may already have started"), "RecoveredArmedIntentCannotInventPrelaunchCancellationProof");
+        campaign.Repository.Outcome = "true"; var originalNode = new STS.Map.MapNode(); menu.ShowMenu(originalNode); menu.StartMatch(); FinishAll(campaign);
+        check(menu.Starts == 1 && Roster.Selection.ArmedAttemptToken == old, "AmbiguousRecoveredArmedIntentStillSupportsSameContextRetry");
+    }
     internal static void Run(Action<bool, string> check) {
         var origins = new List<GoalieMatchLaunchGate.LaunchOrigin>();
         var receipts = new List<GoaliePersistenceBridge.SaveReceipt>();
         GoaliePersistenceBridge.SaveCompleted += receipts.Add;
         GoalieMatchLaunchGate.LaunchAuthorized += origins.Add;
+        var (cancelCampaign, cancelMenu) = Setup();
+        cancelMenu.StartMatch(); string canceledToken = Roster.Selection.ArmedAttemptToken;
+        cancelMenu.OnCancelInput(new()); FinishAll(cancelCampaign);
+        check(Roster.Selection.Attempt.Lifecycle == "CanceledBeforeLaunch" && Roster.Selection.Active.Contract.PlayedMatches == 0,
+            "PendingLaunchCancelPersistsUnlaunchedLifecycleWithoutDebit");
+        var changedDestination = new STS.Map.MapNode(); changedDestination.Node.NodeIndex = 6;
+        cancelMenu.ShowMenu(changedDestination); cancelMenu.StartMatch();
+        check(Roster.Selection.ArmedAttemptToken != canceledToken && Roster.Selection.ProcessedAttemptTokens.Contains(canceledToken)
+            && Roster.Selection.Active.Contract.PlayedMatches == 0 && cancelMenu.Starts == 0,
+            "CanceledDifferentDestinationReplacesTokenAndRetiresOldWithoutDebit");
+        FinishAll(cancelCampaign); check(cancelMenu.Starts == 1, "SupersedingAttemptRequiresDurableSaveBeforeLaunch"); origins.Clear();
         var (campaign, menu) = Setup();
         menu.StartMatch();
         check(menu.Starts == 0 && !menu.m_IsExiting && campaign.Repository.Saves == 1,
@@ -86,11 +203,11 @@ static class LaunchChecks
                 case "route": campaign.runData.currentMap = "{\"act\":1,\"path\":[{\"x\":1,\"y\":1}]}"; break;
                 case "squad": campaign.runData.squadId = "changed"; break;
             }
-            Finish(campaign);
+            FinishAll(campaign);
             check(menu.Starts == 0 && origins.Count == emitted, "LateSaveCannotLaunchAfter_" + invalidation);
             if (invalidation is "cancel" or "reopen") {
                 menu.ShowMenu(menu.currentMapNode); menu.StartMatch();
-                check(Roster.Selection.ArmedAttemptToken == token && campaign.Repository.Saves == 2, "CancelledOrReopenedPreviewReusesSavedAttempt_" + invalidation);
+                check(Roster.Selection.ArmedAttemptToken == token && campaign.Repository.Saves == (invalidation == "cancel" ? 3 : 2), "CancelledOrReopenedPreviewReusesSavedAttempt_" + invalidation);
                 Finish(campaign); check(menu.Starts == 1, "FreshClickAfterCancellationCanLaunch_" + invalidation);
             }
         }
@@ -139,7 +256,7 @@ static class LaunchChecks
         check(menu.Starts == 0 && Roster.UnavailableReason != null, "UnknownReadbackNeverAuthorizesLaunch");
         menu.StartMatch(); check(campaign.Repository.Saves == 1 && menu.m_DescriptionText.text.Contains("Continue"), "UnknownReadbackDoesNotMintRetryToken");
         (campaign, menu) = Setup(); menu.StartMatch(); token = Roster.Selection.ArmedAttemptToken;
-        menu.OnCancelInput(new()); Finish(campaign);
+        menu.OnCancelInput(new()); FinishAll(campaign);
         var repo = campaign.Repository;
         var model = repo.LoadFromPersistentStorage().GetAwaiter().GetResult();
         var continued = new RunData { runID = model.runID, squadId = model.squadId, currentMap = campaign.runData.currentMap, CurrentAct = 1,
@@ -163,6 +280,7 @@ static class LaunchChecks
             if (bypass == "zoom") menu.m_TestZoomOnly = true;
             menu.StartMatch(); check(menu.Starts == 1 && campaign.Repository.Saves == 0, "NativeBehaviorPreserved_" + bypass);
         }
+        CancellationChecks(check);
         Plugin.IsDefaultMode = false; GameManager.GameType = ScriptableStates.GameType.Rogue;
         GoalieMatchLaunchGate.LaunchAuthorized -= origins.Add;
         GoaliePersistenceBridge.SaveCompleted -= receipts.Add;

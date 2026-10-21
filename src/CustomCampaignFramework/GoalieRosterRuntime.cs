@@ -165,18 +165,37 @@ internal sealed class GoalieRosterRuntime
     }
     internal bool TryArmMatch(CampaignState campaign, GoalieMatchAttempt attempt, Action<ChangeResult> completed)
     {
-        if (!CanEdit(campaign) || changing || attempt == null) return false;
+        if (!CanEdit(campaign) || changing || attempt == null || attempt.Lifecycle != "Armed") return false;
         try {
             var proposed = Capture(campaign.runData, Plugin.ModFolder);
             attempt.Validate();
             if (attempt.CampaignId != proposed.CampaignId || attempt.RunId != proposed.RunId || attempt.SquadId != proposed.SquadId
                 || attempt.GoalieId != proposed.Active.PlayerId || attempt.HomeTeamId != campaign.runData.teamData.id
                 || proposed.ProcessedAttemptTokens.Contains(attempt.Token)
-                || proposed.Attempt != null && !proposed.Attempt.Same(attempt)
+                || proposed.Attempt != null && proposed.Attempt.Lifecycle != "CanceledBeforeLaunch" && !proposed.Attempt.Same(attempt)
                 || proposed.Attempt == null && proposed.ArmedAttemptToken.Length != 0) return false;
+            if (proposed.Attempt != null && proposed.Attempt.Token != attempt.Token) {
+                // Explicit prelaunch cancellation permits atomic retirement and
+                // replacement, never a completion/debit or unrelated token reuse.
+                if (proposed.Attempt.Lifecycle != "CanceledBeforeLaunch") return false;
+                proposed.ProcessedAttemptTokens = proposed.ProcessedAttemptTokens.Append(proposed.Attempt.Token).ToArray();
+            } else if (proposed.Attempt != null && !proposed.Attempt.SameIntent(attempt)) return false;
             proposed.Attempt = attempt.Clone(); proposed.ArmedAttemptToken = attempt.Token;
             return SaveChange(campaign, proposed, completed);
         } catch (Exception ex) { Plugin.Log.LogError("[GoalieLaunch] Attempt preparation failed: " + ex); return false; }
+    }
+    // Caller must own an observed never-permitted preview cancellation. A saved
+    // Armed record alone cannot establish that provenance after process loss.
+    internal bool TryCancelMatch(CampaignState campaign, GoalieMatchAttempt expected, Action<ChangeResult> completed)
+    {
+        if (!CanEdit(campaign) || changing || expected == null) return false;
+        try {
+            var proposed = Capture(campaign.runData, Plugin.ModFolder);
+            if (expected.Lifecycle != "Armed" || !expected.Same(proposed.Attempt)
+                || proposed.ArmedAttemptToken != expected.Token) return false;
+            proposed.Attempt = expected.CanceledBeforeLaunch();
+            return SaveChange(campaign, proposed, completed);
+        } catch (Exception ex) { Plugin.Log.LogError("[GoalieLaunch] Cancellation preparation failed: " + ex); return false; }
     }
     private bool SaveChange(CampaignState campaign, GoalieRosterState proposed, Action<ChangeResult> completed)
     {
