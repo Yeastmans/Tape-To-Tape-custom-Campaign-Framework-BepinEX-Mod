@@ -67,3 +67,10 @@ Therefore hires saved before GM continuation share persisted route path. The wit
 ## Pending native evidence
 
 Mouse/controller rendering and navigation, two-step confirmation clarity, empty-slot rendering, retained UIModule menu timing, real SingleEvent/hide/destroy callbacks, late native completion/reload, real map witness JSON and actual local store/reconciliation remain unexecuted. The source-linked checks model these boundaries and the compile establishes fresh-wrapper API compatibility, not those native behaviors.
+
+
+## Review I1 addendum — parent visibility accessor
+
+Source fix `25162f1` captures `UnityEngine.GameObject.get_activeSelf() -> System.Boolean` via the generated property before parent takeover (RVA `0x6847340`, pinned script.json exact signature). It obtains the bench object using `UnityEngine.Component.get_gameObject() -> UnityEngine.GameObject` (RVA `0x6841080`) and restores it with existing `UnityEngine.GameObject.SetActive(System.Boolean) -> System.Void` (RVA `0x6847290`). No new hook is installed. The final protected-profile dependency review must include these exact generated accessors/call alongside the already listed menu fields and SetActive dependency.
+
+LoadCurrentTeam native proof: m_HideBench comparison at `0x43894AD`, visible-list Refresh at `0x4389DE0`, hidden object getter at `0x4389DF9`, SetActive(false) at `0x4389E0F`. Because the visible branch does not call SetActive(true), restoring only m_HideBench would be insufficient after a native refresh during the subview. Actual visibility/rendering remains unexecuted.
