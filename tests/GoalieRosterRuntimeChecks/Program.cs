@@ -41,9 +41,29 @@ Check(owned.Goalie.Earned == owned.State && owned.Goalie.Earned.Id == owned.Goal
 var independent = GoalieNativeSnapshot.Restore(captured);
 ((CounterState)owned.State.talentStates[0]).History[0] = 888;
 Check(((CounterState)independent.Earned.talentStates[0]).History[0] == 9, "RepeatedRestoreOwnsDetachedEarnedGraph");
+foreach (string binding in new[] { "unbound", "null", "own" })
+{
+    var colored = new GoaltenderData { id = "color-" + binding, colorSchemes = new() { Value = "native retained palette" } };
+    if (binding == "own") CampaignAppearanceRuntime.RestoreRecruit(colored, new CampaignDocument(
+        "Appearance Own Stick Color = 255,0,0\nAppearance Own Skates Color = 0,255,0\nJersey Home = own-home\nJersey Away = own-away"));
+    // Captured native menu colors can differ from authored appearance metadata.
+    // The full snapshot owns their exact final values, including null.
+    colored.StickColor = binding == "null" ? null : new() { primaryColor = new(.13f, .27f, .39f, 1), secondaryColor = new(.9f, .8f, .7f, .6f), tertiaryColor = new(.5f, .4f, .3f, .2f) };
+    colored.SkatesColor = binding == "null" ? null : new() { primaryColor = new(.72f, .61f, .53f, 1), secondaryColor = new(.2f, .3f, .4f, .5f), tertiaryColor = new(.6f, .7f, .8f, .9f) };
+    string stick = colored.StickColor == null ? null : UnityEngine.JsonUtility.ToJson(colored.StickColor);
+    string skates = colored.SkatesColor == null ? null : UnityEngine.JsonUtility.ToJson(colored.SkatesColor);
+    var colorRestored = GoalieNativeSnapshot.Restore(GoalieNativeSnapshot.Capture(colored));
+    Check((colorRestored.StickColor == null ? null : UnityEngine.JsonUtility.ToJson(colorRestored.StickColor)) == stick
+        && (colorRestored.SkatesColor == null ? null : UnityEngine.JsonUtility.ToJson(colorRestored.SkatesColor)) == skates,
+        "FinalNativeStickAndSkateColorsPreserved_" + binding);
+    Check(colorRestored.colorSchemes.Value == "native retained palette", "NativePaletteNotRepainted_" + binding);
+    if (binding == "own") Check(CampaignAppearanceRuntime.RecruitSnapshot(colorRestored).Get("Appearance Own Stick Color") == "255,0,0"
+        && colorRestored.HomeLogo == "own-home" && colorRestored.AwayLogo == "own-away", "OwnAppearanceMetadataAndBothLogosRetainedAlongsideExactColors");
+}
 Console.WriteLine($"PASS {checks} goalie runtime checks");
 CoordinatorChecks.Run(Check);
 CheckpointChecks.Run(Check);
 ForwardingChecks.Run(Check);
 BridgeChecks.Run(Check);
+LegacyChecks.Run(Check);
 Console.WriteLine($"PASS {checks} source-linked goalie runtime checks using native boundary doubles");

@@ -1,6 +1,11 @@
 using CampaignCore;
 using System.Text.Json;
 namespace UnityEngine {
+    public struct Color {
+        public float r, g, b, a;
+        public Color(float r, float g, float b, float a) { this.r = r; this.g = g; this.b = b; this.a = a; }
+        public static Color white => new(1, 1, 1, 1);
+    }
     public static class JsonUtility {
         static readonly JsonSerializerOptions Options = new() { IncludeFields = true };
         public static string ToJson(object value) => JsonSerializer.Serialize(value, value.GetType(), Options);
@@ -10,24 +15,34 @@ namespace UnityEngine {
 }
 namespace Rogue.BenchPowers { public class BenchPower { public string ID; } }
 namespace Data {
-    public class SkaterData : Il2CppSystem.Object { }
+    public class SkaterData : Il2CppSystem.Object {
+        public ColorScheme StickColor, SkatesColor;
+        public string HomeLogo, AwayLogo;
+    }
     public enum NumberFormat { Standard, Rounded }
     public struct DateDMY { public int Day, Month, Year; }
-    public class ColorScheme { public string Value; }
-    public class TeamColorsData { public string Value; }
-    public class GoaltenderData : Il2CppSystem.Object {
-        public string id, OriginalId, name, helmetAwaySkin, HomeLogo, AwayLogo, flavorTextLoc, perkFlavorTextLoc, powerupTextLoc;
+    public class ColorScheme { public UnityEngine.Color primaryColor, secondaryColor, tertiaryColor; }
+    public class TeamColorsData {
+        public string Value;
+        public ColorScheme stickScheme = new(), skatesScheme = new();
+        public static TeamColorsData Default { get; } = new();
+    }
+    public class GoaltenderData : SkaterData {
+        public string id, OriginalId, name, helmetAwaySkin, flavorTextLoc, perkFlavorTextLoc, powerupTextLoc;
         public int skill, heightInches, weightKg;
         public float passReadSkill;
         public NumberFormat numberFormat;
         public bool ignoreStatsGrouping, hideInCompendium, lockedWithSquadInCompendium, isCustomSkater, isFemale, HasGoldenHelmet;
         public DateDMY birthDate;
-        public ColorScheme StickColor, SkatesColor;
         public Rogue.BenchPowers.BenchPower benchPower;
         public TeamColorsData colorSchemes;
         public List<string> powerups = new();
         public State.SkaterState Earned;
-        public State.SkaterState SaveState() => Earned ?? new() { Id = id, HasGoldenHelmet = HasGoldenHelmet };
+        // Native SaveState allocates a fresh state, not the last LoadState object.
+        public State.SkaterState SaveState() {
+            var options = new JsonSerializerOptions { IncludeFields = true };
+            return JsonSerializer.Deserialize<State.SkaterState>(JsonSerializer.Serialize(Earned ?? new() { Id = id, HasGoldenHelmet = HasGoldenHelmet }, options), options);
+        }
         public void LoadState(State.SkaterState state) { Earned = state; HasGoldenHelmet = state.HasGoldenHelmet; }
     }
     public class TeamData { public GoaltenderData goalie; }
@@ -59,20 +74,17 @@ namespace State {
     public class TeamDataModelV2 : Il2CppSystem.Object { public List<GoaltenderDataModelV2> skaters; }
 }
 namespace EndlessMode {
-    static class GoalieRecruitment {
-        public static CampaignDocument Snapshot(Data.GoaltenderData goalie) {
-            var d = new CampaignDocument("");
-            d.Set("Recruit Pass Read", goalie.passReadSkill.ToString("R", System.Globalization.CultureInfo.InvariantCulture));
-            d.Set("Recruit Number Format", ((int)goalie.numberFormat).ToString());
-            d.Set("Recruit Away Helmet", goalie.helmetAwaySkin ?? ""); return d;
-        }
-    }
     static class JerseyLogoRuntime {
-        public static CampaignDocument Snapshot(Data.GoaltenderData goalie) {
+        public static CampaignDocument Snapshot(Data.SkaterData goalie) {
             var d = new CampaignDocument(""); d.Set("Jersey Home", goalie.HomeLogo ?? ""); d.Set("Jersey Away", goalie.AwayLogo ?? ""); return d;
         }
+        public static void Restore(Data.SkaterData goalie, CampaignDocument d) { goalie.HomeLogo = d.Get("Jersey Home"); goalie.AwayLogo = d.Get("Jersey Away"); }
     }
-    static class CampaignAppearanceRuntime {
-        public static void RestoreRecruit(Data.GoaltenderData goalie, CampaignDocument d) { goalie.HomeLogo = d.Get("Jersey Home"); goalie.AwayLogo = d.Get("Jersey Away"); }
+    // Actual RecruitSnapshot/RestoreRecruit/OwnColors/Scheme/Merge/Binding are
+    // extracted each build. Only context/renderer/logo services are doubled.
+    static partial class CampaignAppearanceRuntime {
+        private static readonly Dictionary<IntPtr, Binding> Bindings = new();
+        private static void CheckContext() { }
+        private static void SyncLogo(Data.SkaterData player, Binding binding) { }
     }
 }

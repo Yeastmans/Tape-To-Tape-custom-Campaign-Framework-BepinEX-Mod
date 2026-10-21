@@ -101,6 +101,8 @@ tests/GoalieRosterRuntimeChecks/*
 !tests/GoalieRosterRuntimeChecks/CheckpointChecks.cs
 !tests/GoalieRosterRuntimeChecks/ForwardingChecks.cs
 !tests/GoalieRosterRuntimeChecks/BridgeChecks.cs
+!tests/GoalieRosterRuntimeChecks/extract_helpers.py
+!tests/GoalieRosterRuntimeChecks/LegacyChecks.cs
 !tests/GoalieSharingChecks/
 tests/GoalieSharingChecks/*
 !tests/GoalieSharingChecks/GoalieSharingChecks.csproj

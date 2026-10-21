@@ -290,6 +290,8 @@ internal static class GoalieRecruitLoaded
 {
     [HarmonyPostfix] private static void Postfix(RunData __0)
     {
+        // The enabled bridge owns legacy fallback after full-pair acceptance
+        // is known; this postfix must never overwrite an accepted full pair.
         if (!GoaliePersistenceBridge.Enabled) GoalieRecruitment.Restore(__0);
     }
 }

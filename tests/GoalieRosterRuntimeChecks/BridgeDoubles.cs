@@ -18,6 +18,7 @@ static class BridgeDoubleHooks
     }
 }
 namespace HarmonyLib {
+    public sealed class HarmonyPostfix : Attribute { }
     public static class AccessTools {
         public static FieldInfo Field(System.Type type, string name) => type.GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance);
         public static MethodInfo Method(System.Type type, string name, System.Type[] parameters = null) => parameters == null

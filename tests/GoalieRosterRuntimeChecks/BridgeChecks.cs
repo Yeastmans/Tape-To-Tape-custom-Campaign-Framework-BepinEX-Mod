@@ -26,9 +26,33 @@ static class BridgeChecks
         check(run.teamData.goalie == beforeMutationGoalie && GoaliePersistenceBridge.Roster.Selection.Reserve == null, "DetachedMutationPreparationDoesNotPublish");
         mutation.Publish();
         check(GoaliePersistenceBridge.Roster.Selection.Reserve.PlayerId == "reserve", "ValidatedMutationPublishesBothSlots");
+        var publishedOwner = run.teamState.goaltenderState; var publishedTeamState = run.teamState;
+        var refreshedGoalieState = run.teamData.goalie.SaveState();
+        var refreshedForwards = new[] { "new forward save state" }; var refreshedRelics = new[] { "new relic save state" };
+        // CampaignState.SaveRunData replaces TeamState with TeamData.SaveState
+        // before serializing; neither state object's pointer remains stable.
+        run.teamState = new() { goaltenderState = refreshedGoalieState, forwardStates = refreshedForwards, relicStates = refreshedRelics };
+        check(refreshedGoalieState.Pointer != publishedOwner.Pointer && run.teamState != publishedTeamState,
+            "CanonicalSaveRefreshCreatesNewGoalieStateOwner");
+        var failedRepository = new RunDataRepositoryV2 { _fileName = "failed-mutation.es3" };
+        ES3.FailStore = true;
+        var failedWrite = failedRepository.SaveToPersistentStorage(new() { runID = run.runID, squadId = run.squadId,
+            team = new() { skaters = new() { new SerializerV2().SerializeToModel(run.teamData.goalie) } }, teamState = run.teamState });
+        ES3.FailStore = false;
+        check(failedWrite.IsFaulted && !ES3File.persisted.ContainsKey(failedRepository._fileName), "MutationCanonicalSaveFailsBeforeAnyNativeWrite");
         mutation.Rollback();
         check(run.teamData.goalie == beforeMutationGoalie && run.teamState.goaltenderState == beforeMutationState
             && GoaliePersistenceBridge.Roster.Selection.Reserve == null, "MutationRollbackRestoresExactPreviousOccupantsAndStateOwner");
+        check(run.teamState.forwardStates == refreshedForwards && run.teamState.relicStates == refreshedRelics,
+            "MutationRollbackPreservesRefreshedForwardAndRelicOwners");
+        var superseded = GoaliePersistenceBridge.Roster.Stage(run, proposed, new DeserializerV2()); superseded.Publish();
+        var nextMutation = GoaliePersistenceBridge.Roster.Stage(run, proposed, new DeserializerV2()); nextMutation.Publish();
+        var nextGoalie = run.teamData.goalie; var nextOwner = run.teamState.goaltenderState;
+        check(!superseded.Rollback() && run.teamData.goalie == nextGoalie && run.teamState.goaltenderState == nextOwner,
+            "RollbackCannotOverwriteInterveningMutation");
+        var foreignGoalie = GoalieNativeSnapshot.Restore(proposed.Active); run.teamData.goalie = foreignGoalie;
+        check(!nextMutation.Rollback() && run.teamData.goalie == foreignGoalie, "RollbackCannotOverwriteDifferentGoalieWithSameId");
+        run.teamData.goalie = nextGoalie; nextMutation.Rollback(); superseded.Rollback();
         mutation = GoaliePersistenceBridge.Roster.Stage(run, proposed, new DeserializerV2()); mutation.Publish(); goalie = run.teamData.goalie;
         RunDataModelV2 Model() => new() { runID = run.runID, squadId = run.squadId,
             team = new() { skaters = new() { new SerializerV2().SerializeToModel(run.teamData.goalie) } }, teamState = run.teamState };

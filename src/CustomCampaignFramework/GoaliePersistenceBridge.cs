@@ -266,7 +266,15 @@ internal static class GoaliePersistenceBridge
     internal static void Hydrated(DeserializerV2 deserializer, RunData run, RunDataModelV2 model)
     {
         Selections.Remove(model.Pointer, out var selected);
-        if (!Roster.Load(run, model, deserializer, selected, Plugin.ModFolder)) Warn(Roster.UnavailableReason);
+        if (!Roster.Load(run, model, deserializer, selected, Plugin.ModFolder))
+        {
+            Warn(Roster.UnavailableReason);
+            // This identity-checked legacy sidecar restores only omitted
+            // appearance on the native active. It does not infer a reserve,
+            // contracts or an earned-state/checkpoint generation. Resolve it
+            // here after the full-pair result, independent of postfix order.
+            GoalieRecruitment.Restore(run);
+        }
     }
     private static void HydratedPostfix(DeserializerV2 __instance, RunData __0, RunDataModelV2 __1) => Hydrated(__instance, __0, __1);
     private static void FreshPostfix(CampaignState __instance)

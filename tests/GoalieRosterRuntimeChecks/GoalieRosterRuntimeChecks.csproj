@@ -15,4 +15,8 @@
     <Compile Include="../../src/CustomCampaignFramework/JerseyLogoManagedTargets.cs" Link="JerseyLogoManagedTargets.cs" />
     <Compile Include="../../src/ModCompatibility/Shared/NativeCompatibilityProfile.cs" Link="NativeCompatibilityProfile.cs" />
   </ItemGroup>
+  <Target Name="ExtractProductionHelpers" BeforeTargets="BeforeCompile">
+    <Exec Command="python &quot;$(MSBuildProjectDirectory)/extract_helpers.py&quot; &quot;$(MSBuildProjectDirectory)/$(IntermediateOutputPath)AppearanceHelpers.g.cs&quot;" />
+    <ItemGroup><Compile Include="$(IntermediateOutputPath)AppearanceHelpers.g.cs" /></ItemGroup>
+  </Target>
 </Project>

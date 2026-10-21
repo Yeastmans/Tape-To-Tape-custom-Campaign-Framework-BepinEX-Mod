@@ -133,10 +133,14 @@ internal static class GoalieNativeSnapshot
         goalie.heightInches = omitted.Height; goalie.weightKg = omitted.Weight;
         var birth = goalie.birthDate; birth.Day = omitted.BirthDay; birth.Month = omitted.BirthMonth; birth.Year = omitted.BirthYear; goalie.birthDate = birth;
         goalie.flavorTextLoc = omitted.Flavor; goalie.perkFlavorTextLoc = omitted.PerkFlavor; goalie.powerupTextLoc = omitted.PowerupFlavor;
-        goalie.StickColor = stick; goalie.SkatesColor = skates; goalie.benchPower = bench;
+        goalie.benchPower = bench;
         goalie.numberFormat = (NumberFormat)number; goalie.passReadSkill = passRead;
         goalie.helmetAwaySkin = supplemental.Get("Recruit Away Helmet");
         CampaignAppearanceRuntime.RestoreRecruit(goalie, supplemental);
+        // RestoreRecruit rebuilds binding metadata and derives menu colors
+        // from authored keys (transparent when absent). This full snapshot
+        // owns the exact native values, including null, after that helper.
+        goalie.StickColor = stick; goalie.SkatesColor = skates;
         // Separate native goalieStats/runScorersStats remain native-owned. The
         // stable id, OriginalId and grouping flag above preserve their ownership.
         return new Restored(goalie, state);

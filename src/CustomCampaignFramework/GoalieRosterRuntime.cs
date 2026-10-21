@@ -50,7 +50,10 @@ internal sealed class GoalieRosterRuntime
         internal bool Rollback()
         {
             if (!published || finished || roster.run?.Pointer != run.Pointer || roster.state != proposed
-                || run.teamData.goalie?.Pointer != active.Goalie.Pointer || run.teamState.goaltenderState?.Pointer != active.State.Pointer) return false;
+                || run.teamData.goalie?.Pointer != active.Goalie.Pointer || run.teamState?.goaltenderState?.Id != active.Goalie.id) return false;
+            // Canonical saving replaces TeamState and captures a fresh goalie
+            // SkaterState. The published roster generation + goalie own this
+            // mutation; an expected save snapshot is not a different mutation.
             run.teamData.goalie = oldGoalie; run.teamState.goaltenderState = oldOwner; roster.state = previous; finished = true; return true;
         }
     }
