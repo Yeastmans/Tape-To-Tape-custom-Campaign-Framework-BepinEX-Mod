@@ -45,6 +45,7 @@ internal static class GoalieRosterMenu
         internal string Status, CardMessage;
         internal bool EmptyLabelUnavailable;
         internal readonly Dictionary<IntPtr, TextPresentation> Labels = new();
+        internal readonly Dictionary<IntPtr, BadgePresentation> Badges = new();
         internal GoalieSlot? Confirming, AttemptedSlot;
         internal Il2CppSystem.Action<AbstractMenu> Closed, Destroying;
     }
@@ -57,7 +58,18 @@ internal static class GoalieRosterMenu
         internal int Lines;
         internal TextOverflowModes Overflow;
     }
+    internal sealed class BadgePresentation
+    {
+        internal SkaterCard Card;
+        internal IntPtr Skater, Team;
+        internal ESkaterPosition Position;
+        internal GameObject Container;
+        internal RectTransform ContainerRect, TextRect;
+        internal Vector2 ContainerSize, ContainerPosition, TextSize;
+        internal bool Visible;
+    }
     internal static Selection Current;
+    private static readonly Dictionary<IntPtr, Selection> EntryPresentations = new();
     private static bool installed;
     internal static bool Enabled => installed && GoaliePersistenceBridge.Enabled;
     internal static void SetInstalled(bool value) => installed = value;
@@ -94,6 +106,7 @@ internal static class GoalieRosterMenu
     internal static void Open(CampaignState state, GoalieRecruitment.Offer offer, EventChoiceMenu gm, EventChoicePanel legacy, LineupMenu parent = null)
     {
         if (!Enabled || Current != null || GoaliePersistenceBridge.Roster.Busy || state?.runData?.teamData == null) return;
+        if (parent != null) RestoreEntry(parent);
         var s = new Selection { Campaign = state, Run = state.runData.Pointer, Folder = Plugin.ModFolder, Offer = offer, Gm = gm, Legacy = legacy, Parent = parent };
         Current = s;
         try {
@@ -156,7 +169,7 @@ internal static class GoalieRosterMenu
     internal static void Refresh(LineupMenu __instance)
     {
         if (Current?.Menu?.Pointer == __instance?.Pointer && !Current.Finished) Configure(Current);
-        else EntryLabel(__instance);
+        else EntryLabel(__instance, nativeRefreshed: true);
     }
     internal static string ContractText(GoalieRecord record) => record == null ? "Empty" : record.Contract == null ? "Permanent"
         : record.Contract.AwaitingReplacement ? "Expired — awaiting replacement"
@@ -179,9 +192,6 @@ internal static class GoalieRosterMenu
             var card = menu.m_ActivePlayersList.m_SkaterCards[i];
             card.SetLocked(s.Saving || s.Unresolved || s.Offer == null && (i == 0 || s.Reserve == null), true);
             if (card.m_PositionLetter != null) card.m_PositionLetter.text = i == 0 ? "A" : "R";
-            // This native badge is sized for a small number, not contract prose.
-            card.m_FreeAgentDurationContainer?.SetActive(false);
-            if (card.m_FreeAgentDuration != null) card.m_FreeAgentDuration.text = "";
         }
         Title(s, s.Status ?? (s.Offer == null ? "Goalies — select the reserve to swap" : "Choose a slot for " + s.Offer.Candidate.FullName));
     }
@@ -192,9 +202,6 @@ internal static class GoalieRosterMenu
         name = (name ?? "").Replace('\r', ' ').Replace('\n', ' ').Trim();
         return name.Length > 24 ? name.Substring(0, 23) + "…" : name;
     }
-    private static string CompactContract(GoalieRecord record) => record?.Contract == null ? "Permanent"
-        : record.Contract.AwaitingReplacement ? "Expired"
-        : $"{Math.Max(0, record.Contract.Duration - record.Contract.PlayedMatches)}/{record.Contract.Duration} matches";
     private static void LabelCards(Selection s)
     {
         var cards = s.Menu?.m_ActivePlayersList?.m_SkaterCards;
@@ -202,13 +209,18 @@ internal static class GoalieRosterMenu
         for (int i = 0; i < cards.Count && i < 2; i++) {
             var card = cards[i]; var slot = i == 0 ? GoalieSlot.Active : GoalieSlot.Reserve;
             bool empty = i == 1 && s.Reserve == null;
+            var record = i == 0 ? s.Snapshot.Active : s.Snapshot.Reserve;
+            // Like skaters, show remaining matches in the native contract badge.
+            // A pending hire previews the frozen offer only on its target card.
+            bool incoming = s.Offer != null && (s.Confirming == slot || s.Saving && s.AttemptedSlot == slot || s.Unresolved && s.AttemptedSlot == slot);
+            ContractBadge(s, card, incoming ? s.Offer.Contract : record?.Contract);
             string text = s.AttemptedSlot == slot
                 ? s.Saving ? "Saving…" : s.Unresolved ? "Save unresolved — go back" : s.CardMessage
                 : null;
             if (text == null) text = s.Confirming == slot
                 ? s.Offer == null ? "Confirm swap" : "Confirm hire " + ShortName(s.Offer.Candidate.FullName)
                 : empty ? s.Offer == null ? "Empty — recruit at GM" : "Empty — select to hire"
-                : ShortName(i == 0 ? s.Active.FullName : s.Reserve.FullName) + " · " + CompactContract(i == 0 ? s.Snapshot.Active : s.Snapshot.Reserve);
+                : ShortName(i == 0 ? s.Active.FullName : s.Reserve.FullName);
             FitLabel(s, card.m_SkaterName, slot + ": " + text);
             if (empty) {
                 // Both installed lineup card prefabs have four TMP descendants:
@@ -225,23 +237,64 @@ internal static class GoalieRosterMenu
     private static void FitLabel(Selection s, TMP_Text text, string value)
     {
         if (text == null) return;
-        if (!s.Labels.ContainsKey(text.Pointer)) s.Labels[text.Pointer] = new TextPresentation { Text = text, Value = text.text,
-            Auto = text.enableAutoSizing, Wrap = text.enableWordWrapping, Size = text.fontSize, Minimum = text.fontSizeMin,
-            Maximum = text.fontSizeMax, Lines = text.maxVisibleLines, Overflow = text.overflowMode };
+        CaptureLabel(s, text);
         var prior = s.Labels[text.Pointer];
         text.enableWordWrapping = false; text.enableAutoSizing = true;
         text.fontSizeMax = Math.Max(prior.Size, prior.Maximum); text.fontSizeMin = Math.Min(16, text.fontSizeMax);
         text.maxVisibleLines = 1; text.overflowMode = TextOverflowModes.Ellipsis; text.text = value;
     }
-    private static void RestoreLabels(Selection s)
+    private static void CaptureLabel(Selection s, TMP_Text text)
+    {
+        if (!s.Labels.ContainsKey(text.Pointer)) s.Labels[text.Pointer] = new TextPresentation { Text = text, Value = text.text,
+            Auto = text.enableAutoSizing, Wrap = text.enableWordWrapping, Size = text.fontSize, Minimum = text.fontSizeMin,
+            Maximum = text.fontSizeMax, Lines = text.maxVisibleLines, Overflow = text.overflowMode };
+    }
+    private static void ContractBadge(Selection s, SkaterCard card, GoalieContractState contract)
+    {
+        var text = card.m_FreeAgentDuration; var container = card.m_FreeAgentDurationContainer;
+        if (text == null || container == null) return;
+        CaptureLabel(s, text);
+        if (!s.Badges.TryGetValue(text.Pointer, out var prior)) {
+            var containerRect = container.GetComponent<RectTransform>(); var textRect = text.rectTransform;
+            prior = new BadgePresentation { Card = card, Skater = card.CurrentSkaterData.Skater?.Pointer ?? IntPtr.Zero,
+                Team = card.CurrentSkaterData.ActiveTeam?.Pointer ?? IntPtr.Zero, Position = card.CurrentSkaterData.ActivePosition,
+                Container = container, Visible = container.activeSelf,
+                ContainerRect = containerRect, TextRect = textRect,
+                ContainerSize = containerRect != null ? containerRect.sizeDelta : default,
+                ContainerPosition = containerRect != null ? containerRect.anchoredPosition : default,
+                TextSize = textRect != null ? textRect.sizeDelta : default };
+            s.Badges[text.Pointer] = prior;
+        }
+        string value = contract == null ? "" : Math.Max(0, contract.Duration - contract.PlayedMatches).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        text.enableWordWrapping = false; text.maxVisibleLines = 1;
+        text.enableAutoSizing = false; text.fontSize = s.Labels[text.Pointer].Size;
+        text.text = value;
+        if (prior.ContainerRect != null && prior.TextRect != null) {
+            // Native layout keeps child width fixed. Grow horizontally for extra
+            // digits while retaining the same left edge, height, font, and icon.
+            float extra = Math.Max(0, text.GetPreferredValues(value).x - prior.TextSize.x);
+            prior.TextRect.sizeDelta = new Vector2(prior.TextSize.x + extra, prior.TextSize.y);
+            prior.ContainerRect.sizeDelta = new Vector2(prior.ContainerSize.x + extra, prior.ContainerSize.y);
+            prior.ContainerRect.anchoredPosition = new Vector2(prior.ContainerPosition.x + extra / 2, prior.ContainerPosition.y);
+        }
+        container.SetActive(contract != null);
+    }
+    private static void RestoreLabels(Selection s, bool nativeRefreshed = false)
     {
         foreach (var prior in s.Labels.Values) if (prior.Text != null) {
             var text = prior.Text;
-            text.text = prior.Value; text.enableAutoSizing = prior.Auto; text.enableWordWrapping = prior.Wrap;
+            if (!nativeRefreshed) text.text = prior.Value;
+            text.enableAutoSizing = prior.Auto; text.enableWordWrapping = prior.Wrap;
             text.fontSize = prior.Size; text.fontSizeMin = prior.Minimum; text.fontSizeMax = prior.Maximum;
             text.maxVisibleLines = prior.Lines; text.overflowMode = prior.Overflow;
         }
         s.Labels.Clear();
+        foreach (var prior in s.Badges.Values) {
+            if (prior.ContainerRect != null) { prior.ContainerRect.sizeDelta = prior.ContainerSize; prior.ContainerRect.anchoredPosition = prior.ContainerPosition; }
+            if (prior.TextRect != null) prior.TextRect.sizeDelta = prior.TextSize;
+            if (!nativeRefreshed && prior.Container != null) prior.Container.SetActive(prior.Visible);
+        }
+        s.Badges.Clear();
     }
     internal static bool Pick(LineupMenu __instance, SkaterCard __0)
     {
@@ -317,16 +370,44 @@ internal static class GoalieRosterMenu
         }
         Open(campaign, null, null, null, menu); return true;
     }
-    internal static void EntryLabel(LineupMenu menu)
+    internal static void EntryLabel(LineupMenu menu, bool nativeRefreshed = false)
     {
+        // LoadCurrentTeam's caller marks pooled cards as freshly populated;
+        // InitData can also request this entry presentation before that refresh.
+        RestoreEntry(menu, nativeRefreshed);
         if (!Enabled || menu?.Team?.OriginalTeamData?.Pointer != CampaignUtil.CampaignState?.runData?.teamData?.Pointer
             || !GoalieRosterRuntime.IsMapContext(CampaignUtil.CampaignState)) return;
         if (menu.m_ActivePlayersList?.m_SkaterCards == null) return;
+        Selection display = null;
         foreach (var card in menu.m_ActivePlayersList.m_SkaterCards)
             if (card.CurrentSkaterData.ActivePosition == ESkaterPosition.Goalie) {
                 card.SetLocked(false, true);
                 if (card.m_PositionLetter != null) card.m_PositionLetter.text = "G";
+                if (GoaliePersistenceBridge.Roster.CanEdit(CampaignUtil.CampaignState)) {
+                    if (display == null) {
+                        display = new Selection { Menu = menu, Campaign = CampaignUtil.CampaignState, Run = CampaignUtil.CampaignState.runData.Pointer };
+                        display.Closed = (Action<AbstractMenu>)(_ => RestoreEntry(menu));
+                        display.Destroying = (Action<AbstractMenu>)(_ => RestoreEntry(menu));
+                        EntryPresentations[menu.Pointer] = display;
+                        menu.OnHidingCompleted.Register(display.Closed, "GoalieContractBadge");
+                        menu.OnDestroy.Register(display.Destroying, "GoalieContractBadge");
+                    }
+                    ContractBadge(display, card, GoaliePersistenceBridge.Roster.Selection?.Active?.Contract);
+                }
             }
+    }
+    private static void RestoreEntry(LineupMenu menu, bool nativeRefreshed = false)
+    {
+        if (menu == null || !EntryPresentations.TryGetValue(menu.Pointer, out var display)) return;
+        EntryPresentations.Remove(menu.Pointer);
+        // InitData and close can also arrive after a pooled card or run changes.
+        // Never replace that new native occupant's text/visibility with a prior baseline.
+        nativeRefreshed |= display.Run != CampaignUtil.CampaignState?.runData?.Pointer
+            || display.Campaign?.Pointer != CampaignUtil.CampaignState?.Pointer
+            || display.Badges.Values.Any(b => b.Card == null || b.Card.CurrentSkaterData.Skater?.Pointer != b.Skater
+                || b.Card.CurrentSkaterData.ActiveTeam?.Pointer != b.Team || b.Card.CurrentSkaterData.ActivePosition != b.Position);
+        RestoreLabels(display, nativeRefreshed);
+        menu.OnHidingCompleted.Unregister(display.Closed); menu.OnDestroy.Unregister(display.Destroying);
     }
     internal static bool RecruitClick(EventChoiceMenu __instance, AbstractNavigable __0)
     {

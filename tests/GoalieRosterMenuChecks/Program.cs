@@ -4,6 +4,7 @@ using State;
 using Data;
 using Tape2Tape;
 using Tape2Tape.Hockey.UI;
+using Tape2Tape.Customization.UI;
 using Rogue.NPC.GeneralManagerNPC;
 using System.Reflection;
 
@@ -50,7 +51,7 @@ var pair = Offer(state); var selection = Recruit(state, pair);
 var activeLabel = selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName;
 var emptyCard = selection.Menu.m_ActivePlayersList.m_SkaterCards[1];
 Check(selection.Menu.m_ActivePlayersList.m_SkaterCards.All(c => !c.m_FreeAgentDurationContainer.Active && c.m_FreeAgentDuration.text == ""), "ContractProseNeverUsesNarrowNativeBadge");
-Check(activeLabel.text.Contains("Permanent") && !activeLabel.enableWordWrapping && activeLabel.maxVisibleLines == 1 && activeLabel.overflowMode == TMPro.TextOverflowModes.Ellipsis, "ContractUsesBoundedSingleLineName");
+Check(activeLabel.text == "Active: active" && !activeLabel.enableWordWrapping && activeLabel.maxVisibleLines == 1 && activeLabel.overflowMode == TMPro.TextOverflowModes.Ellipsis, "NameUsesBoundedSingleLineWithoutContractProse");
 Check(emptyCard.m_EmptySeatContainer.Active && emptyCard.EmptySeatLabel.text.Contains("select to hire") && !emptyCard.Locked, "ActualVisibleEmptySeatExplainsRecruitAction");
 Check(emptyCard.m_EmptySeatContainer.Children.Length == 4 && emptyCard.EmptySwapLabel.text == "Swap"
     && emptyCard.EmptyStatNum.text == "20" && emptyCard.EmptyStatLabel.text == "OVR", "ExactEmptyNameLeavesNativeComparisonLabelsUnchanged");
@@ -90,7 +91,7 @@ Click(selection, 0); Click(selection, 0); Check(pair.Offer.Taken, "ConfirmedNoWr
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); ES3.FailStore = true;
 Click(selection, 1); Click(selection, 1); ES3.FailStore = false;
 Check(selection.Confirming == null && selection.Menu.m_ActivePlayersList.m_SkaterCards[1].EmptySeatLabel.text.Contains("Save failed")
-    && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text.Contains("Permanent"), "ReserveFailureKeepsAttemptedSlotAfterConfirmationCleared");
+    && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text == "Active: active", "ReserveFailureKeepsAttemptedSlotAfterConfirmationCleared");
 Click(selection, 0);
 Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text.Contains("Confirm hire")
     && selection.Menu.m_ActivePlayersList.m_SkaterCards[1].EmptySeatLabel.text.Contains("select to hire"), "ChangingTargetClearsPriorSlotStatus");
@@ -114,7 +115,9 @@ selection.Menu.TryLeaveMenu(false); Check(!GoalieRecruitment.BeginSelection(pair
 state = Fresh(); var roster = GoaliePersistenceBridge.Roster;
 roster.TryRecruit(state, new GoaltenderData { id = "reserve" }, GoalieSlot.Reserve, roster.Selection.Revision, signedContract: new() { Duration = 4, PlayedMatches = 2 });
 GoalieRosterMenu.Open(state); selection = GoalieRosterMenu.Current;
-Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[1].m_SkaterName.text.Contains("2/4 matches"), "ActualSignedContractDisplayed");
+Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[1].m_SkaterName.text == "Reserve: reserve", "ContractDurationDoesNotReplaceOrAppendToGoalieName");
+Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[1].m_FreeAgentDurationContainer.Active
+    && selection.Menu.m_ActivePlayersList.m_SkaterCards[1].m_FreeAgentDuration.text == "2", "SignedGoalieUsesNativeSkaterRemainingMatchesBadge");
 Click(selection, 1); Click(selection, 1);
 Check(GoalieRosterMenu.Current == null && state.runData.teamData.goalie.id == "reserve" && UnityEngine.Object.CurrentMenu.Team.m_G.id == "reserve"
     && !UnityEngine.Object.CurrentMenu.IsHiding && roster.Selection.Active.Contract.PlayedMatches == 2, "SwapRefreshesCanonicalParentWithoutClosingLineupOrResettingContract");
@@ -278,6 +281,8 @@ var firstMenu = new EventChoiceMenu { SourceNode = contextEvent, mapNode = first
 GoalieRosterMenu.RecruitInitialized(firstMenu); GoalieRecruitment.BeginVisit(contextEvent);
 Check(GoalieRecruitment.Choices(contextEvent, 0) && !firstMenu.Visible && GoalieRecruitment.Current.Offers[0].Contract == null,
     "ActualInitDataBindsPermanentOffersBeforeVisibilityWithoutMatchManager");
+Check(contextEvent.eventChoices.All(c => c.FreeAgentLeavingConditions == null || c.FreeAgentLeavingConditions.Count == 0),
+    "PermanentGmOffersDoNotInventNativeExpiryConditions");
 Check(state.currentNode == null && state.runData.currentNodePoint.x == 44, "MenuBindingDoesNotSynthesizeNativeCurrentNode");
 var firstVisit = GoalieRecruitment.Current; var firstWitness = firstVisit.Ledger.Witness;
 Check(!GoalieRecruitment.OwnsEvent(new GeneralManagerEvent()), "UnrelatedEventDoesNotBorrowBoundGM");
@@ -323,10 +328,10 @@ foreach (bool missingName in new[] { true, false }) {
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); state.Repository.CompleteImmediately = false;
 ES3.FailMarker = true; Click(selection, 1); Click(selection, 1);
 Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[1].EmptySeatLabel.text.Contains("Saving")
-    && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text.Contains("Permanent"), "PendingStatusOnlyMarksAttemptedReserve");
+    && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text == "Active: active", "PendingStatusOnlyMarksAttemptedReserve");
 state.Repository.Complete(state.Repository.Pending[0]); GoaliePersistenceBridge.Tick(); ES3.FailMarker = false;
 Check(!selection.Unresolved && selection.Menu.m_ActivePlayersList.m_SkaterCards[1].EmptySeatLabel.text.Contains("Save failed")
-    && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text.Contains("Permanent"), "DelayedReserveRollbackRetainsAttemptedSlot");
+    && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text == "Active: active", "DelayedReserveRollbackRetainsAttemptedSlot");
 selection.Menu.TryLeaveMenu(false);
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); ES3.FailMarker = true;
 Click(selection, 0); Click(selection, 0); ES3.FailMarker = false;
@@ -347,4 +352,96 @@ selection.Menu.m_Header.m_Title.text = "Reused native menu";
 state.Repository.Complete(state.Repository.Pending[0]); GoaliePersistenceBridge.Tick(); ES3.FailMarker = false;
 Check(selection.Unresolved && selection.Finished && selection.Labels.Count == 0 && closedLabel.enableWordWrapping
     && selection.Menu.m_Header.m_Title.text == "Reused native menu", "LateUnresolvedCallbackCannotRestyleClosedMenu");
+state = Fresh(); pair = Offer(state); pair.Offer.Contract = new() { Duration = 1000 }; selection = Recruit(state, pair);
+var incomingCard = selection.Menu.m_ActivePlayersList.m_SkaterCards[1];
+Check(!incomingCard.m_FreeAgentDurationContainer.Active, "EmptySlotHasNoCurrentContractBadge");
+var badgeRect = incomingCard.m_FreeAgentDurationContainer.GetComponent<UnityEngine.RectTransform>();
+float originalWidth = badgeRect.sizeDelta.x, originalLeft = badgeRect.anchoredPosition.x - badgeRect.sizeDelta.x / 2;
+float originalTextWidth = incomingCard.m_FreeAgentDuration.rectTransform.sizeDelta.x;
+Click(selection, 1);
+Check(incomingCard.m_FreeAgentDurationContainer.Active && incomingCard.m_FreeAgentDuration.text == "1000"
+    && incomingCard.EmptySeatLabel.text.Contains("Confirm hire"), "ConfirmedEmptyTargetPreviewsFrozenIncomingDurationInNativeBadge");
+Check(!incomingCard.m_FreeAgentDuration.enableWordWrapping && incomingCard.m_FreeAgentDuration.maxVisibleLines == 1
+    && incomingCard.m_FreeAgentDuration.rectTransform.sizeDelta.x >= 40
+    && Math.Abs(badgeRect.anchoredPosition.x - badgeRect.sizeDelta.x / 2 - originalLeft) < 0.001f,
+    "MultiDigitBadgeKeepsNativePlacementAndFitsWithoutVerticalWrapping");
+Click(selection, 0);
+Check(!incomingCard.m_FreeAgentDurationContainer.Active
+    && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_FreeAgentDuration.text == "1000", "IncomingBadgeFollowsConfirmationTarget");
+selection.Menu.TryLeaveMenu(false);
+Check(!incomingCard.m_FreeAgentDurationContainer.Active && incomingCard.m_FreeAgentDuration.text == ""
+    && badgeRect.sizeDelta.x == originalWidth && incomingCard.m_FreeAgentDuration.rectTransform.sizeDelta.x == originalTextWidth
+    && incomingCard.m_FreeAgentDuration.enableWordWrapping, "NativeBadgeGeometryTextStyleAndVisibilityRestoredOnExit");
+state = Fresh(); GoaliePersistenceBridge.Roster.TryRecruit(state, new GoaltenderData { id = "expired" }, GoalieSlot.Active,
+    GoaliePersistenceBridge.Roster.Selection.Revision, signedContract: new() { Duration = 4, PlayedMatches = 4, AwaitingReplacement = true });
+GoalieRosterMenu.Open(state); selection = GoalieRosterMenu.Current;
+Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_FreeAgentDurationContainer.Active
+    && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_FreeAgentDuration.text == "0", "ExpiredGoalieNativeBadgeShowsZeroRemaining");
+selection.Menu.TryLeaveMenu(false);
+state = Fresh(); GoaliePersistenceBridge.Roster.TryRecruit(state, new GoaltenderData { id = "timed" }, GoalieSlot.Active,
+    GoaliePersistenceBridge.Roster.Selection.Revision, signedContract: new() { Duration = 4, PlayedMatches = 1 });
+pair = Offer(state); selection = Recruit(state, pair);
+Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_FreeAgentDuration.text == "3", "RecruitmentInitiallyShowsCurrentOccupantRemainingMatches");
+Click(selection, 0);
+Check(!selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_FreeAgentDurationContainer.Active,
+    "PermanentIncomingOfferHidesExistingTimedBadgeDuringConfirmation");
+selection.Menu.TryLeaveMenu(false);
+state = Fresh(); GoaliePersistenceBridge.Roster.TryRecruit(state, new GoaltenderData { id = "timed-main" }, GoalieSlot.Active,
+    GoaliePersistenceBridge.Roster.Selection.Revision, signedContract: new() { Duration = 8, PlayedMatches = 3 });
+var ordinaryLineup = UnityEngine.Object.CurrentMenu;
+ordinaryLineup.LoadCurrentTeam();
+var ordinaryGoalie = ordinaryLineup.m_ActivePlayersList.m_SkaterCards[0];
+Check(ordinaryGoalie.m_FreeAgentDurationContainer.Active && ordinaryGoalie.m_FreeAgentDuration.text == "5"
+    && ordinaryGoalie.m_SkaterName.text == "timed-main" && GoalieRosterMenu.Current == null,
+    "OrdinaryLineupGoalieShowsNativeContractBadgeBeforeOpeningSubview");
+ordinaryLineup.LoadCurrentTeam(); ordinaryGoalie = ordinaryLineup.m_ActivePlayersList.m_SkaterCards[0];
+Check(ordinaryLineup.OnHidingCompleted.Actions.Count == 1 && ordinaryLineup.OnDestroy.Actions.Count == 1,
+    "RepeatedOrdinaryRefreshDoesNotAccumulateBadgeLifecycleHandlers");
+GoalieRosterMenu.EntryLabel(ordinaryLineup);
+Check(ordinaryGoalie.m_FreeAgentDuration.text == "5" && ordinaryLineup.OnDestroy.Actions.Count == 1,
+    "InitEntryAfterLoadDoesNotCaptureAlreadyProjectedBadgeAsNativeBaseline");
+ordinaryLineup.OnHidingCompleted.Invoke(ordinaryLineup);
+Check(!ordinaryGoalie.m_FreeAgentDurationContainer.Active && ordinaryGoalie.m_FreeAgentDuration.text == ""
+    && ordinaryLineup.OnHidingCompleted.Actions.Count == 0 && ordinaryLineup.OnDestroy.Actions.Count == 0,
+    "OrdinaryBadgeRestoresAndUnregistersOnClose");
+ordinaryLineup.LoadCurrentTeam(); ordinaryGoalie = ordinaryLineup.m_ActivePlayersList.m_SkaterCards[0];
+GoalieRosterMenu.Open(state); selection = GoalieRosterMenu.Current;
+Check(!ordinaryGoalie.m_FreeAgentDurationContainer.Active && ordinaryLineup.OnDestroy.Actions.Count == 1,
+    "OpeningGoalieSubviewRestoresOrdinaryBadgeAndTransfersLifecycleOwnership");
+selection.Menu.TryLeaveMenu(false);
+ordinaryLineup.OnDestroy.Invoke(ordinaryLineup);
+Check(ordinaryLineup.OnDestroy.Actions.Count == 0, "OrdinaryBadgeRestoresAfterSubviewReturnAndDestroy");
+ordinaryLineup.LoadCurrentTeam(); ordinaryGoalie = ordinaryLineup.m_ActivePlayersList.m_SkaterCards[0];
+// Model the native pool reusing this exact card before LoadCurrentTeam's postfix.
+ordinaryLineup.Team.OriginalTeamData = new TeamData();
+ordinaryGoalie.CurrentSkaterData = new(ordinaryLineup.Team.OriginalTeamData, new GoaltenderData { id = "foreign" }, ESkaterPosition.C, null, null, Tape2Tape.Customization.UI.EStatBonusesPreviewMode.None, null);
+ordinaryGoalie.m_FreeAgentDuration.text = "7"; ordinaryGoalie.m_FreeAgentDurationContainer.SetActive(true);
+GoalieRosterMenu.Refresh(ordinaryLineup);
+Check(ordinaryGoalie.m_FreeAgentDuration.text == "7" && ordinaryGoalie.m_FreeAgentDurationContainer.Active
+    && ordinaryGoalie.m_FreeAgentDuration.enableWordWrapping && ordinaryLineup.OnDestroy.Actions.Count == 0,
+    "PooledForeignCardKeepsNativeRefreshedContractValuesAfterPostfixCleanup");
+state = Fresh(); ordinaryLineup = UnityEngine.Object.CurrentMenu; ordinaryLineup.LoadCurrentTeam();
+ordinaryGoalie = ordinaryLineup.m_ActivePlayersList.m_SkaterCards[0];
+state.runData = new RunData { teamData = state.runData.teamData };
+ordinaryGoalie.m_FreeAgentDuration.text = "9"; ordinaryGoalie.m_FreeAgentDurationContainer.SetActive(true);
+GoalieRosterMenu.EntryLabel(ordinaryLineup);
+Check(ordinaryGoalie.m_FreeAgentDuration.text == "9" && ordinaryGoalie.m_FreeAgentDurationContainer.Active
+    && ordinaryLineup.OnDestroy.Actions.Count == 0, "ChangedRunEntryPreservesNewNativeBadgeAndDropsOldOwnership");
+state = Fresh(); File.WriteAllText(Path.Combine(Plugin.ModFolder, "campaign.txt"), "Goalie Recruitment = On");
+contextPool = GoalieFreeAgents.DirectoryPath(Plugin.ModFolder); Directory.CreateDirectory(contextPool);
+var finiteFile = Path.Combine(contextPool, "finite.txt");
+File.WriteAllText(finiteFile, "Position = Goalie\nCustom Contract = yes\nContract Matches = 1000\n");
+contextEvent = new GeneralManagerEvent(); firstMenu = new EventChoiceMenu { SourceNode = contextEvent, mapNode = new STS.Map.MapNode() };
+GoalieRosterMenu.RecruitInitialized(firstMenu); GoalieRecruitment.BeginVisit(contextEvent); int previewSaves = state.Repository.Saves;
+Check(GoalieRecruitment.Choices(contextEvent, 0), "FiniteGmOfferBuildsFromProductionChoices");
+var frozenOffer = GoalieRecruitment.Current.Offers.Single();
+var condition = contextEvent.eventChoices.Single().FreeAgentLeavingConditions.Single() as Rogue.FreeAgents.MaxGamesCondition;
+Check(condition != null && condition.maxMatches == 1000 && condition.matches == 0 && frozenOffer.Contract.Duration == 1000,
+    "FiniteGmOfferUsesNativeMaxGamesConditionWithFrozenDuration");
+File.WriteAllText(finiteFile, "Position = Goalie\nCustom Contract = yes\nContract Matches = 1\n");
+condition.matches = 1;
+Check(frozenOffer.Contract.Duration == 1000 && frozenOffer.Contract.PlayedMatches == 0
+    && GoaliePersistenceBridge.Roster.Selection.Active.Contract == null && state.Repository.Saves == previewSaves,
+    "NativeGmPreviewConditionsRemainDetachedFromFrozenOfferAndRoster");
+GoalieRecruitment.Closed(firstMenu);
 Console.WriteLine($"PASS {checks} source-linked goalie menu and native-order checks");

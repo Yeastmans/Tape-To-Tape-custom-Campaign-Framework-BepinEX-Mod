@@ -11,9 +11,12 @@ namespace TMPro {
         public string text; public bool enableAutoSizing, enableWordWrapping = true;
         public float fontSize = 30, fontSizeMin = 12, fontSizeMax = 30;
         public int maxVisibleLines = 100; public TextOverflowModes overflowMode;
+        public UnityEngine.RectTransform rectTransform = new() { sizeDelta = new(13.8444f, 16) };
+        public UnityEngine.Vector2 GetPreferredValues(string value) => new(value.Length * 10f, 16);
     }
 }
 namespace UnityEngine {
+    public struct Vector2 { public float x, y; public Vector2(float x, float y) { this.x=x; this.y=y; } }
     public class MonoBehaviour : Il2CppSystem.Object { public void StartCoroutine(IEnumerator routine) { while (routine.MoveNext()) {} } }
     public class CanvasGroup { public float alpha = 1; public bool interactable = true, blocksRaycasts = true; }
     public class Transform {
@@ -21,7 +24,8 @@ namespace UnityEngine {
         public Transform Find(string path) { Transform current = this; foreach (var name in path.Split('/')) { if (!current.Children.TryGetValue(name, out var child)) return null; current = child; } return current; }
         public T GetComponent<T>() where T : class => Components.OfType<T>().SingleOrDefault();
     }
-    public class GameObject { public bool Active = true; public bool activeSelf => Active; public object[] Children = Array.Empty<object>(); public Transform transform = new(); public void SetActive(bool value) => Active = value; public T[] GetComponentsInChildren<T>(bool inactive) => Children.OfType<T>().ToArray(); }
+    public class RectTransform : Transform { public Vector2 sizeDelta = new(42.1458f, 24), anchoredPosition = new(21.0729f, -68); }
+    public class GameObject { public bool Active = true; public bool activeSelf => Active; public object[] Children = Array.Empty<object>(); public Transform transform = new RectTransform(); public void SetActive(bool value) => Active = value; public T[] GetComponentsInChildren<T>(bool inactive) => Children.OfType<T>().ToArray(); public T GetComponent<T>() where T : class => transform as T; }
     public static class Object {
         public static LineupMenu CurrentMenu;
         public static int Destroyed;
@@ -185,9 +189,13 @@ namespace STS.Map {
     public class EventNode : Il2CppSystem.Object { public List<EventChoice> eventChoices = new(); }
     public enum EEventChoiceType { Skater }
     public class EventTermParam {}
-    public class EventChoice { public bool interactable = true; public SkaterData Skater; public string translatedButtonName; public NodeType nodeType; public EEventChoiceType ChoiceType; public Il2CppSystem.Collections.Generic.List<EventTermParam> choicesTermParams; public Il2CppSystem.Action onSelection; }
+    public class EventChoice { public bool interactable = true; public SkaterData Skater; public string translatedButtonName; public NodeType nodeType; public EEventChoiceType ChoiceType; public Il2CppSystem.Collections.Generic.List<EventTermParam> choicesTermParams; public Il2CppSystem.Action onSelection; public Il2CppSystem.Collections.Generic.IReadOnlyList<Rogue.FreeAgents.LeavingCondition> FreeAgentLeavingConditions; }
     public class MapNode : Il2CppSystem.Object { public Node Node = new(); public Il2CppSystem.Object Blueprint = new(); }
     public class Node { public int NodeIndex, LayerIndex; }
+}
+namespace Rogue.FreeAgents {
+    public class LeavingCondition : Il2CppSystem.Object {}
+    public class MaxGamesCondition : LeavingCondition { public int maxMatches, matches; public int MatchesLeft => maxMatches - matches; }
 }
 namespace Rogue.NPC.GeneralManagerNPC {
     public class GeneralManagerEvent : STS.Map.EventNode { public int NextCalls, LastCount; public int NumTimesToOfferChoices = 2; public bool NextChoices(int count) { NextCalls++; LastCount = count; return count < 2; } }
