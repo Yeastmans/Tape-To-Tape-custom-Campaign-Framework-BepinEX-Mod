@@ -196,10 +196,16 @@ internal static class GoalieRecruitment
                 var offer = new Offer { Visit = current, Revision = revision, Candidate = goalie, Id = offerId,
                     Contract = GoalieContractRuntime.Sign(cfg.Fields, goalie.id) };
                 current.Offers.Add(offer);
+                // Use the native skater contract row, but only detached preview
+                // conditions: goalie contracts never enter native skater state.
+                var conditions = new Il2CppSystem.Collections.Generic.List<Rogue.FreeAgents.LeavingCondition>();
+                var contract = offer.Contract;
+                if (contract != null) conditions.Add(new Rogue.FreeAgents.MaxGamesCondition { maxMatches = contract.Duration, matches = 0 });
                 cards.Add(new EventChoice
                 {
                     translatedButtonName = "Recruit " + goalie.FullName + " — " + GoalieContractRuntime.OfferText(offer.Contract) + " — choose goalie slot",
                     interactable = true, nodeType = NodeType.GeneralManager, ChoiceType = EEventChoiceType.Skater,
+                    FreeAgentLeavingConditions = conditions.Cast<Il2CppSystem.Collections.Generic.IReadOnlyList<Rogue.FreeAgents.LeavingCondition>>(),
                     Skater = goalie, choicesTermParams = new Il2CppSystem.Collections.Generic.List<EventTermParam>(),
                     onSelection = (Action)(() => BeginSelection(offer))
                 });
