@@ -5,10 +5,18 @@ using EndlessMode;
 using BishopGames.UI;
 using Tape2Tape.Hockey.UI;
 using Tape2Tape.Customization.UI;
+namespace TMPro {
+    public enum TextOverflowModes { Overflow, Ellipsis }
+    public class TMP_Text : Il2CppSystem.Object {
+        public string text; public bool enableAutoSizing, enableWordWrapping = true;
+        public float fontSize = 30, fontSizeMin = 12, fontSizeMax = 30;
+        public int maxVisibleLines = 100; public TextOverflowModes overflowMode;
+    }
+}
 namespace UnityEngine {
     public class MonoBehaviour : Il2CppSystem.Object { public void StartCoroutine(IEnumerator routine) { while (routine.MoveNext()) {} } }
     public class CanvasGroup { public float alpha = 1; public bool interactable = true, blocksRaycasts = true; }
-    public class GameObject { public bool Active = true; public bool activeSelf => Active; public void SetActive(bool value) => Active = value; }
+    public class GameObject { public bool Active = true; public bool activeSelf => Active; public object[] Children = Array.Empty<object>(); public void SetActive(bool value) => Active = value; public T[] GetComponentsInChildren<T>(bool inactive) => Children.OfType<T>().ToArray(); }
     public static class Object {
         public static LineupMenu CurrentMenu;
         public static int Destroyed;
@@ -60,7 +68,9 @@ namespace Tape2Tape.Customization.UI {
         public AbstractNavigable Navigable = new();
         public Text m_PositionLetter = new(), m_SkaterName = new(), m_FreeAgentDuration = new();
         public UnityEngine.GameObject m_FreeAgentDurationContainer = new();
-        public SkaterCard() { Navigable.Clicked += Toggle.OnNavigableClicked; }
+        public Text EmptySeatLabel = new() { text = "Empty Seat" };
+        public UnityEngine.GameObject m_EmptySeatContainer = new(), m_FilledSeatContainer = new();
+        public SkaterCard() { Navigable.Clicked += Toggle.OnNavigableClicked; m_EmptySeatContainer.Children = new object[] { EmptySeatLabel }; }
         public void SetLocked(bool value, bool force) { Locked = value; Toggle.CanToggle = !value; }
     }
     public class SkaterCardList {
@@ -77,6 +87,7 @@ namespace Tape2Tape.Customization.UI {
                 var card = new SkaterCard { CurrentSkaterData = item };
                 card.m_PositionLetter.text = item.ActivePosition == ESkaterPosition.Goalie ? "G" : "C";
                 card.m_SkaterName.text = (item.Skater as GoaltenderData)?.FullName ?? "Empty";
+                card.m_EmptySeatContainer.SetActive(item.Skater == null); card.m_FilledSeatContainer.SetActive(item.Skater != null);
                 card.m_FreeAgentDurationContainer.SetActive(false); card.m_FreeAgentDuration.text = "";
                 System.Action handler = () => OnSkaterCardToggled?.Invoke(card);
                 subscriptions.Add(card, handler); card.Toggle.SelectionChanged += handler;
@@ -100,7 +111,7 @@ namespace Tape2Tape.Customization.UI {
     }
 }
 namespace Tape2Tape.Hockey.UI {
-    public class Text { public string text; } public class Header { public Text m_Title = new(); }
+    public class Text : TMPro.TMP_Text { } public class Header { public Text m_Title = new(); }
     public class LineupMenu : AbstractMenu {
         public class Metadata { public TeamData Team; public bool LockPlayers, IsHomeTeam; }
         public TeamRosterData Team; public bool m_HideBench, m_AreSkatersLocked;

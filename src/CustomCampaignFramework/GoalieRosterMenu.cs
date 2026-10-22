@@ -17,6 +17,7 @@ using Tape2Tape;
 using Tape2Tape.Customization.UI;
 using Tape2Tape.Hockey.UI;
 using UnityEngine;
+using TMPro;
 
 namespace EndlessMode;
 
@@ -41,9 +42,20 @@ internal static class GoalieRosterMenu
         internal EventChoicePanel Legacy;
         internal bool Ready, Saving, Finished, Committed, Unresolved, Destroyed;
         internal bool ParentPolicyCaptured, ParentHideBench, ParentBenchVisible;
-        internal string Status;
+        internal string Status, CardMessage;
+        internal bool EmptyLabelUnavailable;
+        internal readonly Dictionary<IntPtr, TextPresentation> Labels = new();
         internal GoalieSlot? Confirming;
         internal Il2CppSystem.Action<AbstractMenu> Closed, Destroying;
+    }
+    internal sealed class TextPresentation
+    {
+        internal TMP_Text Text;
+        internal string Value;
+        internal bool Auto, Wrap;
+        internal float Size, Minimum, Maximum;
+        internal int Lines;
+        internal TextOverflowModes Overflow;
     }
     internal static Selection Current;
     private static bool installed;
@@ -151,6 +163,7 @@ internal static class GoalieRosterMenu
         : $"{Math.Max(0, record.Contract.Duration - record.Contract.PlayedMatches)} / {record.Contract.Duration} played matches remaining";
     private static void Configure(Selection s)
     {
+        RestoreLabels(s);
         var menu = s.Menu;
         var cards = new Il2CppSystem.Collections.Generic.List<SkaterDataForUI>();
         // SkaterDataForUI is a native 48-byte struct represented by a managed
@@ -165,14 +178,69 @@ internal static class GoalieRosterMenu
         for (int i = 0; i < menu.m_ActivePlayersList.m_SkaterCards.Count; i++) {
             var card = menu.m_ActivePlayersList.m_SkaterCards[i];
             card.SetLocked(s.Saving || s.Unresolved || s.Offer == null && (i == 0 || s.Reserve == null), true);
-            if (card.m_PositionLetter != null) card.m_PositionLetter.text = i == 0 ? "Active" : "Reserve";
-            if (card.m_SkaterName != null) card.m_SkaterName.text = (i == 0 ? s.Active.FullName : s.Reserve?.FullName) ?? "Empty reserve";
-            card.m_FreeAgentDurationContainer?.SetActive(true);
-            if (card.m_FreeAgentDuration != null) card.m_FreeAgentDuration.text = ContractText(i == 0 ? s.Snapshot.Active : s.Snapshot.Reserve);
+            if (card.m_PositionLetter != null) card.m_PositionLetter.text = i == 0 ? "A" : "R";
+            // This native badge is sized for a small number, not contract prose.
+            card.m_FreeAgentDurationContainer?.SetActive(false);
+            if (card.m_FreeAgentDuration != null) card.m_FreeAgentDuration.text = "";
         }
         Title(s, s.Status ?? (s.Offer == null ? "Goalies — select the reserve to swap" : "Choose a slot for " + s.Offer.Candidate.FullName));
     }
-    private static void Title(Selection s, string title) { s.Status = title; if (s.Menu?.m_Header?.m_Title != null) s.Menu.m_Header.m_Title.text = title; }
+    private static void Title(Selection s, string title)
+    { if (s.Finished) return; s.Status = title; if (s.Menu?.m_Header?.m_Title != null) s.Menu.m_Header.m_Title.text = title; LabelCards(s); }
+    private static string ShortName(string name)
+    {
+        name = (name ?? "").Replace('\r', ' ').Replace('\n', ' ').Trim();
+        return name.Length > 24 ? name.Substring(0, 23) + "…" : name;
+    }
+    private static string CompactContract(GoalieRecord record) => record?.Contract == null ? "Permanent"
+        : record.Contract.AwaitingReplacement ? "Expired"
+        : $"{Math.Max(0, record.Contract.Duration - record.Contract.PlayedMatches)}/{record.Contract.Duration} matches";
+    private static void LabelCards(Selection s)
+    {
+        var cards = s.Menu?.m_ActivePlayersList?.m_SkaterCards;
+        if (cards == null) return;
+        for (int i = 0; i < cards.Count && i < 2; i++) {
+            var card = cards[i]; var slot = i == 0 ? GoalieSlot.Active : GoalieSlot.Reserve;
+            bool empty = i == 1 && s.Reserve == null;
+            string text = s.Saving ? "Saving…" : s.Unresolved ? "Save unresolved — go back" : s.CardMessage;
+            if (text == null) text = s.Confirming == slot
+                ? s.Offer == null ? "Confirm swap" : "Confirm hire " + ShortName(s.Offer.Candidate.FullName)
+                : empty ? s.Offer == null ? "Empty — recruit at GM" : "Empty — select to hire"
+                : ShortName(i == 0 ? s.Active.FullName : s.Reserve.FullName) + " · " + CompactContract(i == 0 ? s.Snapshot.Active : s.Snapshot.Reserve);
+            FitLabel(s, card.m_SkaterName, slot + ": " + text);
+            if (empty) {
+                // Native null-skater cards hide m_SkaterName and show a separate
+                // EmptySeat container. Only adapt its unambiguous text widget.
+                var labels = card.m_EmptySeatContainer?.GetComponentsInChildren<TMP_Text>(true);
+                if (labels?.Length == 1) FitLabel(s, labels[0], slot + ": " + text);
+                else if (!s.EmptyLabelUnavailable) {
+                    s.EmptyLabelUnavailable = true;
+                    Plugin.Log.LogWarning("[GoalieRoster] Empty-slot label layout unavailable; retaining native label and header instructions.");
+                }
+            }
+        }
+    }
+    private static void FitLabel(Selection s, TMP_Text text, string value)
+    {
+        if (text == null) return;
+        if (!s.Labels.ContainsKey(text.Pointer)) s.Labels[text.Pointer] = new TextPresentation { Text = text, Value = text.text,
+            Auto = text.enableAutoSizing, Wrap = text.enableWordWrapping, Size = text.fontSize, Minimum = text.fontSizeMin,
+            Maximum = text.fontSizeMax, Lines = text.maxVisibleLines, Overflow = text.overflowMode };
+        var prior = s.Labels[text.Pointer];
+        text.enableWordWrapping = false; text.enableAutoSizing = true;
+        text.fontSizeMax = Math.Max(prior.Size, prior.Maximum); text.fontSizeMin = Math.Min(16, text.fontSizeMax);
+        text.maxVisibleLines = 1; text.overflowMode = TextOverflowModes.Ellipsis; text.text = value;
+    }
+    private static void RestoreLabels(Selection s)
+    {
+        foreach (var prior in s.Labels.Values) if (prior.Text != null) {
+            var text = prior.Text;
+            text.text = prior.Value; text.enableAutoSizing = prior.Auto; text.enableWordWrapping = prior.Wrap;
+            text.fontSize = prior.Size; text.fontSizeMin = prior.Minimum; text.fontSizeMax = prior.Maximum;
+            text.maxVisibleLines = prior.Lines; text.overflowMode = prior.Overflow;
+        }
+        s.Labels.Clear();
+    }
     internal static bool Pick(LineupMenu __instance, SkaterCard __0)
     {
         var s = Current;
@@ -184,6 +252,7 @@ internal static class GoalieRosterMenu
         if (index < 0 || index > 1 || index == 1 && !s.Snapshot.ReserveEnabled) return false;
         if (s.Offer == null && (index != 1 || s.Reserve == null)) return false;
         var slot = index == 0 ? GoalieSlot.Active : GoalieSlot.Reserve;
+        s.CardMessage = null;
         __0.Toggle.SetSelected(false, false);
         bool? prevention = null;
         if (s.Offer != null && slot == GoalieSlot.Reserve && GoalieContractPolicy.Expired(s.Snapshot.Active)) {
@@ -215,12 +284,12 @@ internal static class GoalieRosterMenu
             } else if (result.Outcome == GoalieRosterRuntime.ChangeOutcome.Unresolved) {
                 s.Unresolved = true; if (s.Offer != null) s.Offer.Unresolved = true;
                 Title(s, result.Message);
-            } else { s.Confirming = null; Title(s, result.Message); }
+            } else { s.Confirming = null; s.CardMessage = "Save failed — select again"; Title(s, result.Message); }
         }
         bool accepted = s.Offer != null
             ? GoaliePersistenceBridge.Roster.TryRecruit(s.Campaign, s.Offer.Candidate, slot, s.Revision, Completed, s.Offer.Contract, s.Offer.Visit.Ledger, s.Offer.Id, s.DeparturePrevention, s.Offer.Visit.Selection.Index, s.Offer.Visit.Selection.Layer)
             : GoaliePersistenceBridge.Roster.TrySwap(s.Campaign, s.Revision, Completed);
-        if (!accepted) { s.Saving = false; s.Confirming = null; Title(s, "Goalie selection changed or could not be prepared. Go back and reopen."); }
+        if (!accepted) { s.Saving = false; s.Confirming = null; s.CardMessage = "Unavailable — reopen"; Title(s, "Goalie selection changed or could not be prepared. Go back and reopen."); }
         return false;
     }
     internal static bool Leave(LineupMenu __instance)
@@ -252,7 +321,7 @@ internal static class GoalieRosterMenu
         foreach (var card in menu.m_ActivePlayersList.m_SkaterCards)
             if (card.CurrentSkaterData.ActivePosition == ESkaterPosition.Goalie) {
                 card.SetLocked(false, true);
-                if (card.m_PositionLetter != null) card.m_PositionLetter.text = "Manage goalies";
+                if (card.m_PositionLetter != null) card.m_PositionLetter.text = "G";
             }
     }
     internal static bool RecruitClick(EventChoiceMenu __instance, AbstractNavigable __0)
@@ -284,6 +353,7 @@ internal static class GoalieRosterMenu
     internal static void Finish(Selection s)
     {
         if (s == null || s.Finished) return; s.Finished = true;
+        RestoreLabels(s);
         if (s.Menu != null && s.Closed != null) { s.Menu.OnHidingCompleted.Unregister(s.Closed); s.Menu.OnDestroy.Unregister(s.Destroying); }
         if (ReferenceEquals(Current, s)) Current = null;
         if (s.Offer != null && !s.Saving) GoalieRecruitment.Cancel(s.Offer);
