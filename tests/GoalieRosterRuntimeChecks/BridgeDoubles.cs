@@ -73,6 +73,11 @@ public static partial class ES3 {
     internal static bool FailMarker, FailStore, WrongMarkerReadback;
     internal static System.Action AfterStore;
     internal static Il2CppSystem.Exception AdmissionError;
+    internal static int GenericSaveCalls;
+    public static void Save<T>(string key, T value, ES3Settings settings) {
+        GenericSaveCalls++;
+        Save(key, (Il2CppSystem.Object)(object)value, settings);
+    }
     public static void Save(string key, Il2CppSystem.Object value, ES3Settings settings) {
         if (!ES3File.cachedFiles.TryGetValue(settings.path, out var file)) ES3File.cachedFiles[settings.path] = file = new(settings, false);
         if (key == GoalieRosterStore.MarkerKey && FailMarker) throw new IOException("marker injection failure");

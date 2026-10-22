@@ -1,0 +1,13 @@
+# Native checkpoint marker write repair
+
+Parent source: `643aed397b9154048717a5469b8c5fcfd9166383`. Installed predecessor: `52448BC1E666CDD01A7A935DAD0354AF375C1AB2BE7632544A8C7E44D90F67C6`.
+
+The live retest reached the verified fresh-run boundary (`reserve=True`) and produced two GM offers. Native saves then logged a type-initializer failure for `MethodInfoStoreGeneric_Save_Public_Static_Void_String_T_ES3Settings_0`.
+
+Inspection of the exact installed DLL proves that GoalieNativeCheckpoint.Inject selected `ES3.Save<Il2CppSystem.String>(string,T,ES3Settings)`. The presence of the correct non-generic overload in startup preflight did not force that overload at the C# call site. Installed generated ES3 code resolves the generic method through a static generic MethodInfo store and MakeGenericMethod. Installed Il2CppSystem.String initializes `Il2CppClassPointerStore<System.String>`; the inferred wrapper type requests the different `Il2CppClassPointerStore<Il2CppSystem.String>` store. Live logging captured the outer TypeInitializationException message, not its inner exception. The compiled generic call and incompatible class-store path are confirmed; the exact inner exception is not claimed.
+
+Injection now explicitly casts the already-native marker to Il2CppSystem.Object, selecting the reviewed concrete `Save(string,Il2CppSystem.Object,ES3Settings)` method. That wrapper marshals native object/settings pointers and invokes its fixed MethodInfo directly, with no generic method-store initialization. Settings, cache location, marker text, readback, exact run-entry checks, and rollback remain unchanged. An existing marker still rolls back with its original type and byte-array references; an absent marker is removed without touching unrelated keys.
+
+Two diagnostics failed before the source fix: a compiled-IL check against installed 5244 and a source-linked boundary check after adding the missing competing generic overload to its double. The repaired diagnostic DLL passes all 21 actual-wrapper/compiled-IL checks. The runtime suite includes marker success readback, both rollback cases, and a counter proving injection did not select the competing generic overload. Native gameplay is not executed by these diagnostics. The updater allowlists the installed predecessor; native compatibility metadata is unchanged.
+
+Evidence: `artifacts/feature-test-crash-20261022/menu-context-failure/live-checkpoint-save-failure/` contains preserved live logs, red/green marker checks, and the canonical source guard. The original candidate and receipt remain preserved. Final integrated package validation and human save/recruit/Continue acceptance are separate requirements.

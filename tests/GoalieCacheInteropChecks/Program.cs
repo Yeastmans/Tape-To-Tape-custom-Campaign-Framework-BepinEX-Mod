@@ -45,6 +45,20 @@ Check(read != null && methods.SelectMany(Calls).Count(m => m.DeclaringType.FullN
     "all three compiled cache read sites use the typed safe entry reader");
 Check(Calls(methods.Single(m => m.Name == "Inject")).Any(m => m.DeclaringType.FullName == "Il2CppSystem.Collections.IDictionary" && m.Name == "set_Item"),
     "compiled precise rollback uses native boxed-object setter");
+// Overload presence alone does not prove C# selected it. String's generated
+// wrapper initializes the System.String native-class store, so inferring the
+// Il2CppSystem.String generic argument reaches a different uninitialized store.
+var markerWrite = Calls(methods.Single(m => m.Name == "Inject")).Single(m => m.DeclaringType.FullName == "ES3" && m.Name == "Save");
+Check(markerWrite is not GenericInstanceMethod && !markerWrite.HasGenericParameters
+    && markerWrite.Parameters.Select(p => p.ParameterType.FullName).SequenceEqual(new[] { "System.String", "Il2CppSystem.Object", "ES3Settings" }),
+    "compiled marker write selects exact non-generic object Save overload");
+Console.WriteLine("MARKER_WRITE " + markerWrite.FullName);
+var concreteSave = main.GetType("ES3").Methods.Single(m => m.Name == "Save" && !m.HasGenericParameters
+    && m.Parameters.Select(p => p.ParameterType.FullName).SequenceEqual(new[] { "System.String", "Il2CppSystem.Object", "ES3Settings" }));
+Check(CallsNamed(concreteSave, "il2cpp_runtime_invoke") && !CallsNamed(concreteSave, "MakeGenericMethod")
+    && concreteSave.Body.Instructions.Select(i => i.Operand).OfType<FieldReference>().Any(f => f.Name == "NativeMethodInfoPtr_Save_Public_Static_Void_String_Object_ES3Settings_0")
+    && !concreteSave.Body.Instructions.Select(i => i.Operand).OfType<FieldReference>().Any(f => f.DeclaringType is GenericInstanceType),
+    "installed concrete marker writer invokes direct native method without generic method store");
 var card = main.Types.Single(t => t.Name == "SkaterDataForUI");
 Check(card.BaseType.FullName == "Il2CppSystem.ValueType" && !card.IsValueType, "installed lineup card is another native struct represented as managed class");
 var list = wrappers.GetType("Il2CppSystem.Collections.Generic.List`1");

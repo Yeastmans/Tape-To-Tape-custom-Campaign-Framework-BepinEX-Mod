@@ -83,7 +83,10 @@ internal sealed class GoalieNativeCheckpoint
         {
             var settings = new ES3Settings(Path, File.settings) { location = ES3.Location.Cache };
             Il2CppSystem.String nativeMarker = marker;
-            ES3.Save(GoalieRosterStore.MarkerKey, nativeMarker, settings);
+            // Force the reviewed concrete overload. Generic inference otherwise
+            // picks Il2CppSystem.String, whose generated native-class store is
+            // different from the System.String store initialized by interop.
+            ES3.Save(GoalieRosterStore.MarkerKey, (Il2CppSystem.Object)nativeMarker, settings);
             if ((string)File.Load(GoalieRosterStore.MarkerKey)?.TryCast<Il2CppSystem.String>() != marker || !SameEntry())
                 throw new InvalidDataException("Native checkpoint marker readback failed.");
         }
