@@ -14,6 +14,7 @@
     <Compile Include="../../src/CustomCampaignFramework/GoalieRosterRuntime.cs" Link="GoalieRosterRuntime.cs" />
     <Compile Include="../../src/CustomCampaignFramework/GoaliePersistenceBridge.cs" Link="GoaliePersistenceBridge.cs" />
     <Compile Include="../../src/CustomCampaignFramework/GoaliePersistenceContracts.cs" Link="GoaliePersistenceContracts.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/GoalieWrapperContract.cs" Link="GoalieWrapperContract.cs" />
     <Compile Include="../../src/CustomCampaignFramework/NativeCompatibility.cs" Link="NativeCompatibility.cs" />
     <Compile Include="../../src/CustomCampaignFramework/JerseyLogoManagedTargets.cs" Link="JerseyLogoManagedTargets.cs" />
     <Compile Include="../../src/ModCompatibility/Shared/NativeCompatibilityProfile.cs" Link="NativeCompatibilityProfile.cs" />

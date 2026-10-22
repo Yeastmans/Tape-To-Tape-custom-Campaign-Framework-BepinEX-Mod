@@ -37,21 +37,20 @@ internal static class GoaliePersistenceContracts
     // an incidental whole-file generated-wrapper hash.
     private static void ValidateWrapperApi()
     {
-        void Method(Type type, string name, Type result, params Type[] args)
+        void Method(Type type, string name, bool isStatic, Type result, params Type[] args)
         {
-            var method = AccessTools.Method(type, name, args);
-            if (method == null || method.ReturnType != result) throw new MissingMethodException("Goalie wrapper contract: " + type.FullName + "." + name);
+            GoalieWrapperContract.Resolve(type, name, isStatic, result, args);
         }
         void Constructor(Type type, params Type[] args)
         { if (type.GetConstructor(args) == null) throw new MissingMethodException("Goalie wrapper constructor: " + type.FullName); }
-        Method(typeof(ES3), "Save", typeof(void), typeof(string), typeof(Il2CppSystem.Object), typeof(ES3Settings));
-        Method(typeof(ES3File), "Load", typeof(Il2CppSystem.Object), typeof(string));
-        Method(typeof(ES3File), "KeyExists", typeof(bool), typeof(string));
-        Method(typeof(ES3Internal.ES3TypeMgr), "GetOrCreateES3Type", typeof(ES3Types.ES3Type), typeof(Il2CppSystem.Type), typeof(bool));
-        Method(typeof(SerializerV2), "SerializeToModel", typeof(SkaterDataModelV2), typeof(GoaltenderData));
-        Method(typeof(DeserializerV2), "ConvertGoaltenderDataModelToGoaltenderData", typeof(GoaltenderData), typeof(GoaltenderDataModelV2));
-        Method(typeof(SkaterData), "SaveState", typeof(SkaterState));
-        Method(typeof(SkaterData), "LoadState", typeof(void), typeof(SkaterState));
+        Method(typeof(ES3), "Save", true, typeof(void), typeof(string), typeof(Il2CppSystem.Object), typeof(ES3Settings));
+        Method(typeof(ES3File), "Load", false, typeof(Il2CppSystem.Object), typeof(string));
+        Method(typeof(ES3File), "KeyExists", false, typeof(bool), typeof(string));
+        Method(typeof(ES3Internal.ES3TypeMgr), "GetOrCreateES3Type", true, typeof(ES3Types.ES3Type), typeof(Il2CppSystem.Type), typeof(bool));
+        Method(typeof(SerializerV2), "SerializeToModel", false, typeof(SkaterDataModelV2), typeof(GoaltenderData));
+        Method(typeof(DeserializerV2), "ConvertGoaltenderDataModelToGoaltenderData", false, typeof(GoaltenderData), typeof(GoaltenderDataModelV2));
+        Method(typeof(SkaterData), "SaveState", false, typeof(SkaterState));
+        Method(typeof(SkaterData), "LoadState", false, typeof(void), typeof(SkaterState));
         Constructor(typeof(ES3File), typeof(ES3Settings), typeof(bool));
         Constructor(typeof(ES3Settings), typeof(bool)); Constructor(typeof(ES3Settings), typeof(string), typeof(ES3Settings));
         var repository = typeof(RunDataRepositoryV2);

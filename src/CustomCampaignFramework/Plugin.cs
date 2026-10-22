@@ -1152,6 +1152,7 @@ public class Plugin : BasePlugin
             }
 
             if (lower == "free_agents" || lower == "free agents") continue; // Loaded once from both supported locations above.
+            if (folderName.Equals(GoalieFreeAgents.Folder, StringComparison.OrdinalIgnoreCase)) continue; // Owned by goalie recruitment, never a squad.
 
             if (lower == "superstars" || lower == "superstar")
             {

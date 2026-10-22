@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../../src/CampaignCore/CampaignCore.csproj" /></ItemGroup>
+  <Target Name="ExtractProductionLoader" BeforeTargets="BeforeCompile">
+    <Exec Command="python &quot;$(MSBuildProjectDirectory)/extract_loader.py&quot; &quot;$(MSBuildProjectDirectory)/$(IntermediateOutputPath)PlayerTeamsLoader.g.cs&quot;" />
+    <ItemGroup><Compile Include="$(IntermediateOutputPath)PlayerTeamsLoader.g.cs" /></ItemGroup>
+  </Target>
+</Project>

@@ -144,3 +144,10 @@ tests/GameArtPackageChecks/*
 !tests/GameArtPackageChecks/GameArtPackageChecks.csproj
 !tests/GameArtPackageChecks/Program.cs
 !SESSION_HANDOFF.md
+!tests/GoalieStartupChecks/
+tests/GoalieStartupChecks/*
+!tests/GoalieStartupChecks/GoalieStartupChecks.csproj
+!tests/GoalieStartupChecks/Program.cs
+!tests/GoalieStartupChecks/LoaderBoundary.cs
+!tests/GoalieStartupChecks/WrapperFixtures.cs
+!tests/GoalieStartupChecks/extract_loader.py
