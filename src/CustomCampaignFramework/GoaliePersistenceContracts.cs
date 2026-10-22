@@ -68,9 +68,9 @@ internal static class GoaliePersistenceContracts
             if (!OperatingSystem.IsWindows() || IntPtr.Size != 8) throw new PlatformNotSupportedException("Audited Windows x64 required.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().Single(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
             var profile = NativeCompatibility.Load(module.FileName);
-            if (profile.GameHash != "92E73E6D0BE549DD8C695302B7AAE6A77CBBF4DE27F27D26ED01F4B3DABC5B8D"
-                || profile.MetadataHash != "1009F63178E260153CBBF224338BDC9124F9468D0F462F7A58327F638188914A")
-                throw new InvalidDataException("Goalie checkpoint adapter requires pinned build 26085704.");
+            if (profile.GameHash != "A58718A1AF369E064DF3A7CE149129C0130C4F316BC5E47EF7E6365853B1AA42"
+                || profile.MetadataHash != "7CABE7311509564E5C2D4A0580212E2839FAA0CAC05949940015DD4D092E4EDB")
+                throw new InvalidDataException("Goalie checkpoint adapter requires pinned build 26141904.");
             NamedManagedHookContract.RequireExactSet(Required, profile.NamedHooks, Feature);
             ValidateWrapperApi();
             foreach (var dependency in new[] {

@@ -107,14 +107,14 @@ internal static class CustomRewardDataCapabilities
         try {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8) throw new PlatformNotSupportedException("Attribute queries require the audited Windows x64 build.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().First(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-            if (NativeCompatibility.Load(module.FileName).GameHash != "92E73E6D0BE549DD8C695302B7AAE6A77CBBF4DE27F27D26ED01F4B3DABC5B8D")
+            if (NativeCompatibility.Load(module.FileName).GameHash != "A58718A1AF369E064DF3A7CE149129C0130C4F316BC5E47EF7E6365853B1AA42")
                 throw new InvalidOperationException("Attribute queries have not been audited for this game build.");
-            var cached = module.BaseAddress + 0xe901f0; var get = module.BaseAddress + 0xe90030;
-            var direct = module.BaseAddress + 0xe900d0;
+            var cached = module.BaseAddress + 0xe90200; var get = module.BaseAddress + 0xe90040;
+            var direct = module.BaseAddress + 0xe900e0;
             Verify(cached, "48895C241048896C2418565741574883");
             Verify(get, "48895C2408574883EC2048837A380048");
             Verify(direct, "48895C241848896C2420564883EC20");
-            var listGet = module.BaseAddress + 0xeb91d0;
+            var listGet = module.BaseAddress + 0xeb91e0;
             Verify(listGet, "48895C241848896C2420574883EC20");
             RegisterList<Railgun>("Shot Power", listGet); RegisterList<TopGear>("Speed", listGet); RegisterList<Bedrock>("Checking", listGet);
             Register<Railgun>("Shot Power", cached, get); Register<TopGear>("Speed", cached, get); Register<Bedrock>("Checking", cached, get);
