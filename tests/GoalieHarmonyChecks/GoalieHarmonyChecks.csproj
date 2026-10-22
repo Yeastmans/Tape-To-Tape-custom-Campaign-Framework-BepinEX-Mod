@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net6.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><NoWarn>$(NoWarn);NETSDK1138;CS0618</NoWarn><LangVersion>latest</LangVersion><GameDirectory Condition="'$(GameDirectory)' == ''">C:/Steam/steamapps/common/Tape to Tape</GameDirectory></PropertyGroup>
+  <ItemGroup>
+    <Reference Include="0Harmony"><HintPath>$(GameDirectory)/BepInEx/core/0Harmony.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="MonoMod.Utils"><HintPath>$(GameDirectory)/BepInEx/core/MonoMod.Utils.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="Mono.Cecil"><HintPath>$(GameDirectory)/BepInEx/core/Mono.Cecil.dll</HintPath><Private>true</Private></Reference>
+  </ItemGroup>
+</Project>

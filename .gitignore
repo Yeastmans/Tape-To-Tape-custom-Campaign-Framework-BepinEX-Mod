@@ -151,3 +151,7 @@ tests/GoalieStartupChecks/*
 !tests/GoalieStartupChecks/LoaderBoundary.cs
 !tests/GoalieStartupChecks/WrapperFixtures.cs
 !tests/GoalieStartupChecks/extract_loader.py
+!tests/GoalieHarmonyChecks/
+tests/GoalieHarmonyChecks/*
+!tests/GoalieHarmonyChecks/GoalieHarmonyChecks.csproj
+!tests/GoalieHarmonyChecks/Program.cs

@@ -26,14 +26,14 @@ internal static class GoalieMatchCompletion
         Hook("elite", "STS.Map.EliteMapNode", "LaunchMatch", "System.Void", Array.Empty<string>(), "NodePrefix", "NodeFinalizer"),
         Hook("initialize", "State.GameModeControllers.GameControllerBase", "InitializeGoaltenders", "System.Void", Array.Empty<string>(), "InitializePrefix", "InitializeFinalizer"),
         Hook("goalie", "Goaltender.Goaltender", "Initialize", "System.Void", new[] { "Data.GoaltenderData", "System.Boolean" }, "GoaliePrefix", "GoalieFinalizer"),
-        Hook("faceoff", "GameManager", "OnFaceoff", "System.Void", new[] { "Events.FaceoffArgs" }, "", "NormalPlayFinalizer"),
-        Hook("puckdrop", "GameManager", "OnPuckDropLaunch", "System.Void", Array.Empty<string>(), "", "NormalPlayFinalizer"),
-        Hook("shootout", "State.GameModeControllers.Shootout.InRoundState", "OnEnter", "System.Void", Array.Empty<string>(), "", "ShootoutPlayFinalizer"),
-        Hook("normal-restart", "State.GameModeControllers.NormalMatch.NormalMatchGameModeController", "OnRestart", "System.Void", Array.Empty<string>(), "", "RestartFinalizer"),
-        Hook("shootout-restart", "State.GameModeControllers.Shootout.ShootoutGameModeController", "OnRestart", "System.Void", Array.Empty<string>(), "", "RestartFinalizer"),
+        Hook("faceoff", "GameManager", "OnFaceoff", "System.Void", new[] { "Events.FaceoffArgs" }, "ExecutionPrefix", "NormalPlayFinalizer"),
+        Hook("puckdrop", "GameManager", "OnPuckDropLaunch", "System.Void", Array.Empty<string>(), "ExecutionPrefix", "NormalPlayFinalizer"),
+        Hook("shootout", "State.GameModeControllers.Shootout.InRoundState", "OnEnter", "System.Void", Array.Empty<string>(), "ExecutionPrefix", "ShootoutPlayFinalizer"),
+        Hook("normal-restart", "State.GameModeControllers.NormalMatch.NormalMatchGameModeController", "OnRestart", "System.Void", Array.Empty<string>(), "ExecutionPrefix", "RestartFinalizer"),
+        Hook("shootout-restart", "State.GameModeControllers.Shootout.ShootoutGameModeController", "OnRestart", "System.Void", Array.Empty<string>(), "ExecutionPrefix", "RestartFinalizer"),
         Hook("overtime", "GameLoader", "SwitchToShootout", "System.Void", new[] { "System.Int32" }, "SwitchPrefix", "SwitchFinalizer"),
         Hook("departure", "Rogue.FreeAgents.FreeAgentManager", "HandleFreeAgentsLeaving", "System.Void", Array.Empty<string>(), "DeparturePrefix", "DepartureFinalizer"),
-        Hook("context", "State.EndOfGame.EndOfGameFlowController", "Initialize", "System.Void", Array.Empty<string>(), "", "FlowFinalizer"),
+        Hook("context", "State.EndOfGame.EndOfGameFlowController", "Initialize", "System.Void", Array.Empty<string>(), "ExecutionPrefix", "FlowFinalizer"),
         Hook("update", "State.EndOfGame.Steps.CampaignUpdateStep", "Execute", "Cysharp.Threading.Tasks.UniTask", new[] { "State.EndOfGame.EndOfGameContext" }, "UpdatePrefix", "UpdateFinalizer")
     };
     private static NamedManagedHookContract Hook(string id, string type, string method, string result, string[] args, string prefix, string finalizer)
@@ -43,6 +43,12 @@ internal static class GoalieMatchCompletion
         => Required.Select(c => (JerseyLogoManagedTargets.Resolve(c, AppDomain.CurrentDomain.GetAssemblies()),
             c.Prefix.Length == 0 ? null : AccessTools.Method(typeof(GoalieMatchCompletion), c.Prefix) ?? throw new MissingMethodException(c.Prefix),
             AccessTools.Method(typeof(GoalieMatchCompletion), c.Finalizer) ?? throw new MissingMethodException(c.Finalizer))).ToArray();
+
+    // The shipped HarmonyX allocates __runOriginal only while writing a prefix
+    // or postfix. These otherwise-finalizer-only entries need a real prefix so
+    // finalizers can observe native completion and foreign skips. HarmonyX ANDs
+    // prefix results, so returning true never revives a foreign-skipped body.
+    private static bool ExecutionPrefix() => true;
 
     private sealed class Session
     {
