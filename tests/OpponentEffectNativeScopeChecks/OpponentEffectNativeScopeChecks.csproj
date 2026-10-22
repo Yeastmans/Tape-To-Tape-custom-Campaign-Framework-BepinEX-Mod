@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Il2CppInterop.Common"><HintPath>../../installer/bepinex/BepInEx/core/Il2CppInterop.Common.dll</HintPath><Private>true</Private></Reference>
+    <Reference Include="System.Reflection.MetadataLoadContext"><HintPath>$(MSBuildSDKsPath)/../System.Reflection.MetadataLoadContext.dll</HintPath></Reference>
+    <ProjectReference Include="../../src/CampaignCore/CampaignCore.csproj" />
+    <Compile Include="../../src/CustomCampaignFramework/OpponentEffectScope.cs" Link="OpponentEffectScope.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/NativeOpponentScopes.cs" Link="NativeOpponentScopes.cs" />
+    <Compile Include="../../src/ModCompatibility/Shared/NativeCompatibilityProfile.cs" Link="NativeCompatibilityProfile.cs" />
+    <Content Include="../../src/CustomCampaignFramework/Assets/jersey-logo-targets.json" Link="jersey-logo-targets.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../src/CustomCampaignFramework/Assets/native-compatibility.json" Link="native-compatibility.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

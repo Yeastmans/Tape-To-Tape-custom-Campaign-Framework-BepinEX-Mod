@@ -102,6 +102,10 @@
       <HintPath>$(MSBuildThisFileDirectory)..\..\installer\bepinex\BepInEx\core\0Harmony.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Il2CppInterop.Common">
+      <HintPath>$(MSBuildThisFileDirectory)..\..\installer\bepinex\BepInEx\core\Il2CppInterop.Common.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Il2CppInterop.Runtime">
       <HintPath>$(MSBuildThisFileDirectory)..\..\installer\bepinex\BepInEx\core\Il2CppInterop.Runtime.dll</HintPath>
       <Private>false</Private>

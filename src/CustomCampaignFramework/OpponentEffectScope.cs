@@ -39,12 +39,32 @@ internal static class OpponentEffectScope
             foreach (var method in methods)
                 try
                 {
+                    var route = JerseyLogoNativeHooks.RegisterOpponentScope(consumer, method, out string reason);
+                    if (route == OpponentScopeRoute.Raw)
+                    {
+                        Plugin.Log.LogInfo("[Opponent] Shared native effect scope: " + reason + " -> " + consumer);
+                        continue;
+                    }
+                    if (route == OpponentScopeRoute.Blocked)
+                    {
+                        Plugin.Log.LogWarning("[Opponent] Effect hook unavailable: " + consumer + ": " + reason);
+                        continue;
+                    }
                     Consumers[method] = consumer;
                     harmony.Patch(method, prefix: new HarmonyMethod(typeof(OpponentEffectScope), nameof(Enter)),
                         finalizer: new HarmonyMethod(typeof(OpponentEffectScope), nameof(Leave)));
                 }
                 catch (Exception ex) { Plugin.Log.LogWarning("[Opponent] Effect hook unavailable: " + consumer + ": " + ex.Message); }
         }
+    }
+    // Each native MoveNext slice owns a synchronous scope; it never leaks across
+    // coroutine suspension, and an unregistered raw target preserves its caller.
+    internal static void RunNative(string consumer, Action original)
+    {
+        if (consumer == null) { original(); return; }
+        string previous = Current;
+        try { Current = consumer; original(); }
+        finally { Current = previous; }
     }
     [HarmonyPriority(Priority.First)]
     private static void Enter(MethodBase __originalMethod, out ScopeState __state)

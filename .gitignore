@@ -17,6 +17,7 @@ artifacts/
 tests/*
 !tests/PlayNowUpdateChecks/
 !tests/PlayNowRosterChecks/
+!tests/OpponentEffectNativeScopeChecks/
 test-campaigns/
 dump_*/
 graphify-out/

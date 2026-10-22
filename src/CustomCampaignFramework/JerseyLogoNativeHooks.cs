@@ -11,6 +11,9 @@ using BepInEx.Unity.IL2CPP.Hook;
 using CampaignCore;
 using Data;
 using HarmonyLib;
+using Il2CppInterop.Common;
+using Il2CppInterop.Runtime;
+using Il2CppInterop.Runtime.Runtime;
 using Spine;
 using Spine.Unity;
 using Skaters;
@@ -31,8 +34,31 @@ internal static class JerseyLogoNativeHooks
     private static readonly List<INativeDetour> detours = new();
     private static readonly List<Delegate> callbacks = new();
     private static readonly List<RawNativeHookContract> installed = new();
+    private static NativeOpponentScopes opponentScopes;
     private static Harmony harmony;
     internal static bool Enabled { get; private set; }
+    private static RawNativeHookContract[] Contracts()
+    {
+        using var stream = typeof(JerseyLogoNativeHooks).Assembly.GetManifestResourceStream("JerseyLogoTargets.json");
+        return JsonSerializer.Deserialize<RawNativeHookContract[]>(new StreamReader(stream).ReadToEnd());
+    }
+    internal static OpponentScopeRoute RegisterOpponentScope(string consumer, MethodInfo method, out string reason)
+    {
+        // Reserve targets even when native validation/installation was blocked.
+        opponentScopes ??= new NativeOpponentScopes(Contracts());
+        if (opponentScopes.Module == IntPtr.Zero)
+            opponentScopes.Module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>()
+                .Single(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase)).BaseAddress;
+        return opponentScopes.Register(consumer, method, NativeAddress, out reason);
+    }
+    private static unsafe IntPtr NativeAddress(MethodInfo method)
+    {
+        var field = Il2CppInteropUtils.GetIl2CppMethodInfoPointerFieldForGeneratedMethod(method)
+            ?? throw new MissingFieldException("Generated native MethodInfo pointer.");
+        var pointer = (IntPtr)field.GetValue(null);
+        if (pointer == IntPtr.Zero) return IntPtr.Zero;
+        return UnityVersionHandler.Wrap((Il2CppMethodInfo*)pointer).MethodPointer;
+    }
     private static long context = -1;
     private sealed class Selection
     {
@@ -375,8 +401,8 @@ internal static class JerseyLogoNativeHooks
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8) throw new PlatformNotSupportedException("Audited Windows x64 required.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().Single(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
             var profile = NativeCompatibility.Load(module.FileName);
-            using var stream = typeof(JerseyLogoNativeHooks).Assembly.GetManifestResourceStream("JerseyLogoTargets.json");
-            var contracts = JsonSerializer.Deserialize<RawNativeHookContract[]>(new StreamReader(stream).ReadToEnd());
+            var contracts = Contracts();
+            opponentScopes = new NativeOpponentScopes(contracts) { Module = module.BaseAddress };
             if (profile.GameHash != "A58718A1AF369E064DF3A7CE149129C0130C4F316BC5E47EF7E6365853B1AA42" || profile.MetadataHash != "7CABE7311509564E5C2D4A0580212E2839FAA0CAC05949940015DD4D092E4EDB")
                 throw new InvalidDataException("Jersey adapters require pinned build 26141904.");
             JerseyLogoManagedTargets.ValidateBeforeInstall(contracts, profile.RawHooks, profile.NamedHooks);
@@ -410,7 +436,7 @@ internal static class JerseyLogoNativeHooks
             try { harmony?.UnpatchSelf(); } catch (Exception rollback) { rollbackFailed = true; Warn(rollback); }
             for (int i = detours.Count - 1; i >= 0; --i)
             {
-                try { detours[i].Dispose(); detours.RemoveAt(i); installed.RemoveAt(i); }
+                try { detours[i].Dispose(); opponentScopes.Release(installed[i]); detours.RemoveAt(i); installed.RemoveAt(i); }
                 catch (Exception rollback) { rollbackFailed = true; Warn(rollback); }
             }
             // Keep callback/original delegates rooted if a provider refused removal.
@@ -424,7 +450,8 @@ internal static class JerseyLogoNativeHooks
         if (contract.Kind == "move")
         {
             MoveFn original = null;
-            MoveFn callback = (s, m) => { if (kind <= Graphic) Move(kind, original, s, m); else Transient(kind, original, s, m); };
+            MoveFn scopedOriginal = (s, m) => OpponentEffectScope.RunNative(opponentScopes.Consumer(contract.Id), () => original(s, m));
+            MoveFn callback = (s, m) => { if (kind <= Graphic) Move(kind, scopedOriginal, s, m); else Transient(kind, scopedOriginal, s, m); };
             callbacks.Add(callback); detours.Add(INativeDetour.CreateAndApply(address, callback, out original));
         }
         else if (contract.Kind == "bridge")
@@ -449,6 +476,7 @@ internal static class JerseyLogoNativeHooks
         }
         else throw new InvalidDataException("Unknown jersey callback kind.");
         installed.Add(contract);
+        opponentScopes.Own(contract);
     }
     private sealed class ManagedPatch
     {
