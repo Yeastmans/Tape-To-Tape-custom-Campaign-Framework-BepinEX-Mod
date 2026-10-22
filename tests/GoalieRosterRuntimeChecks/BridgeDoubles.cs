@@ -29,7 +29,11 @@ namespace HarmonyLib {
     public class Harmony { public Harmony(string id) {} public void Patch(MethodInfo method, HarmonyMethod prefix, HarmonyMethod postfix) {} public void Unpatch(MethodInfo method, MethodInfo patch) {} }
 }
 namespace Il2CppInterop.Runtime {
+    public static class Il2CppClassPointerStore<T> { public static IntPtr NativeClassPtr = typeof(T) == typeof(string) ? (IntPtr)901 : IntPtr.Zero; }
     public static class IL2CPP {
+        internal static int StringConversions;
+        public static IntPtr il2cpp_object_get_class(IntPtr pointer) => NativeRegistry.Values[pointer] is Il2CppSystem.String ? (IntPtr)901 : (IntPtr)902;
+        public static string Il2CppStringToManaged(IntPtr pointer) { StringConversions++; return ((Il2CppSystem.String)NativeRegistry.Values[pointer]).Value; }
         public static IntPtr Il2CppObjectBaseToPtr(Il2CppSystem.Object value) => value.Pointer;
         public static unsafe IntPtr il2cpp_runtime_invoke(IntPtr method, IntPtr instance, void** args, ref IntPtr exception) {
             if (ES3.AdmissionError != null) { exception = ES3.AdmissionError.Pointer; return IntPtr.Zero; }

@@ -59,6 +59,16 @@ Check(CallsNamed(concreteSave, "il2cpp_runtime_invoke") && !CallsNamed(concreteS
     && concreteSave.Body.Instructions.Select(i => i.Operand).OfType<FieldReference>().Any(f => f.Name == "NativeMethodInfoPtr_Save_Public_Static_Void_String_Object_ES3Settings_0")
     && !concreteSave.Body.Instructions.Select(i => i.Operand).OfType<FieldReference>().Any(f => f.DeclaringType is GenericInstanceType),
     "installed concrete marker writer invokes direct native method without generic method store");
+Check(!methods.SelectMany(Calls).Any(m => m is GenericInstanceMethod g && m.Name == "TryCast"
+    && g.GenericArguments.Any(t => t.FullName == "Il2CppSystem.String")),
+    "compiled checkpoint never casts through the uninitialized native string wrapper class store");
+var markerText = methods.SingleOrDefault(m => m.Name == "MarkerText");
+Check(markerText != null && CallsNamed(markerText, "il2cpp_object_get_class") && CallsNamed(markerText, "Il2CppStringToManaged")
+    && markerText.Body.Instructions.Select(i => i.Operand).OfType<FieldReference>().Any(f => f.Name == "NativeClassPtr"
+        && f.DeclaringType is GenericInstanceType t && t.ElementType.FullName == "Il2CppInterop.Runtime.Il2CppClassPointerStore`1"
+        && t.GenericArguments.Single().FullName == "System.String")
+    && methods.SelectMany(Calls).Count(m => m.DeclaringType.FullName == checkpoint.FullName && m.Name == "MarkerText") == 2,
+    "both compiled marker reads use checked managed-string native class identity and conversion");
 var card = main.Types.Single(t => t.Name == "SkaterDataForUI");
 Check(card.BaseType.FullName == "Il2CppSystem.ValueType" && !card.IsValueType, "installed lineup card is another native struct represented as managed class");
 var list = wrappers.GetType("Il2CppSystem.Collections.Generic.List`1");

@@ -42,6 +42,16 @@ static class CacheInteropBoundaryChecks
         check((string)file.Load(GoalieRosterStore.MarkerKey).TryCast<Il2CppSystem.String>() == "confirmed-marker" && selected.SameEntry(),
             "ConcreteMarkerWriteRoundTripsWithoutChangingSelectedRun");
         check(ES3.GenericSaveCalls == genericWrites, "MarkerInjectionDoesNotSelectCompetingGenericSaveOverload");
+        var convert = typeof(GoalieNativeCheckpoint).GetMethod("MarkerText", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        object Text(Il2CppSystem.Object value) => convert.Invoke(null, new object[] { value });
+        int conversions = Il2CppInterop.Runtime.IL2CPP.StringConversions;
+        check(Text(null) == null && Text(new Il2CppSystem.Object()) == null
+            && Il2CppInterop.Runtime.IL2CPP.StringConversions == conversions, "NullAndNonStringMarkersRejectedBeforeNativeStringConversion");
+        check((string)Text((Il2CppSystem.String)"native marker") == "native marker"
+            && Il2CppInterop.Runtime.IL2CPP.StringConversions == conversions + 1, "MarkerReadUsesExactManagedStringClassStoreAndNativeConversion");
+        file.cache[GoalieRosterStore.MarkerKey] = entry;
+        var wrongMarker = GoalieNativeCheckpoint.Cached(Path.GetTempPath(), path);
+        check(wrongMarker.HasMarker && wrongMarker.Marker == null, "NonStringCachedMarkerRemainsPresentButCannotAuthorizeCheckpoint");
         ES3File.cachedFiles.Remove(path);
     }
 }

@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using CampaignCore;
 using ES3Internal;
+using Il2CppInterop.Runtime;
 using State;
 
 namespace EndlessMode;
@@ -31,7 +32,17 @@ internal sealed class GoalieNativeCheckpoint
         // the runData array/type pair is eligible for model association.
         HasMarker = file.KeyExists(GoalieRosterStore.MarkerKey);
         Marker = HasMarker
-            ? (string)file.Load(GoalieRosterStore.MarkerKey)?.TryCast<Il2CppSystem.String>() : null;
+            ? MarkerText(file.Load(GoalieRosterStore.MarkerKey)) : null;
+    }
+    private static string MarkerText(Il2CppSystem.Object value)
+    {
+        if (value == null) return null;
+        // String's generated interop constructor initializes the managed string
+        // class store. TryCast<Il2CppSystem.String> consults a different store.
+        IntPtr stringClass = Il2CppClassPointerStore<string>.NativeClassPtr;
+        if (stringClass == IntPtr.Zero) throw new InvalidDataException("Native string class is unavailable.");
+        if (IL2CPP.il2cpp_object_get_class(value.Pointer) != stringClass) return null;
+        return IL2CPP.Il2CppStringToManaged(value.Pointer);
     }
     internal static void RequireProfile(ES3Settings settings)
     {
@@ -87,7 +98,7 @@ internal sealed class GoalieNativeCheckpoint
             // picks Il2CppSystem.String, whose generated native-class store is
             // different from the System.String store initialized by interop.
             ES3.Save(GoalieRosterStore.MarkerKey, (Il2CppSystem.Object)nativeMarker, settings);
-            if ((string)File.Load(GoalieRosterStore.MarkerKey)?.TryCast<Il2CppSystem.String>() != marker || !SameEntry())
+            if (MarkerText(File.Load(GoalieRosterStore.MarkerKey)) != marker || !SameEntry())
                 throw new InvalidDataException("Native checkpoint marker readback failed.");
         }
         catch
