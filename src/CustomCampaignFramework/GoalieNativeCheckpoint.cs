@@ -22,7 +22,7 @@ internal sealed class GoalieNativeCheckpoint
     {
         Folder = folder; Path = path; File = file;
         RequireProfile(file.settings);
-        if (!file.cache.TryGetValue("runData", out var entry) || entry?.type?.type?.FullName != "State.RunDataModelV2" || entry.bytes == null)
+        if (!ReadEntry(file, "runData", out var entry) || entry?.type?.type?.FullName != "State.RunDataModelV2" || entry.bytes == null)
             throw new InvalidDataException("Selected native cache has no complete runData entry.");
         Entry = entry; Bytes = GoalieNativeGraph.ObjectBytes(entry.bytes.ToArray());
         string type = entry.type.type.FullName;
@@ -45,6 +45,16 @@ internal sealed class GoalieNativeCheckpoint
         return file;
     }
     internal static GoalieNativeCheckpoint Cached(string folder, string path) => new(folder, path, Existing(path));
+    private static bool ReadEntry(ES3File file, string key, out ES3Data entry)
+    {
+        // ES3Data is a native 16-byte struct exposed as a managed class. The
+        // generated generic out wrapper only reserves a pointer-sized local.
+        // The indexer instead receives the boxed value from runtime_invoke.
+        var cache = file.cache;
+        if (!cache.ContainsKey(key)) { entry = null; return false; }
+        entry = cache[key];
+        return true;
+    }
     internal static GoalieNativeCheckpoint Persisted(string folder, string path, ES3Settings settings)
     {
         // A separate ES3File reads the physical container without replacing the
@@ -54,7 +64,7 @@ internal sealed class GoalieNativeCheckpoint
     internal bool SameEntry()
     {
         var current = Existing(Path);
-        return current.Pointer == File.Pointer && current.cache.TryGetValue("runData", out var entry)
+        return current.Pointer == File.Pointer && ReadEntry(current, "runData", out var entry)
             && entry.type?.Pointer == Entry.type.Pointer && entry.bytes?.Pointer == Entry.bytes.Pointer
             && entry.bytes.ToArray().SequenceEqual(Bytes);
     }
@@ -68,7 +78,7 @@ internal sealed class GoalieNativeCheckpoint
     internal void Inject(string marker)
     {
         if (!SameEntry()) throw new InvalidDataException("Run cache changed before checkpoint injection.");
-        bool hadMarker = File.cache.TryGetValue(GoalieRosterStore.MarkerKey, out var previous);
+        bool hadMarker = ReadEntry(File, GoalieRosterStore.MarkerKey, out var previous);
         try
         {
             var settings = new ES3Settings(Path, File.settings) { location = ES3.Location.Cache };
@@ -81,7 +91,13 @@ internal sealed class GoalieNativeCheckpoint
         {
             // Restore the precise prior cache entry; do not serialize a guessed
             // previous marker or remove unrelated native statistics keys.
-            if (hadMarker) File.cache[GoalieRosterStore.MarkerKey] = previous;
+            if (hadMarker) {
+                // The generic setter also passes a boxed header as the struct
+                // payload. Native IDictionary accepts the box and unboxes it,
+                // preserving both references of the exact prior cache entry.
+                Il2CppSystem.String key = GoalieRosterStore.MarkerKey;
+                File.cache.Cast<Il2CppSystem.Collections.IDictionary>()[key] = previous;
+            }
             else File.cache.Remove(GoalieRosterStore.MarkerKey);
             throw;
         }

@@ -150,8 +150,12 @@ internal static class GoalieRosterMenu
     {
         var menu = s.Menu;
         var cards = new Il2CppSystem.Collections.Generic.List<SkaterDataForUI>();
-        cards.Add(new SkaterDataForUI(s.Preview, s.Active, ESkaterPosition.Goalie, null, null, EStatBonusesPreviewMode.None, null));
-        if (s.Snapshot.ReserveEnabled) cards.Add(new SkaterDataForUI(s.Preview, s.Reserve, ESkaterPosition.Goalie, null, null, EStatBonusesPreviewMode.None, null));
+        // SkaterDataForUI is a native 48-byte struct represented by a managed
+        // class. IList accepts its box; native code unboxes all 48 bytes. The
+        // generated generic List.Add wrapper would pass the boxed header.
+        var boxedCards = cards.Cast<Il2CppSystem.Collections.IList>();
+        boxedCards.Add(new SkaterDataForUI(s.Preview, s.Active, ESkaterPosition.Goalie, null, null, EStatBonusesPreviewMode.None, null));
+        if (s.Snapshot.ReserveEnabled) boxedCards.Add(new SkaterDataForUI(s.Preview, s.Reserve, ESkaterPosition.Goalie, null, null, EStatBonusesPreviewMode.None, null));
         menu.m_ActiveSkaters = cards; menu.m_BenchSkaters.Clear();
         menu.m_ActivePlayersList.Refresh(cards.Cast<Il2CppSystem.Collections.Generic.IReadOnlyList<SkaterDataForUI>>());
         menu.m_BenchPlayersList.Clear(); menu.m_HideBench = true;

@@ -50,7 +50,7 @@ namespace BishopGames.UI {
 namespace Tape2Tape.Customization.UI {
     public enum ESkaterPosition { Goalie, C }
     public enum EStatBonusesPreviewMode { None }
-    public struct SkaterDataForUI {
+    public class SkaterDataForUI : Il2CppSystem.Object {
         public SkaterData Skater; public TeamData ActiveTeam; public ESkaterPosition ActivePosition;
         public SkaterDataForUI(TeamData team, SkaterData skater, ESkaterPosition position, object injuries, object power, EStatBonusesPreviewMode mode, object bonuses)
         { ActiveTeam = team; Skater = skater; ActivePosition = position; }
@@ -172,8 +172,12 @@ namespace Il2CppSystem {
 }
 namespace Il2CppSystem.Collections.Generic {
     public interface IReadOnlyList<T> : System.Collections.Generic.IReadOnlyList<T> {}
-    public class List<T> : System.Collections.Generic.List<T>, IReadOnlyList<T> { public TCast Cast<TCast>() => (TCast)(object)this; }
+    public class List<T> : System.Collections.Generic.List<T>, IReadOnlyList<T>, Il2CppSystem.Collections.IList {
+        public TCast Cast<TCast>() => (TCast)(object)this;
+        int Il2CppSystem.Collections.IList.Add(Il2CppSystem.Object item) { Add((T)(object)item); return Count - 1; }
+    }
 }
+namespace Il2CppSystem.Collections { public interface IList { int Add(Il2CppSystem.Object item); } }
 
 namespace Il2CppSystem { public class Action { System.Action callback; public void Invoke() => callback(); public static implicit operator Action(System.Action value) => new() { callback = value }; } }
 namespace EndlessMode {

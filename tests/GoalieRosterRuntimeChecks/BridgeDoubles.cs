@@ -41,6 +41,19 @@ namespace Il2CppInterop.Runtime {
     }
 }
 namespace ES3Internal { public class ES3Data : Il2CppSystem.Object { public ES3Types.ES3Type type; public Il2CppStructArray<byte> bytes; } }
+namespace Il2CppSystem.Collections {
+    public class IDictionary {
+        internal static int BoxedWrites;
+        internal Dictionary<string, ES3Internal.ES3Data> Entries;
+        public Il2CppSystem.Object this[Il2CppSystem.Object key] {
+            set { BoxedWrites++; Entries[(string)(Il2CppSystem.String)key] = (ES3Internal.ES3Data)value; }
+        }
+    }
+}
+static class CacheDoubleCastExtensions {
+    public static T Cast<T>(this Dictionary<string, ES3Internal.ES3Data> entries)
+        => (T)(object)new Il2CppSystem.Collections.IDictionary { Entries = entries };
+}
 public class ES3File : Il2CppSystem.Object {
     public static readonly Dictionary<string, ES3File> cachedFiles = new();
     internal static bool FailPhysicalRead;
