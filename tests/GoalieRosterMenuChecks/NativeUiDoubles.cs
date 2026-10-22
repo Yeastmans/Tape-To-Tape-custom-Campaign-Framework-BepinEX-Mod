@@ -16,7 +16,12 @@ namespace TMPro {
 namespace UnityEngine {
     public class MonoBehaviour : Il2CppSystem.Object { public void StartCoroutine(IEnumerator routine) { while (routine.MoveNext()) {} } }
     public class CanvasGroup { public float alpha = 1; public bool interactable = true, blocksRaycasts = true; }
-    public class GameObject { public bool Active = true; public bool activeSelf => Active; public object[] Children = Array.Empty<object>(); public void SetActive(bool value) => Active = value; public T[] GetComponentsInChildren<T>(bool inactive) => Children.OfType<T>().ToArray(); }
+    public class Transform {
+        public Dictionary<string, Transform> Children = new(); public object[] Components = Array.Empty<object>();
+        public Transform Find(string path) { Transform current = this; foreach (var name in path.Split('/')) { if (!current.Children.TryGetValue(name, out var child)) return null; current = child; } return current; }
+        public T GetComponent<T>() where T : class => Components.OfType<T>().SingleOrDefault();
+    }
+    public class GameObject { public bool Active = true; public bool activeSelf => Active; public object[] Children = Array.Empty<object>(); public Transform transform = new(); public void SetActive(bool value) => Active = value; public T[] GetComponentsInChildren<T>(bool inactive) => Children.OfType<T>().ToArray(); }
     public static class Object {
         public static LineupMenu CurrentMenu;
         public static int Destroyed;
@@ -69,8 +74,19 @@ namespace Tape2Tape.Customization.UI {
         public Text m_PositionLetter = new(), m_SkaterName = new(), m_FreeAgentDuration = new();
         public UnityEngine.GameObject m_FreeAgentDurationContainer = new();
         public Text EmptySeatLabel = new() { text = "Empty Seat" };
+        public Text EmptySwapLabel = new() { text = "Swap" }, EmptyStatNum = new() { text = "20" }, EmptyStatLabel = new() { text = "OVR" };
         public UnityEngine.GameObject m_EmptySeatContainer = new(), m_FilledSeatContainer = new();
-        public SkaterCard() { Navigable.Clicked += Toggle.OnNavigableClicked; m_EmptySeatContainer.Children = new object[] { EmptySeatLabel }; }
+        public SkaterCard() {
+            Navigable.Clicked += Toggle.OnNavigableClicked;
+            // Installed lineup prefab includes inactive comparison labels as well as Name.
+            m_EmptySeatContainer.Children = new object[] { EmptySeatLabel, EmptySwapLabel, EmptyStatNum, EmptyStatLabel };
+            var info = new UnityEngine.Transform(); m_EmptySeatContainer.transform.Children["PlayerInfo"] = info;
+            info.Children["Name"] = new() { Components = new object[] { EmptySeatLabel } };
+            info.Children["Swap"] = new() { Components = new object[] { EmptySwapLabel } };
+            info.Children["StatBoxSwap"] = new() { Children = new() {
+                ["StatNum"] = new() { Components = new object[] { EmptyStatNum } },
+                ["Label"] = new() { Components = new object[] { EmptyStatLabel } } } };
+        }
         public void SetLocked(bool value, bool force) { Locked = value; Toggle.CanToggle = !value; }
     }
     public class SkaterCardList {

@@ -52,6 +52,8 @@ var emptyCard = selection.Menu.m_ActivePlayersList.m_SkaterCards[1];
 Check(selection.Menu.m_ActivePlayersList.m_SkaterCards.All(c => !c.m_FreeAgentDurationContainer.Active && c.m_FreeAgentDuration.text == ""), "ContractProseNeverUsesNarrowNativeBadge");
 Check(activeLabel.text.Contains("Permanent") && !activeLabel.enableWordWrapping && activeLabel.maxVisibleLines == 1 && activeLabel.overflowMode == TMPro.TextOverflowModes.Ellipsis, "ContractUsesBoundedSingleLineName");
 Check(emptyCard.m_EmptySeatContainer.Active && emptyCard.EmptySeatLabel.text.Contains("select to hire") && !emptyCard.Locked, "ActualVisibleEmptySeatExplainsRecruitAction");
+Check(emptyCard.m_EmptySeatContainer.Children.Length == 4 && emptyCard.EmptySwapLabel.text == "Swap"
+    && emptyCard.EmptyStatNum.text == "20" && emptyCard.EmptyStatLabel.text == "OVR", "ExactEmptyNameLeavesNativeComparisonLabelsUnchanged");
 Check(selection.Menu.Focused == selection.Menu.m_ActivePlayersList.Navigables[0] && selection.Menu.ToggleCallbacks == 0
     && selection.Confirming == null && !pair.Offer.Taken, "InitialNativeFocusDoesNotActivateOrConfirm");
 selection.Menu.Focus(selection.Menu.m_ActivePlayersList.Navigables[1]);
@@ -82,8 +84,17 @@ selection.Menu.TryLeaveMenu(false);
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); ES3.FailStore = true;
 Click(selection, 0); Click(selection, 0); ES3.FailStore = false;
 Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text.Contains("Save failed"), "SaveFailureVisibleInCardWithoutHeader");
+Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[1].EmptySeatLabel.text.Contains("select to hire"), "StarterFailureDoesNotMarkReserve");
 Check(!pair.Offer.Taken && state.runData.teamData.goalie.id == "active" && !selection.Unresolved && selection.Menu.m_Header.m_Title.text.Contains("previous goalies retained"), "ConfirmedNoWriteRestoresOfferAndBothOccupants");
 Click(selection, 0); Click(selection, 0); Check(pair.Offer.Taken, "ConfirmedNoWriteMayRetry");
+state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); ES3.FailStore = true;
+Click(selection, 1); Click(selection, 1); ES3.FailStore = false;
+Check(selection.Confirming == null && selection.Menu.m_ActivePlayersList.m_SkaterCards[1].EmptySeatLabel.text.Contains("Save failed")
+    && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text.Contains("Permanent"), "ReserveFailureKeepsAttemptedSlotAfterConfirmationCleared");
+Click(selection, 0);
+Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text.Contains("Confirm hire")
+    && selection.Menu.m_ActivePlayersList.m_SkaterCards[1].EmptySeatLabel.text.Contains("select to hire"), "ChangingTargetClearsPriorSlotStatus");
+selection.Menu.TryLeaveMenu(false);
 foreach (string outcome in new[] { "false", "fault", "cancel" }) {
     state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); state.Repository.Outcome = outcome;
     Click(selection, 0); Click(selection, 0);
@@ -297,16 +308,31 @@ var confirmLabel = selection.Menu.m_ActivePlayersList.m_SkaterCards[1].EmptySeat
 Check(confirmLabel.text.StartsWith("Reserve: Confirm hire ") && confirmLabel.text.Length < 50 && !confirmLabel.enableWordWrapping,
     "LongCandidateKeepsActionAndSlotVisibleWithoutWrapping");
 selection.Menu.TryLeaveMenu(false);
-foreach (int labelCount in new[] { 0, 2 }) {
+foreach (bool missingName in new[] { true, false }) {
     state = Fresh(); pair = Offer(state); selection = Recruit(state, pair);
     var slotCard = selection.Menu.m_ActivePlayersList.m_SkaterCards[1];
-    slotCard.m_EmptySeatContainer.Children = Enumerable.Range(0, labelCount).Select(_ => (object)new Text { text = "Native label" }).ToArray();
+    var info = slotCard.m_EmptySeatContainer.transform.Find("PlayerInfo");
+    if (missingName) info.Children.Remove("Name");
+    else info.Children["Name"].Components = Array.Empty<object>();
     int warningCount = Plugin.Log.Warnings.Count;
     Click(selection, 1); Click(selection, 1);
     Check(pair.Offer.Taken && Plugin.Log.Warnings.Count == warningCount + 1
-        && slotCard.m_EmptySeatContainer.Children.Cast<Text>().All(t => t.text == "Native label"),
-        "UnexpectedEmptyLabelLayoutPreservesRecruitmentAndLogsOnce_" + labelCount);
+        && slotCard.EmptySwapLabel.text == "Swap" && slotCard.EmptyStatNum.text == "20" && slotCard.EmptyStatLabel.text == "OVR",
+        "MissingExactEmptyNamePreservesRecruitmentAndOtherLabels_" + missingName);
 }
+state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); state.Repository.CompleteImmediately = false;
+ES3.FailMarker = true; Click(selection, 1); Click(selection, 1);
+Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[1].EmptySeatLabel.text.Contains("Saving")
+    && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text.Contains("Permanent"), "PendingStatusOnlyMarksAttemptedReserve");
+state.Repository.Complete(state.Repository.Pending[0]); GoaliePersistenceBridge.Tick(); ES3.FailMarker = false;
+Check(!selection.Unresolved && selection.Menu.m_ActivePlayersList.m_SkaterCards[1].EmptySeatLabel.text.Contains("Save failed")
+    && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text.Contains("Permanent"), "DelayedReserveRollbackRetainsAttemptedSlot");
+selection.Menu.TryLeaveMenu(false);
+state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); ES3.FailMarker = true;
+Click(selection, 0); Click(selection, 0); ES3.FailMarker = false;
+Check(selection.Unresolved && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text.Contains("Save unresolved")
+    && selection.Menu.m_ActivePlayersList.m_SkaterCards[1].EmptySeatLabel.text.Contains("select to hire"), "UnresolvedStatusOnlyMarksAttemptedStarter");
+selection.Menu.TryLeaveMenu(false);
 state = Fresh(); GoalieRosterMenu.Open(state); selection = GoalieRosterMenu.Current;
 Check(selection.Offer == null && selection.Menu.m_ActivePlayersList.m_SkaterCards[1].Locked
     && selection.Menu.m_ActivePlayersList.m_SkaterCards[1].EmptySeatLabel.text.Contains("recruit at GM"),

@@ -45,7 +45,7 @@ internal static class GoalieRosterMenu
         internal string Status, CardMessage;
         internal bool EmptyLabelUnavailable;
         internal readonly Dictionary<IntPtr, TextPresentation> Labels = new();
-        internal GoalieSlot? Confirming;
+        internal GoalieSlot? Confirming, AttemptedSlot;
         internal Il2CppSystem.Action<AbstractMenu> Closed, Destroying;
     }
     internal sealed class TextPresentation
@@ -202,20 +202,22 @@ internal static class GoalieRosterMenu
         for (int i = 0; i < cards.Count && i < 2; i++) {
             var card = cards[i]; var slot = i == 0 ? GoalieSlot.Active : GoalieSlot.Reserve;
             bool empty = i == 1 && s.Reserve == null;
-            string text = s.Saving ? "Saving…" : s.Unresolved ? "Save unresolved — go back" : s.CardMessage;
+            string text = s.AttemptedSlot == slot
+                ? s.Saving ? "Saving…" : s.Unresolved ? "Save unresolved — go back" : s.CardMessage
+                : null;
             if (text == null) text = s.Confirming == slot
                 ? s.Offer == null ? "Confirm swap" : "Confirm hire " + ShortName(s.Offer.Candidate.FullName)
                 : empty ? s.Offer == null ? "Empty — recruit at GM" : "Empty — select to hire"
                 : ShortName(i == 0 ? s.Active.FullName : s.Reserve.FullName) + " · " + CompactContract(i == 0 ? s.Snapshot.Active : s.Snapshot.Reserve);
             FitLabel(s, card.m_SkaterName, slot + ": " + text);
             if (empty) {
-                // Native null-skater cards hide m_SkaterName and show a separate
-                // EmptySeat container. Only adapt its unambiguous text widget.
-                var labels = card.m_EmptySeatContainer?.GetComponentsInChildren<TMP_Text>(true);
-                if (labels?.Length == 1) FitLabel(s, labels[0], slot + ": " + text);
+                // Both installed lineup card prefabs have four TMP descendants:
+                // Name plus Swap/StatBoxSwap comparison labels. Address only Name.
+                var label = card.m_EmptySeatContainer?.transform.Find("PlayerInfo/Name")?.GetComponent<TMP_Text>();
+                if (label != null) FitLabel(s, label, slot + ": " + text);
                 else if (!s.EmptyLabelUnavailable) {
                     s.EmptyLabelUnavailable = true;
-                    Plugin.Log.LogWarning("[GoalieRoster] Empty-slot label layout unavailable; retaining native label and header instructions.");
+                    Plugin.Log.LogWarning("[GoalieRoster] Empty-slot PlayerInfo/Name TMP label unavailable; retaining native label and header instructions.");
                 }
             }
         }
@@ -252,7 +254,7 @@ internal static class GoalieRosterMenu
         if (index < 0 || index > 1 || index == 1 && !s.Snapshot.ReserveEnabled) return false;
         if (s.Offer == null && (index != 1 || s.Reserve == null)) return false;
         var slot = index == 0 ? GoalieSlot.Active : GoalieSlot.Reserve;
-        s.CardMessage = null;
+        s.CardMessage = null; s.AttemptedSlot = null;
         __0.Toggle.SetSelected(false, false);
         bool? prevention = null;
         if (s.Offer != null && slot == GoalieSlot.Reserve && GoalieContractPolicy.Expired(s.Snapshot.Active)) {
@@ -273,8 +275,10 @@ internal static class GoalieRosterMenu
                 : $"{(occupant == null ? "Fill empty reserve" : "Replace " + occupant)} with {s.Offer.Candidate.FullName} ({GoalieContractRuntime.OfferText(s.Offer.Contract)})?{result} Select {slot} again to confirm; Back cancels.");
             return false;
         }
-        s.Saving = true; Title(s, "Saving goalie roster…");
+        s.AttemptedSlot = slot; s.Saving = true; Title(s, "Saving goalie roster…");
         void Completed(GoalieRosterRuntime.ChangeResult result) {
+            Plugin.Log.LogInfo("[GoalieRoster] Selection completed; slot=" + slot + "; run=" + s.Run.ToString("X")
+                + "; outcome=" + result.Outcome + "; message=" + result.Message + "; " + GoaliePersistenceBridge.DescribeReceipt(result.Receipt));
             s.Saving = false;
             if (result.Receipt?.Reconciled == true) { s.Committed = true; if (s.Offer != null) GoalieRecruitment.Consumed(s.Offer); }
             if (result.Outcome == GoalieRosterRuntime.ChangeOutcome.Committed) {
