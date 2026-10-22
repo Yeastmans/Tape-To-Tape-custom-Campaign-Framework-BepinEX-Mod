@@ -14,6 +14,9 @@ static class TransitionChecks
         var run = new RunData { runID = "run", squadId = "squad", teamData = new() { goalie = active }, teamState = new() { goaltenderState = active.SaveState() } };
         var campaign = CampaignUtil.CampaignState = new() { runData = run };
         var roster = GoaliePersistenceBridge.Roster;
+        check(campaign._runDataRepository.Pointer != campaign.Repository.Pointer
+            && campaign._runDataRepository.TryCast<RunDataRepository>()._runDataRepositoryV2 == campaign.Repository,
+            "NativeRepositoryFacadeAndStorageHaveDistinctIdentity");
         GoalieNativeSnapshot.Deserializer = new();
         roster.Fresh(run, Plugin.ModFolder, false);
         var candidate = new GoaltenderData { id = "candidate", skill = 92 };
@@ -41,7 +44,19 @@ static class TransitionChecks
         GoalieRosterRuntime.ChangeResult completion = null;
         check(roster.TryRecruit(campaign, new() { id = "reentrant" }, GoalieSlot.Reserve, roster.Selection.Revision, result => completion = result), "ReentrantSaveTransitionAccepted");
         GoaliePersistenceBridge.SaveAdmitted -= Unrelated;
+        check(Plugin.Log.Infos.Any(line => line.StartsWith("[GoalieSave]") && line.Contains("outcome=Committed")
+            && line.Contains("reconciled=True") && line.Contains("operation=")), "CommittedResultDiagnosticIncludesExactReceipt");
         check(completion?.Outcome == GoalieRosterRuntime.ChangeOutcome.Committed && completion.Receipt.RepositoryPointer == campaign.Repository.Pointer
             && outsider.Saves == 1, "ForeignReentrantAdmissionCannotStealExactSaveReceipt");
+        var originalFacade = campaign._runDataRepository;
+        int saves = campaign.Repository.Saves; var before = roster.Selection;
+        foreach (var unsupported in new IRunDataRepository[] { new(), new RunDataRepository() }) {
+            campaign.RepositoryFacade = unsupported;
+            check(!roster.TryRecruit(campaign, new() { id = "unsupported-facade" }, GoalieSlot.Reserve, before.Revision)
+                && campaign.Repository.Saves == saves && roster.Selection.Revision == before.Revision
+                && roster.Selection.Reserve.PlayerId == before.Reserve.PlayerId && !roster.Busy,
+                "UnknownOrMissingNestedRepositoryRejectsBeforeMutation");
+        }
+        campaign.RepositoryFacade = originalFacade;
     }
 }

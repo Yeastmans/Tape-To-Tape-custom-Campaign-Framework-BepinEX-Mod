@@ -99,14 +99,17 @@ public static partial class ES3 {
 namespace State {
     public partial class CampaignState : Il2CppSystem.Object {
         public Data.RunData runData; public RunDataRepositoryV2 Repository = new();
-        public RunDataRepositoryV2 _runDataRepository => Repository;
+        internal IRunDataRepository RepositoryFacade;
+        public IRunDataRepository _runDataRepository => RepositoryFacade ??= new RunDataRepository { _runDataRepositoryV2 = Repository };
         public void ApplyNewRunStartEffects() {}
         public void SaveRunData() {
             runData.teamState = new() { goaltenderState = runData.teamData.goalie.SaveState(), forwardStates = runData.teamState.forwardStates, relicStates = runData.teamState.relicStates };
-            Repository.SaveToPersistentStorage(new() { runID = runData.runID, squadId = runData.squadId,
+            _runDataRepository.TryCast<RunDataRepository>()._runDataRepositoryV2.SaveToPersistentStorage(new() { runID = runData.runID, squadId = runData.squadId,
                 team = new() { skaters = new() { new SerializerV2().SerializeToModel(runData.teamData.goalie) } }, teamState = runData.teamState });
         }
     }
+    public class IRunDataRepository : Il2CppSystem.Object { }
+    public class RunDataRepository : IRunDataRepository { public RunDataRepositoryV2 _runDataRepositoryV2; }
     public class RunDataRepositoryV2 : Il2CppSystem.Object {
         public string _fileName = "RunDataV2.es3";
         public object _talentRepository { get; } = new(); public object _relicRepository { get; } = new(); public object _abilityRepository { get; } = new();

@@ -13,6 +13,17 @@ void Check(bool ok, string label) { Console.WriteLine((ok ? "PASS " : "FAIL ") +
 IEnumerable<MethodReference> Calls(MethodDefinition method) => method.Body.Instructions.Select(i => i.Operand).OfType<MethodReference>();
 bool CallsNamed(MethodDefinition method, string name) => Calls(method).Any(m => m.Name == name);
 bool Constant(Instruction instruction, bool value) => instruction.OpCode == (value ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+var facade = main.GetType("State.RunDataRepository");
+Check(main.GetType("State.CampaignState").Properties.Single(p => p.Name == "_runDataRepository").PropertyType.FullName == "State.IRunDataRepository"
+    && facade.Properties.Single(p => p.Name == "_runDataRepositoryV2").PropertyType.FullName == "State.RunDataRepositoryV2",
+    "installed campaign repository is an interface facade owning a distinct V2 storage reference");
+var bridge = runtime.GetType("EndlessMode.GoaliePersistenceBridge");
+var resolveRepository = bridge.Methods.SingleOrDefault(m => m.Name == "SaveRepository");
+Check(resolveRepository != null && CallsNamed(resolveRepository, "get__runDataRepository")
+    && CallsNamed(resolveRepository, "get__runDataRepositoryV2")
+    && Calls(resolveRepository).Any(m => m is GenericInstanceMethod g && m.Name == "TryCast"
+        && g.GenericArguments.Single().FullName == "State.RunDataRepository"),
+    "compiled save ownership resolves the concrete facade nested V2 storage");
 var data = main.GetType("ES3Internal.ES3Data");
 Check(data.BaseType.FullName == "Il2CppSystem.ValueType" && !data.IsValueType, "installed ES3Data is a managed class representing a native value type");
 Check(data.Properties.Single(p => p.Name == "type").PropertyType.FullName == "ES3Types.ES3Type"
@@ -84,6 +95,13 @@ Check(!Calls(configure).Any(m => m.DeclaringType is GenericInstanceType t && t.E
 Check(Calls(configure).Count(m => m.DeclaringType.FullName == "Il2CppSystem.Collections.IList" && m.Name == "Add") == 2,
     "both compiled active and reserve card additions use native boxed-object Add");
 IEnumerable<TypeDefinition> Descendants(TypeDefinition type) => new[] { type }.Concat(type.NestedTypes.SelectMany(Descendants));
+foreach (string ownerName in new[] { "GoaliePersistenceBridge", "GoalieRosterRuntime", "GoalieMatchLaunchGate" }) {
+    var ownershipCalls = Descendants(runtime.GetType("EndlessMode." + ownerName)).SelectMany(t => t.Methods)
+        .Where(m => m.HasBody && m.Name != "SaveRepository").SelectMany(Calls).ToArray();
+    Check(ownershipCalls.Any(m => m.DeclaringType.FullName == bridge.FullName && m.Name == "SaveRepository")
+        && !ownershipCalls.Any(m => m.Name == "get__runDataRepository"),
+        "compiled " + ownerName + " validates nested storage identity rather than facade pointer");
+}
 var unsafeValueMethods = new[] { "TryGetValue", "set_Item", "Add", "Insert", "Remove", "Contains", "IndexOf" };
 var unsafeCalls = runtime.Types.Where(t => t.Namespace == "EndlessMode" && t.Name.StartsWith("Goalie"))
     .SelectMany(Descendants).SelectMany(t => t.Methods).Where(m => m.HasBody).SelectMany(Calls)

@@ -52,6 +52,8 @@ internal static class GoaliePersistenceContracts
         Method(typeof(SkaterData), "LoadState", false, typeof(void), typeof(SkaterState));
         Constructor(typeof(ES3File), typeof(ES3Settings), typeof(bool));
         Constructor(typeof(ES3Settings), typeof(bool)); Constructor(typeof(ES3Settings), typeof(string), typeof(ES3Settings));
+        Method(typeof(CampaignState), "get__runDataRepository", false, typeof(IRunDataRepository));
+        Method(typeof(RunDataRepository), "get__runDataRepositoryV2", false, typeof(RunDataRepositoryV2));
         var repository = typeof(RunDataRepositoryV2);
         var dependencies = new[] { "_talentRepository", "_relicRepository", "_abilityRepository" }.Select(name => repository.GetProperty(name)?.PropertyType
             ?? throw new MissingMemberException("Native repository injection contract: " + name)).ToArray();

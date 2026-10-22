@@ -210,6 +210,8 @@ internal sealed class GoalieRosterRuntime
     }
     private bool SaveChange(CampaignState campaign, GoalieRosterState proposed, Action<ChangeResult> completed)
     {
+        var repository = GoaliePersistenceBridge.SaveRepository(campaign)
+            ?? throw new InvalidOperationException("Reviewed native campaign save repository is unavailable.");
         var mutation = Stage(campaign.runData, proposed, GoalieNativeSnapshot.Deserializer
             ?? throw new InvalidOperationException("Native goalie restore repositories are unavailable."));
         GoaliePersistenceBridge.SaveReceipt admitted = null;
@@ -224,11 +226,14 @@ internal sealed class GoalieRosterRuntime
                 changing = false; changeOwner = null;
                 if (outcome == ChangeOutcome.Unresolved) UnavailableReason = message;
             }
+            Plugin.Log.LogInfo("[GoalieSave] run=" + proposed.RunId + "; outcome=" + outcome + "; message=" + message
+                + "; expectedRepository=" + repository.Pointer.ToString("X") + "; " + GoaliePersistenceBridge.DescribeReceipt(receipt));
             completed?.Invoke(new ChangeResult { Outcome = outcome, Message = message, Receipt = receipt });
         }
         onAdmission = receipt => {
             if (done || !invoking || admitted != null || !ReferenceEquals(receipt.CallerToken, token) || receipt.RunPointer != campaign.runData.Pointer
-                || receipt.RepositoryPointer != campaign._runDataRepository?.Pointer) return;
+                || receipt.RepositoryPointer != repository.Pointer
+                || GoaliePersistenceBridge.SaveRepository(campaign)?.Pointer != repository.Pointer) return;
             // Even an unavailable companion is our native save and may write.
             // Completion classifies it; lack of Admission is never a rollback proof.
             admitted = receipt;
@@ -249,7 +254,7 @@ internal sealed class GoalieRosterRuntime
         GoaliePersistenceBridge.SaveAdmitted += onAdmission; GoaliePersistenceBridge.SaveCompleted += onCompletion;
         try {
             mutation.Publish(); invoking = true;
-            GoaliePersistenceBridge.SaveCampaign(campaign, token); // native SaveState replaces TeamState before repository admission
+            GoaliePersistenceBridge.SaveCampaign(campaign, token, repository); // native SaveState replaces TeamState before repository admission
             invoking = false;
             if (admitted == null && !done) {
                 if (mutation.Rollback()) Finish(ChangeOutcome.Rejected, "Save was not admitted; previous goalies retained.", null);

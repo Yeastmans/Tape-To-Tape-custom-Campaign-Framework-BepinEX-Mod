@@ -25,10 +25,16 @@ internal static class GoaliePersistenceBridge
     [ThreadStatic] private static SaveRequest serializing;
     [ThreadStatic] private static bool readingSelection;
     [ThreadStatic] private static SaveCaller caller;
-    private sealed class SaveCaller { internal CampaignState Campaign; internal object Token; internal bool Claimed; }
-    internal static void SaveCampaign(CampaignState campaign, object token)
+    private sealed class SaveCaller { internal CampaignState Campaign; internal RunDataRepositoryV2 Repository; internal object Token; internal bool Claimed; }
+    // CampaignState owns an IRunDataRepository facade. The reviewed concrete
+    // facade delegates to its separate V2 object; only that object is hooked.
+    internal static RunDataRepositoryV2 SaveRepository(CampaignState campaign)
+        => campaign?._runDataRepository?.TryCast<RunDataRepository>()?._runDataRepositoryV2;
+    internal static void SaveCampaign(CampaignState campaign, object token, RunDataRepositoryV2 repository)
     {
-        var previous = caller; caller = new SaveCaller { Campaign = campaign, Token = token };
+        if (repository == null || SaveRepository(campaign)?.Pointer != repository.Pointer)
+            throw new InvalidOperationException("Native campaign save repository ownership changed.");
+        var previous = caller; caller = new SaveCaller { Campaign = campaign, Repository = repository, Token = token };
         try { campaign.SaveRunData(); } finally { caller = previous; }
     }
 
@@ -45,6 +51,11 @@ internal static class GoaliePersistenceBridge
         // Local persisted-pair proof only; never a Steam/cloud replication claim.
         internal bool Durable => NativeError == null && NativeResult && Reconciled;
     }
+    internal static string DescribeReceipt(SaveReceipt receipt) => receipt == null ? "receipt=none"
+        : "operation=" + receipt.OperationId + "; repository=" + receipt.RepositoryPointer.ToString("X")
+            + "; nativeResult=" + receipt.NativeResult + "; nativeError=" + (receipt.NativeError?.Message ?? "none")
+            + "; reconciled=" + receipt.Reconciled + "; revision=" + receipt.Checkpoint?.Revision
+            + "; noLocalWrite=" + receipt.NoLocalWrite + "; failure=" + (receipt.Failure ?? "none");
     internal static event Action<SaveReceipt> SaveAdmitted;
     internal static event Action<SaveReceipt> SaveCompleted;
     private sealed class SaveRequest
@@ -124,7 +135,8 @@ internal static class GoaliePersistenceBridge
         request.Receipt.OperationId = request.Operation.Id; request.Receipt.Proxy = request.Operation.Proxy;
         request.Receipt.RepositoryPointer = __instance.Pointer;
         var callingRun = caller?.Campaign?.runData;
-        if (caller != null && !caller.Claimed && caller.Campaign._runDataRepository?.Pointer == __instance.Pointer
+        if (caller != null && !caller.Claimed && caller.Repository.Pointer == __instance.Pointer
+            && SaveRepository(caller.Campaign)?.Pointer == __instance.Pointer
             && callingRun?.runID == __0?.runID && callingRun?.squadId == __0?.squadId)
         {
             caller.Claimed = true; request.Receipt.CallerToken = caller.Token; request.Receipt.RunPointer = callingRun.Pointer;

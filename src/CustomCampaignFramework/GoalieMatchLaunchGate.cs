@@ -275,7 +275,7 @@ internal static class GoalieMatchLaunchGate
     {
         var receipt = pending.Receipt; var saved = GoaliePersistenceBridge.Roster.Selection;
         return receipt?.Durable == true && receipt.CallerToken != null && !string.IsNullOrEmpty(receipt.OperationId)
-            && receipt.RunPointer == pending.Run.Pointer && receipt.RepositoryPointer == pending.Campaign._runDataRepository?.Pointer
+            && receipt.RunPointer == pending.Run.Pointer && receipt.RepositoryPointer == GoaliePersistenceBridge.SaveRepository(pending.Campaign)?.Pointer
             && pending.Attempt.Lifecycle == "Armed" && receipt.AttemptToken == pending.Attempt.Token && pending.Attempt.Same(receipt.Admission?.Attempt)
             && pending.Attempt.Same(receipt.Checkpoint?.Attempt) && pending.Attempt.Same(saved?.Attempt)
             && receipt.Admission.ArmedAttemptToken == pending.Attempt.Token && receipt.Checkpoint.ArmedAttemptToken == pending.Attempt.Token
