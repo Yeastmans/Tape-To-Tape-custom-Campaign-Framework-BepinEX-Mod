@@ -1788,6 +1788,7 @@ public class Plugin : BasePlugin
 
         var harmony = new Harmony("com.mods.customcampaign");
         harmony.PatchAll();
+        FreshRunActivation.Install();
         GoalieLifecycleActivation.Install();
         CustomRewardGoalRules.Install();
         CustomRewardCapabilities.Install();

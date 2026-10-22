@@ -56,7 +56,10 @@ internal static class GoalieRosterMenu
         Hook("pick", typeof(LineupMenu), "OnTogglePlayerCard", "System.Void", new[] { "Tape2Tape.Customization.UI.SkaterCard" }, "Pick", true),
         Hook("back", typeof(LineupMenu), "TryLeaveMenu", "System.Void", new[] { "System.Boolean" }, "Leave", true),
         Hook("recruit", typeof(EventChoiceMenu), "OnItemClicked", "System.Void", new[] { "BishopGames.UI.AbstractNavigable" }, "RecruitClick", true),
-        Hook("legacy-open", typeof(EventChoicePanel), "ShowMenu", "System.Void", new[] { "STS.Map.MapNode", "STS.Map.EventNode" }, "LegacyShown", false),
+        Hook("gm-init", typeof(EventChoiceMenu), "InitData", "System.Void", new[] { "Il2CppSystem.Object" }, "RecruitInitialized", false),
+        Hook("gm-close", typeof(EventChoiceMenu), "OnClosed", "System.Void", Array.Empty<string>(), "RecruitClosed", false),
+        Hook("gm-destroy", typeof(EventChoiceMenu), "BehaviourDestroy", "System.Void", Array.Empty<string>(), "RecruitClosed", true),
+        Hook("legacy-open", typeof(EventChoicePanel), "ShowMenu", "System.Void", new[] { "STS.Map.MapNode", "STS.Map.EventNode" }, "LegacyOpening", true),
         Hook("legacy-close", typeof(EventChoicePanel), "HideMenu", "System.Void", Array.Empty<string>(), "LegacyLeave", true)
     };
     private static NamedManagedHookContract Hook(string id, Type type, string method, string result, string[] parameters, string patch, bool prefix)
@@ -215,7 +218,7 @@ internal static class GoalieRosterMenu
             } else { s.Confirming = null; Title(s, result.Message); }
         }
         bool accepted = s.Offer != null
-            ? GoaliePersistenceBridge.Roster.TryRecruit(s.Campaign, s.Offer.Candidate, slot, s.Revision, Completed, s.Offer.Contract, s.Offer.Visit.Ledger, s.Offer.Id, s.DeparturePrevention)
+            ? GoaliePersistenceBridge.Roster.TryRecruit(s.Campaign, s.Offer.Candidate, slot, s.Revision, Completed, s.Offer.Contract, s.Offer.Visit.Ledger, s.Offer.Id, s.DeparturePrevention, s.Offer.Visit.Selection.Index, s.Offer.Visit.Selection.Layer)
             : GoaliePersistenceBridge.Roster.TrySwap(s.Campaign, s.Revision, Completed);
         if (!accepted) { s.Saving = false; s.Confirming = null; Title(s, "Goalie selection changed or could not be prepared. Go back and reopen."); }
         return false;
@@ -233,7 +236,7 @@ internal static class GoalieRosterMenu
         var campaign = CampaignUtil.CampaignState;
         if (!Enabled || Current != null || menu?.Team?.OriginalTeamData?.Pointer != campaign?.runData?.teamData?.Pointer
             || card?.CurrentSkaterData.ActivePosition != ESkaterPosition.Goalie || card.Toggle?.IsSelected != true
-            || Plugin.IsDefaultMode || T2TUtils.IsInMatch || GameManager.GameType != ScriptableStates.GameType.Rogue) return false;
+            || !GoalieRosterRuntime.IsMapContext(CampaignUtil.CampaignState)) return false;
         card.Toggle.SetSelected(false, false);
         if (!GoaliePersistenceBridge.Roster.CanEdit(campaign)) {
             if (menu.m_Header?.m_Title != null) menu.m_Header.m_Title.text = GoaliePersistenceBridge.Roster.UnavailableReason ?? "Goalie roster unavailable.";
@@ -244,7 +247,7 @@ internal static class GoalieRosterMenu
     internal static void EntryLabel(LineupMenu menu)
     {
         if (!Enabled || menu?.Team?.OriginalTeamData?.Pointer != CampaignUtil.CampaignState?.runData?.teamData?.Pointer
-            || Plugin.IsDefaultMode || T2TUtils.IsInMatch || GameManager.GameType != ScriptableStates.GameType.Rogue) return;
+            || !GoalieRosterRuntime.IsMapContext(CampaignUtil.CampaignState)) return;
         if (menu.m_ActivePlayersList?.m_SkaterCards == null) return;
         foreach (var card in menu.m_ActivePlayersList.m_SkaterCards)
             if (card.CurrentSkaterData.ActivePosition == ESkaterPosition.Goalie) {
@@ -255,7 +258,7 @@ internal static class GoalieRosterMenu
     internal static bool RecruitClick(EventChoiceMenu __instance, AbstractNavigable __0)
     {
         var visit = GoalieRecruitment.Current;
-        if (!Enabled || !GoalieRecruitment.IsCurrent(visit) || __instance.SourceNode?.Pointer != visit.Node) return true;
+        if (!Enabled || !GoalieRecruitment.IsCurrent(visit) || __instance.SourceNode?.Pointer != visit.Node || visit.Selection.Menu?.Pointer != __instance.Pointer) return true;
         if (__instance.IgnoreInput || Current != null || __0 == null) return false;
         foreach (var item in __instance.m_Items) if (item.Navigable?.Pointer == __0.Pointer) {
             if (!item.ChoiceData.interactable) return false;
@@ -265,17 +268,17 @@ internal static class GoalieRosterMenu
         }
         return false;
     }
-    private static void LegacyShown(EventChoicePanel __instance, EventNode __1)
-    {
-        var visit = GoalieRecruitment.Current;
-        if (GoalieRecruitment.IsCurrent(visit) && visit.Node == __1?.Pointer) visit.Legacy = __instance;
-    }
+    internal static void RecruitInitialized(EventChoiceMenu __instance)
+        => GoalieRecruitment.Selected(CampaignUtil.CampaignState, __instance?.mapNode, __instance?.SourceNode, __instance);
+    private static void RecruitClosed(EventChoiceMenu __instance) => GoalieRecruitment.Closed(__instance);
+    private static void LegacyOpening(EventChoicePanel __instance, MapNode __0, EventNode __1)
+        => GoalieRecruitment.Selected(CampaignUtil.CampaignState, __0, __1, legacy: __instance);
     private static bool LegacyLeave(EventChoicePanel __instance)
     {
         var visit = GoalieRecruitment.Current;
         if (!GoalieRecruitment.IsCurrent(visit) || visit.Legacy?.Pointer != __instance.Pointer) return true;
         if (Current?.Legacy?.Pointer == __instance.Pointer) return false;
-        if (visit.Pending == null) return true;
+        if (visit.Pending == null) { GoalieRecruitment.Closed(__instance); return true; }
         Open(CampaignUtil.CampaignState, visit.Pending, null, __instance); return false;
     }
     internal static void Finish(Selection s)

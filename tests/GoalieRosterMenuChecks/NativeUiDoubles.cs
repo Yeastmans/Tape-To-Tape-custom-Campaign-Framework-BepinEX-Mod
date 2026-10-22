@@ -138,7 +138,7 @@ namespace Tape2Tape.Hockey.UI {
     }
     public class EventChoiceItem { public AbstractNavigable Navigable = new(); public STS.Map.EventChoice ChoiceData; }
     public class EventChoiceMenu : AbstractMenu {
-        public STS.Map.EventNode SourceNode; public List<EventChoiceItem> m_Items = new();
+        public STS.Map.MapNode mapNode; public STS.Map.EventNode SourceNode; public List<EventChoiceItem> m_Items = new();
         public bool m_IsTakenOver, m_IsExiting, Visible = true, Busy; public AbstractMenu m_MenuOverSelf;
         public int m_ChoicesMade, Refreshes, Exits, DefaultSelections;
         public bool IgnoreInput => Busy || m_IsTakenOver || m_MenuOverSelf != null || m_IsExiting;
@@ -159,7 +159,7 @@ namespace STS.Map {
     public enum EEventChoiceType { Skater }
     public class EventTermParam {}
     public class EventChoice { public bool interactable = true; public SkaterData Skater; public string translatedButtonName; public NodeType nodeType; public EEventChoiceType ChoiceType; public Il2CppSystem.Collections.Generic.List<EventTermParam> choicesTermParams; public Il2CppSystem.Action onSelection; }
-    public class MapNode { public Node Node = new(); }
+    public class MapNode : Il2CppSystem.Object { public Node Node = new(); public Il2CppSystem.Object Blueprint = new(); }
     public class Node { public int NodeIndex, LayerIndex; }
 }
 namespace Rogue.NPC.GeneralManagerNPC {

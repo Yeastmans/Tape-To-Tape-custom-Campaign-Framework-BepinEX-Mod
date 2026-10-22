@@ -17,7 +17,7 @@ static class LaunchChecks
         ES3.FailMarker = false; ES3.FailStore = false; ES3.WrongMarkerReadback = false; ES3File.FailPhysicalRead = false;
         ES3.AdmissionError = null; ES3.AfterStore = null;
         Plugin.ModFolder = Path.Combine(Path.GetTempPath(), "ccf-launch-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(Plugin.ModFolder);
-        Plugin.IsDefaultMode = false; T2TUtils.IsInMatch = false; GameManager.GameType = ScriptableStates.GameType.Rogue;
+        GameManager.GameTypeUnavailable = true; Plugin.IsDefaultMode = false; T2TUtils.IsInMatch = false; T2TUtils.IsOnWorldMap = true; GameManager.GameType = ScriptableStates.GameType.Rogue;
         BridgeDoubleHooks.Enable();
         var goalie = new GoaltenderData { id = "launch-goalie", OriginalId = "career-owner" };
         var run = new RunData { runID = "launch-run", squadId = "launch-squad", currentMap = "{\"act\":1,\"path\":[]}", CurrentAct = 1,
@@ -321,7 +321,7 @@ static class LaunchChecks
         foreach (string bypass in new[] { "permanent", "base", "playnow", "zoom" }) {
             (campaign, menu) = Setup(contract: bypass != "permanent");
             if (bypass == "base") Plugin.IsDefaultMode = true;
-            if (bypass == "playnow") GameManager.GameType = ScriptableStates.GameType.QuickPlay;
+            if (bypass == "playnow") { GameManager.GameType = ScriptableStates.GameType.QuickPlay; T2TUtils.IsOnWorldMap = false; }
             if (bypass == "zoom") menu.m_TestZoomOnly = true;
             menu.StartMatch(); check(menu.Starts == 1 && campaign.Repository.Saves == 0, "NativeBehaviorPreserved_" + bypass);
         }

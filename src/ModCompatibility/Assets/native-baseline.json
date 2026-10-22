@@ -1,8 +1,8 @@
 {
-  "Id": "89C2BF9BC714D598CF5A82FB112D34D191C7C4DE66F03ECB69CE5DF5D2E13627",
+  "Id": "A1C673BA9F16617C31A7274F444D57F880C143200861ED0ADC5FEB08561DEBA6",
   "Profile": {
     "RuntimeContract": "t2t-native-v2-20261020",
-    "BaselineId": "89C2BF9BC714D598CF5A82FB112D34D191C7C4DE66F03ECB69CE5DF5D2E13627",
+    "BaselineId": "A1C673BA9F16617C31A7274F444D57F880C143200861ED0ADC5FEB08561DEBA6",
     "Build": "26141904",
     "GameHash": "A58718A1AF369E064DF3A7CE149129C0130C4F316BC5E47EF7E6365853B1AA42",
     "MetadataHash": "7CABE7311509564E5C2D4A0580212E2839FAA0CAC05949940015DD4D092E4EDB",
@@ -1943,19 +1943,6 @@
       },
       {
         "Feature": "goalie-checkpoint",
-        "Id": "goalie-fresh",
-        "Assembly": "MainScriptsAssembly",
-        "DeclaringType": "State.CampaignState",
-        "Method": "ApplyNewRunStartEffects",
-        "IsStatic": false,
-        "ReturnType": "System.Void",
-        "Parameters": [],
-        "Prefix": "",
-        "Postfix": "FreshPostfix",
-        "Finalizer": ""
-      },
-      {
-        "Feature": "goalie-checkpoint",
         "Id": "goalie-hydrate",
         "Assembly": "MainScriptsAssembly",
         "DeclaringType": "State.DeserializerV2",
@@ -2055,8 +2042,8 @@
           "STS.Map.MapNode",
           "STS.Map.EventNode"
         ],
-        "Prefix": "",
-        "Postfix": "LegacyShown",
+        "Prefix": "LegacyOpening",
+        "Postfix": "",
         "Finalizer": ""
       },
       {
@@ -2346,6 +2333,89 @@
         "Prefix": "UpdatePrefix",
         "Postfix": "",
         "Finalizer": "UpdateFinalizer"
+      },
+      {
+        "Feature": "campaign-fresh-run",
+        "Id": "fresh-run-reset",
+        "Assembly": "MainScriptsAssembly",
+        "DeclaringType": "State.CampaignState",
+        "Method": "ResetRunData",
+        "IsStatic": false,
+        "ReturnType": "System.Void",
+        "Parameters": [],
+        "Prefix": "ResetPrefix",
+        "Postfix": "ResetPostfix",
+        "Finalizer": ""
+      },
+      {
+        "Feature": "campaign-fresh-run",
+        "Id": "fresh-run-map",
+        "Assembly": "MainScriptsAssembly",
+        "DeclaringType": "RunManager",
+        "Method": "CreateMapFromScratch",
+        "IsStatic": false,
+        "ReturnType": "System.Void",
+        "Parameters": [],
+        "Prefix": "MapPrefix",
+        "Postfix": "",
+        "Finalizer": ""
+      },
+      {
+        "Feature": "campaign-fresh-run",
+        "Id": "fresh-run-hydrate",
+        "Assembly": "MainScriptsAssembly",
+        "DeclaringType": "State.DeserializerV2",
+        "Method": "DeserializeFromModel",
+        "IsStatic": false,
+        "ReturnType": "System.Void",
+        "Parameters": [
+          "Data.RunData",
+          "State.RunDataModelV2"
+        ],
+        "Prefix": "HydratePrefix",
+        "Postfix": "",
+        "Finalizer": ""
+      },
+      {
+        "Feature": "goalie-roster-menu",
+        "Id": "goalie-menu-gm-init",
+        "Assembly": "MainScriptsAssembly",
+        "DeclaringType": "Tape2Tape.Hockey.UI.EventChoiceMenu",
+        "Method": "InitData",
+        "IsStatic": false,
+        "ReturnType": "System.Void",
+        "Parameters": [
+          "Il2CppSystem.Object"
+        ],
+        "Prefix": "",
+        "Postfix": "RecruitInitialized",
+        "Finalizer": ""
+      },
+      {
+        "Feature": "goalie-roster-menu",
+        "Id": "goalie-menu-gm-close",
+        "Assembly": "MainScriptsAssembly",
+        "DeclaringType": "Tape2Tape.Hockey.UI.EventChoiceMenu",
+        "Method": "OnClosed",
+        "IsStatic": false,
+        "ReturnType": "System.Void",
+        "Parameters": [],
+        "Prefix": "",
+        "Postfix": "RecruitClosed",
+        "Finalizer": ""
+      },
+      {
+        "Feature": "goalie-roster-menu",
+        "Id": "goalie-menu-gm-destroy",
+        "Assembly": "MainScriptsAssembly",
+        "DeclaringType": "Tape2Tape.Hockey.UI.EventChoiceMenu",
+        "Method": "BehaviourDestroy",
+        "IsStatic": false,
+        "ReturnType": "System.Void",
+        "Parameters": [],
+        "Prefix": "RecruitClosed",
+        "Postfix": "",
+        "Finalizer": ""
       }
     ]
   },
@@ -9594,6 +9664,21 @@
       "Name": "Unlocks.UnlockSystem$$IsUnlocked::System.Boolean IsUnlocked(System.String id)",
       "Signature": "System.Boolean IsUnlocked(System.String id)",
       "BodyHash": "941B16DFDED484A7BCF7834FF5979F4CA3FF6A95541C1427F1F57E2BFFBCEC22"
+    },
+    {
+      "Name": "RunManager$$CreateMapFromScratch::System.Void CreateMapFromScratch()",
+      "Signature": "System.Void CreateMapFromScratch()",
+      "BodyHash": "5D69619537493E3D6892A9586E641598578FF49399622410891619FB9335FCFF"
+    },
+    {
+      "Name": "Tape2Tape.Hockey.UI.EventChoiceMenu$$OnClosed::System.Void OnClosed()",
+      "Signature": "System.Void OnClosed()",
+      "BodyHash": "59E56AFCD41700357E7FC553B83F333DD64A975F837BF3E54BEDB8DA9EEE8FB0"
+    },
+    {
+      "Name": "Tape2Tape.Hockey.UI.EventChoiceMenu$$BehaviourDestroy::System.Void BehaviourDestroy()",
+      "Signature": "System.Void BehaviourDestroy()",
+      "BodyHash": "F52BF4582E9CF39C5DDB7E2CBE10D2AA1F024D8895E09B99CB74F55D6C5AC6FB"
     }
   ],
   "Sites": [

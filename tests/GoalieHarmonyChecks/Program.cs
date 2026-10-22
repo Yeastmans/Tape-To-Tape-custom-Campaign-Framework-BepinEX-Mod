@@ -41,15 +41,18 @@ foreach(var assembly in new[] { typeof(Harmony).Assembly, typeof(DynamicMethodDe
         Check(SHA256.HashData(File.ReadAllBytes(assembly.Location)).SequenceEqual(SHA256.HashData(File.ReadAllBytes(installed))),
             "exact installed provider bytes: "+assembly.GetName().Name);
     });
-Run("approved production completion plan",()=> {
+foreach(string owner in new[] { "FreshRunActivation", "GoaliePersistenceContracts", "GoalieRosterMenu", "GoalieMatchLaunchGate", "GoalieMatchCompletion" }) Run("approved production plan " + owner,()=> {
     using var stream=runtime.GetManifestResourceStream("NativeCompatibility.json")!;
     var profileType=runtime.GetType("CampaignCore.NativeCompatibilityProfile",true)!;
     var profile=profileType.GetMethod("Read")!.Invoke(null,new object[]{new StreamReader(stream).ReadToEnd()})!;
-    var required=runtime.GetType("EndlessMode.GoalieMatchCompletion",true)!.GetField("Required",flags)!.GetValue(null)!;
-    runtime.GetType("CampaignCore.NamedManagedHookContract",true)!.GetMethod("RequireExactSet")!.Invoke(null,new[]{required,profileType.GetProperty("NamedHooks")!.GetValue(profile),"goalie-match-completion"});
-    Check(true,"production completion plan matches approved embedded contracts");
+    var type=runtime.GetType("EndlessMode." + owner,true)!;
+    var required=(Array)type.GetField("Required",flags)!.GetValue(null)!;
+    var first=required.GetValue(0)!;
+    var feature=first.GetType().GetProperty("Feature")!.GetValue(first)!;
+    runtime.GetType("CampaignCore.NamedManagedHookContract",true)!.GetMethod("RequireExactSet")!.Invoke(null,new[]{required,profileType.GetProperty("NamedHooks")!.GetValue(profile),feature});
+    Check(true,"production " + owner + " plan matches approved embedded contracts");
 });
-foreach (string owner in new[] { "GoaliePersistenceContracts", "GoalieRosterMenu", "GoalieMatchLaunchGate", "GoalieMatchCompletion" }) {
+foreach (string owner in new[] { "FreshRunActivation", "GoaliePersistenceContracts", "GoalieRosterMenu", "GoalieMatchLaunchGate", "GoalieMatchCompletion" }) {
     var type=runtime.GetType("EndlessMode."+owner,true)!;
     var targets=(Array)type.GetMethod("Resolve",flags)!.Invoke(null,null)!;
     foreach(object tuple in targets) {

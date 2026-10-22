@@ -279,6 +279,7 @@ internal static class GoaliePersistenceBridge
     }
     internal static void Hydrated(DeserializerV2 deserializer, RunData run, RunDataModelV2 model)
     {
+        FreshRunLifecycle.Forget(run);
         Selections.Remove(model.Pointer, out var selected);
         if (!Roster.Load(run, model, deserializer, selected, Plugin.ModFolder))
         {
@@ -291,7 +292,7 @@ internal static class GoaliePersistenceBridge
         }
     }
     private static void HydratedPostfix(DeserializerV2 __instance, RunData __0, RunDataModelV2 __1) => Hydrated(__instance, __0, __1);
-    private static void FreshPostfix(CampaignState __instance)
+    internal static void Fresh(CampaignState __instance)
     {
         if (!Enabled || Plugin.IsDefaultMode || __instance?.runData?.teamData?.goalie == null) return;
         try {
@@ -299,6 +300,7 @@ internal static class GoaliePersistenceBridge
             Roster.Fresh(__instance.runData, Plugin.ModFolder,
                 SquadBehaviorRuntime.Enabled(__instance.runData.squadId, GoalieFeatureOptions.ReserveBehaviorId, false),
                 GoalieContractRuntime.Sign(SquadPoolRuntime.Team(__instance.runData.squadId)?.Goalie?.Fields, __instance.runData.teamData.goalie.id));
+            Plugin.Log.LogInfo("[GoalieLifecycle] Fresh roster bound; run=" + __instance.runData.runID + "; reserve=" + Roster.Selection.ReserveEnabled);
         }
         catch (Exception ex) { Warn("Fresh goalie roster unavailable: " + ex.Message); }
     }

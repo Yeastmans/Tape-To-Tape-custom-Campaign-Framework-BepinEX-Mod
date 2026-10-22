@@ -62,6 +62,7 @@ foreach (string binding in new[] { "unbound", "null", "own" })
 }
 Console.WriteLine($"PASS {checks} goalie runtime checks");
 CoordinatorChecks.Run(Check);
+LifecycleContextChecks.Run(Check);
 CacheInteropBoundaryChecks.Run(Check);
 CheckpointChecks.Run(Check);
 ForwardingChecks.Run(Check);

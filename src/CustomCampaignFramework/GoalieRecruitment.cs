@@ -10,6 +10,7 @@ using Rogue.NPC.GeneralManagerNPC;
 using State;
 using STS.Map;
 using Tape2Tape;
+using Tape2Tape.Hockey.UI;
 
 namespace EndlessMode;
 
@@ -20,7 +21,11 @@ internal static class GoalieRecruitment
     internal const string IdPrefix = "CCF_GFA_";
     internal sealed class Selection
     {
-        internal IntPtr State, Run, Team, Blueprint;
+        internal IntPtr State, Run, Team, Blueprint, Event;
+        internal MapNode Map;
+        internal EventChoiceMenu Menu;
+        internal EventChoicePanel Legacy;
+        internal string Route;
         internal string RunId, Folder;
         internal int Act, Layer, Index;
         internal bool RecruitmentEnabled;
@@ -28,10 +33,11 @@ internal static class GoalieRecruitment
         internal bool Matches(CampaignState state)
         {
             var run = state?.runData;
-            return !Plugin.IsDefaultMode && state?.Pointer == State && run?.Pointer == Run
-                && run.teamData?.Pointer == Team && state.currentNode?.Pointer == Blueprint
-                && state.currentNode.nodeType == NodeType.GeneralManager && run.runID == RunId
-                && run.CurrentAct == Act && run.currentNodePoint.x == Index && run.currentNodePoint.y == Layer
+            return GoalieRosterRuntime.IsMapContext(state) && state?.Pointer == State && run?.Pointer == Run
+                && run.teamData?.Pointer == Team && Map?.Blueprint?.Pointer == Blueprint && run.runID == RunId
+                && Map.Node?.NodeIndex == Index && Map.Node.LayerIndex == Layer
+                && (Menu == null || Menu.SourceNode?.Pointer == Event && Menu.mapNode?.Pointer == Map.Pointer)
+                && run.CurrentAct == Act && GoalieRosterRuntime.HasRecruitmentWitness(state, Route, Index, Layer)
                 && string.Equals(Plugin.ModFolder, Folder, StringComparison.OrdinalIgnoreCase);
         }
     }
@@ -62,11 +68,11 @@ internal static class GoalieRecruitment
         && value.Selection.Matches(CampaignUtil.CampaignState);
     internal static bool Valid(Offer offer) => offer != null && IsCurrent(offer.Visit)
         && !offer.Taken && !offer.Unresolved && offer.Revision == offer.Visit.Revision
-        && GoalieRosterRuntime.HasRecruitmentWitness(CampaignUtil.CampaignState, offer.Visit.Ledger?.Witness);
+        && GoalieRosterRuntime.HasRecruitmentWitness(CampaignUtil.CampaignState, offer.Visit.Ledger?.Witness, offer.Visit.Selection.Index, offer.Visit.Selection.Layer);
     internal static Visit Current => visit;
-    internal static GoalieRecruitmentVisitState VisitLedger(CampaignState state, int quota)
+    internal static GoalieRecruitmentVisitState VisitLedger(CampaignState state, int quota, int? index = null, int? layer = null)
     {
-        string witness = GoalieRosterRuntime.RecruitmentWitness(state);
+        string witness = GoalieRosterRuntime.RecruitmentWitness(state, index, layer);
         var saved = GoaliePersistenceBridge.Roster.Selection?.RecruitmentVisit;
         if (saved?.Witness == witness) return saved.Clone();
         var result = new GoalieRecruitmentVisitState { Witness = witness, Generation = Guid.NewGuid().ToString("N"), Quota = quota };
@@ -96,16 +102,19 @@ internal static class GoalieRecruitment
     internal static bool IsRecruit(GoaltenderData goalie) => (goalie?.id ?? "").StartsWith(IdPrefix, StringComparison.Ordinal);
     internal static bool IsGoalieNode => selected?.Matches(CampaignUtil.CampaignState) == true;
 
-    internal static void Selected(CampaignState state, MapNode node)
+    internal static bool OwnsEvent(GeneralManagerEvent node) => IsGoalieNode && selected.Event == node?.Pointer;
+
+    internal static void Selected(CampaignState state, MapNode node, EventNode source, EventChoiceMenu menu = null, EventChoicePanel legacy = null)
     {
         selected = null; visit = null;
-        if (Plugin.IsDefaultMode || state?.runData?.teamData == null || node?.Node == null
-            || state.currentNode?.nodeType != NodeType.GeneralManager) return;
+        if (!GoalieRosterRuntime.IsMapContext(state) || state?.runData?.teamData == null || node?.Node == null
+            || source?.TryCast<GeneralManagerEvent>() == null || node.Blueprint == null) return;
         try
         {
             var run = state.runData;
-            if (string.IsNullOrWhiteSpace(run.runID) || run.currentNodePoint.x != node.Node.NodeIndex
-                || run.currentNodePoint.y != node.Node.LayerIndex || CustomMapLayout.RecruitRoleFor(node) != GoalieFreeAgents.Goalies) return;
+            string role = CustomMapLayout.RecruitRoleFor(node);
+            Plugin.Log.LogInfo("[GoalieRecruit] Selected actual GM menu; run=" + run.runID + "; node=" + node.Node.LayerIndex + ":" + node.Node.NodeIndex + "; role=" + role);
+            if (string.IsNullOrWhiteSpace(run.runID) || role != GoalieFreeAgents.Goalies) return;
             string campaignFile = Path.Combine(Plugin.ModFolder, "campaign.txt");
             bool enabled = false;
             string error = "";
@@ -120,20 +129,31 @@ internal static class GoalieRecruitment
                 error = $"Goalies node at act {run.CurrentAct}, layer {node.Node.LayerIndex + 1}, node {node.Node.NodeIndex + 1} cannot read Goalie Recruitment from campaign.txt: {ex.Message}";
             }
             selected = new Selection { State = state.Pointer, Run = run.Pointer, Team = run.teamData.Pointer,
-                Blueprint = state.currentNode.Pointer, RunId = run.runID, Folder = Plugin.ModFolder,
+                Blueprint = node.Blueprint.Pointer, Map = node, Event = source.Pointer, Menu = menu, Legacy = legacy,
+                Route = GoalieRosterRuntime.RecruitmentWitness(state, node.Node.NodeIndex, node.Node.LayerIndex), RunId = run.runID, Folder = Plugin.ModFolder,
                 Act = run.CurrentAct, Layer = node.Node.LayerIndex, Index = node.Node.NodeIndex,
                 RecruitmentEnabled = enabled, ConfigurationError = error };
         }
         catch (Exception ex) { Plugin.Log.LogWarning("[GoalieRecruit] Could not resolve saved map role: " + ex.Message); }
     }
-    internal static void BeginVisit() => visit = null;
+    internal static void BeginVisit(GeneralManagerEvent node) { if (selected?.Event == node?.Pointer) visit = null; }
+    internal static void Closed(EventChoiceMenu menu)
+    {
+        if (selected?.Menu?.Pointer != menu?.Pointer || menu == null) return;
+        selected = null; visit = null;
+    }
+    internal static void Closed(EventChoicePanel menu)
+    {
+        if (selected?.Legacy?.Pointer != menu?.Pointer || menu == null) return;
+        selected = null; visit = null;
+    }
 
     internal static bool Choices(GeneralManagerEvent node, int choicesMade)
     {
         var cards = new List<EventChoice>();
         try
         {
-            if (!IsGoalieNode) return false;
+            if (!IsGoalieNode || selected.Event != node?.Pointer) return false;
             if (!selected.RecruitmentEnabled)
             {
                 Plugin.Log.LogError("[GoalieRecruit] " + selected.ConfigurationError);
@@ -142,8 +162,8 @@ internal static class GoalieRecruitment
             }
             if (visit == null || visit.Node != node.Pointer || !ReferenceEquals(visit.Selection, selected))
             {
-                var ledger = VisitLedger(CampaignUtil.CampaignState, node.NumTimesToOfferChoices);
-                visit = new Visit { Selection = selected, Node = node.Pointer, Event = node, Ledger = ledger,
+                var ledger = VisitLedger(CampaignUtil.CampaignState, node.NumTimesToOfferChoices, selected.Index, selected.Layer);
+                visit = new Visit { Selection = selected, Node = node.Pointer, Event = node, Ledger = ledger, Legacy = selected.Legacy,
                     Hires = ledger.ConsumedOfferIds.Length, Offered = new HashSet<string>(ledger.OfferedPoolIds, StringComparer.Ordinal) };
             }
             var current = visit;
@@ -192,6 +212,7 @@ internal static class GoalieRecruitment
             cards.Clear();
             Plugin.Log.LogError("[GoalieRecruit] Authored goalie offers failed; no skater/native fallback: " + ex);
         }
+        Plugin.Log.LogInfo("[GoalieRecruit] Offers=" + cards.Count + "; run=" + selected?.RunId + "; role=Goalies; hires=" + visit?.Hires);
         TwoLineContracts.ReplaceChoices(node, cards);
         return cards.Count > 0;
     }
@@ -319,22 +340,17 @@ internal static class GoalieRecruitment
     }
 }
 
-[HarmonyPatch(typeof(CampaignState), nameof(CampaignState.SetCurrentNode))]
-internal static class GoalieRecruitSelection
-{
-    [HarmonyPostfix] private static void Postfix(CampaignState __instance, MapNode __0) => GoalieRecruitment.Selected(__instance, __0);
-}
 [HarmonyPatch(typeof(GeneralManagerEvent), "Initialize")]
 internal static class GoalieRecruitVisitStart
 {
-    [HarmonyPrefix] private static void Prefix() => GoalieRecruitment.BeginVisit();
+    [HarmonyPrefix] private static void Prefix(GeneralManagerEvent __instance) => GoalieRecruitment.BeginVisit(__instance);
 }
 [HarmonyPatch(typeof(GeneralManagerEvent), "NextChoices")]
 internal static class GoalieRecruitChoices
 {
     [HarmonyPrefix] private static bool Prefix(GeneralManagerEvent __instance, int __0, ref bool __result)
     {
-        if (!GoalieRecruitment.IsGoalieNode) return true;
+        if (!GoalieRecruitment.OwnsEvent(__instance)) return true;
         __result = GoalieRecruitment.Choices(__instance, __0); return false;
     }
 }

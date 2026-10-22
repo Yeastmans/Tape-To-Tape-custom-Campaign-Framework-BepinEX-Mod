@@ -24,6 +24,7 @@ internal static class GoalieLifecycleActivation
         try {
             GoalieActivationTransaction.Run(
                 () => {
+                    if (!FreshRunActivation.Installed) throw new InvalidOperationException("Verified fresh run boundary is unavailable.");
                     var profile = GoaliePersistenceContracts.Preflight();
                     foreach (var set in new[] { GoalieRosterMenu.Required, GoalieMatchLaunchGate.Required, GoalieMatchCompletion.Required })
                         NamedManagedHookContract.RequireExactSet(set, profile.NamedHooks, set[0].Feature);
@@ -31,7 +32,7 @@ internal static class GoalieLifecycleActivation
                     foreach (var h in GoalieRosterMenu.Resolve()) plan.Add(new Hook { Native=h.Native, Prefix=h.Prefix, Postfix=h.Postfix });
                     foreach (var h in GoalieMatchLaunchGate.Resolve()) plan.Add(new Hook { Native=h.Native, Prefix=h.Prefix, Postfix=h.Postfix, Launch=true });
                     foreach (var h in GoalieMatchCompletion.Resolve()) plan.Add(new Hook { Native=h.Native, Prefix=h.Prefix, Finalizer=h.Finalizer, Completion=true });
-                    if (plan.Count != 35 || plan.Select(h => h.Native).Distinct().Count() != 35)
+                    if (plan.Count != 37 || plan.Select(h => h.Native).Distinct().Count() != 37)
                         throw new InvalidOperationException("Incomplete goalie lifecycle installation plan.");
                     // Reject pre-existing foreign patches on provenance targets; a
                     // later foreign skip remains unknown through __runOriginal.
@@ -79,7 +80,7 @@ internal static class GoalieLifecycleActivation
                 () => { GoaliePersistenceBridge.SetEnabled(false); GoalieRosterMenu.SetInstalled(false); },
                 GoalieMatchCompletion.Unsubscribe,
                 harmony.UnpatchSelf);
-            Plugin.Log.LogInfo("[GoalieLifecycle] All 35 targets installed; persistence, menu, launch and completion enabled together.");
+            Plugin.Log.LogInfo("[GoalieLifecycle] All 37 targets installed; persistence, menu, launch and completion enabled together.");
         } catch (Exception ex) { Plugin.Log.LogWarning("[GoalieLifecycle] Entire capability unavailable: " + ex); }
     }
 }

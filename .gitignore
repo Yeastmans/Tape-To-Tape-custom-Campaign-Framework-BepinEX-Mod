@@ -156,3 +156,5 @@ tests/GoalieStartupChecks/*
 tests/GoalieHarmonyChecks/*
 !tests/GoalieHarmonyChecks/GoalieHarmonyChecks.csproj
 !tests/GoalieHarmonyChecks/Program.cs
+
+!tests/GoalieRosterRuntimeChecks/LifecycleContextChecks.cs

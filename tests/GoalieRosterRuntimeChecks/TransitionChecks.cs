@@ -26,8 +26,8 @@ static class TransitionChecks
         check(roster.TrySwap(campaign, revision) && run.teamData.goalie.id == "starter" && ((CounterState)run.teamData.goalie.Earned.talentStates[0]).Earned == 14 && roster.Selection.Reserve.PlayerId == "candidate", "SwapPreservesEarnedState");
         T2TUtils.IsInMatch = true;
         check(!roster.TrySwap(campaign, roster.Selection.Revision), "InMatchCannotSwap"); T2TUtils.IsInMatch = false;
-        GameManager.GameType = ScriptableStates.GameType.QuickPlay;
-        check(!roster.TrySwap(campaign, roster.Selection.Revision), "PlayNowCannotSwap"); GameManager.GameType = ScriptableStates.GameType.Rogue;
+        GameManager.GameType = ScriptableStates.GameType.QuickPlay; T2TUtils.IsOnWorldMap = false;
+        check(!roster.TrySwap(campaign, roster.Selection.Revision), "PlayNowCannotSwap"); GameManager.GameType = ScriptableStates.GameType.Rogue; T2TUtils.IsOnWorldMap = true;
         // Reentrant unrelated saves can notify before the initiating caller's
         // admission callback, but must never steal its scoped caller token.
         var outsider = new RunDataRepositoryV2 { _fileName = "other.es3" };

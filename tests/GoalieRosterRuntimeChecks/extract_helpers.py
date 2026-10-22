@@ -39,10 +39,10 @@ parts.append(re.search(r'internal static bool IsRecruit\(.*?;', recruitment).gro
 for signature in ("internal static CampaignDocument Snapshot(", "internal static void Restore("):
     parts.append(body(recruitment, signature))
 if "menu" in sys.argv:
-    parts.insert(1, "using System.IO; using System.Collections.Generic; using State; using Tape2Tape; using STS.Map; using Rogue.NPC.GeneralManagerNPC;")
-    for signature in ("internal sealed class Selection", "internal sealed class Visit", "internal sealed class Offer", "internal static bool BeginSelection(", "internal static void Cancel(", "internal static void Consumed(", "internal static GoalieRecruitmentVisitState VisitLedger(", "internal static void Selected(", "internal static bool Choices("):
+    parts.insert(1, "using System.IO; using System.Collections.Generic; using State; using Tape2Tape; using STS.Map; using Tape2Tape.Hockey.UI; using Rogue.NPC.GeneralManagerNPC;")
+    for signature in ("internal sealed class Selection", "internal sealed class Visit", "internal sealed class Offer", "internal static bool BeginSelection(", "internal static void Cancel(", "internal static void Consumed(", "internal static GoalieRecruitmentVisitState VisitLedger(", "internal static void Selected(", "internal static void BeginVisit(", "internal static void Closed(EventChoiceMenu", "internal static void Closed(EventChoicePanel", "internal static bool Choices("):
         parts.append(body(recruitment, signature))
-    for signature in ("internal static bool IsCurrent(", "internal static bool Valid("):
+    for signature in ("internal static bool IsCurrent(", "internal static bool Valid(", "internal static bool OwnsEvent("):
         start = recruitment.index(signature); parts.append(recruitment[start:recruitment.index(";", start)+1])
     for signature in ("internal static bool MatchesPool(", "internal static bool MatchesPoolId("):
         start = recruitment.index(signature); parts.append(recruitment[start:recruitment.index(";", start)+1])

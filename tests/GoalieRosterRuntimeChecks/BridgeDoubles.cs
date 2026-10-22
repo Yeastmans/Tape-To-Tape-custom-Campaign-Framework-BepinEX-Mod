@@ -134,11 +134,18 @@ namespace State {
 namespace Tape2Tape { public static class CampaignUtil { public static State.CampaignState CampaignState; } }
 namespace EndlessMode {
     static partial class Plugin { internal static string ModFolder; internal static bool IsDefaultMode; internal static LogDouble Log = new(); }
-    class LogDouble { internal readonly List<string> Warnings = new(); internal readonly List<string> Errors = new(); internal void LogError(string value) { Errors.Add(value); } internal void LogWarning(string value) { Warnings.Add(value); } }
+    class LogDouble { internal readonly List<string> Warnings = new(); internal readonly List<string> Errors = new(); internal readonly List<string> Infos = new(); internal void LogInfo(string value) { Infos.Add(value); } internal void LogError(string value) { Errors.Add(value); } internal void LogWarning(string value) { Warnings.Add(value); } }
     static class MatchRuleRunner { internal static void Install() {} }
     static class SquadBehaviorRuntime { internal static bool ReserveEnabled; internal static bool Enabled(string squad, string behavior, bool native) => ReserveEnabled; }
 }
 
-namespace Tape2Tape { public static class T2TUtils { public static bool IsInMatch; } }
+namespace Tape2Tape { public static class T2TUtils { public static bool IsInMatch; public static bool IsOnWorldMap = true; } }
 namespace ScriptableStates { public enum GameType { Rogue, QuickPlay } }
-public partial class GameManager : Il2CppSystem.Object { public static ScriptableStates.GameType GameType = ScriptableStates.GameType.Rogue; }
+public partial class GameManager : Il2CppSystem.Object {
+    public static bool GameTypeUnavailable;
+    private static ScriptableStates.GameType gameType = ScriptableStates.GameType.Rogue;
+    public static ScriptableStates.GameType GameType { get => GameTypeUnavailable ? throw new NullReferenceException("match manager is absent") : gameType; set => gameType = value; }
+}
+public class RunManager : Il2CppSystem.Object { public State.CampaignState CampaignState; public void CreateMapFromScratch() {} }
+
+namespace EndlessMode { static class CustomRewardRunStart { internal static int Calls; internal static Action<State.CampaignState> Completing; internal static void Complete(State.CampaignState state) { Calls++; Completing?.Invoke(state); } } }

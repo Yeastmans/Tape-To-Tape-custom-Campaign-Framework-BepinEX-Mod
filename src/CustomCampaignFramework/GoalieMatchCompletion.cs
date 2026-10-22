@@ -345,7 +345,7 @@ internal static class GoalieMatchCompletion
             // Native copy, base event, boss awards and bench/run bookkeeping have
             // all returned. Only now may Stage publish a promoted reserve.
             session.Completing = true;
-            if (!GoaliePersistenceBridge.Roster.TryCompleteMatch(session.Origin.Campaign, session.Origin.Attempt, session.Participant, __state.Prevented, result => {
+            if (!GoaliePersistenceBridge.Roster.TryCompleteMatch(__0, session.Origin.Campaign, session.Origin.Attempt, session.Participant, __state.Prevented, result => {
                 if (result.Outcome != GoalieRosterRuntime.ChangeOutcome.Committed) Unavailable(session, result.Message);
                 else if (result.Receipt?.Durable != true) Warn(result.Message);
             })) Unavailable(session, "Goalie completion save was not accepted.");

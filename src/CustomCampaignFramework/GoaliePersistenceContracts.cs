@@ -21,7 +21,6 @@ internal static class GoaliePersistenceContracts
         Target("deserialize", "ES3", "Deserialize", true, "Il2CppSystem.Object", new[] { "ES3Types.ES3Type", "Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppStructArray<System.Byte>", "ES3Settings" }, "DeserializePrefix", "DeserializePostfix"),
         Target("store", "ES3", "StoreCachedFile", true, "System.Void", new[] { "System.String" }, "StorePrefix"),
         Target("cache", "ES3File", "CacheFile", true, "ES3File", new[] { "ES3Settings" }, "CachePrefix"),
-        Target("fresh", "State.CampaignState", "ApplyNewRunStartEffects", false, "System.Void", Array.Empty<string>(), postfix: "FreshPostfix"),
         Target("hydrate", "State.DeserializerV2", "DeserializeFromModel", false, "System.Void", new[] { "Data.RunData", "State.RunDataModelV2" }, postfix: "HydratedPostfix")
     };
     private static NamedManagedHookContract Target(string id, string type, string method, bool isStatic, string result, string[] args, string prefix = "", string postfix = "")

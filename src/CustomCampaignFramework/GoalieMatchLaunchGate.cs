@@ -108,7 +108,7 @@ internal static class GoalieMatchLaunchGate
         try {
             var roster = GoaliePersistenceBridge.Roster;
             var saved = roster.Selection;
-            return origin != null && PermittedOrigins.TryGetValue(origin, out _) && !Plugin.IsDefaultMode && GameManager.GameType == ScriptableStates.GameType.Rogue
+            return origin != null && PermittedOrigins.TryGetValue(origin, out _) && !Plugin.IsDefaultMode
                 && campaign?.Pointer == origin.Campaign.Pointer && campaign.Pointer == CampaignUtil.CampaignState?.Pointer
                 && campaign.runData?.Pointer == origin.Run.Pointer && campaign.runData.teamData?.Pointer == origin.HomeTeam.Pointer
                 && homeTeam?.Pointer == origin.HomeTeam.Pointer && homeTeam.id == origin.attempt.HomeTeamId
@@ -150,7 +150,7 @@ internal static class GoalieMatchLaunchGate
     private static void CancelUnlaunched(MatchPreviewMenu menu)
     {
         try {
-            if (Plugin.IsDefaultMode || GameManager.GameType != ScriptableStates.GameType.Rogue
+            if (!GoalieRosterRuntime.IsMapContext(menu?._campaignState)
                 || menu == null || menu.m_IsExiting || !Previews.TryGetValue(menu.Pointer, out var preview) || !preview.Open) return;
             var saved = GoaliePersistenceBridge.Roster.Selection;
             if (saved?.Attempt == null || !UnlaunchedAttempts.TryGetValue(saved.Attempt.Token, out var witness)
@@ -185,7 +185,7 @@ internal static class GoalieMatchLaunchGate
     private static bool Start(MatchPreviewMenu menu, Entry entry, UIInputShortcutBase input)
     {
         var roster = GoaliePersistenceBridge.Roster;
-        if (Plugin.IsDefaultMode || GameManager.GameType != ScriptableStates.GameType.Rogue || !NeedsGate(roster.Selection)) return true;
+        if (Plugin.IsDefaultMode || !T2TUtils.IsOnWorldMap) return true;
         try {
             if (permit != null) {
                 var allowed = permit;
@@ -211,6 +211,8 @@ internal static class GoalieMatchLaunchGate
             if (menu.m_TestZoomOnly) return true; // native zoom test is not a match
             if (!Previews.TryGetValue(menu.Pointer, out var preview) || !preview.Open) return false;
             if (preview.Pending != null) return false;
+            if (!roster.CanEdit(menu._campaignState)) { Status(preview, roster.ContextFailure(menu._campaignState, "match-start")); return false; }
+            if (!NeedsGate(roster.Selection)) return true;
             var campaign = menu._campaignState;
             foreach (var key in UnlaunchedAttempts.Where(pair => pair.Value.Campaign.Pointer != campaign?.Pointer
                 || pair.Value.Run.Pointer != campaign?.runData?.Pointer || pair.Key != roster.Selection?.ArmedAttemptToken).Select(pair => pair.Key).ToArray())

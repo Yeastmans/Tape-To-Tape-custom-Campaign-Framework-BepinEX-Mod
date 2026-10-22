@@ -17,11 +17,12 @@ static class ContractSigningChecks
         var campaign = CampaignUtil.CampaignState = new() { runData = run };
         GoalieNativeSnapshot.Deserializer = new();
         GoaliePersistenceBridge.Roster.NoSelectedRun();
-        BridgeDoubleHooks.Call("FreshPostfix", new object[] { campaign });
+        FreshRunLifecycle.ResetPostfix(campaign, null, true);
+        FreshRunLifecycle.MapPrefix(new RunManager { CampaignState = campaign });
         var roster = GoaliePersistenceBridge.Roster;
         check(roster.Selection.Active.Contract?.Duration == 4 && roster.Selection.Active.Contract.PlayedMatches == 0, "ActualFreshBoundarySignsAuthoredStarter");
         config.Goalie.Fields.Set(PlayerContractOptions.MatchesKey, "12");
-        BridgeDoubleHooks.Call("FreshPostfix", new object[] { campaign });
+        FreshRunLifecycle.MapPrefix(new RunManager { CampaignState = campaign });
         check(roster.Selection.Active.Contract.Duration == 4, "RepeatedFreshCallbackCannotResignExistingOwnedRun");
         campaign.SaveRunData();
         var model = campaign.Repository.LoadFromPersistentStorage().GetAwaiter().GetResult();
@@ -36,12 +37,19 @@ static class ContractSigningChecks
         foreach (var value in new[] { "", "0", "-1", "bad", "2.5" }) {
             config.Goalie.Fields.Set(PlayerContractOptions.MatchesKey, value);
             Plugin.Log.Warnings.Clear();
-            roster.NoSelectedRun(); BridgeDoubleHooks.Call("FreshPostfix", new object[] { campaign });
+            roster.NoSelectedRun();
+            var prior = campaign.runData;
+            campaign.runData = new RunData { runID = Guid.NewGuid().ToString("N"), squadId = prior.squadId, teamData = prior.teamData, teamState = prior.teamState };
+            FreshRunLifecycle.ResetPostfix(campaign, prior, true); FreshRunLifecycle.MapPrefix(new RunManager { CampaignState = campaign });
             check(roster.Selection.Active.Contract == null && Plugin.Log.Warnings.Count == 1 && Plugin.Log.Warnings[0].Contains("positive whole number") && Plugin.Log.Warnings[0].Contains("new-recruit"), "MalformedGoalieDurationFallsBackToPermanentWithWarning_" + value);
         }
         config.Goalie.Fields.Set(PlayerContractOptions.EnabledKey, "no"); config.Goalie.Fields.Set(PlayerContractOptions.MatchesKey, "4");
-        roster.NoSelectedRun(); BridgeDoubleHooks.Call("FreshPostfix", new object[] { campaign });
+        roster.NoSelectedRun();
+            var priorPermanent = campaign.runData;
+            campaign.runData = new RunData { runID = Guid.NewGuid().ToString("N"), squadId = priorPermanent.squadId, teamData = priorPermanent.teamData, teamState = priorPermanent.teamState };
+            FreshRunLifecycle.ResetPostfix(campaign, priorPermanent, true); FreshRunLifecycle.MapPrefix(new RunManager { CampaignState = campaign });
         check(roster.Selection.Active.Contract == null, "DisabledGoalieContractKeepsPermanentStarter");
+        loaded = campaign.runData;
         RetentionRegistryFixture.Reset();
         check(GoalieContractRuntime.TryDepartureProtection(campaign, out bool prevented) && !prevented && loaded.teamData.LastRelicQuery == typeof(Rogue.Handcuffs), "UnprotectedDecisionUsesExactTypedNativePredicate");
         loaded.teamData.NativeHandcuffs = true;
@@ -66,6 +74,7 @@ static class ContractSigningChecks
         string folder = Plugin.ModFolder; Plugin.ModFolder = null;
         check(!GoalieContractRuntime.TryDepartureProtection(campaign, out _), "UnavailableCampaignFolderCannotBecomeUnprotectedDecision");
         Plugin.ModFolder = folder;
+        loaded = campaign.runData;
         RetentionRegistryFixture.Reset();
         string malformed = Path.Combine(Plugin.ModFolder, "broken.txt");
         File.WriteAllText(malformed, "Export Custom Reward broken = not-base64"); Plugin.Log.Errors.Clear();
@@ -99,7 +108,8 @@ static class ContractSigningChecks
         CustomRewardRuntime.DuringOwnership = null; Plugin.ModContentRoot = originalContentRoot;
         check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && !prevented, "RestoredScopeCanAuthorizeMatchingSnapshot");
         foreach (string source in new[] { "retained", "export" }) {
-            RetentionRegistryFixture.Reset();
+            loaded = campaign.runData;
+        RetentionRegistryFixture.Reset();
             string owned = RetentionRegistryFixture.SaveAuthoredProtection(loaded.teamData);
             string failing = source == "retained" ? CustomRewardLifecycle.RetainedPath : Path.Combine(Plugin.ModContentRoot, "play_now_overrides", "broken.txt");
             Directory.CreateDirectory(Path.GetDirectoryName(failing)); File.WriteAllText(failing, "Export Custom Reward broken = not-base64");
@@ -117,10 +127,12 @@ static class ContractSigningChecks
         Plugin.ModFolder = Path.Combine(Path.GetTempPath(), "ccf-other-contract-campaign-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(Plugin.ModFolder);
         roster.Fresh(loaded, Plugin.ModFolder, false);
         check(roster.Owns(loaded, Plugin.ModFolder) && !GoalieContractRuntime.TryDepartureProtection(campaign, out _), "PriorCampaignRegistryCannotAuthorizeNewOwnedRun");
+        loaded = campaign.runData;
         RetentionRegistryFixture.Reset();
         check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && !prevented, "NewCampaignSnapshotDoesNotInheritPriorProtection");
         Plugin.ModFolder = firstCampaign; roster.Fresh(loaded, Plugin.ModFolder, false);
         check(!GoalieContractRuntime.TryDepartureProtection(campaign, out _), "ReturningCampaignRequiresMatchingRegistryScope");
+        loaded = campaign.runData;
         RetentionRegistryFixture.Reset();
         check(GoalieContractRuntime.TryDepartureProtection(campaign, out prevented) && prevented, "NormalRegistryRebindRestoresCurrentCampaignKnownDecision");
         SquadPoolRuntime.Teams.Clear();

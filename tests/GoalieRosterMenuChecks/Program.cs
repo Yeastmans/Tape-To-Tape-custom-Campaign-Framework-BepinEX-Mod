@@ -11,7 +11,7 @@ int checks = 0;
 void Check(bool value, string name) { if (!value) throw new Exception(name); Console.WriteLine("PASS " + name); checks++; }
 BridgeDoubleHooks.Enable();
 typeof(GoalieRosterMenu).GetField("installed", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, true);
-Plugin.IsDefaultMode = false;
+Plugin.IsDefaultMode = false; GameManager.GameTypeUnavailable = true; T2TUtils.IsOnWorldMap = true;
 CampaignState Fresh(bool reserve = true) {
     Plugin.ModFolder = Path.Combine(Path.GetTempPath(), "ccf-menu-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(Plugin.ModFolder);
     RetentionRegistryFixture.Reset();
@@ -25,14 +25,15 @@ CampaignState Fresh(bool reserve = true) {
 }
 (GoalieRecruitment.Offer Offer, EventChoiceMenu Gm) Offer(CampaignState state) {
     var node = new GeneralManagerEvent();
+    var map = new STS.Map.MapNode(); var gm = new EventChoiceMenu { SourceNode = node, mapNode = map };
     var visit = new GoalieRecruitment.Visit { Revision = 4, Node = node.Pointer, Event = node, Ledger = GoalieRecruitment.VisitLedger(state, 2),
         Selection = new() { State = state.Pointer, Run = state.runData.Pointer, Team = state.runData.teamData.Pointer,
-            Blueprint = state.currentNode.Pointer, RunId = state.runData.runID, Folder = Plugin.ModFolder,
+            Blueprint = map.Blueprint.Pointer, Map = map, Event = node.Pointer, Menu = gm, Route = GoalieRosterRuntime.RecruitmentWitness(state, 0, 0), RunId = state.runData.runID, Folder = Plugin.ModFolder,
             Act = 0, Layer = 0, Index = 0, RecruitmentEnabled = true, ConfigurationError = "" } };
     typeof(GoalieRecruitment).GetField("visit", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, visit);
     var offer = new GoalieRecruitment.Offer { Visit = visit, Revision = visit.Revision, Id = GoalieRosterStore.Hash(visit.Ledger.Generation + ":offer"), Candidate = new() { id = "candidate" } };
     visit.Offers.Add(offer);
-    var gm = new EventChoiceMenu { SourceNode = node }; gm.m_Items.Add(new() { ChoiceData = new() { Skater = offer.Candidate } });
+    gm.m_Items.Add(new() { ChoiceData = new() { Skater = offer.Candidate } });
     return (offer, gm);
 }
 GoalieRosterMenu.Selection Recruit(CampaignState state, (GoalieRecruitment.Offer Offer, EventChoiceMenu Gm) pair) {
@@ -68,7 +69,7 @@ state = Fresh(false); pair = Offer(state); selection = Recruit(state, pair);
 Check(selection.Menu.m_ActivePlayersList.m_SkaterCards.Count == 1, "ReserveDisabledShowsExactlyStarter");
 Click(selection, 0); Check(selection.Menu.m_Header.m_Title.text.Contains("Replace active") && state.runData.teamData.goalie.id == "active", "ChooseFilledSlotShowsReplacement");
 Click(selection, 0); Check(state.runData.teamData.goalie.id == "candidate" && GoaliePersistenceBridge.Roster.Selection.Reserve == null, "ReserveDisabledReplacesOnlyStarter");
-state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); state.runData.currentNodePoint.x++;
+state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); state.runData.currentMap = "{\"act\":1,\"path\":[{\"x\":0,\"y\":0}]}";
 Click(selection, 0); Check(!pair.Offer.Taken && state.runData.teamData.goalie.id == "active", "StaleVisitCannotRecruit");
 selection.Menu.TryLeaveMenu(false);
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); ES3.FailStore = true;
@@ -116,27 +117,30 @@ state = Fresh();
 File.WriteAllText(Path.Combine(Plugin.ModFolder, "campaign.txt"), "Goalie Recruitment = On");
 var pool = GoalieFreeAgents.DirectoryPath(Plugin.ModFolder); Directory.CreateDirectory(pool);
 for (int i = 0; i < 5; i++) File.WriteAllText(Path.Combine(pool, "goalie" + i + ".txt"), "Position = Goalie\nCustom Contract = yes\nContract Matches = 6\n");
-var mapNode = new STS.Map.MapNode(); GoalieRecruitment.Selected(state, mapNode);
+var mapNode = new STS.Map.MapNode();
 var gmNode = new GeneralManagerEvent();
+var gm = new EventChoiceMenu { SourceNode = gmNode, mapNode = mapNode, Visible = false };
+state.currentNode = null; state.runData.currentNodePoint.x = 9;
+GoalieRosterMenu.RecruitInitialized(gm);
 Check(GoalieRecruitment.Choices(gmNode, 0) && gmNode.eventChoices.Count == 2, "ActualOfferGenerationUsesAuthoredGoaliePool");
 var actual = GoalieRecruitment.Current; var selectedOffer = actual.Offers[0];
 Check(selectedOffer.Contract?.Duration == 6 && gmNode.eventChoices[0].translatedButtonName.Contains("6 played-match contract"), "GeneratedOfferDisplaysActualFrozenSignedDuration");
 foreach (var file in Directory.GetFiles(pool)) File.WriteAllText(file, "Position = Goalie\nCustom Contract = yes\nContract Matches = 99\n");
 var exposed = selectedOffer.Contract; exposed.Duration = 22;
 Check(selectedOffer.Contract.Duration == 6, "OfferContractCannotBeMutatedThroughExposedSnapshot");
-var gm = new EventChoiceMenu { SourceNode = gmNode }; gm.m_Items.Add(new() { ChoiceData = gmNode.eventChoices[0] });
+gm.m_Items.Add(new() { ChoiceData = gmNode.eventChoices[0] });
 GoalieRosterMenu.RecruitClick(gm, gm.m_Items[0].Navigable); selection = GoalieRosterMenu.Current; Click(selection, 0); Click(selection, 0);
 Check(roster.Selection.Active.Contract?.Duration == 6 && roster.Selection.Active.Contract.PlayedMatches == 0, "ConfirmedOfferSignsFrozenDurationDespiteAuthorEdits");
 string consumedId = selectedOffer.Id; string generation = roster.Selection.RecruitmentVisit.Generation;
 roster.TryRecruit(state, new GoaltenderData { id = "replacement-after-signing" }, GoalieSlot.Active, roster.Selection.Revision);
-GoalieRecruitment.Selected(state, mapNode);
+GoalieRosterMenu.RecruitInitialized(gm);
 Check(GoalieRecruitment.Choices(gmNode, 0) && GoalieRecruitment.Current.Hires == 1 && GoalieRecruitment.Current.Ledger.Generation == generation
     && GoalieRecruitment.Current.Offers.All(o => o.Id != consumedId), "ReplacedAwayGoalieDoesNotRefundSavedHire");
 string witness = GoalieRosterRuntime.RecruitmentWitness(state);
 state.runData.currentMap = "{\"nodes\":[1,2],\"path\":[],\"act\":1}";
 Check(GoalieRosterRuntime.RecruitmentWitness(state) == witness, "UnrelatedMapFieldsAndFormattingCannotMintQuota");
 foreach (var file in Directory.GetFiles(pool)) File.Delete(file);
-GoalieRecruitment.Selected(state, mapNode);
+GoalieRosterMenu.RecruitInitialized(gm);
 Check(!GoalieRecruitment.Choices(gmNode, 0) && GoalieRecruitment.Current.Hires == 1 && roster.Selection.RecruitmentVisit.ConsumedOfferIds.Length == 1,
     "MissingPoolDoesNotReplenishConsumedHires");
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair);
@@ -243,3 +247,40 @@ File.Delete(brokenDefinitions);
 Click(selection, 1); Check(!pair.Offer.Taken && selection.Menu.m_Header.m_Title.text.Contains("becomes active"), "RecoveredRegistryRequiresOrdinaryReplacementConfirmation");
 Click(selection, 1); Check(pair.Offer.Taken && roster.Selection.Active.PlayerId == "candidate" && roster.Selection.RecruitmentVisit.ConsumedOfferIds.Length == 1, "RecoveredRegistryAllowsExactlyOneSigning");
 Console.WriteLine($"PASS {checks} source-linked goalie menu checks");
+
+// Native InitData precedes Show.Initialize and visibility; no SetCurrentNode.
+state = Fresh(); state.currentNode = null; state.runData.currentNodePoint.x = 44;
+File.WriteAllText(Path.Combine(Plugin.ModFolder, "campaign.txt"), "Goalie Recruitment = On");
+var contextPool = GoalieFreeAgents.DirectoryPath(Plugin.ModFolder); Directory.CreateDirectory(contextPool);
+File.WriteAllText(Path.Combine(contextPool, "permanent.txt"), "Position = Goalie\nCustom Contract = no\n");
+var contextEvent = new GeneralManagerEvent();
+var firstMap = new STS.Map.MapNode { Node = new() { LayerIndex = 1, NodeIndex = 2 } };
+var firstMenu = new EventChoiceMenu { SourceNode = contextEvent, mapNode = firstMap, Visible = false };
+GoalieRosterMenu.RecruitInitialized(firstMenu); GoalieRecruitment.BeginVisit(contextEvent);
+Check(GoalieRecruitment.Choices(contextEvent, 0) && !firstMenu.Visible && GoalieRecruitment.Current.Offers[0].Contract == null,
+    "ActualInitDataBindsPermanentOffersBeforeVisibilityWithoutMatchManager");
+Check(state.currentNode == null && state.runData.currentNodePoint.x == 44, "MenuBindingDoesNotSynthesizeNativeCurrentNode");
+var firstVisit = GoalieRecruitment.Current; var firstWitness = firstVisit.Ledger.Witness;
+Check(!GoalieRecruitment.OwnsEvent(new GeneralManagerEvent()), "UnrelatedEventDoesNotBorrowBoundGM");
+var secondMap = new STS.Map.MapNode { Node = new() { LayerIndex = 1, NodeIndex = 3 } };
+var secondMenu = new EventChoiceMenu { SourceNode = contextEvent, mapNode = secondMap, Visible = false };
+GoalieRosterMenu.RecruitInitialized(secondMenu); GoalieRecruitment.BeginVisit(contextEvent);
+Check(GoalieRecruitment.Choices(contextEvent, 0) && GoalieRecruitment.Current.Ledger.Witness != firstWitness
+    && !GoalieRecruitment.IsCurrent(firstVisit), "ReusedGMEventAtSiblingNodeHasDistinctWitnessAndInvalidatesOldOffer");
+var secondVisit = GoalieRecruitment.Current;
+GoalieRecruitment.Closed(firstMenu);
+Check(GoalieRecruitment.IsCurrent(secondVisit), "ClosingOldMenuCannotClearNewBinding");
+secondMenu.SetVisibility(false, true);
+Check(GoalieRecruitment.IsCurrent(secondVisit), "TemporaryTakeoverHidingRetainsExactVisit");
+GoalieRecruitment.Closed(secondMenu);
+Check(!GoalieRecruitment.IsCurrent(secondVisit), "ActualMenuClosureInvalidatesOffers");
+GoalieRosterMenu.RecruitInitialized(firstMenu); GoalieRecruitment.Choices(contextEvent, 0);
+GoalieRosterMenu.RecruitInitialized(new EventChoiceMenu { SourceNode = new STS.Map.EventNode(), mapNode = firstMap });
+Check(!GoalieRecruitment.IsGoalieNode, "NonGmMenuInvalidatesStaleGoalieSelection");
+var legacyPanel = new EventChoicePanel();
+typeof(GoalieRosterMenu).GetMethod("LegacyOpening", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, new object[] { legacyPanel, firstMap, contextEvent });
+GoalieRecruitment.BeginVisit(contextEvent);
+Check(GoalieRecruitment.Choices(contextEvent, 0) && GoalieRecruitment.Current.Legacy == legacyPanel, "LegacyEntryBindsBeforeNativeInitialize");
+GoalieRecruitment.Closed(legacyPanel);
+Check(!GoalieRecruitment.IsGoalieNode, "LegacyClosureInvalidatesExactBinding");
+Console.WriteLine($"PASS {checks} source-linked goalie menu and native-order checks");

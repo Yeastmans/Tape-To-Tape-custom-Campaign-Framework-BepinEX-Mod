@@ -4,10 +4,9 @@ using HarmonyLib;
 
 namespace EndlessMode;
 
-[HarmonyPatch(typeof(State.CampaignState), "ApplyNewRunStartEffects")]
 internal static class CustomRewardRunStart
 {
-    [HarmonyPostfix] private static void Postfix(State.CampaignState __instance)
+    internal static void Complete(State.CampaignState __instance)
     {
         CustomRewardRuntime.Safe(() => Apply(__instance));
         PlayerContractRuntime.Safe(() => PlayerContractRuntime.CompleteStarting(__instance));

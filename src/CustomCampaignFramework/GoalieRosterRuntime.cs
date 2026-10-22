@@ -96,15 +96,25 @@ internal sealed class GoalieRosterRuntime
     private object changeOwner;
     internal bool Busy => changing;
     internal bool CanEdit(CampaignState campaign) => GoaliePersistenceBridge.Enabled && !Plugin.IsDefaultMode
-        && !T2TUtils.IsInMatch && GameManager.GameType == ScriptableStates.GameType.Rogue
+        && IsMapContext(campaign)
         && campaign != null && campaign.Pointer == CampaignUtil.CampaignState?.Pointer
         && state != null && UnavailableReason == null && Owns(campaign.runData, Plugin.ModFolder);
+
+    internal static bool IsMapContext(CampaignState campaign) => !Plugin.IsDefaultMode && !T2TUtils.IsInMatch
+        && T2TUtils.IsOnWorldMap && campaign?.runData != null && campaign.Pointer == CampaignUtil.CampaignState?.Pointer;
+    internal string ContextFailure(CampaignState campaign, string source)
+    {
+        string reason = !GoaliePersistenceBridge.Enabled ? "Goalie lifecycle compatibility is unavailable. Review the startup diagnostic before playing this campaign." : !IsMapContext(campaign) ? "The current campaign map is unavailable."
+            : UnavailableReason ?? (state == null || !Owns(campaign.runData, Plugin.ModFolder) ? "No goalie roster is bound to this run. Start a new run or Continue with its matching companion." : "Goalie save is in progress.");
+        Plugin.Log.LogWarning("[GoalieContext] " + source + ": rejected; run=" + campaign?.runData?.runID + "; " + reason);
+        return reason;
+    }
 
     // False means rejected without publication. True means the asynchronous
     // transaction was accepted; only its completion determines consumption.
     internal bool TryRecruit(CampaignState campaign, GoaltenderData candidate, GoalieSlot slot, long expectedRevision,
         Action<ChangeResult> completed = null, GoalieContractState signedContract = null,
-        GoalieRecruitmentVisitState signingVisit = null, string offerId = null, bool? expectedDeparturePrevention = null)
+        GoalieRecruitmentVisitState signingVisit = null, string offerId = null, bool? expectedDeparturePrevention = null, int? signingNodeIndex = null, int? signingLayerIndex = null)
     {
         if (!CanEdit(campaign) || changing || state.Revision != expectedRevision || candidate == null
             || (slot != GoalieSlot.Active && slot != GoalieSlot.Reserve) || slot == GoalieSlot.Reserve && !state.ReserveEnabled) return false;
@@ -117,7 +127,8 @@ internal sealed class GoalieRosterRuntime
                 || expectedDeparturePrevention.HasValue && expectedDeparturePrevention.Value != prevented)) return false;
             if (signingVisit != null) {
                 signingVisit.Validate();
-                string witness = RecruitmentWitness(campaign);
+                if (!signingNodeIndex.HasValue || !signingLayerIndex.HasValue) return false;
+                string witness = RecruitmentWitness(campaign, signingNodeIndex, signingLayerIndex);
                 var saved = proposed.RecruitmentVisit?.Witness == witness ? proposed.RecruitmentVisit : null;
                 if (witness != signingVisit.Witness || string.IsNullOrWhiteSpace(offerId)
                     || signingVisit.ConsumedOfferIds.Length >= signingVisit.Quota || signingVisit.ConsumedOfferIds.Contains(offerId)
@@ -134,12 +145,12 @@ internal sealed class GoalieRosterRuntime
             return SaveChange(campaign, proposed, completed);
         } catch (Exception ex) { Plugin.Log.LogError("[GoalieRoster] Recruitment preparation failed: " + ex); return false; }
     }
-    internal static bool HasRecruitmentWitness(CampaignState campaign, string witness)
+    internal static bool HasRecruitmentWitness(CampaignState campaign, string witness, int? nodeIndex = null, int? layerIndex = null)
     {
-        try { return witness != null && RecruitmentWitness(campaign) == witness; }
+        try { return witness != null && RecruitmentWitness(campaign, nodeIndex, layerIndex) == witness; }
         catch { return false; }
     }
-    internal static string RecruitmentWitness(CampaignState campaign)
+    internal static string RecruitmentWitness(CampaignState campaign, int? nodeIndex = null, int? layerIndex = null)
     {
         // Native SaveMap serializes Map.act and Map.path (Point.x/y). Only
         // completed node traversal appends to path. Ignore formatting, nodes,
@@ -149,8 +160,8 @@ internal sealed class GoalieRosterRuntime
         var path = map.RootElement.GetProperty("path");
         if (path.ValueKind != JsonValueKind.Array) throw new InvalidDataException("Saved route path unavailable.");
         var text = new StringBuilder().Append(map.RootElement.GetProperty("act").GetInt32()).Append(':')
-            .Append(run.CurrentAct).Append(':').Append(run.currentNodePoint.x.ToString("R", CultureInfo.InvariantCulture)).Append(':')
-            .Append(run.currentNodePoint.y.ToString("R", CultureInfo.InvariantCulture));
+            .Append(run.CurrentAct).Append(':').Append((nodeIndex.HasValue ? nodeIndex.Value.ToString(CultureInfo.InvariantCulture) : run.currentNodePoint.x.ToString("R", CultureInfo.InvariantCulture))).Append(':')
+            .Append((layerIndex.HasValue ? layerIndex.Value.ToString(CultureInfo.InvariantCulture) : run.currentNodePoint.y.ToString("R", CultureInfo.InvariantCulture)));
         foreach (var point in path.EnumerateArray()) text.Append('|').Append(point.GetProperty("x").GetInt32()).Append(',').Append(point.GetProperty("y").GetInt32());
         return GoalieRosterStore.Hash(text.ToString());
     }
@@ -258,10 +269,11 @@ internal sealed class GoalieRosterRuntime
     }
     // Separate proven completion boundary. CanEdit deliberately remains a
     // between-match UI guard; callers must retain the exact played origin.
-    internal bool TryCompleteMatch(CampaignState campaign, GoalieMatchAttempt attempt, string participant, bool prevented,
+    internal bool TryCompleteMatch(State.EndOfGame.EndOfGameContext context, CampaignState campaign, GoalieMatchAttempt attempt, string participant, bool prevented,
         Action<ChangeResult> completed)
     {
-        if (!GoaliePersistenceBridge.Enabled || Plugin.IsDefaultMode || GameManager.GameType != ScriptableStates.GameType.Rogue || changing || UnavailableReason != null
+        if (!GoaliePersistenceBridge.Enabled || Plugin.IsDefaultMode || context?.GameType != ScriptableStates.GameType.Rogue
+            || context.CampaignState?.Pointer != campaign?.Pointer || context.GameModeController?.TryCast<State.GameModeControllers.GameControllerBase>()?.teamSelectionState?.homeTeam?.Pointer != campaign?.runData?.teamData?.Pointer || changing || UnavailableReason != null
             || campaign?.Pointer != CampaignUtil.CampaignState?.Pointer || attempt == null || participant != attempt.GoalieId
             || !Owns(campaign.runData, Plugin.ModFolder) || !attempt.Same(state?.Attempt)
             || attempt.Lifecycle != "Armed" || state.ArmedAttemptToken != attempt.Token

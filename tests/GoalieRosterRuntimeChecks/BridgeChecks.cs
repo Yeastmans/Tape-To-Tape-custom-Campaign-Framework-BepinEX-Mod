@@ -17,7 +17,8 @@ static class BridgeChecks
         var run = new RunData { runID = "run", squadId = "squad", teamData = new() { goalie = goalie },
             teamState = new() { goaltenderState = goalie.SaveState(), forwardStates = new[] { "forward earned" }, relicStates = new[] { "relic earned" } } };
         CampaignUtil.CampaignState = new() { runData = run };
-        BridgeDoubleHooks.Call("FreshPostfix", new object[] { CampaignUtil.CampaignState });
+        FreshRunLifecycle.ResetPostfix(CampaignUtil.CampaignState, null, true);
+        FreshRunLifecycle.MapPrefix(new RunManager { CampaignState = CampaignUtil.CampaignState });
         var beforeMutationGoalie = run.teamData.goalie; var beforeMutationState = run.teamState.goaltenderState;
         var proposed = GoaliePersistenceBridge.Roster.Selection;
         var reserve = GoalieNativeSnapshot.Restore(proposed.Active); reserve.id = "reserve"; reserve.Earned.Id = "reserve";
@@ -104,7 +105,7 @@ static class BridgeChecks
             "CorruptSelectedCompanionKeepsExactNativeActiveAndEarnedState");
         File.WriteAllBytes(selectedPath, validRecordBytes);
         // Rebind the original run for independent save fault fixtures.
-        SquadBehaviorRuntime.ReserveEnabled = true; BridgeDoubleHooks.Call("FreshPostfix", new object[] { CampaignUtil.CampaignState });
+        SquadBehaviorRuntime.ReserveEnabled = true; GoaliePersistenceBridge.Roster.Fresh(run, Plugin.ModFolder, true);
         foreach (string fault in new[] { "prepare", "inject", "readback", "store", "platform-false", "platform-fault", "platform-cancel", "commit" })
         {
             ES3.FailMarker = fault == "inject"; ES3.WrongMarkerReadback = fault == "readback"; ES3.FailStore = fault == "store";
