@@ -20,6 +20,7 @@ namespace UnityEngine {
     public class MonoBehaviour : Il2CppSystem.Object { public void StartCoroutine(IEnumerator routine) { while (routine.MoveNext()) {} } }
     public class CanvasGroup { public float alpha = 1; public bool interactable = true, blocksRaycasts = true; }
     public class Transform {
+        public int SiblingIndex = 8; public int GetSiblingIndex() => SiblingIndex; public void SetSiblingIndex(int index) => SiblingIndex = index; public void SetAsLastSibling() => SiblingIndex = 100;
         public Dictionary<string, Transform> Children = new(); public object[] Components = Array.Empty<object>();
         public Transform Find(string path) { Transform current = this; foreach (var name in path.Split('/')) { if (!current.Children.TryGetValue(name, out var child)) return null; current = child; } return current; }
         public T GetComponent<T>() where T : class => Components.OfType<T>().SingleOrDefault();

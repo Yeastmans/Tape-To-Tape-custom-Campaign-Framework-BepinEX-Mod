@@ -96,8 +96,9 @@ internal static class GoalieGmPreview
         var nameLabel = template.m_NameLabel ?? template.transform.Find("LabelBar")?.GetComponent<TMP_Text>();
         if (rect == null || nameLabel == null || template.m_MainValue == null || rect.parent == null)
             throw new InvalidOperationException("Expected native GM stat text and rectangle.");
-        // Native parchment: x63,y-211,width311. Talents begin at y-357.
-        // Seven 20px rows end at -351, preserving six pixels of separation.
+        // Match the original four stat rows, not the larger gap above talents.
+        // Native Noto needs a 20px text box at 14px font size. Its actual glyphs
+        // fit 15.5px row spacing; seven rows end at -324 inside y-211..-326.
         if (Math.Abs(rect.sizeDelta.x - 311) > 1 || Math.Abs(rect.anchoredPosition.y + 211) > 1)
             throw new InvalidOperationException("Unreviewed native GM stat geometry.");
         card.Originals = new GameObject[rows.Length]; card.Visible = new bool[rows.Length];
@@ -107,7 +108,7 @@ internal static class GoalieGmPreview
         {
             bool fraction = i == values.Length - 1;
             int column = fraction ? 0 : i / 6, row = fraction ? 6 : i % 6;
-            float x = rect.anchoredPosition.x + column * 161, y = rect.anchoredPosition.y - row * 20;
+            float x = rect.anchoredPosition.x + column * 161, y = rect.anchoredPosition.y - row * 15.5f;
             // Native Bungee digits need 48px for signed Skill; Pass Read gets
             // the full final row so its authored fractional precision survives.
             float labelWidth = i == 0 ? 100 : 114, numberWidth = fraction ? 195 : i == 0 ? 48 : 34;
@@ -123,7 +124,7 @@ internal static class GoalieGmPreview
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0, 1);
         rect.anchoredPosition = new Vector2(x, y); rect.sizeDelta = new Vector2(width, 20);
         text.enableWordWrapping = false; text.enableAutoSizing = true;
-        text.fontSizeMin = 14; text.fontSizeMax = 18; text.fontSize = 18;
+        text.fontSizeMin = 14; text.fontSizeMax = 14; text.fontSize = 14;
         text.maxVisibleLines = 1; text.overflowMode = TextOverflowModes.Ellipsis;
         text.alignment = number ? TextAlignmentOptions.MidlineRight : TextAlignmentOptions.MidlineLeft;
         text.raycastTarget = false; text.text = value; text.gameObject.SetActive(true);

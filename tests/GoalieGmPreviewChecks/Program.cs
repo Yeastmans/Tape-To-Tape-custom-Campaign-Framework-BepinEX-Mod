@@ -21,11 +21,16 @@ GoalieGmPreview.Tick();Check(UnityEngine.Object.Created==26,"SteadyTickDoesNotAl
 foreach(var text in UnityEngine.Object.Texts) {
  var r=text.rectTransform;
  Check(r.anchoredPosition.x>=63 && r.anchoredPosition.x+r.sizeDelta.x<=374
-    && r.anchoredPosition.y<=-211 && r.anchoredPosition.y-r.sizeDelta.y>=-351,
-    "OwnedTextStaysInsideReviewedStatsRegion:"+text.text);
+    && r.anchoredPosition.y<=-211 && r.anchoredPosition.y-r.sizeDelta.y>=-326,
+    "OwnedTextStaysInsideNativeFourRowStatBox:"+text.text);
 }
+if (args.Length == 1) File.WriteAllText(args[0], System.Text.Json.JsonSerializer.Serialize(UnityEngine.Object.Texts.Select(t => new {
+    text = t.text, x = t.rectTransform.anchoredPosition.x, y = t.rectTransform.anchoredPosition.y,
+    width = t.rectTransform.sizeDelta.x, height = t.rectTransform.sizeDelta.y, minFont = t.fontSizeMin, maxFont = t.fontSizeMax
+}), new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
 Check(UnityEngine.Object.Texts.Single(t=>t.text=="0.125").rectTransform.sizeDelta.x>=100,"FractionalPassReadHasRoomForFullAuthoredPrecision");
 Check(UnityEngine.Object.Texts.Single(t=>t.text=="-7").rectTransform.sizeDelta.x>=48,"SignedSkillHasRoomForNativeMinimum");
+Check(UnityEngine.Object.Texts.All(t=>t.rectTransform.sizeDelta.y>=19.0681f && t.fontSizeMin==14 && t.fontSizeMax==14),"NativeFontAscentDescentFitsWithoutShrinkingBelowFourteen");
 Check(UnityEngine.Object.Texts.All(t=>!t.raycastTarget&&!t.enableWordWrapping&&t.maxVisibleLines==1),"StatsCannotStealInputOrWrapAcrossRows");
 Check(UnityEngine.Object.Texts.Where((t,i)=>i%2==1).Select(t=>t.text).SequenceEqual(values.Select(v=>v.Value)),"AllDisplayedValuesMatchNamedFields");
 item.m_SkaterDetails.m_ForwardSpeed.gameObject.SetActive(true);GoalieGmPreview.Tick();Check(!item.m_SkaterDetails.m_ForwardSpeed.gameObject.activeSelf,"NativeSelectionRefreshCannotShowForwardRows");

@@ -356,9 +356,11 @@ state = Fresh(); pair = Offer(state); pair.Offer.Contract = new() { Duration = 1
 var incomingCard = selection.Menu.m_ActivePlayersList.m_SkaterCards[1];
 Check(!incomingCard.m_FreeAgentDurationContainer.Active, "EmptySlotHasNoCurrentContractBadge");
 var badgeRect = incomingCard.m_FreeAgentDurationContainer.GetComponent<UnityEngine.RectTransform>();
+int originalBadgeOrder = badgeRect.GetSiblingIndex();
 float originalWidth = badgeRect.sizeDelta.x, originalLeft = badgeRect.anchoredPosition.x - badgeRect.sizeDelta.x / 2;
 float originalTextWidth = incomingCard.m_FreeAgentDuration.rectTransform.sizeDelta.x;
 Click(selection, 1);
+Check(badgeRect.GetSiblingIndex() > originalBadgeOrder, "GoalieContractBadgeDrawsAboveLaterPortraitSiblings");
 Check(incomingCard.m_FreeAgentDurationContainer.Active && incomingCard.m_FreeAgentDuration.text == "1000"
     && incomingCard.EmptySeatLabel.text.Contains("Confirm hire"), "ConfirmedEmptyTargetPreviewsFrozenIncomingDurationInNativeBadge");
 Check(!incomingCard.m_FreeAgentDuration.enableWordWrapping && incomingCard.m_FreeAgentDuration.maxVisibleLines == 1
@@ -369,6 +371,7 @@ Click(selection, 0);
 Check(!incomingCard.m_FreeAgentDurationContainer.Active
     && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_FreeAgentDuration.text == "1000", "IncomingBadgeFollowsConfirmationTarget");
 selection.Menu.TryLeaveMenu(false);
+Check(badgeRect.GetSiblingIndex() == originalBadgeOrder, "GoalieBadgeRestoresNativeSiblingOrderOnExit");
 Check(!incomingCard.m_FreeAgentDurationContainer.Active && incomingCard.m_FreeAgentDuration.text == ""
     && badgeRect.sizeDelta.x == originalWidth && incomingCard.m_FreeAgentDuration.rectTransform.sizeDelta.x == originalTextWidth
     && incomingCard.m_FreeAgentDuration.enableWordWrapping, "NativeBadgeGeometryTextStyleAndVisibilityRestoredOnExit");
@@ -420,6 +423,8 @@ GoalieRosterMenu.Refresh(ordinaryLineup);
 Check(ordinaryGoalie.m_FreeAgentDuration.text == "7" && ordinaryGoalie.m_FreeAgentDurationContainer.Active
     && ordinaryGoalie.m_FreeAgentDuration.enableWordWrapping && ordinaryLineup.OnDestroy.Actions.Count == 0,
     "PooledForeignCardKeepsNativeRefreshedContractValuesAfterPostfixCleanup");
+Check(ordinaryGoalie.m_FreeAgentDurationContainer.transform.GetSiblingIndex() == originalBadgeOrder,
+    "PooledForeignCardRestoresNativeBadgeSiblingOrder");
 state = Fresh(); ordinaryLineup = UnityEngine.Object.CurrentMenu; ordinaryLineup.LoadCurrentTeam();
 ordinaryGoalie = ordinaryLineup.m_ActivePlayersList.m_SkaterCards[0];
 state.runData = new RunData { teamData = state.runData.teamData };

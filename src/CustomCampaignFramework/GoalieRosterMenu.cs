@@ -67,6 +67,7 @@ internal static class GoalieRosterMenu
         internal RectTransform ContainerRect, TextRect;
         internal Vector2 ContainerSize, ContainerPosition, TextSize;
         internal bool Visible;
+        internal int SiblingIndex;
     }
     internal static Selection Current;
     private static readonly Dictionary<IntPtr, Selection> EntryPresentations = new();
@@ -258,7 +259,7 @@ internal static class GoalieRosterMenu
             var containerRect = container.GetComponent<RectTransform>(); var textRect = text.rectTransform;
             prior = new BadgePresentation { Card = card, Skater = card.CurrentSkaterData.Skater?.Pointer ?? IntPtr.Zero,
                 Team = card.CurrentSkaterData.ActiveTeam?.Pointer ?? IntPtr.Zero, Position = card.CurrentSkaterData.ActivePosition,
-                Container = container, Visible = container.activeSelf,
+                Container = container, Visible = container.activeSelf, SiblingIndex = container.transform.GetSiblingIndex(),
                 ContainerRect = containerRect, TextRect = textRect,
                 ContainerSize = containerRect != null ? containerRect.sizeDelta : default,
                 ContainerPosition = containerRect != null ? containerRect.anchoredPosition : default,
@@ -277,6 +278,10 @@ internal static class GoalieRosterMenu
             prior.ContainerRect.sizeDelta = new Vector2(prior.ContainerSize.x + extra, prior.ContainerSize.y);
             prior.ContainerRect.anchoredPosition = new Vector2(prior.ContainerPosition.x + extra / 2, prior.ContainerPosition.y);
         }
+        // The native goalie portrait is a later sibling and covers the duration.
+        // Keep the badge in its native place, above the portrait while owned.
+        if (contract != null) container.transform.SetAsLastSibling();
+        else container.transform.SetSiblingIndex(prior.SiblingIndex);
         container.SetActive(contract != null);
     }
     private static void RestoreLabels(Selection s, bool nativeRefreshed = false)
@@ -290,6 +295,7 @@ internal static class GoalieRosterMenu
         }
         s.Labels.Clear();
         foreach (var prior in s.Badges.Values) {
+            if (prior.Container != null) prior.Container.transform.SetSiblingIndex(prior.SiblingIndex);
             if (prior.ContainerRect != null) { prior.ContainerRect.sizeDelta = prior.ContainerSize; prior.ContainerRect.anchoredPosition = prior.ContainerPosition; }
             if (prior.TextRect != null) prior.TextRect.sizeDelta = prior.TextSize;
             if (!nativeRefreshed && prior.Container != null) prior.Container.SetActive(prior.Visible);
