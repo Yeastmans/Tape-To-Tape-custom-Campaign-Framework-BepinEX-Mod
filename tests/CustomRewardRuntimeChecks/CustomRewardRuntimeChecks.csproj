@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/CampaignCore/CampaignCore.csproj" />
+    <Compile Include="../../src/CustomCampaignFramework/EligibleRewardFilter.cs" Link="EligibleRewardFilter.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/CustomRewardPools.cs" Link="CustomRewardPools.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/CustomBlademasterPool.cs" Link="CustomBlademasterPool.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/SquadBehaviorRuntime.cs" Link="SquadBehaviorRuntime.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/RewardPoolPicks.cs" Link="RewardPoolPicks.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/CustomRewardGoalConfirmation.cs" Link="CustomRewardGoalConfirmation.cs" />
+    <EmbeddedResource Include="../../assets/reward-pools/normal_run_pool.tsv" LogicalName="NormalRewardPools.tsv" />
+  </ItemGroup>
+</Project>
