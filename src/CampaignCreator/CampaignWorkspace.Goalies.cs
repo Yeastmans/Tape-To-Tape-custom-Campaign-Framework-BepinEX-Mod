@@ -68,7 +68,7 @@ public sealed partial class CampaignWorkspace
         return InsetPoolPanel.Frame(new StackPanel { Spacing = StudioTheme.SpaceMd, Children = {
             new TextBlock { Text = "Goalies", FontSize = 20 },
             recruitment,
-            new TextBlock { Text = "Set a General Manager node's Recruit role to Goalies to use this campaign pool. Recruited goalies replace your current goalie and stay until replaced again. Edit each goalie's stats and talents in the goalie editor. Check candidates, then Save campaign; an empty pool offers no goalies. Unchecked goalies remain editable.", TextWrapping = TextWrapping.Wrap },
+            new TextBlock { Text = "Set a General Manager node's Recruit role to Goalies to use this campaign pool. Recruit into the active slot, or the reserve slot when enabled for your squad. Goalies stay until replaced unless a custom contract ends. Edit each goalie's stats and talents in the goalie editor. Check candidates, then Save campaign; an empty pool offers no goalies. Unchecked goalies remain editable.", TextWrapping = TextWrapping.Wrap },
             new WrapPanel { Children = { import, create } }, InsetPoolPanel.List(list, 440, "GoalieFreeAgentPoolScroll")
         } }, "GoalieFreeAgentPoolPanel");
     }
