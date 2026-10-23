@@ -145,27 +145,72 @@ internal static class GoalieRosterMenu
             // SkaterPreviewInUI repaints from homeColors/awayColors after its
             // asynchronous skin merge. Each card therefore needs its own team
             // carrier, including that goalie's personal home/away overrides.
-            preview.homeColors = PlayNowTranslation.GoaliePreviewColors(source.homeGoalieColors ?? source.homeColors, goalie, false);
-            preview.awayColors = PlayNowTranslation.GoaliePreviewColors(source.awayGoalieColors ?? source.awayColors, goalie, true);
-            preview.homeGoalieColors = preview.homeColors;
-            preview.awayGoalieColors = preview.awayColors;
+            PaintPreviewTeam(preview, source, goalie);
             return preview;
         } catch { UnityEngine.Object.Destroy(preview); throw; }
     }
+    private static void PaintPreviewTeam(TeamData preview, TeamData source, GoaltenderData goalie)
+    {
+        preview.homeColors = PlayNowTranslation.GoaliePreviewColors(source.homeGoalieColors ?? source.homeColors, goalie, false);
+        preview.awayColors = PlayNowTranslation.GoaliePreviewColors(source.awayGoalieColors ?? source.awayColors, goalie, true);
+        preview.homeGoalieColors = preview.homeColors;
+        preview.awayGoalieColors = preview.awayColors;
+    }
+    private sealed class OrdinaryPreview
+    {
+        internal Il2CppSystem.Action<AbstractMenu> Closed, Destroying;
+        internal readonly Dictionary<(IntPtr Run, IntPtr Team, IntPtr Player), TeamData> Teams = new();
+    }
+    private static readonly Dictionary<IntPtr, OrdinaryPreview> OrdinaryPreviews = new();
     internal static void PreviewTeamFor(SkaterPreviewInUI owner, SkaterData player, ref TeamData team)
     {
         try {
-            var s = Current;
-            if (owner == null || player == null || team == null || !Valid(s) || s.Menu == null || s.Menu.IsHiding) return;
+            if (owner == null || player == null || team == null) return;
             var menu = owner.GetComponentInParent<LineupMenu>(true);
-            if (menu?.Pointer != s.Menu.Pointer || team.Pointer != menu.Team?.TemporaryTeamData?.Pointer) return;
-            // The native large-preview continuation supplies menu.Team rather
-            // than the card's team. Redirect this render argument only; never
-            // replace or recolor the canonical/menu roster's shared TeamData.
-            var preview = player.Pointer == s.Active?.Pointer ? s.Preview
-                : player.Pointer == s.Reserve?.Pointer ? s.ReservePreview : null;
-            if (preview != null) team = preview;
+            if (menu == null || menu.IsHiding || team.Pointer != menu.Team?.TemporaryTeamData?.Pointer) return;
+            var s = Current;
+            if (s?.Menu?.Pointer == menu.Pointer) {
+                if (!Valid(s)) return;
+                // The native large-preview continuation supplies menu.Team rather
+                // than the card's team. Redirect this render argument only.
+                var preview = player.Pointer == s.Active?.Pointer ? s.Preview
+                    : player.Pointer == s.Reserve?.Pointer ? s.ReservePreview : null;
+                if (preview != null) team = preview;
+                return;
+            }
+            var campaign = CampaignUtil.CampaignState;
+            var goalie = player.TryCast<GoaltenderData>();
+            if (!Enabled || goalie == null || menu.Team.m_G?.Pointer != goalie.Pointer
+                || menu.Team.OriginalTeamData?.Pointer != campaign?.runData?.teamData?.Pointer
+                || !GoaliePersistenceBridge.Roster.CanEdit(campaign)) return;
+            if (!OrdinaryPreviews.TryGetValue(menu.Pointer, out var owned)) {
+                owned = new OrdinaryPreview();
+                owned.Closed = (Action<AbstractMenu>)(_ => ClearOrdinaryPreviews(menu));
+                owned.Destroying = (Action<AbstractMenu>)(_ => ClearOrdinaryPreviews(menu));
+                OrdinaryPreviews.Add(menu.Pointer, owned);
+                try {
+                    menu.OnHidingCompleted.Register(owned.Closed, "GoalieLineupPalette");
+                    menu.OnDestroy.Register(owned.Destroying, "GoalieLineupPalette");
+                } catch { ClearOrdinaryPreviews(menu); throw; }
+            }
+            var key = (campaign.runData.Pointer, team.Pointer, goalie.Pointer);
+            if (!owned.Teams.TryGetValue(key, out var carrier)) {
+                carrier = PreviewTeam(team, goalie);
+                owned.Teams.Add(key, carrier);
+            } else PaintPreviewTeam(carrier, team, goalie);
+            // Retain previous carriers until native hiding completes: an older
+            // cancelled continuation can still hold its own team reference.
+            team = carrier;
         } catch (Exception ex) { Plugin.Log.LogWarning("[GoalieRoster] Kept native preview: " + ex.Message); }
+    }
+    private static void ClearOrdinaryPreviews(LineupMenu menu)
+    {
+        if (menu == null || !OrdinaryPreviews.TryGetValue(menu.Pointer, out var owned)) return;
+        OrdinaryPreviews.Remove(menu.Pointer);
+        menu.OnHidingCompleted.Unregister(owned.Closed);
+        menu.OnDestroy.Unregister(owned.Destroying);
+        foreach (var carrier in owned.Teams.Values) if (carrier != null) UnityEngine.Object.Destroy(carrier);
+        owned.Teams.Clear();
     }
     private static IEnumerator Show(Selection s)
     {

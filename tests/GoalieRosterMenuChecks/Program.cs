@@ -585,5 +585,81 @@ inheritedGoalie.colorSchemes = nativePalette;
 CampaignAppearanceRuntime.ForKit(inheritedGoalie, true);
 Check(inheritedGoalie.colorSchemes.jerseyScheme.primaryColor.a == 0,
     "ExplicitNoOverridesStillClearsDonorJerseyForTeamInheritance");
+// Ordinary map lineup uses the same native raw-team repaint continuation.
+state = Fresh();
+var mapLineup = UnityEngine.Object.CurrentMenu;
+var mapSource = state.runData.teamData;
+var mapGoalie = mapSource.goalie;
+mapGoalie.colorSchemes = TeamColorsData.CopyFrom(nativePalette);
+mapSource.homeColors.jerseyScheme.primaryColor = new UnityEngine.Color(0, .7f, .9f, 1);
+mapSource.awayColors.jerseyScheme.primaryColor = new UnityEngine.Color(1, 1, 1, 1);
+mapLineup.Team.m_G = mapGoalie;
+mapLineup.Team.TemporaryTeamData = UnityEngine.Object.Instantiate(mapSource);
+var mapNativeTeam = mapLineup.Team.TemporaryTeamData;
+var mapOwner = new Tape2Tape.Customization.UI.SkaterPreviewInUI { Parent = mapLineup };
+TeamData MapRender(SkaterData skater, TeamData input = null) {
+    var team = input ?? mapNativeTeam; LineupPreviewKit.Prefix(mapOwner, skater, ref team); return team;
+}
+int mapSaves = state.Repository.Saves;
+var mapRenderTeam = MapRender(mapGoalie);
+Check(!ReferenceEquals(mapRenderTeam, mapNativeTeam)
+    && mapRenderTeam.homeColors.jerseyScheme.primaryColor.Equals(nativePalette.jerseyScheme.primaryColor),
+    "OrdinaryMapGoaliePreviewSuppliesPersonalPaletteToNativeContinuation");
+Check(ReferenceEquals(MapRender(mapGoalie), mapRenderTeam)
+    && mapLineup.OnHidingCompleted.Actions.Count == 1 && mapLineup.OnDestroy.Actions.Count == 1,
+    "OrdinaryPreviewReusesCarrierAndSingleLifecycleRegistration");
+Check(ReferenceEquals(mapLineup.Team.TemporaryTeamData, mapNativeTeam)
+    && ReferenceEquals(mapSource.goalie, mapGoalie)
+    && mapSource.homeColors.jerseyScheme.primaryColor.Equals(new UnityEngine.Color(0, .7f, .9f, 1))
+    && state.Repository.Saves == mapSaves, "OrdinaryPreviewDoesNotMutateCanonicalOrMenuTeamOrSave");
+Check(ReferenceEquals(MapRender(new GoaltenderData { id = mapGoalie.id }), mapNativeTeam)
+    && ReferenceEquals(MapRender(new ForwardData()), mapNativeTeam),
+    "OrdinaryPreviewRejectsSameIdGoalieCloneAndForward");
+var unrelatedRenderTeam = new TeamData();
+Check(ReferenceEquals(MapRender(mapGoalie, unrelatedRenderTeam), unrelatedRenderTeam), "OrdinaryPreviewRejectsForeignTeamArgument");
+Plugin.IsDefaultMode = true;
+Check(ReferenceEquals(MapRender(mapGoalie), mapNativeTeam), "OrdinaryPreviewDefaultModeKeepsNativeTeam");
+Plugin.IsDefaultMode = false; Tape2Tape.T2TUtils.IsInMatch = true;
+Check(ReferenceEquals(MapRender(mapGoalie), mapNativeTeam), "OrdinaryPreviewMatchContextKeepsNativeTeam");
+Tape2Tape.T2TUtils.IsInMatch = false;
+mapLineup.Team.OriginalTeamData = new TeamData { id = mapSource.id };
+Check(ReferenceEquals(MapRender(mapGoalie), mapNativeTeam), "OrdinaryPreviewRejectsSameIdForeignOriginalTeam");
+mapLineup.Team.OriginalTeamData = mapSource;
+var nextMapGoalie = new GoaltenderData { id = "next-map-goalie", colorSchemes = TeamColorsData.CopyFrom(nativePalette) };
+nextMapGoalie.colorSchemes.jerseyScheme.primaryColor = new UnityEngine.Color(.1f, .9f, .3f, 1);
+mapLineup.Team.m_G = nextMapGoalie;
+var nextMapCarrier = MapRender(nextMapGoalie);
+Check(!ReferenceEquals(nextMapCarrier, mapRenderTeam)
+    && nextMapCarrier.homeColors.jerseyScheme.primaryColor.Equals(nextMapGoalie.colorSchemes.jerseyScheme.primaryColor)
+    && mapRenderTeam.homeColors.jerseyScheme.primaryColor.Equals(nativePalette.jerseyScheme.primaryColor),
+    "OrdinaryChangedGoalieOwnsSeparateCarrierForPendingNativeContinuations");
+Check(ReferenceEquals(MapRender(mapGoalie), mapNativeTeam), "OrdinaryPreviewRejectsFormerSelectedGoalie");
+var replacementTemporaryTeam = UnityEngine.Object.Instantiate(mapSource);
+mapLineup.Team.TemporaryTeamData = replacementTemporaryTeam;
+Check(ReferenceEquals(MapRender(nextMapGoalie), mapNativeTeam), "OrdinaryPreviewRejectsStaleTemporaryTeamArgument");
+var replacementCarrier = MapRender(nextMapGoalie, replacementTemporaryTeam);
+Check(!ReferenceEquals(replacementCarrier, replacementTemporaryTeam) && !ReferenceEquals(replacementCarrier, nextMapCarrier),
+    "OrdinaryReplacedTemporaryTeamGetsSeparateCarrier");
+var originalMapRun = state.runData;
+state.runData = new RunData { teamData = mapSource };
+Check(ReferenceEquals(MapRender(nextMapGoalie, replacementTemporaryTeam), replacementTemporaryTeam),
+    "OrdinaryChangedRunCannotBorrowPriorRosterAuthority");
+state.runData = originalMapRun;
+mapLineup.OnHidingCompleted.Invoke(mapLineup);
+mapLineup.OnDestroy.Invoke(mapLineup);
+Check(UnityEngine.Object.DestroyedObjects.Count(o => ReferenceEquals(o, mapRenderTeam)) == 1
+    && UnityEngine.Object.DestroyedObjects.Count(o => ReferenceEquals(o, nextMapCarrier)) == 1
+    && UnityEngine.Object.DestroyedObjects.Count(o => ReferenceEquals(o, replacementCarrier)) == 1
+    && !UnityEngine.Object.DestroyedObjects.Contains(mapSource)
+    && !UnityEngine.Object.DestroyedObjects.Contains(mapNativeTeam)
+    && mapLineup.OnHidingCompleted.Actions.Count == 0 && mapLineup.OnDestroy.Actions.Count == 0,
+    "OrdinaryCloseDestroysOnlyOwnedCarriersAndUnregistersExactlyOnce");
+var reopenOrdinaryCarrier = MapRender(nextMapGoalie, replacementTemporaryTeam);
+Check(!ReferenceEquals(reopenOrdinaryCarrier, replacementCarrier) && mapLineup.OnHidingCompleted.Actions.Count == 1,
+    "OrdinaryReusedMenuStartsNewCarrierLifetime");
+mapLineup.OnDestroy.Invoke(mapLineup);
+Check(UnityEngine.Object.DestroyedObjects.Count(o => ReferenceEquals(o, reopenOrdinaryCarrier)) == 1
+    && mapLineup.OnHidingCompleted.Actions.Count == 0 && mapLineup.OnDestroy.Actions.Count == 0,
+    "OrdinaryDestroyWithoutHideReleasesCarrierAndListeners");
 Console.WriteLine($"PASS {checks} source-linked goalie menu and native-order checks");
 } catch (Exception ex) { Console.Error.WriteLine(ex); Environment.ExitCode = 1; }
