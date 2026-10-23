@@ -113,10 +113,13 @@ internal static class GoalieGmPreview
             // the full final row so its authored fractional precision survives.
             float labelWidth = i == 0 ? 100 : 114, numberWidth = fraction ? 195 : i == 0 ? 48 : 34;
             AddText(card, nameLabel, rect.parent, values[i].Name, x, y, labelWidth, false);
-            AddText(card, template.m_MainValue, rect.parent, values[i].Value, x + labelWidth + 2, y, numberWidth, true);
+            var number = AddText(card, template.m_MainValue, rect.parent, values[i].Value, x + labelWidth + 2, y, numberWidth, true);
+            // A short fraction belongs under the left numeric column. Longer
+            // authored fractions may grow rightward into the unused final row.
+            if (fraction) number.rectTransform.sizeDelta = new Vector2(Math.Min(numberWidth, Math.Max(34, number.GetPreferredValues(values[i].Value).x)), 20);
         }
     }
-    private static void AddText(Card card, TMP_Text template, Transform parent, string value, float x, float y, float width, bool number)
+    private static TMP_Text AddText(Card card, TMP_Text template, Transform parent, string value, float x, float y, float width, bool number)
     {
         var text = UnityEngine.Object.Instantiate(template, parent, false);
         card.Text.Add(text);
@@ -128,6 +131,7 @@ internal static class GoalieGmPreview
         text.maxVisibleLines = 1; text.overflowMode = TextOverflowModes.Ellipsis;
         text.alignment = number ? TextAlignmentOptions.MidlineRight : TextAlignmentOptions.MidlineLeft;
         text.raycastTarget = false; text.text = value; text.gameObject.SetActive(true);
+        return text;
     }
     private static void Remove(Card card)
     {

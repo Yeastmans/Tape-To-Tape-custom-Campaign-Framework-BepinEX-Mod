@@ -53,6 +53,7 @@ var emptyCard = selection.Menu.m_ActivePlayersList.m_SkaterCards[1];
 Check(selection.Menu.m_ActivePlayersList.m_SkaterCards.All(c => !c.m_FreeAgentDurationContainer.Active && c.m_FreeAgentDuration.text == ""), "ContractProseNeverUsesNarrowNativeBadge");
 Check(activeLabel.text == "Active: active" && !activeLabel.enableWordWrapping && activeLabel.maxVisibleLines == 1 && activeLabel.overflowMode == TMPro.TextOverflowModes.Ellipsis, "NameUsesBoundedSingleLineWithoutContractProse");
 Check(emptyCard.m_EmptySeatContainer.Active && emptyCard.EmptySeatLabel.text.Contains("select to hire") && !emptyCard.Locked, "ActualVisibleEmptySeatExplainsRecruitAction");
+Check(emptyCard.EmptySeatLabel.color.Equals(activeLabel.color), "ActionableEmptyReserveUsesEnabledNativeNameColor");
 Check(emptyCard.m_EmptySeatContainer.Children.Length == 4 && emptyCard.EmptySwapLabel.text == "Swap"
     && emptyCard.EmptyStatNum.text == "20" && emptyCard.EmptyStatLabel.text == "OVR", "ExactEmptyNameLeavesNativeComparisonLabelsUnchanged");
 Check(selection.Menu.Focused == selection.Menu.m_ActivePlayersList.Navigables[0] && selection.Menu.ToggleCallbacks == 0
@@ -65,6 +66,7 @@ Check(selection.Active.Pointer != state.runData.teamData.goalie.Pointer && !sele
 selection.Menu.TryLeaveMenu(false);
 Check(!pair.Offer.Taken && pair.Offer.Visit.Pending == null && pair.Gm.m_ChoicesMade == 0 && pair.Gm.DefaultSelections == 1 && pair.Gm.Visible && !pair.Gm.m_IsTakenOver, "CancelDoesNotConsumeOffer");
 Check(activeLabel.enableWordWrapping && !activeLabel.enableAutoSizing && activeLabel.maxVisibleLines == 100 && emptyCard.EmptySeatLabel.text == "Empty Seat", "CardTextPresentationRestoredOnExit");
+Check(emptyCard.EmptySeatLabel.color.Equals(new UnityEngine.Color(0,0,0,.4980392f)), "EmptyReserveRestoresNativeColorOnClose");
 GoalieRosterMenu.Finish(selection);
 Check(pair.Gm.DefaultSelections == 1 && selection.Menu.OnDestroy.Actions.Count == 0 && selection.Menu.OnHidingCompleted.Actions.Count == 0, "CloseUnregistersAndRestoresGMExactlyOnce");
 selection = Recruit(state, pair); var previousActive = state.runData.teamData.goalie;

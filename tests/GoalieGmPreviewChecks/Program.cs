@@ -28,7 +28,7 @@ if (args.Length == 1) File.WriteAllText(args[0], System.Text.Json.JsonSerializer
     text = t.text, x = t.rectTransform.anchoredPosition.x, y = t.rectTransform.anchoredPosition.y,
     width = t.rectTransform.sizeDelta.x, height = t.rectTransform.sizeDelta.y, minFont = t.fontSizeMin, maxFont = t.fontSizeMax
 }), new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
-Check(UnityEngine.Object.Texts.Single(t=>t.text=="0.125").rectTransform.sizeDelta.x>=100,"FractionalPassReadHasRoomForFullAuthoredPrecision");
+Check(UnityEngine.Object.Texts.Single(t=>t.text=="0.125").rectTransform.sizeDelta.x==50,"FractionalPassReadUsesOnlyItsPreferredWidthInFinalRow");
 Check(UnityEngine.Object.Texts.Single(t=>t.text=="-7").rectTransform.sizeDelta.x>=48,"SignedSkillHasRoomForNativeMinimum");
 Check(UnityEngine.Object.Texts.All(t=>t.rectTransform.sizeDelta.y>=19.0681f && t.fontSizeMin==14 && t.fontSizeMax==14),"NativeFontAscentDescentFitsWithoutShrinkingBelowFourteen");
 Check(UnityEngine.Object.Texts.All(t=>!t.raycastTarget&&!t.enableWordWrapping&&t.maxVisibleLines==1),"StatsCannotStealInputOrWrapAcrossRows");
@@ -43,6 +43,14 @@ offer.Taken=false;GoalieRecruitment.ContextValid=false;GoalieGmPreview.Tick();Ch
 GoalieRecruitment.ContextValid=true;menu.IsHiding=true;GoalieGmPreview.Tick();Check(UnityEngine.Object.Created==52,"ClosingMenuHasNoPreview");
 menu.IsHiding=false;((RectTransform)item.m_SkaterDetails.m_ForwardSpeed.transform).sizeDelta=new(400,28);
 GoalieGmPreview.Tick();GoalieGmPreview.Tick();Check(UnityEngine.Object.Created==52&&Plugin.Log.Warnings==1,"UnknownLayoutWarnsOnceWithoutAllocatingOrLooping");
+GoalieRecruitment.Current=null;GoalieGmPreview.Tick();
+((RectTransform)item.m_SkaterDetails.m_ForwardSpeed.transform).sizeDelta=new(311,28);
+g.passReadSkill=0;GoalieRecruitment.Current=visit;GoalieGmPreview.Tick();
+var zero=UnityEngine.Object.Texts.Last(t=>t.text=="0");
+Check(zero.rectTransform.anchoredPosition.x+zero.rectTransform.sizeDelta.x==213,"ShortPassReadAlignsWithLeftColumnNumbers");
+GoalieRecruitment.Current=null;GoalieGmPreview.Tick();g.passReadSkill=.123456789f;GoalieRecruitment.Current=visit;GoalieGmPreview.Tick();
+var precise=UnityEngine.Object.Texts.Last();
+Check(precise.rectTransform.sizeDelta.x==precise.GetPreferredValues(precise.text).x && precise.rectTransform.sizeDelta.x>34,"LongPassReadExpandsIntoUnusedFinalRowWithoutRounding");
 GoalieRecruitment.Current=null;GoalieGmPreview.Tick();
 if(args.Length==2) InteropChecks.Run(args,Check);
 Console.WriteLine($"PASS {count} source-linked goalie GM presentation checks");

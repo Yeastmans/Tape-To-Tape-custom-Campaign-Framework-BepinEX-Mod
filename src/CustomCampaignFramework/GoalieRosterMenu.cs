@@ -57,6 +57,7 @@ internal static class GoalieRosterMenu
         internal float Size, Minimum, Maximum;
         internal int Lines;
         internal TextOverflowModes Overflow;
+        internal Color Color;
     }
     internal sealed class BadgePresentation
     {
@@ -227,7 +228,12 @@ internal static class GoalieRosterMenu
                 // Both installed lineup card prefabs have four TMP descendants:
                 // Name plus Swap/StatBoxSwap comparison labels. Address only Name.
                 var label = card.m_EmptySeatContainer?.transform.Find("PlayerInfo/Name")?.GetComponent<TMP_Text>();
-                if (label != null) FitLabel(s, label, slot + ": " + text);
+                if (label != null) {
+                    FitLabel(s, label, slot + ": " + text);
+                    // Native empty-seat text is half-transparent black. An
+                    // offered goalie makes this a real hire target/status label.
+                    if (s.Offer != null && card.m_SkaterName != null) label.color = card.m_SkaterName.color;
+                }
                 else if (!s.EmptyLabelUnavailable) {
                     s.EmptyLabelUnavailable = true;
                     Plugin.Log.LogWarning("[GoalieRoster] Empty-slot PlayerInfo/Name TMP label unavailable; retaining native label and header instructions.");
@@ -248,7 +254,7 @@ internal static class GoalieRosterMenu
     {
         if (!s.Labels.ContainsKey(text.Pointer)) s.Labels[text.Pointer] = new TextPresentation { Text = text, Value = text.text,
             Auto = text.enableAutoSizing, Wrap = text.enableWordWrapping, Size = text.fontSize, Minimum = text.fontSizeMin,
-            Maximum = text.fontSizeMax, Lines = text.maxVisibleLines, Overflow = text.overflowMode };
+            Maximum = text.fontSizeMax, Lines = text.maxVisibleLines, Overflow = text.overflowMode, Color = text.color };
     }
     private static void ContractBadge(Selection s, SkaterCard card, GoalieContractState contract)
     {
@@ -292,6 +298,7 @@ internal static class GoalieRosterMenu
             text.enableAutoSizing = prior.Auto; text.enableWordWrapping = prior.Wrap;
             text.fontSize = prior.Size; text.fontSizeMin = prior.Minimum; text.fontSizeMax = prior.Maximum;
             text.maxVisibleLines = prior.Lines; text.overflowMode = prior.Overflow;
+            text.color = prior.Color;
         }
         s.Labels.Clear();
         foreach (var prior in s.Badges.Values) {

@@ -13,7 +13,7 @@ namespace UnityEngine {
 namespace TMPro {
  public enum TextOverflowModes {Ellipsis}
  public enum TextAlignmentOptions {MidlineLeft,MidlineRight}
- public class TMP_Text:UnityEngine.Component {public string text;public bool enableWordWrapping,enableAutoSizing,raycastTarget;public float fontSizeMin,fontSizeMax,fontSize;public int maxVisibleLines;public TextOverflowModes overflowMode;public TextAlignmentOptions alignment;public UnityEngine.RectTransform rectTransform=>(UnityEngine.RectTransform)transform;}
+ public class TMP_Text:UnityEngine.Component {public string text;public bool enableWordWrapping,enableAutoSizing,raycastTarget;public float fontSizeMin,fontSizeMax,fontSize;public int maxVisibleLines;public TextOverflowModes overflowMode;public TextAlignmentOptions alignment;public UnityEngine.RectTransform rectTransform=>(UnityEngine.RectTransform)transform;public UnityEngine.Vector2 GetPreferredValues(string value)=>new(value.Length*10f,20);}
 }
 namespace Data {public class GoaltenderData:UnityEngine.Object { public int skill,catchingSkill,gloveSkill,blockerSkill,fiveHoleSkill,standingSpeed,butterflySpeed,controlSkill,recoverySkill,passPower,pokecheckSkill,depth; public float passReadSkill; public int shotPower=999;}}
 namespace Tape2Tape.Customization.UI {public class SkaterStatBox:UnityEngine.Component {public TMPro.TMP_Text m_NameLabel=new(),m_MainValue=new();}}

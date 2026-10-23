@@ -11,6 +11,7 @@ namespace TMPro {
         public string text; public bool enableAutoSizing, enableWordWrapping = true;
         public float fontSize = 30, fontSizeMin = 12, fontSizeMax = 30;
         public int maxVisibleLines = 100; public TextOverflowModes overflowMode;
+        public UnityEngine.Color color = new(1,1,1,1);
         public UnityEngine.RectTransform rectTransform = new() { sizeDelta = new(13.8444f, 16) };
         public UnityEngine.Vector2 GetPreferredValues(string value) => new(value.Length * 10f, 16);
     }
@@ -78,7 +79,7 @@ namespace Tape2Tape.Customization.UI {
         public AbstractNavigable Navigable = new();
         public Text m_PositionLetter = new(), m_SkaterName = new(), m_FreeAgentDuration = new();
         public UnityEngine.GameObject m_FreeAgentDurationContainer = new();
-        public Text EmptySeatLabel = new() { text = "Empty Seat" };
+        public Text EmptySeatLabel = new() { text = "Empty Seat", color = new(0,0,0,.4980392f) };
         public Text EmptySwapLabel = new() { text = "Swap" }, EmptyStatNum = new() { text = "20" }, EmptyStatLabel = new() { text = "OVR" };
         public UnityEngine.GameObject m_EmptySeatContainer = new(), m_FilledSeatContainer = new();
         public SkaterCard() {
