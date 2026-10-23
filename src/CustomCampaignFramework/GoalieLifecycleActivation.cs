@@ -16,6 +16,26 @@ internal static class GoalieLifecycleActivation
         internal MethodInfo Native, Prefix, Postfix, Finalizer;
         internal bool Completion, Launch;
     }
+    // Metadata-only aggregate used by startup and installed-wrapper diagnostics.
+    // Cardinality comes from the exact feature inventories already checked against
+    // the approved profile; duplicate or missing resolved targets still fail closed.
+    private static List<Hook> ResolvePlan()
+    {
+        var plan = new List<Hook>();
+        foreach (var h in GoaliePersistenceContracts.Resolve()) plan.Add(new Hook { Native=h.Native, Prefix=h.Prefix, Postfix=h.Postfix });
+        foreach (var h in GoalieRosterMenu.Resolve()) plan.Add(new Hook { Native=h.Native, Prefix=h.Prefix, Postfix=h.Postfix });
+        foreach (var h in GoalieMatchLaunchGate.Resolve()) plan.Add(new Hook { Native=h.Native, Prefix=h.Prefix, Postfix=h.Postfix, Launch=true });
+        foreach (var h in GoalieMatchCompletion.Resolve()) plan.Add(new Hook { Native=h.Native, Prefix=h.Prefix, Finalizer=h.Finalizer, Completion=true });
+        ValidatePlan(plan);
+        return plan;
+    }
+    private static void ValidatePlan(List<Hook> plan)
+    {
+        int expected = GoaliePersistenceContracts.Required.Length + GoalieRosterMenu.Required.Length
+            + GoalieMatchLaunchGate.Required.Length + GoalieMatchCompletion.Required.Length;
+        if (plan.Count != expected || plan.Any(h => h?.Native == null) || plan.Select(h => h.Native).Distinct().Count() != expected)
+            throw new InvalidOperationException("Incomplete goalie lifecycle installation plan.");
+    }
     internal static void Install()
     {
         if (GoaliePersistenceBridge.Enabled) return;
@@ -28,12 +48,7 @@ internal static class GoalieLifecycleActivation
                     var profile = GoaliePersistenceContracts.Preflight();
                     foreach (var set in new[] { GoalieRosterMenu.Required, GoalieMatchLaunchGate.Required, GoalieMatchCompletion.Required })
                         NamedManagedHookContract.RequireExactSet(set, profile.NamedHooks, set[0].Feature);
-                    foreach (var h in GoaliePersistenceContracts.Resolve()) plan.Add(new Hook { Native=h.Native, Prefix=h.Prefix, Postfix=h.Postfix });
-                    foreach (var h in GoalieRosterMenu.Resolve()) plan.Add(new Hook { Native=h.Native, Prefix=h.Prefix, Postfix=h.Postfix });
-                    foreach (var h in GoalieMatchLaunchGate.Resolve()) plan.Add(new Hook { Native=h.Native, Prefix=h.Prefix, Postfix=h.Postfix, Launch=true });
-                    foreach (var h in GoalieMatchCompletion.Resolve()) plan.Add(new Hook { Native=h.Native, Prefix=h.Prefix, Finalizer=h.Finalizer, Completion=true });
-                    if (plan.Count != 37 || plan.Select(h => h.Native).Distinct().Count() != 37)
-                        throw new InvalidOperationException("Incomplete goalie lifecycle installation plan.");
+                    plan = ResolvePlan();
                     // Reject pre-existing foreign patches on provenance targets; a
                     // later foreign skip remains unknown through __runOriginal.
                     foreach (var h in plan.Where(h => h.Completion || h.Launch)) {
@@ -80,7 +95,7 @@ internal static class GoalieLifecycleActivation
                 () => { GoaliePersistenceBridge.SetEnabled(false); GoalieRosterMenu.SetInstalled(false); },
                 GoalieMatchCompletion.Unsubscribe,
                 harmony.UnpatchSelf);
-            Plugin.Log.LogInfo("[GoalieLifecycle] All 37 targets installed; persistence, menu, launch and completion enabled together.");
+            Plugin.Log.LogInfo("[GoalieLifecycle] All " + plan.Count + " targets installed; persistence, menu, launch and completion enabled together.");
         } catch (Exception ex) { Plugin.Log.LogWarning("[GoalieLifecycle] Entire capability unavailable: " + ex); }
     }
 }

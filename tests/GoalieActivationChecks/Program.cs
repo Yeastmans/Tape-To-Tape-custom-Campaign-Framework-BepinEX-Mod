@@ -32,4 +32,5 @@ for (int failure = 0; failure < 8; failure++) {
 }
 Console.WriteLine($"{count} activation checks passed");
 
-CoordinatorChecks.Run();
+try { CoordinatorChecks.Run(); }
+catch (Exception ex) { Console.Error.WriteLine(ex); Environment.ExitCode = 1; }

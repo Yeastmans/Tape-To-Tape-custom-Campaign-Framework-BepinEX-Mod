@@ -24,6 +24,31 @@ Run("production wrapper preflight accepts installed interop", () => {
     contracts.GetMethod("ValidateWrapperApi", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, null);
     Check(true, "production wrapper preflight accepts installed interop without invoking native methods");
 });
+Run("production aggregate lifecycle plan", () => {
+    var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(runtime);
+    var type = assembly.GetType("EndlessMode.GoalieLifecycleActivation", true)!;
+    const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Static;
+    var resolve = type.GetMethod("ResolvePlan", flags) ?? throw new Exception("Startup aggregate plan is not independently verifiable");
+    var validate = type.GetMethod("ValidatePlan", flags)!;
+    var plan = (System.Collections.IList)resolve.Invoke(null, null)!;
+    using var stream = assembly.GetManifestResourceStream("NativeCompatibility.json")!;
+    using var json = System.Text.Json.JsonDocument.Parse(stream);
+    int expected = json.RootElement.GetProperty("NamedHooks").EnumerateArray()
+        .Count(h => h.GetProperty("Feature").GetString()!.StartsWith("goalie-", StringComparison.Ordinal));
+    Check(plan.Count == expected, "compiled aggregate plan covers every embedded goalie hook");
+    void Reject(System.Collections.IList changed, string label) {
+        try { validate.Invoke(null, new object[] { changed }); throw new Exception("Accepted " + label); }
+        catch (TargetInvocationException ex) when (ex.InnerException is InvalidOperationException) { Check(true, label); }
+    }
+    var duplicate = (System.Collections.IList)resolve.Invoke(null, null)!; duplicate[1] = duplicate[0];
+    Reject(duplicate, "aggregate plan rejects duplicate native targets");
+    var missing = (System.Collections.IList)resolve.Invoke(null, null)!; missing.RemoveAt(missing.Count - 1);
+    Reject(missing, "aggregate plan rejects missing native target");
+    var extra = (System.Collections.IList)resolve.Invoke(null, null)!; extra.Add(extra[0]);
+    Reject(extra, "aggregate plan rejects extra target");
+    var nullEntry = (System.Collections.IList)resolve.Invoke(null, null)!; nullEntry[0] = null;
+    Reject(nullEntry, "aggregate plan rejects null target");
+});
 Run("strict wrapper overload resolution", () => {
     var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(runtime);
     var resolver = assembly.GetType("EndlessMode.GoalieWrapperContract", true)!.GetMethod("Resolve", BindingFlags.Static | BindingFlags.NonPublic)!;
