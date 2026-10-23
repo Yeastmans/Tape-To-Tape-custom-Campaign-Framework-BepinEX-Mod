@@ -1901,6 +1901,7 @@
     "Tape2Tape.Hockey.UI.LineupMenu$$LinkStartersAndBenchEnds",
     "Tape2Tape.Hockey.UI.LineupMenu$$LoadCurrentTeam",
     "Tape2Tape.Hockey.UI.LineupMenu$$OnTogglePlayerCard",
+    "Tape2Tape.Hockey.UI.LineupMenu$$RefreshSkaterPreview",
     "Tape2Tape.Hockey.UI.LineupMenu$$SelectFirstPlayer",
     "Tape2Tape.Hockey.UI.LineupMenu$$TryLeaveMenu",
     "Tape2Tape.Hockey.UI.LineupMenu$$get_Team",

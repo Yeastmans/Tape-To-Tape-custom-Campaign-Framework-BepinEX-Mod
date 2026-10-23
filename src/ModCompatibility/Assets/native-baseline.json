@@ -1,8 +1,8 @@
 {
-  "Id": "7183AE880DD21C2B7B8347C8E7F711E0715E8829F9A4F1C23552C9EA0B538834",
+  "Id": "EF624287E51BE046F1D1A12773DAF060DCD99C4DC12DAC7CF7F2B805CB985C08",
   "Profile": {
     "RuntimeContract": "t2t-native-v2-20261020",
-    "BaselineId": "7183AE880DD21C2B7B8347C8E7F711E0715E8829F9A4F1C23552C9EA0B538834",
+    "BaselineId": "EF624287E51BE046F1D1A12773DAF060DCD99C4DC12DAC7CF7F2B805CB985C08",
     "Build": "26150666",
     "GameHash": "FD2E6FDF3900272C2E9B201F3280AF15C44D330D28E131E00FE6C99D007C4B93",
     "MetadataHash": "22E6F00B8CE5F83A3D167410FE6B7C76086B201BC48CB83CFAA3BD4E577CAC37",
@@ -9065,6 +9065,11 @@
       "Name": "Tape2Tape.Hockey.UI.LineupMenu$$OnTogglePlayerCard::System.Void OnTogglePlayerCard(Tape2Tape.Customization.UI.SkaterCard card)",
       "Signature": "System.Void OnTogglePlayerCard(Tape2Tape.Customization.UI.SkaterCard card)",
       "BodyHash": "BDEC17CA37555D2C49C71E86FCB4047A360057A45BEC0BB2A8B75E012EAEF1DC"
+    },
+    {
+      "Name": "Tape2Tape.Hockey.UI.LineupMenu$$RefreshSkaterPreview::System.Void RefreshSkaterPreview(Data.SkaterData skater)",
+      "Signature": "System.Void RefreshSkaterPreview(Data.SkaterData skater)",
+      "BodyHash": "465384C6232A2F17B8F8C324DF38B33E36429780F1B9600E1F2F365426CFB7CF"
     },
     {
       "Name": "Tape2Tape.Hockey.UI.LineupMenu$$SelectFirstPlayer::System.Void SelectFirstPlayer()",
