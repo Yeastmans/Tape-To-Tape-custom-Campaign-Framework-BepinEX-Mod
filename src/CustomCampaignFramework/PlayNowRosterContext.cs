@@ -4,6 +4,7 @@ using Data;
 using CampaignCore;
 using HarmonyLib;
 using Tape2Tape.Customization.UI;
+using Tape2Tape.Hockey.UI;
 
 namespace EndlessMode;
 
@@ -15,6 +16,8 @@ internal static class PlayNowRosterContext
     {
         internal Frame Parent;
         internal bool Eligible, Disposed;
+        internal bool Saved;
+        internal TeamData Team;
         public void Dispose()
         {
             if (Disposed) return;
@@ -26,7 +29,7 @@ internal static class PlayNowRosterContext
     internal static bool Active => current?.Eligible == true && !current.Disposed;
     internal static IDisposable Enter(TeamData team)
     {
-        var frame = new Frame { Parent = current, Eligible = PlayNowRosterRuntime.TryGet(team, out _) };
+        var frame = new Frame { Parent = current, Team = team, Eligible = PlayNowRosterRuntime.TryGet(team, out _) };
         current = frame;
         return frame;
     }
@@ -63,6 +66,41 @@ internal static class PlayNowRosterContext
     public static Exception Finalizer(Exception __exception, IDisposable __state)
     {
         __state?.Dispose(); return __exception;
+    }
+    public static void Applied(TeamRosterData __instance, ref bool __result, IDisposable __state, bool __runOriginal)
+    {
+        if (!__runOriginal || !__result || __state is not Frame frame || !frame.Eligible || frame.Disposed || frame.Saved) return;
+        try
+        {
+            if (__instance?.OriginalTeamData?.Pointer != frame.Team?.Pointer || !Valid(__instance))
+                throw new InvalidOperationException("The exported lineup identity changed while applying the edit.");
+            PlayNowRosterSave.SaveApplied(__instance.OriginalTeamData);
+            frame.Saved = true;
+        }
+        catch (Exception ex)
+        {
+            __result = false;
+            Plugin.Log.LogWarning("[PlayNow] Lineup was not saved; keep the editor open and retry: " + ex.Message);
+        }
+    }
+    public static bool Leave(LineupMenu __instance)
+    {
+        var roster = __instance?.Team;
+        if (roster == null || __instance.m_AreSkatersLocked || !roster.HasChanged
+            || !PlayNowRosterRuntime.IsRegistered(roster.OriginalTeamData)) return true;
+        try
+        {
+            // Invalid rosters retain the native discard/return prompt. Valid
+            // edits have no confirmation prompt: native immediately applies.
+            if (!roster.CheckRoster(false)) return true;
+            if (NativeSquadBehaviorBridge.Ready && Valid(roster) && roster.ApplyChanges()) return true;
+        }
+        catch (Exception ex) { Plugin.Log.LogWarning("[PlayNow] Lineup save failed: " + ex.Message); }
+        // Gate before native sets m_IsLeaving. IL2CPP catches managed patch
+        // exceptions, and native itself closes even on a false ApplyChanges.
+        if (__instance.m_Header?.m_Title != null)
+            __instance.m_Header.m_Title.text = "Lineup not saved — retry or restore the previous roster";
+        return false;
     }
 
     // Native constructor reads CurrentLine and limits the bench to benchSize.
@@ -101,11 +139,14 @@ internal static class PlayNowRosterContext
     }
     internal static void Install(Harmony harmony)
     {
+        harmony.Patch(AccessTools.Method(typeof(LineupMenu), "TryLeaveMenu"),
+            prefix: new HarmonyMethod(typeof(PlayNowRosterContext), nameof(Leave)));
         harmony.Patch(AccessTools.GetDeclaredConstructors(typeof(TeamRosterData)).Single(c => c.GetParameters().Length == 4),
             postfix: new HarmonyMethod(typeof(PlayNowRosterContext), nameof(Constructed)));
         foreach (string name in new[] { "UpdateTemporaryTeamData", "ApplyChanges" })
             harmony.Patch(AccessTools.Method(typeof(TeamRosterData), name),
                 prefix: new HarmonyMethod(typeof(PlayNowRosterContext), nameof(Prefix)),
+                postfix: name == "ApplyChanges" ? new HarmonyMethod(typeof(PlayNowRosterContext), nameof(Applied)) : null,
                 finalizer: new HarmonyMethod(typeof(PlayNowRosterContext), nameof(Finalizer)));
     }
 }

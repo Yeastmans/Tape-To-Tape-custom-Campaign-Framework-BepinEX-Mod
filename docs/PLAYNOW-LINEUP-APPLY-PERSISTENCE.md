@@ -1,0 +1,9 @@
+# Play Now lineup apply persistence
+
+The native pre-match Lineup menu applies edits when leaving a valid changed roster, but that path does not call the custom-team repository writer. Exported two-line edits now commit through the existing guarded native/companion save transaction after successful ApplyChanges.
+
+The exact loaded team retains its accepted repository and revision across owned clones. Unchanged repeated applies do not write again. Invalid or unsupported exported shapes, skipped/failed native applies, foreign teams and stale save revisions cannot gain write authority.
+
+The native leave coroutine logs a false apply result and still closes. The installed IL2CPP detour also catches managed exceptions before returning to native code. Therefore a scoped TryLeaveMenu prefix preflights only changed, editable exported rosters whose native CheckRoster(false) passes. It refuses close with a visible failure heading when the paired save fails, retaining the pending in-memory edit for retry. Invalid rosters keep the native discard/return prompt; locked, unchanged and unrelated menus keep native behavior. Successful preflight permits the normal leave; its repeated apply is a persistence no-op.
+
+Managed regression evidence covers the missing-save red, successful apply, duplicate/no-op, failed/skipped/thrown native apply, foreign/locked/unchanged/invalid/unsupported boundaries, stale-file rejection, pending edit preservation, retry, nested temporary-update scope and native-shaped cold reload. These checks model native apply's in-memory effect and source-link production patch/transaction code; they do not establish that keyboard entry, patch generation or rendered native menu behavior works. Final actual-interop build/Harmony diagnostics and live pre-match edit/leave/restart validation remain separate.

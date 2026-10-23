@@ -22,6 +22,7 @@ internal static class PlayNowRosterSave
     private sealed class TeamRevision
     {
         internal TeamData Team;
+        internal TeamRepository Repository;
         internal int Instance;
         internal Revision Revision;
     }
@@ -69,14 +70,14 @@ internal static class PlayNowRosterSave
         var fields = new[] { ("leftWingerId", model.leftWingerId), ("rightWingerId", model.rightWingerId), ("centerId", model.centerId),
             ("leftDefensemenId", model.leftDefensemenId), ("rightDefensemenId", model.rightDefensemenId), ("goalieId", model.goalieId) };
         if (fields.Any(p => json.RootElement.GetProperty(p.Item1).GetString() != p.Item2)) throw new IOException("Loaded native roster is stale.");
-        Teams[team.Pointer] = new TeamRevision { Team = team, Instance = team.GetInstanceID(), Revision = revision };
+        Teams[team.Pointer] = new TeamRevision { Team = team, Repository = repository, Instance = team.GetInstanceID(), Revision = revision };
         foreach (var p in Items(team.forwards)) PlayNowPlayerSave.BindLoaded(p);
         PlayNowPlayerSave.BindLoaded(team.goalie);
     }
     internal static void Clone(TeamData source, TeamData clone)
     {
         if (source == null || clone == null || !Teams.TryGetValue(source.Pointer, out var old) || old.Instance != source.GetInstanceID()) return;
-        Teams[clone.Pointer] = new TeamRevision { Team = clone, Instance = clone.GetInstanceID(), Revision = old.Revision };
+        Teams[clone.Pointer] = new TeamRevision { Team = clone, Repository = old.Repository, Instance = clone.GetInstanceID(), Revision = old.Revision };
         foreach (var p in Items(clone.forwards)) PlayNowPlayerSave.BindClone(source, p);
         PlayNowPlayerSave.BindClone(source, clone.goalie);
     }
@@ -116,6 +117,23 @@ internal static class PlayNowRosterSave
         return doc;
     }
     internal static void Save(TeamRepository repository, TeamData team) => repository.SaveCustomTeam(team);
+    internal static void SaveApplied(TeamData team)
+    {
+        if (team == null || !Teams.TryGetValue(team.Pointer, out var accepted)
+            || accepted.Instance != team.GetInstanceID() || accepted.Team.id != team.id || accepted.Repository == null
+            || !PlayNowRosterRuntime.TryGet(team, out var roster))
+            throw new IOException("This lineup has no accepted persistent team identity.");
+        Check(accepted.Revision);
+        roster = PlayNowRosterCodec.Remap(roster, id => PlayNowRosterRuntime.TryGetSourceId(team, id, out string source) ? source : id);
+        if (!PlayNowRosterCodec.TryRead(new CampaignDocument(accepted.Revision.CompanionText), out var saved, out _))
+            throw new IOException("The accepted saved lineup is incomplete.");
+        if (roster.Line1.SequenceEqual(saved.Line1) && roster.Line2.SequenceEqual(saved.Line2)
+            && roster.GoalieId == saved.GoalieId && roster.StaminaEnabled == saved.StaminaEnabled) return;
+        var before = accepted.Revision;
+        Save(accepted.Repository, team);
+        if (ReferenceEquals(before, accepted.Revision))
+            throw new IOException("The native team writer did not confirm the paired lineup save.");
+    }
     public static void TeamPrefix(TeamRepository __instance, TeamData customTeam, out SaveFrame __state)
     {
         __state = new SaveFrame { Parent = Current };

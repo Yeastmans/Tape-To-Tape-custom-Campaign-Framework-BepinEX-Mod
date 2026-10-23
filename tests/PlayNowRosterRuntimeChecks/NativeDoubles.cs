@@ -36,7 +36,7 @@ namespace Tape2Tape.Customization
 }
 namespace EndlessMode
 {
-    static class PlayNowRosterSave { public static void Clear() {} public static void AcceptLoaded(TeamRepository r, TeamDataModel m, TeamData t) {} public static void Clone(TeamData a,TeamData b) {} }
+    static class PlayNowRosterSave { public static void Clear() {} public static void AcceptLoaded(TeamRepository r, TeamDataModel m, TeamData t) {} public static void Clone(TeamData a,TeamData b) {} public static void SaveApplied(TeamData t) {} }
     static class PlayNowTranslation { internal static Dictionary<string, CampaignDocument> Documents = new(); public static CampaignDocument Read(string id, bool team = false) => Documents.GetValueOrDefault(id); }
     static class Plugin { public static Logger Log = new(); }
     class Logger { public readonly List<string> Warnings=new(); public void LogWarning(object message) { Warnings.Add(message.ToString()); } }
@@ -52,6 +52,7 @@ namespace HarmonyLib {
 }
 namespace Tape2Tape.Customization.UI {
     public class TeamRosterData {
+        public bool HasChanged; public bool CheckRoster(bool requireMaxForwards)=>true; public bool ApplyChanges()=>true;
         public TeamData OriginalTeamData,TemporaryTeamData;
         public ForwardData m_LW,m_RW,m_C,m_LD,m_RD; public GoaltenderData m_G;
         public Il2CppSystem.Collections.Generic.List<ForwardData> m_BenchForwards = new();
@@ -71,3 +72,4 @@ namespace UnityEngine { public static class Resources { public static T Load<T>(
 namespace EndlessMode { public static class SquadBehaviorRuntime { public static bool TryEnabled(string id,string flag,out bool enabled) {enabled=false;return false;} } }
 
 namespace EndlessMode { public static class NativeSquadBehaviorBridge { public static bool Ready=true; } }
+namespace Tape2Tape.Hockey.UI { public class LineupMenu { public Tape2Tape.Customization.UI.TeamRosterData Team; public bool m_AreSkatersLocked; public Header m_Header = new(); } public class Header { public Text m_Title = new(); } public class Text { public string text; } }

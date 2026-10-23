@@ -41,7 +41,7 @@ namespace Tape2Tape.Customization {
   public ForwardRepository m_forwardRepository=new();public GoalieRepository m_goalieRepository=new();public PersistentDataCustomTeamsRepository m_customTeamRepository=new();
   public ForwardData InstantiateForwardWithId(Il2CppSystem.Collections.Generic.List<ForwardData> players,string id)=>players.First(p=>p.id==id);
   public static TeamDataModel Model(TeamData t){var l=t.lines[t.activeLineNumber-1];return new(){Id=t.id,leftWingerId=l.leftWinger,rightWingerId=l.rightWinger,centerId=l.center,rightDefensemenId=l.rightDefensemen,leftDefensemenId=l.leftDefensemen,goalieId=t.goalie.id,logoId=t.logoId,relics=t.relics,homeColors=t.homeColors,awayColors=t.awayColors};}
-  public void SaveCustomTeam(TeamData customTeam){PlayNowRosterSave.SaveFrame state=null;Exception error=null;try{PlayNowRosterSave.TeamPrefix(this,customTeam,out state);var model=Model(customTeam);if(PlayNowRosterSave.TeamWriterPrefix(m_customTeamRepository,model))File.WriteAllText(PlayNowSaveJournal.NativePath(m_customTeamRepository._path,"team",customTeam.id),UnityEngine.JsonUtility.ToJson(model));}catch(Exception e){error=e;}error=PlayNowRosterSave.TeamFinalizer(error,state);if(error!=null)throw error;}
+  public int SaveCalls; public void SaveCustomTeam(TeamData customTeam){SaveCalls++;PlayNowRosterSave.SaveFrame state=null;Exception error=null;try{PlayNowRosterSave.TeamPrefix(this,customTeam,out state);var model=Model(customTeam);if(PlayNowRosterSave.TeamWriterPrefix(m_customTeamRepository,model))File.WriteAllText(PlayNowSaveJournal.NativePath(m_customTeamRepository._path,"team",customTeam.id),UnityEngine.JsonUtility.ToJson(model));}catch(Exception e){error=e;}error=PlayNowRosterSave.TeamFinalizer(error,state);if(error!=null)throw error;}
  }
 }
 namespace Tape2Tape.Customization.UI {
@@ -65,8 +65,10 @@ namespace EndlessMode {
 }
 
 namespace Tape2Tape.Customization.UI { public class TeamRosterData {
+ public bool HasChanged = true, RosterValid = true; public Func<bool> ApplyBody; public bool CheckRoster(bool requireMaxForwards)=>RosterValid; public bool ApplyChanges()=>ApplyBody();
  public TeamData OriginalTeamData,TemporaryTeamData;
  public ForwardData m_LW,m_RW,m_C,m_LD,m_RD; public GoaltenderData m_G;
  public Il2CppSystem.Collections.Generic.List<ForwardData> m_BenchForwards=new();
 }}
+namespace Tape2Tape.Hockey.UI { public class LineupMenu { public Tape2Tape.Customization.UI.TeamRosterData Team; public bool m_AreSkatersLocked; public Header m_Header = new(); } public class Header { public Text m_Title = new(); } public class Text { public string text; } }
 namespace EndlessMode { public static class NativeSquadBehaviorBridge {public static bool Ready=true;} }

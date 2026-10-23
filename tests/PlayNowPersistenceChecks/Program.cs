@@ -212,6 +212,7 @@ Test("NativeFloatSpellingsUseSingleDomainWithoutWeakeningOtherFields",(root,_)=>
  Reject("{\"id\":\"p\",\"speed\":16777216}","{\"id\":\"p\",\"speed\":16777217}",typeof(ForwardDataModel));
  Assert(PlayNowSaveJournal.Hash(Encoding.UTF8.GetBytes(persisted))!=PlayNowSaveJournal.Hash(Encoding.UTF8.GetBytes(equivalent)),"schema comparison weakened byte fingerprints");
 });
+Test("NativeLineupApplyPersistsWithoutSeparateTeamCustomizerSave",(root,_)=>LineupApplyChecks.Run(root,Assert));
 Test("ActualStudioExportRuntimeSaveReimportUpdate",(root,_)=>StudioBoundaryChecks.Run(root,Assert));
 Test("ActualGoalieHeadSaveImportReexportUpdate",(root,_)=>GoalieHeadRoundtripChecks.Run(root,Assert));
 Console.WriteLine($"{pass} passed; {fail} failed");return fail==0?0:1;
