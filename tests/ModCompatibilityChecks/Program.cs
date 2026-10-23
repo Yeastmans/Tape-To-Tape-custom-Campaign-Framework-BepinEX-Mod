@@ -20,11 +20,13 @@ p=Copy();p.Sites[0].Target++;Reject(()=>p.Validate(p.GameHash,baseline.Id),"Call
 p=Copy();p.FlowBytes="90909090909090";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Starting-flow ABI cannot be replaced by arbitrary bytes");
 p=Copy();p.SurfaceBytes="90";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Rink ABI remains guarded");
 var image=new NativeImage(game);
-Check(baseline.Profile.Build == "26141904", "Current release targets reviewed Steam build 26141904");
+Check(baseline.Profile.Build == "26150666", "Current release targets reviewed Steam build 26150666");
 Check(baseline.Methods.Any(m => m.Name.StartsWith("Tape2Tape.Hockey.UI.LineupMenu$$LinkStartersAndBenchEnds::", StringComparison.Ordinal)),
     "Updated native lineup navigation remains protected");
 var verified=baseline.Verify(image,"verification");
-Check(verified.RawHooks.Count == 21 && verified.NamedHooks.Count == 46, "Verified profile preserves every raw and named hook");
+Check(verified.RawHooks.Count == 21 && verified.NamedHooks.Count == 51, "Verified profile preserves every raw and named hook");
+Check(verified.NamedHooks.Count(h => h.Feature.StartsWith("goalie-", StringComparison.Ordinal)) == 37,
+    "Verified profile preserves all current goalie lifecycle hooks");
 foreach (string feature in new[] { "jersey-logo", "goalie-checkpoint", "goalie-roster-menu", "goalie-match-launch", "goalie-match-completion" }) {
     var altered = JsonSerializer.Deserialize<CompatibilityBaseline>(JsonSerializer.Serialize(baseline))!;
     altered.Profile.NamedHooks.RemoveAll(h => h.Feature == feature);
