@@ -1,6 +1,6 @@
 {
   "RuntimeContract": "t2t-native-v2-20261020",
-  "BaselineId": "6C412AFD771A54EEA9757974A2275C9963A492FA301C43FCD20398F300898059",
+  "BaselineId": "7183AE880DD21C2B7B8347C8E7F711E0715E8829F9A4F1C23552C9EA0B538834",
   "Build": "26150666",
   "GameHash": "FD2E6FDF3900272C2E9B201F3280AF15C44D330D28E131E00FE6C99D007C4B93",
   "MetadataHash": "22E6F00B8CE5F83A3D167410FE6B7C76086B201BC48CB83CFAA3BD4E577CAC37",
@@ -2347,6 +2347,21 @@
       "Prefix": "ExecutionPrefix",
       "Postfix": "",
       "Finalizer": "FlowFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-node-clear",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "State.CampaignState",
+      "Method": "SetCurrentNode",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "STS.Map.MapNode"
+      ],
+      "Prefix": "NodeClearPrefix",
+      "Postfix": "",
+      "Finalizer": "NodeClearFinalizer"
     },
     {
       "Feature": "goalie-match-completion",

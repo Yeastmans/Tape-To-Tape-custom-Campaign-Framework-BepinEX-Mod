@@ -9,6 +9,8 @@ using State.EndOfGame;
 using Tape2Tape;
 using Cysharp.Threading.Tasks;
 
+namespace State { public partial class CampaignState { public Il2CppSystem.Object currentNode; } }
+
 static class CompletionChecks
 {
     internal static object Call(string method, params object[] args) {
@@ -104,6 +106,22 @@ static class CompletionChecks
         Initialize(f); T2TUtils.IsInMatch = true;
     }
     static object Begin(Fixture f) { object[] args = { f.Context, null }; Call("UpdatePrefix", args); return args[1]; }
+    static void ClearNativeNode(Fixture f, string fault = null) {
+        var run = f.Campaign.runData;
+        f.Campaign.currentNode = f.Context.MatchNode;
+        run.lastNodePoint.x = run.currentNodePoint.x; run.lastNodePoint.y = run.currentNodePoint.y;
+        if (fault == "context") f.Context.MatchNode = new();
+        object[] args = { f.Campaign, fault == "non-null" ? f.Menu.currentMapNode : null, null };
+        if (fault != "unobserved") Call("NodeClearPrefix", args);
+        run.currentNodePoint.x = -1; run.currentNodePoint.y = -1; f.Campaign.currentNode = null;
+        if (fault == "last-node") run.lastNodePoint.x = 42;
+        if (fault == "not-cleared") run.currentNodePoint.y = 1;
+        var error = fault == "throw" ? new Exception("native clear failed") : null;
+        if (fault != "unobserved") {
+            var returned = Call("NodeClearFinalizer", f.Campaign, args[2], fault != "skip", error);
+            if (!ReferenceEquals(returned, error)) throw new Exception("Node clear must preserve native exception identity");
+        }
+    }
     static void Departure(Fixture f, string mode = "normal") {
         var manager = new Rogue.FreeAgents.FreeAgentManager { _campaignState = f.Campaign };
         object[] args = { manager, null }; Call("DeparturePrefix", args);
@@ -118,6 +136,47 @@ static class CompletionChecks
         Call("UpdateFinalizer", f.Context, state, new UniTask { Status = status }, true, error);
     }
     internal static void Run(Action<bool, string> check) {
+        var cleared = Setup(1); Play(cleared); ClearNativeNode(cleared);
+        check((string)Call("BindingFailure", Call("ContextBinding", cleared.Context)) == "origin", "NodeClearDoesNotBroadenOrdinaryLiveOrLaunchOwnership");
+        var clearedUpdate = Begin(cleared); Departure(cleared); End(cleared, clearedUpdate);
+        check(Roster.Selection.Active.PlayerId == "bench-goalie" && Roster.Selection.Attempt == null,
+            "ObservedNativeNodeClearPreservesExactCompletionAndPromotesReserve");
+        LaunchChecks.Finish(cleared.Campaign);
+        int clearedSaves = cleared.Campaign.Repository.Saves;
+        End(cleared, clearedUpdate);
+        check(cleared.Campaign.Repository.Saves == clearedSaves && Roster.Selection.ProcessedAttemptTokens.Length == 1,
+            "ObservedClearCompletionCannotBeDebitedOrSavedTwice");
+        foreach (var fault in new[] { "unobserved", "context", "non-null", "last-node", "not-cleared", "skip", "throw", "no-play", "same-id-clone" }) {
+            cleared = Setup(1); if (fault != "no-play") Play(cleared); ClearNativeNode(cleared, fault);
+            if (fault == "same-id-clone") {
+                var clone = GoalieNativeSnapshot.Restore(GoalieNativeSnapshot.Capture(cleared.Manager._homeTeam.goaltender.goaltenderData));
+                cleared.Manager._homeTeam.goaltender.goaltenderData = clone; cleared.Manager._homeTeam.goaltender._skaterData = clone;
+            }
+            clearedUpdate = Begin(cleared); Departure(cleared); End(cleared, clearedUpdate);
+            check(Roster.Selection.Active.Contract.PlayedMatches == 0 && Roster.Selection.Attempt != null,
+                "UnprovenOrChangedNodeClearCannotDebit_" + fault);
+        }
+        foreach (var fault in new[] { "foreign-context", "foreign-controller", "foreign-run", "act", "last-node-after", "live-data-after" }) {
+            cleared = Setup(1); Play(cleared); ClearNativeNode(cleared); clearedUpdate = Begin(cleared);
+            if (fault == "foreign-context") cleared.Context = new() { CampaignState = cleared.Campaign, GameModeController = cleared.Controller, GameType = ScriptableStates.GameType.Rogue, MatchNode = cleared.Menu.currentMapNode.Blueprint };
+            if (fault == "foreign-controller") cleared.Context.GameModeController = new NormalMatchGameModeController();
+            if (fault == "foreign-run") cleared.Campaign.runData = new() { runID = cleared.Campaign.runData.runID, squadId = cleared.Campaign.runData.squadId, teamData = cleared.Campaign.runData.teamData, CurrentAct = 1 };
+            if (fault == "act") cleared.Campaign.runData.CurrentAct++;
+            if (fault == "last-node-after") cleared.Campaign.runData.lastNodePoint.y++;
+            if (fault == "live-data-after") cleared.Manager._homeTeam.goaltender.goaltenderData = new() { id = Roster.Selection.Active.PlayerId };
+            Departure(cleared); End(cleared, clearedUpdate);
+            check(Roster.Selection.Active.Contract.PlayedMatches == 0 && Roster.Selection.Attempt != null,
+                "ClearedContextDoesNotAuthorizeChangedCompletion_" + fault);
+        }
+        foreach (var protection in new[] { "native", "custom" }) {
+            cleared = Setup(1); Play(cleared); ClearNativeNode(cleared);
+            if (protection == "native") cleared.Campaign.runData.teamData.NativeHandcuffs = true;
+            else RetentionRegistryFixture.SaveAuthoredProtection(cleared.Campaign.runData.teamData);
+            clearedUpdate = Begin(cleared); Departure(cleared); End(cleared, clearedUpdate);
+            check(Roster.Selection.Active.PlayerId == "launch-goalie" && Roster.Selection.Active.Contract.PlayedMatches == 1 && Roster.Selection.Attempt == null,
+                "ClearedNodeStillRequiresAndRespectsActualRetention_" + protection);
+            LaunchChecks.Finish(cleared.Campaign);
+        }
         bool diagnosticInvoked = false;
         Call("TraceCompletion", "test-capture", new Func<string>(() => { diagnosticInvoked = true; throw new InvalidOperationException("diagnostic getter"); }));
         check(diagnosticInvoked && Plugin.Log.Warnings.Last().Contains("snapshot-error:InvalidOperationException"), "CompletionDiagnosticGetterFailureIsReportedWithoutEscaping");
@@ -214,8 +273,30 @@ static class CompletionChecks
         update = Begin(f); Departure(f); End(f, update); LaunchChecks.Finish(f.Campaign);
         check(Roster.Selection.Active.Contract.PlayedMatches == 1, "SuccessfulShootoutRoundEntryCountsOnceAcrossRounds");
 
+        foreach (string fault in new[] { "mode", "blueprint" }) {
+            var owner = Setup(); Play(owner);
+            var priorBinding = Call("ContextBinding", owner.Context);
+            var replacement = new EndOfGameContext { CampaignState = owner.Campaign, GameModeController = owner.Controller,
+                GameType = ScriptableStates.GameType.QuickPlay,
+                MatchNode = fault == "blueprint" ? new() : null };
+            var selection = new State.TeamSelection { homeTeam = owner.Campaign.runData.teamData,
+                gameType = fault == "mode" ? ScriptableStates.GameType.QuickPlay : ScriptableStates.GameType.Rogue };
+            Call("FlowFinalizer", new EndOfGameFlowController { _context = replacement, _campaignState = owner.Campaign,
+                _teamSelection = selection, _gameModeController = owner.Controller }, true, null);
+            check(ReferenceEquals(Call("ContextBinding", owner.Context), priorBinding), "InvalidNewFlowCannotRetireExistingContext_" + fault);
+        }
+        {
+            var owner = Setup(); Play(owner);
+            var replacement = new EndOfGameContext { CampaignState = owner.Campaign, GameModeController = owner.Controller,
+                GameType = ScriptableStates.GameType.QuickPlay, MatchNode = null };
+            Call("FlowFinalizer", new EndOfGameFlowController { _context = replacement, _campaignState = owner.Campaign,
+                _teamSelection = owner.Controller.teamSelectionState, _gameModeController = owner.Controller }, true, null);
+            replacement.GameType = ScriptableStates.GameType.Rogue; replacement.MatchNode = owner.Menu.currentMapNode.Blueprint;
+            check(Call("ContextBinding", owner.Context) == null && Call("ContextBinding", replacement) != null,
+                "NativeDefaultContextRegistersBeforeEndGameFillsModeAndBlueprint");
+        }
         f = Setup(); Play(f); string restartToken = Roster.Selection.ArmedAttemptToken;
-        var oldManager = f.Manager;
+        var oldManager = f.Manager; var oldRematchContext = f.Context;
         Call("RestartFinalizer", f.Controller, true, null);
         f.Manager = GameManager.Instance = new() { _homeTeam = new() { _teamData = f.Campaign.runData.teamData, goaltender = new() } };
         f.Context = new() { CampaignState = f.Campaign, GameModeController = f.Controller, GameType = ScriptableStates.GameType.Rogue, MatchNode = f.Menu.currentMapNode.Blueprint };
@@ -223,6 +304,11 @@ static class CompletionChecks
             _teamSelection = f.Controller.teamSelectionState, _gameModeController = f.Controller }, true, null);
         Initialize(f); Play(f); Call("NormalPlayFinalizer", oldManager, true, null);
         check(Roster.UnavailableReason == null, "DelayedOldManagerPlayDoesNotInvalidateCurrentRematch");
+        object[] retiredUpdate = { oldRematchContext, null }; Call("UpdatePrefix", retiredUpdate);
+        Call("UpdateFinalizer", oldRematchContext, retiredUpdate[1], new UniTask { Status = UniTaskStatus.Succeeded }, true, null);
+        check(Call("ContextBinding", oldRematchContext) == null && Roster.Selection.Active.Contract.PlayedMatches == 0
+            && Roster.UnavailableReason == null, "SuccessfulNewFlowRetiresOnlyOldSameControllerCompletionContext");
+        ClearNativeNode(f);
         update = Begin(f); Departure(f); End(f, update); LaunchChecks.Finish(f.Campaign);
         check(Roster.Selection.Active.Contract.PlayedMatches == 1 && Roster.Selection.Active.Contract.LastMatchKey == restartToken
             && f.Campaign.Repository.Saves == 2, "RematchReconstructionReusesOriginAndChargesOnceWithoutNewArm");

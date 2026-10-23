@@ -36,6 +36,7 @@ internal static class GoalieMatchCompletion
         Hook("overtime", "GameLoader", "SwitchToShootout", "System.Void", new[] { "System.Int32" }, "SwitchPrefix", "SwitchFinalizer"),
         Hook("departure", "Rogue.FreeAgents.FreeAgentManager", "HandleFreeAgentsLeaving", "System.Void", Array.Empty<string>(), "DeparturePrefix", "DepartureFinalizer"),
         Hook("context", "State.EndOfGame.EndOfGameFlowController", "Initialize", "System.Void", Array.Empty<string>(), "ExecutionPrefix", "FlowFinalizer"),
+        Hook("node-clear", "State.CampaignState", "SetCurrentNode", "System.Void", new[] { "STS.Map.MapNode" }, "NodeClearPrefix", "NodeClearFinalizer"),
         Hook("update", "State.EndOfGame.Steps.CampaignUpdateStep", "Execute", "Cysharp.Threading.Tasks.UniTask", new[] { "State.EndOfGame.EndOfGameContext" }, "UpdatePrefix", "UpdateFinalizer")
     };
     private static NamedManagedHookContract Hook(string id, string type, string method, string result, string[] args, string prefix, string finalizer)
@@ -112,6 +113,12 @@ internal static class GoalieMatchCompletion
         internal EndOfGameContext Context;
         internal Session Session;
         internal IntPtr Controller;
+        internal Binding ClearedBinding;
+    }
+    private sealed class NodeClear
+    {
+        internal OriginContext Owner;
+        internal Binding Binding;
     }
     private sealed class Departure
     {
@@ -199,6 +206,10 @@ internal static class GoalieMatchCompletion
     private static string BindingFailure(Binding binding)
     {
         if (binding == null || !Owned(binding.Session)) return "origin";
+        return LiveBindingFailure(binding);
+    }
+    private static string LiveBindingFailure(Binding binding)
+    {
         if (GameManager.Instance?.Pointer != binding.Manager.Pointer) return "manager";
         if (binding.Controller.campaignState?.Pointer != binding.Session.Origin.Campaign.Pointer) return "controller-campaign";
         if (binding.Controller.teamSelectionState?.gameType != ScriptableStates.GameType.Rogue) return "game-type";
@@ -533,8 +544,18 @@ internal static class GoalieMatchCompletion
                 && Controllers.TryGetValue(__instance._gameModeController.Pointer, out var binding) ? binding.Session : null);
             if (!Owned(session) || __instance._campaignState?.Pointer != session.Origin.Campaign.Pointer
                 || __instance._teamSelection?.homeTeam?.Pointer != session.Origin.HomeTeam.Pointer
+                || __instance._teamSelection.gameType != ScriptableStates.GameType.Rogue
                 || context.CampaignState?.Pointer != session.Origin.Campaign.Pointer
+                || (context.MatchNode != null && context.MatchNode.Pointer != session.Blueprint)
                 || context.GameModeController?.Pointer != __instance._gameModeController?.Pointer) return __exception;
+            // Native Initialize leaves context mode/default blueprint unset;
+            // UpdateEndOfGameContext fills them only after the game ends. The
+            // live selection proves Rogue now; any supplied blueprint must agree.
+            // A proven rematch flow replaces its previous context for this
+            // controller/session. Delayed callbacks from the old flow must not
+            // compete for (or borrow) the new match's node-clear witness.
+            foreach (var stale in Contexts.Where(pair => pair.Value.Controller == context.GameModeController.Pointer
+                && ReferenceEquals(pair.Value.Session, session)).Select(pair => pair.Key).ToArray()) Contexts.Remove(stale);
             Contexts.Add(context.Pointer, new OriginContext { Context = context, Session = session, Controller = context.GameModeController.Pointer });
             // Native overtime reinjects controllers in the existing scene. It
             // can keep the already-proven live goalie instead of cloning again.
@@ -557,17 +578,63 @@ internal static class GoalieMatchCompletion
     {
         __state = new Update { Previous = update, Context = __0 }; update = __state;
         try {
-            if (__0?.GameType == ScriptableStates.GameType.Rogue && __0.GameModeController != null
-                && Contexts.TryGetValue(__0.Pointer, out var context) && context.Controller == __0.GameModeController.Pointer
-                && Controllers.TryGetValue(context.Controller, out var binding) && ReferenceEquals(context.Session, binding.Session)
-                && __0.CampaignState?.Pointer == binding.Session.Origin.Campaign.Pointer
-                && __0.MatchNode?.Pointer == binding.Session.Blueprint)
-                __state.Binding = binding;
+            __state.Binding = ContextBinding(__0);
         } catch (Exception ex) { Warn(ex.Message); }
         finally {
             var evidence = __state;
             TraceCompletion("update-entry", () => "accepted=" + (evidence.Binding != null) + "; " + CompletionContext(__0));
         }
+    }
+    private static Binding ContextBinding(EndOfGameContext context)
+        => context?.GameType == ScriptableStates.GameType.Rogue && context.GameModeController != null
+            && Contexts.TryGetValue(context.Pointer, out var owner) && owner.Controller == context.GameModeController.Pointer
+            && Controllers.TryGetValue(owner.Controller, out var binding) && ReferenceEquals(owner.Session, binding.Session)
+            && context.CampaignState?.Pointer == binding.Session.Origin.Campaign.Pointer
+            && context.MatchNode?.Pointer == binding.Session.Blueprint ? binding : null;
+    private static bool CompletionOwned(Update scope)
+    {
+        var binding = scope?.Binding; var session = binding?.Session;
+        if (session == null || session.Invalid || session.Completing || !ReferenceEquals(update, scope)
+            || !ReferenceEquals(ContextBinding(scope.Context), binding)) return false;
+        if (Owned(session)) return true;
+        return Contexts.TryGetValue(scope.Context.Pointer, out var owner) && ReferenceEquals(owner.ClearedBinding, binding)
+            && GoalieMatchLaunchGate.TryReuseOriginAfterObservedNodeClear(session.Origin, session.Origin.Campaign, session.Origin.HomeTeam);
+    }
+    private static bool CompletionBound(Update scope) => CompletionOwned(scope) && LiveBindingFailure(scope.Binding) == null;
+    private static void NodeClearPrefix(CampaignState __instance, MapNode __0, out NodeClear __state)
+    {
+        __state = null;
+        try {
+            if (!ReferenceEquals(__0, null) || GameManager.Instance == null
+                || !Managers.TryGetValue(GameManager.Instance.Pointer, out var binding) || !Bound(binding)
+                || binding.Session.Participant != binding.Session.Origin.Attempt.GoalieId
+                || __instance?.Pointer != binding.Session.Origin.Campaign.Pointer
+                || __instance.currentNode?.Pointer != binding.Session.Blueprint) return;
+            OriginContext owner = null;
+            foreach (var candidate in Contexts.Values) {
+                if (!ReferenceEquals(ContextBinding(candidate.Context), binding)) continue;
+                if (owner != null || candidate.ClearedBinding != null) return; // ambiguous or already consumed transition
+                owner = candidate;
+            }
+            if (owner != null) __state = new NodeClear { Owner = owner, Binding = binding };
+        } catch (Exception ex) { Warn(ex.Message); }
+    }
+    private static Exception NodeClearFinalizer(CampaignState __instance, NodeClear __state, bool __runOriginal, Exception __exception)
+    {
+        try {
+            if (__state == null) return __exception;
+            var binding = __state.Binding; var origin = binding.Session.Origin;
+            if (__exception != null || !__runOriginal || __instance?.Pointer != origin.Campaign.Pointer
+                || __state.Owner.ClearedBinding != null || !ReferenceEquals(ContextBinding(__state.Owner.Context), binding)
+                || binding.Session.Invalid || binding.Session.Completing || LiveBindingFailure(binding) != null
+                || !GoalieMatchLaunchGate.TryReuseOriginAfterObservedNodeClear(origin, __instance, origin.HomeTeam)) {
+                Unavailable(binding.Session, "Native match-node clearing did not preserve the originating completion context.");
+                return __exception;
+            }
+            __state.Owner.ClearedBinding = binding;
+            TraceCompletion("node-clear-observed", () => CompletionContext(__state.Owner.Context));
+        } catch (Exception ex) { if (__state != null) Unavailable(__state.Binding.Session, ex.Message); }
+        return __exception;
     }
     // Install with Priority.First. A missing prefix/foreign skip is unknown.
     // The actual owned custom prefix reports its decision into this scope.
@@ -584,7 +651,7 @@ internal static class GoalieMatchCompletion
             if (binding == null || !ReferenceEquals(update, scope.Update) || scope.Manager?.Pointer != manager?.Pointer
                 || manager._campaignState?.Pointer != binding.Session.Origin.Campaign.Pointer) return;
             scope.SeenCustom = true; scope.Custom = prevented; scope.OriginalAllowed = originalAllowed;
-            if (!Bound(binding) || !CustomRewardContractRetention.TryPrevents(binding.Session.Origin.HomeTeam, out bool currentCustom)
+            if (!CompletionBound(scope.Update) || !CustomRewardContractRetention.TryPrevents(binding.Session.Origin.HomeTeam, out bool currentCustom)
                 || currentCustom != prevented) return;
             // A second, typed native query is necessary when no forward expires.
             // Never detour the generic RVA or interpret no native call as false.
@@ -620,9 +687,9 @@ internal static class GoalieMatchCompletion
             + "; protectionKnown=" + __state?.ProtectionKnown + "; prevented=" + __state?.Prevented + "; " + CompletionContext(__0));
         try {
             var binding = __state?.Binding; var session = binding?.Session;
-            if (session == null || session.Completing || !Owned(session)) return __exception;
+            if (session == null || session.Completing || !CompletionOwned(__state)) return __exception;
             if (__exception != null || !__runOriginal || __result.Status != UniTaskStatus.Succeeded
-                || __0?.Pointer != __state.Context.Pointer || !Bound(binding) || session.Participant == null
+                || __0?.Pointer != __state.Context.Pointer || !CompletionBound(__state) || session.Participant == null
                 || !__state.DepartureSeen || !__state.ProtectionKnown) { Unavailable(session, "Native match completion or departure protection could not be verified."); return __exception; }
             // Native copy, base event, boss awards and bench/run bookkeeping have
             // all returned. Only now may Stage publish a promoted reserve.

@@ -105,6 +105,21 @@ internal static class GoalieMatchLaunchGate
     internal static event Action<LaunchOrigin> LaunchAuthorized;
     internal static bool TryReuseOrigin(LaunchOrigin origin, CampaignState campaign, TeamData homeTeam)
     {
+        try { return ReuseOriginIdentity(origin, campaign, homeTeam)
+            && origin.Run.currentNodePoint.x == origin.attempt.NodeIndex && origin.Run.currentNodePoint.y == origin.attempt.LayerIndex; }
+        catch { return false; }
+    }
+    // Only the completion observer may use this after witnessing successful
+    // native SetCurrentNode(null) for its exact registered end-game context.
+    internal static bool TryReuseOriginAfterObservedNodeClear(LaunchOrigin origin, CampaignState campaign, TeamData homeTeam)
+    {
+        try { return ReuseOriginIdentity(origin, campaign, homeTeam) && ReferenceEquals(campaign.currentNode, null)
+            && origin.Run.currentNodePoint.x == -1 && origin.Run.currentNodePoint.y == -1
+            && origin.Run.lastNodePoint.x == origin.attempt.NodeIndex && origin.Run.lastNodePoint.y == origin.attempt.LayerIndex; }
+        catch { return false; }
+    }
+    private static bool ReuseOriginIdentity(LaunchOrigin origin, CampaignState campaign, TeamData homeTeam)
+    {
         try {
             var roster = GoaliePersistenceBridge.Roster;
             var saved = roster.Selection;
@@ -114,7 +129,6 @@ internal static class GoalieMatchLaunchGate
                 && homeTeam?.Pointer == origin.HomeTeam.Pointer && homeTeam.id == origin.attempt.HomeTeamId
                 && homeTeam.goalie?.id == origin.attempt.GoalieId && origin.Run.runID == origin.attempt.RunId
                 && origin.Run.squadId == origin.attempt.SquadId && origin.Run.CurrentAct == origin.attempt.Act
-                && origin.Run.currentNodePoint.x == origin.attempt.NodeIndex && origin.Run.currentNodePoint.y == origin.attempt.LayerIndex
                 && roster.UnavailableReason == null
                 && string.Equals(origin.Folder, Plugin.ModFolder, StringComparison.OrdinalIgnoreCase)
                 && roster.Owns(campaign.runData, Plugin.ModFolder) && saved?.Attempt?.Lifecycle == "Armed"

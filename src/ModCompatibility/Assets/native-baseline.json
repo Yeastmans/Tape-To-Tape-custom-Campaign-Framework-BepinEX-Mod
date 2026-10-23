@@ -1,8 +1,8 @@
 {
-  "Id": "6C412AFD771A54EEA9757974A2275C9963A492FA301C43FCD20398F300898059",
+  "Id": "7183AE880DD21C2B7B8347C8E7F711E0715E8829F9A4F1C23552C9EA0B538834",
   "Profile": {
     "RuntimeContract": "t2t-native-v2-20261020",
-    "BaselineId": "6C412AFD771A54EEA9757974A2275C9963A492FA301C43FCD20398F300898059",
+    "BaselineId": "7183AE880DD21C2B7B8347C8E7F711E0715E8829F9A4F1C23552C9EA0B538834",
     "Build": "26150666",
     "GameHash": "FD2E6FDF3900272C2E9B201F3280AF15C44D330D28E131E00FE6C99D007C4B93",
     "MetadataHash": "22E6F00B8CE5F83A3D167410FE6B7C76086B201BC48CB83CFAA3BD4E577CAC37",
@@ -2349,6 +2349,21 @@
         "Prefix": "ExecutionPrefix",
         "Postfix": "",
         "Finalizer": "FlowFinalizer"
+      },
+      {
+        "Feature": "goalie-match-completion",
+        "Id": "goalie-completion-node-clear",
+        "Assembly": "MainScriptsAssembly",
+        "DeclaringType": "State.CampaignState",
+        "Method": "SetCurrentNode",
+        "IsStatic": false,
+        "ReturnType": "System.Void",
+        "Parameters": [
+          "STS.Map.MapNode"
+        ],
+        "Prefix": "NodeClearPrefix",
+        "Postfix": "",
+        "Finalizer": "NodeClearFinalizer"
       },
       {
         "Feature": "goalie-match-completion",
@@ -5342,6 +5357,11 @@
       "BodyHash": "810E46EE3F5D225407AD49571419A118B2045597E1A777E22D37E01D4C6C7892"
     },
     {
+      "Name": "State.EndOfGame.EndOfGameFlowController$$.ctor::System.Void .ctor()",
+      "Signature": "System.Void .ctor()",
+      "BodyHash": "28E6CD57FD1C9285316D850E040EFC84B4024771832C690174A7040B5E541E2E"
+    },
+    {
       "Name": "State.EndOfGame.EndOfGameFlowController$$CheckRunWon::System.Void CheckRunWon(STS.Map.MatchBlueprint currentNode)",
       "Signature": "System.Void CheckRunWon(STS.Map.MatchBlueprint currentNode)",
       "BodyHash": "91916C6DDEC6FDDB17F52D693808F6785C606AC150E30F7DA392EEE30D3FAE24"
@@ -5357,6 +5377,11 @@
       "BodyHash": "65546517624046EBE62252599028E3FA50878976A42B1D07FDF70E15D9C88C3B"
     },
     {
+      "Name": "State.EndOfGame.EndOfGameFlowController$$UpdateEndOfGameContext::System.Void UpdateEndOfGameContext()",
+      "Signature": "System.Void UpdateEndOfGameContext()",
+      "BodyHash": "0C3BB122425FD7A7C072A32CBF5EC44ABAD2736EAD64EEC38FF5808C615394D2"
+    },
+    {
       "Name": "State.EndOfGame.Steps.CampaignUpdateStep$$Execute::Cysharp.Threading.Tasks.UniTask Execute(State.EndOfGame.EndOfGameContext ctx)",
       "Signature": "Cysharp.Threading.Tasks.UniTask Execute(State.EndOfGame.EndOfGameContext ctx)",
       "BodyHash": "F81B25DA476B6BE69B72F3BFD633430AF543D71F2D3CD7F2B8706ECFF4488481"
@@ -5365,6 +5390,11 @@
       "Name": "State.EndOfGame.Steps.CampaignUpdateStep$$UpdateCampaignPowerupAndRelicState::System.Void UpdateCampaignPowerupAndRelicState(State.EndOfGame.EndOfGameContext ctx)",
       "Signature": "System.Void UpdateCampaignPowerupAndRelicState(State.EndOfGame.EndOfGameContext ctx)",
       "BodyHash": "C2998B0955B64F5F0D7446EDA84C5CC923A40D70AD2F5438361799628774B1A3"
+    },
+    {
+      "Name": "State.EndOfGame.Steps.RewardsStep.\u003CProcessAllRewards\u003Ed__#$$MoveNext::System.Void MoveNext()",
+      "Signature": "System.Void MoveNext()",
+      "BodyHash": "26E35E49045E9184F4255E7928CCCC1AB164CD23DFACF44D2E804BBD7C065D57"
     },
     {
       "Name": "State.EndOfGame.Steps.RewardsStep$$GenerateTalentRewards::Rogue.SkaterTalentRewards GenerateTalentRewards(Data.TeamData teamData, Rogue.Powerups.Repository.ITalentRepository talentRepository)",

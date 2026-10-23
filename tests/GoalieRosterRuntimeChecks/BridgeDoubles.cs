@@ -5,6 +5,8 @@ using CampaignCore;
 using EndlessMode;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 
+namespace Data { public partial class RunData { public Point lastNodePoint = new(); } }
+
 static class BridgeDoubleHooks
 {
     internal static object Call(string name, object[] args = null) {
