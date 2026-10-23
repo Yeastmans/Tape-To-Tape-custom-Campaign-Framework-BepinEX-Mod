@@ -150,6 +150,51 @@ internal static class GoalieMatchCompletion
     private static void ObserveOrigin(GoalieMatchLaunchGate.LaunchOrigin origin) => previewOrigin = origin;
     private static bool Owned(Session session) => session != null && !session.Invalid && !session.Completing
         && GoalieMatchLaunchGate.TryReuseOrigin(session.Origin, session.Origin.Campaign, session.Origin.HomeTeam);
+    // Temporary live diagnosis of completion boundaries. Evidence collection
+    // must never change a native callback's decision or exception propagation.
+    private static void TraceCompletion(string stage, Func<string> capture)
+    {
+        try { Plugin.Log.LogWarning("[GoalieCompletion] utc=" + DateTime.UtcNow.ToString("O")
+            + "; stage=" + stage + "; " + CaptureSide(capture)); } catch { }
+    }
+    private static string CompletionSession(Session session)
+    {
+        if (session == null) return "session=none";
+        var origin = session.Origin;
+        var run = origin.Campaign.runData;
+        var saved = GoaliePersistenceBridge.Roster.Selection;
+        return "token=" + origin.Attempt.Token + "; owned=" + Owned(session)
+            + "; invalid=" + session.Invalid + "; completing=" + session.Completing + "; participant=" + session.Participant
+            + "; campaign=" + origin.Campaign.Pointer.ToString("X") + "/" + CampaignUtil.CampaignState?.Pointer.ToString("X")
+            + "; run=" + origin.Run.Pointer.ToString("X") + "/" + run?.Pointer.ToString("X")
+            + "; runId=" + origin.Attempt.RunId + "/" + run?.runID
+            + "; squad=" + origin.Attempt.SquadId + "/" + run?.squadId
+            + "; team=" + origin.HomeTeam.Pointer.ToString("X") + "/" + run?.teamData?.Pointer.ToString("X")
+            + "; teamId=" + origin.Attempt.HomeTeamId + "/" + origin.HomeTeam.id
+            + "; goalieId=" + origin.Attempt.GoalieId + "/" + origin.HomeTeam.goalie?.id
+            + "; act=" + origin.Attempt.Act + "/" + run?.CurrentAct
+            + "; node=" + origin.Attempt.NodeIndex + "/" + run?.currentNodePoint.x
+            + "; layer=" + origin.Attempt.LayerIndex + "/" + run?.currentNodePoint.y
+            + "; default=" + Plugin.IsDefaultMode + "; folderSame=" + string.Equals(origin.Folder, Plugin.ModFolder, StringComparison.OrdinalIgnoreCase)
+            + "; rosterOwned=" + GoaliePersistenceBridge.Roster.Owns(run, Plugin.ModFolder)
+            + "; unavailable=" + GoaliePersistenceBridge.Roster.UnavailableReason
+            + "; savedLifecycle=" + saved?.Attempt?.Lifecycle + "; savedSame=" + origin.Attempt.Same(saved?.Attempt)
+            + "; savedToken=" + saved?.ArmedAttemptToken + "; processed=" + saved?.ProcessedAttemptTokens.Contains(origin.Attempt.Token);
+    }
+    private static string CompletionContext(EndOfGameContext context)
+    {
+        if (context == null) return "context=none";
+        Contexts.TryGetValue(context.Pointer, out var owner);
+        Binding binding = null;
+        if (context.GameModeController != null) Controllers.TryGetValue(context.GameModeController.Pointer, out binding);
+        return "context=" + context.Pointer.ToString("X") + "; gameType=" + context.GameType
+            + "; contextCampaign=" + context.CampaignState?.Pointer.ToString("X")
+            + "; contextController=" + context.GameModeController?.Pointer.ToString("X")
+            + "; registeredController=" + owner?.Controller.ToString("X")
+            + "; controllerBound=" + (binding != null) + "; sameSession=" + ReferenceEquals(owner?.Session, binding?.Session)
+            + "; blueprint=" + context.MatchNode?.Pointer.ToString("X") + "/" + binding?.Session.Blueprint.ToString("X")
+            + "; bindingFailure=" + BindingFailure(binding) + "; " + CompletionSession(binding?.Session ?? owner?.Session);
+    }
     private static bool Bound(Binding binding) => BindingFailure(binding) == null;
     private static string BindingFailure(Binding binding)
     {
@@ -404,7 +449,11 @@ internal static class GoalieMatchCompletion
                 Controllers[binding.Controller.Pointer] = binding; Managers[binding.Manager.Pointer] = binding;
             } else Unavailable(binding.Session, "Native goalie initialization did not preserve the originating home goalie.");
         } catch (Exception ex) { if (__state?.Binding != null) __state.Binding.Session.Invalid = true; Warn(ex.Message); }
-        finally { if (__state != null && ReferenceEquals(initialization, __state)) initialization = __state.Previous; }
+        finally {
+            TraceCompletion("initialize-exit", () => "original=" + __runOriginal + "; exception=" + __exception?.GetType().Name
+                + "; observed=" + __state?.Observed + "; controllers=" + Controllers.Count + "; " + CompletionSession(__state?.Binding?.Session));
+            if (__state != null && ReferenceEquals(initialization, __state)) initialization = __state.Previous;
+        }
         return __exception;
     }
     private static void Played(Binding binding)
@@ -423,6 +472,7 @@ internal static class GoalieMatchCompletion
         string id = binding.Live.id;
         if (binding.Session.Participant != null && binding.Session.Participant != id) binding.Session.Invalid = true;
         else binding.Session.Participant = id;
+        TraceCompletion("played", () => CompletionSession(binding.Session));
     }
     private static Exception NormalPlayFinalizer(GameManager __instance, bool __runOriginal, Exception __exception)
     {
@@ -471,6 +521,11 @@ internal static class GoalieMatchCompletion
     }
     private static Exception FlowFinalizer(EndOfGameFlowController __instance, bool __runOriginal, Exception __exception)
     {
+        TraceCompletion("flow-initialize", () => "original=" + __runOriginal + "; exception=" + __exception?.GetType().Name
+            + "; flow=" + __instance?.Pointer.ToString("X") + "; flowCampaign=" + __instance?._campaignState?.Pointer.ToString("X")
+            + "; flowTeam=" + __instance?._teamSelection?.homeTeam?.Pointer.ToString("X")
+            + "; flowController=" + __instance?._gameModeController?.Pointer.ToString("X")
+            + "; pending={" + CompletionSession(pendingScene) + "}; " + CompletionContext(__instance?._context));
         try {
             var context = __instance?._context;
             if (__exception != null || !__runOriginal || context == null || Contexts.ContainsKey(context.Pointer)) return __exception;
@@ -495,6 +550,7 @@ internal static class GoalieMatchCompletion
                 }
             }
         } catch (Exception ex) { Warn(ex.Message); }
+        finally { TraceCompletion("flow-exit", () => CompletionContext(__instance?._context)); }
         return __exception;
     }
     private static void UpdatePrefix(EndOfGameContext __0, out Update __state)
@@ -508,12 +564,18 @@ internal static class GoalieMatchCompletion
                 && __0.MatchNode?.Pointer == binding.Session.Blueprint)
                 __state.Binding = binding;
         } catch (Exception ex) { Warn(ex.Message); }
+        finally {
+            var evidence = __state;
+            TraceCompletion("update-entry", () => "accepted=" + (evidence.Binding != null) + "; " + CompletionContext(__0));
+        }
     }
     // Install with Priority.First. A missing prefix/foreign skip is unknown.
     // The actual owned custom prefix reports its decision into this scope.
     private static void DeparturePrefix(Rogue.FreeAgents.FreeAgentManager __instance, out Departure __state)
     {
         __state = new Departure { Previous = departure, Update = update, Manager = __instance }; departure = __state;
+        TraceCompletion("departure-entry", () => "scope=" + (update != null) + "; bound=" + (update?.Binding != null)
+            + "; managerCampaign=" + __instance?._campaignState?.Pointer.ToString("X"));
     }
     private static void ObserveRetention(Rogue.FreeAgents.FreeAgentManager manager, bool prevented, bool originalAllowed)
     {
@@ -541,11 +603,21 @@ internal static class GoalieMatchCompletion
             owner.ProtectionKnown = !owner.DepartureSeen && known;
             owner.DepartureSeen = true; owner.Prevented = __state.Prevented;
         } catch (Exception ex) { Warn(ex.Message); }
-        finally { if (__state != null && ReferenceEquals(departure, __state)) departure = __state.Previous; }
+        finally {
+            TraceCompletion("departure-exit", () => "original=" + __runOriginal + "; exception=" + __exception?.GetType().Name
+                + "; seenCustom=" + __state?.SeenCustom + "; known=" + __state?.Known + "; custom=" + __state?.Custom
+                + "; originalAllowed=" + __state?.OriginalAllowed + "; prevented=" + __state?.Prevented
+                + "; departureSeen=" + __state?.Update?.DepartureSeen + "; protectionKnown=" + __state?.Update?.ProtectionKnown);
+            if (__state != null && ReferenceEquals(departure, __state)) departure = __state.Previous;
+        }
         return __exception;
     }
     private static Exception UpdateFinalizer(EndOfGameContext __0, Update __state, UniTask __result, bool __runOriginal, Exception __exception)
     {
+        TraceCompletion("update-return", () => "original=" + __runOriginal + "; exception=" + __exception?.GetType().Name
+            + "; status=" + __result.Status + "; scopedContext=" + __state?.Context?.Pointer.ToString("X")
+            + "; accepted=" + (__state?.Binding != null) + "; departureSeen=" + __state?.DepartureSeen
+            + "; protectionKnown=" + __state?.ProtectionKnown + "; prevented=" + __state?.Prevented + "; " + CompletionContext(__0));
         try {
             var binding = __state?.Binding; var session = binding?.Session;
             if (session == null || session.Completing || !Owned(session)) return __exception;
@@ -560,7 +632,10 @@ internal static class GoalieMatchCompletion
                 else if (result.Receipt?.Durable != true) Warn(result.Message);
             })) Unavailable(session, "Goalie completion save was not accepted.");
         } catch (Exception ex) { if (__state?.Binding != null) Unavailable(__state.Binding.Session, ex.Message); }
-        finally { if (__state != null && ReferenceEquals(update, __state)) update = __state.Previous; }
+        finally {
+            TraceCompletion("update-exit", () => CompletionSession(__state?.Binding?.Session));
+            if (__state != null && ReferenceEquals(update, __state)) update = __state.Previous;
+        }
         return __exception;
     }
     private static void Unavailable(Session session, string detail)

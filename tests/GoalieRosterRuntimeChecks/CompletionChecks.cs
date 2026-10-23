@@ -118,6 +118,13 @@ static class CompletionChecks
         Call("UpdateFinalizer", f.Context, state, new UniTask { Status = status }, true, error);
     }
     internal static void Run(Action<bool, string> check) {
+        bool diagnosticInvoked = false;
+        Call("TraceCompletion", "test-capture", new Func<string>(() => { diagnosticInvoked = true; throw new InvalidOperationException("diagnostic getter"); }));
+        check(diagnosticInvoked && Plugin.Log.Warnings.Last().Contains("snapshot-error:InvalidOperationException"), "CompletionDiagnosticGetterFailureIsReportedWithoutEscaping");
+        var diagnosticLog = Plugin.Log;
+        try { Plugin.Log = null; Call("TraceCompletion", "test-logger", new Func<string>(() => "evidence")); }
+        finally { Plugin.Log = diagnosticLog; }
+        check(ReferenceEquals(Plugin.Log, diagnosticLog), "CompletionDiagnosticLoggerFailureCannotChangeControlFlow");
         var originalError = new Exception("foreign failure");
         check((string)Call("CaptureSide", new Func<string>(() => throw new InvalidOperationException("diagnostic getter"))) == "snapshot-error:InvalidOperationException",
             "ThrowingDiagnosticCaptureCannotEscapeIntoHandoffDecision");
