@@ -1,30 +1,13 @@
-# Live goalie identity investigation
+# Live goalie identity investigation and native side handoff
 
-The reviewed 26150666 runtime reached live play with the Gold OneMatch goalie,
-but rejected its live binding before actual match completion. The observed
-0-0 screen was the transition into overtime, not a completed match. No contract
-debit or expiry acceptance is established by that session.
+The installed diagnostic runtime D978E6411423604924C540492593D0895216493A00C5394D367BC3157202E03B reproduced `reason=live-data` during an actual match. The receiver remained `260A8C2E540`, while the two native data fields changed together from `261351416C0` to `26131711D80`. Stable goalie ID, manager, campaign and selected team were unchanged. The warning was collected after regulation; the log has no timestamps, so its exact frame is not established. The 0-0 screen led into overtime, not match completion.
 
-The old message combined several distinct failures: manager, controller campaign,
-game type, selected team, goalie receiver, two live data pointers and stable
-goalie ID. It did not prove that the goalie ID itself changed. Display names are
-not part of these predicates. Native OnFaceoff and OnPuckDropLaunch both set
-isGamePlaying before returning, so ignoring non-playing callbacks is not a
-supported remedy. A read-only native probe after restart found no live match
-manager and cannot reconstruct the earlier binding.
+Native review identifies a missing owned lifecycle boundary. `Team.OnEndOfPeriodFinished` calls `SetSide`, which calls `SwitchSide`. `SwitchSide` selects the north/south scene goalie, assigns its team, and calls `Goaltender.Initialize` with the exact persistent home-team goalie. Initialize creates a new live clone and writes both goalie/skater data fields. Side changes may reuse the receiver or select the other one. These four native methods are equivalent to build 26141904 after relocations: this is an existing mod binding omission, not a newly changed Steam body.
 
-This diagnostic change retains every existing fail-closed predicate and adds one
-bounded warning before invalidation. `[GoalieIdentity]` records the first failed
-predicate, expected and current native pointers, goalie IDs, run and attempt
-token. Diagnostic failure cannot prevent invalidation. No hook, profile, save
-format or contract-accounting behavior changes.
+The repair observes a reviewed `Team.SwitchSide(bool)` prefix/finalizer scope. Entry requires the current, already-proven home binding and its exact campaign, team selection, source goalie and attempt. The existing Initialize hook separately recognizes this direct persistent-source path. It accepts only the native team's selected receiver with its matching team back-reference, a successful original Initialize, and its resulting distinct live clone with the same stable ID and both data fields agreeing. The replacement binding is published only after successful original SwitchSide completion, unchanged ownership, requested side and complete candidate validation. It retains the session, participant and attempt; it does not debit a match. Skips, exceptions, missing observations and mismatches fail closed. Unrelated same-ID clones still fail the original pointer guard.
 
-Two regression assertions reproduce absent diagnostic evidence before the change:
-one checks an actual stable-ID mismatch, and one checks an unproven same-ID clone.
-Both cases must still block completion. The next controlled live attempt must
-capture this warning before an identity repair can be justified. Do not relax
-pointer equality or fabricate a completion from the persisted Armed record.
+The explicit hook inventory adds one named hook (52 total, 38 goalie lifecycle) and protects the four reviewed native methods plus seven event construction/registration/dispatch dependencies (1463 total). Exact installed native/metadata hashes and all prior raw contracts remain unchanged. Current native review and interop diagnostics are saved under `artifacts/goalie-live-identity-20261023`. The prior baseline is preserved there; the new baseline rejects the incomplete previous hook inventory. The installed diagnostic predecessor is added to the updater's replacement allowlist.
 
-Evidence is under canonical `artifacts/goalie-live-identity-20261023`; the
-controller preserves original logs/saves in
-`artifacts/gameplay-validation-20261023/after-live-regulation`.
+Regression evidence: the new period handoff case first failed on the previous source. The repaired source passes 468 completion checks, covering same/different receiver, repeated handoffs, exact-once debit and reserve promotion at actual completion, direct-source mismatch, wrong team/selection, visitor flag, missing initialization, ID mismatch, wrong side, foreign skips and exceptions, state restoration, and independent opponent scope. The paired home-then-visitor regression alternates both physical receivers over three periods; setup before first play is also covered. Native registration and the event's safe=true forward dispatch establish home-before-visitor order. Existing unexplained-clone rejection remains green. Compatibility checks pass 132 cases, and installed Harmony wrapper diagnostics pass 64 cases without native execution or detours. The candidate records accepted side handoffs so the next actual gameplay session can distinguish native cloning from another unexplained mutation.
+
+Actual gameplay acceptance of this repair remains pending. A fresh owned attempt must survive initialization and regulation/overtime, retain its contract badge, and finish a real match before contract debit/expiry can be accepted. The controller owns candidate installation, saved-content preservation and live validation; this source task did not change installed files or saves.

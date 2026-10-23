@@ -25,6 +25,7 @@ internal static class GoalieMatchCompletion
         Hook("challenge", "STS.Map.ChallengeMapNode", "LaunchMatch", "System.Void", Array.Empty<string>(), "NodePrefix", "NodeFinalizer"),
         Hook("elite", "STS.Map.EliteMapNode", "LaunchMatch", "System.Void", Array.Empty<string>(), "NodePrefix", "NodeFinalizer"),
         Hook("initialize", "State.GameModeControllers.GameControllerBase", "InitializeGoaltenders", "System.Void", Array.Empty<string>(), "InitializePrefix", "InitializeFinalizer"),
+        Hook("side", "Tape2Tape.Team", "SwitchSide", "System.Void", new[] { "System.Boolean" }, "SidePrefix", "SideFinalizer"),
         Hook("goalie", "Goaltender.Goaltender", "Initialize", "System.Void", new[] { "Data.GoaltenderData", "System.Boolean" }, "GoaliePrefix", "GoalieFinalizer"),
         Hook("faceoff", "GameManager", "OnFaceoff", "System.Void", new[] { "Events.FaceoffArgs" }, "ExecutionPrefix", "NormalPlayFinalizer"),
         Hook("puckdrop", "GameManager", "OnPuckDropLaunch", "System.Void", Array.Empty<string>(), "ExecutionPrefix", "NormalPlayFinalizer"),
@@ -71,9 +72,18 @@ internal static class GoalieMatchCompletion
         internal Binding Binding;
         internal bool Observed;
     }
+    private sealed class SideHandoff
+    {
+        internal SideHandoff Previous;
+        internal Binding Before, Candidate;
+        internal Team Team;
+        internal GoaltenderData Source;
+        internal bool North, Failed;
+    }
     private sealed class CloneObservation
     {
         internal Initialization Scope;
+        internal SideHandoff Side;
         internal GoaltenderData First;
     }
     private sealed class Update
@@ -104,6 +114,7 @@ internal static class GoalieMatchCompletion
     private static Binding pendingOvertime;
     private static bool subscribed;
     [ThreadStatic] private static Initialization initialization;
+    [ThreadStatic] private static SideHandoff sideHandoff;
     [ThreadStatic] private static Update update;
     [ThreadStatic] private static Departure departure;
 
@@ -119,7 +130,7 @@ internal static class GoalieMatchCompletion
         GoalieMatchLaunchGate.LaunchAuthorized -= ObserveOrigin;
         GoalieContractRuntime.RetentionEvaluated -= ObserveRetention;
         subscribed = false; previewOrigin = null; pendingScene = null; pendingOvertime = null;
-        Controllers.Clear(); Managers.Clear(); Contexts.Clear(); initialization = null; update = null; departure = null;
+        Controllers.Clear(); Managers.Clear(); Contexts.Clear(); initialization = null; sideHandoff = null; update = null; departure = null;
     }
     private static void ObserveOrigin(GoalieMatchLaunchGate.LaunchOrigin origin) => previewOrigin = origin;
     private static bool Owned(Session session) => session != null && !session.Invalid && !session.Completing
@@ -191,10 +202,61 @@ internal static class GoalieMatchCompletion
             __state.Binding = new Binding { Session = session, Controller = __instance, Manager = manager, Goalie = manager._homeTeam.goaltender };
         } catch (Exception ex) { Warn(ex.Message); }
     }
+    private static bool SideOwned(SideHandoff scope)
+    {
+        var binding = scope?.Before;
+        return binding != null && Owned(binding.Session)
+            && GameManager.Instance?.Pointer == binding.Manager.Pointer
+            && binding.Manager._homeTeam?.Pointer == scope.Team.Pointer && scope.Team.isHomeTeam
+            && scope.Team.teamSelection?.Pointer == binding.Controller.teamSelectionState?.Pointer
+            && binding.Controller.campaignState?.Pointer == binding.Session.Origin.Campaign.Pointer
+            && scope.Team.teamSelection?.gameType == ScriptableStates.GameType.Rogue
+            && scope.Team.teamSelection.homeTeam?.Pointer == binding.Session.Origin.HomeTeam.Pointer
+            && scope.Team.teamSelection.homeTeam.goalie?.Pointer == scope.Source.Pointer
+            && scope.Source.id == binding.Session.Origin.Attempt.GoalieId;
+    }
+    private static void SidePrefix(Team __instance, bool __0, out SideHandoff __state)
+    {
+        __state = new SideHandoff { Previous = sideHandoff, Team = __instance, North = __0 }; sideHandoff = __state;
+        try {
+            var manager = GameManager.Instance;
+            if (manager == null || !Managers.TryGetValue(manager.Pointer, out var before)
+                || manager._homeTeam?.Pointer != __instance?.Pointer || !Bound(before)) return;
+            __state.Before = before; __state.Source = before.Session.Origin.HomeTeam.goalie;
+            if (!SideOwned(__state) || __state.Previous?.Before != null) __state.Failed = true;
+        } catch (Exception ex) { __state.Failed = true; Warn(ex.Message); }
+    }
+    private static Exception SideFinalizer(SideHandoff __state, bool __runOriginal, Exception __exception)
+    {
+        try {
+            if (__state?.Before == null) return __exception;
+            var candidate = __state.Candidate;
+            if (__exception == null && __runOriginal && ReferenceEquals(sideHandoff, __state) && !__state.Failed
+                && SideOwned(__state) && __state.Team.isNorth == __state.North && candidate != null && Bound(candidate)
+                && candidate.Goalie.Team?.Pointer == __state.Team.Pointer) {
+                Controllers[candidate.Controller.Pointer] = candidate; Managers[candidate.Manager.Pointer] = candidate;
+                if (ReferenceEquals(pendingOvertime, __state.Before)) pendingOvertime = candidate;
+                Plugin.Log.LogWarning("[GoalieIdentity] handoff=side; token=" + candidate.Session.Origin.Attempt.Token
+                    + "; id=" + candidate.Live.id + "; oldReceiver=" + __state.Before.Goalie.Pointer.ToString("X")
+                    + "; receiver=" + candidate.Goalie.Pointer.ToString("X") + "; oldLive=" + __state.Before.Live.Pointer.ToString("X")
+                    + "; live=" + candidate.Live.Pointer.ToString("X"));
+            } else Unavailable(__state.Before.Session, "Native goalie side switching did not preserve the originating home goalie.");
+        } catch (Exception ex) { if (__state?.Before != null) Unavailable(__state.Before.Session, ex.Message); }
+        finally { if (__state != null && ReferenceEquals(sideHandoff, __state)) sideHandoff = __state.Previous; }
+        return __exception;
+    }
     private static void GoaliePrefix(Goaltender.Goaltender __instance, GoaltenderData __0, bool __1, out CloneObservation __state)
     {
         __state = null;
         try {
+            var side = sideHandoff;
+            if (side?.Before != null) {
+                if (side.Failed || side.Candidate != null || !SideOwned(side) || !__1 || __0?.Pointer != side.Source.Pointer
+                    || __instance?.Pointer != side.Team.goaltender?.Pointer || __instance.Team?.Pointer != side.Team.Pointer) {
+                    side.Failed = true; return;
+                }
+                __state = new CloneObservation { Side = side, First = __0 }; return;
+            }
             var scope = initialization; var binding = scope?.Binding;
             if (binding == null || !__1 || __instance?.Pointer != binding.Goalie.Pointer) return;
             if (__0 == null || __0.id != binding.Session.Origin.Attempt.GoalieId
@@ -206,12 +268,24 @@ internal static class GoalieMatchCompletion
     {
         try {
             if (__state == null) return __exception;
+            if (__state.Side is SideHandoff side) {
+                var output = __instance.goaltenderData;
+                if (__exception != null || !__runOriginal || !ReferenceEquals(sideHandoff, side) || side.Candidate != null
+                    || !SideOwned(side) || output == null || output.Pointer == __state.First.Pointer
+                    || output.id != side.Before.Session.Origin.Attempt.GoalieId || __instance._skaterData?.Pointer != output.Pointer
+                    || __instance.Pointer != side.Team.goaltender?.Pointer || __instance.Team?.Pointer != side.Team.Pointer) {
+                    side.Failed = true; return __exception;
+                }
+                side.Candidate = new Binding { Session = side.Before.Session, Controller = side.Before.Controller,
+                    Manager = side.Before.Manager, Goalie = __instance, Live = output };
+                return __exception;
+            }
             var binding = __state.Scope.Binding; var live = __instance.goaltenderData;
             if (__exception != null || !__runOriginal || !ReferenceEquals(initialization, __state.Scope)
                 || !Owned(binding.Session) || live == null || live.Pointer == __state.First.Pointer
                 || live.id != __state.First.id || __instance._skaterData?.Pointer != live.Pointer) { binding.Session.Invalid = true; return __exception; }
             binding.Live = live; __state.Scope.Observed = true;
-        } catch (Exception ex) { if (__state?.Scope.Binding != null) __state.Scope.Binding.Session.Invalid = true; Warn(ex.Message); }
+        } catch (Exception ex) { if (__state?.Side != null) __state.Side.Failed = true; if (__state?.Scope?.Binding != null) __state.Scope.Binding.Session.Invalid = true; Warn(ex.Message); }
         return __exception;
     }
     private static Exception InitializeFinalizer(Initialization __state, bool __runOriginal, Exception __exception)

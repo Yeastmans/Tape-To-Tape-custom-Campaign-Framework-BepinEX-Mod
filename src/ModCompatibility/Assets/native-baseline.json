@@ -1,8 +1,8 @@
 {
-  "Id": "B5AAD9100629E15F49F820FAA258480F41B01B99349AA0F6148E44A51319C458",
+  "Id": "40BBD82ED3BAED09F198B4ECEF9D6B6DA9E008EFE4300BC7E91467215AAFB14C",
   "Profile": {
     "RuntimeContract": "t2t-native-v2-20261020",
-    "BaselineId": "B5AAD9100629E15F49F820FAA258480F41B01B99349AA0F6148E44A51319C458",
+    "BaselineId": "40BBD82ED3BAED09F198B4ECEF9D6B6DA9E008EFE4300BC7E91467215AAFB14C",
     "Build": "26150666",
     "GameHash": "FD2E6FDF3900272C2E9B201F3280AF15C44D330D28E131E00FE6C99D007C4B93",
     "MetadataHash": "22E6F00B8CE5F83A3D167410FE6B7C76086B201BC48CB83CFAA3BD4E577CAC37",
@@ -2197,6 +2197,21 @@
       },
       {
         "Feature": "goalie-match-completion",
+        "Id": "goalie-completion-side",
+        "Assembly": "MainScriptsAssembly",
+        "DeclaringType": "Tape2Tape.Team",
+        "Method": "SwitchSide",
+        "IsStatic": false,
+        "ReturnType": "System.Void",
+        "Parameters": [
+          "System.Boolean"
+        ],
+        "Prefix": "SidePrefix",
+        "Postfix": "",
+        "Finalizer": "SideFinalizer"
+      },
+      {
+        "Feature": "goalie-match-completion",
         "Id": "goalie-completion-goalie",
         "Assembly": "MainScriptsAssembly",
         "DeclaringType": "Goaltender.Goaltender",
@@ -2559,6 +2574,31 @@
       "Name": "Arena.IceSetup$$SwitchIceType",
       "Signature": "Cysharp.Threading.Tasks.UniTask SwitchIceType(Arena.IceSetup.IceType type)",
       "BodyHash": "68D740F72DE782D89D0A56C57AB8ECC40A00E2FFB3F6EF6321982B136F385FFB"
+    },
+    {
+      "Name": "BishopGames.AbstractEvent$$.ctor::System.Void .ctor(System.Boolean useSafeInvocation = False)",
+      "Signature": "System.Void .ctor(System.Boolean useSafeInvocation = False)",
+      "BodyHash": "CC1567476EC0E7A9460DD1E0209C51A72D8076EDC9027BF39366AF580DEE0B87"
+    },
+    {
+      "Name": "BishopGames.AbstractEvent$$Register::System.Void Register(System.Delegate toRegister, System.String function = null)",
+      "Signature": "System.Void Register(System.Delegate toRegister, System.String function = null)",
+      "BodyHash": "D28AB92B5DA382D6B7EAF3C7E9B2A83BF39B04A9762D19994543B75452EEFBC8"
+    },
+    {
+      "Name": "BishopGames.AbstractEvent$$SafeInvoke::System.Void SafeInvoke(System.Action\u00601\u003CSystem.Delegate\u003E invokeDef)",
+      "Signature": "System.Void SafeInvoke(System.Action\u00601\u003CSystem.Delegate\u003E invokeDef)",
+      "BodyHash": "197FBFC0C95ECF09EA0B5571159B2F716CB4D91D31AD875374E2C6A2F4996A59"
+    },
+    {
+      "Name": "BishopGames.AbstractSingleEvent$$Register::System.Void Register(System.Delegate toRegister, System.String function = null)",
+      "Signature": "System.Void Register(System.Delegate toRegister, System.String function = null)",
+      "BodyHash": "61E43275E5C10D94654368834A0B3B7DD0464509E45283DF41B99296E1675A06"
+    },
+    {
+      "Name": "BishopGames.SingleEvent$$Invoke::System.Void Invoke()",
+      "Signature": "System.Void Invoke()",
+      "BodyHash": "B2B5525AF2605FA9E51DEA378E1022EB3414BB4D830BE95EA16C204157FAF061"
     },
     {
       "Name": "BishopGames.UI.AbstractMenu$$get_IsHiding::System.Boolean get_IsHiding()",
@@ -3406,6 +3446,11 @@
       "BodyHash": "5F476D88496BC2B554BED3DCCFA24096A3CC952979EC3CF8E8B7E49F940D4B8E"
     },
     {
+      "Name": "Events.GameplayEvents$$.cctor::System.Void .cctor()",
+      "Signature": "System.Void .cctor()",
+      "BodyHash": "44FF9D7FF4903D391120C4A700674011D62304D2FE00553CE1A4189B50B132A2"
+    },
+    {
       "Name": "FaceoffWithReferee$$IsCornerFaceoff::System.Boolean IsCornerFaceoff()",
       "Signature": "System.Boolean IsCornerFaceoff()",
       "BodyHash": "5D9353C526D796049F1C00F384A4B423BD9883CBD509D063529A38556192ACDF"
@@ -3524,6 +3569,11 @@
       "Name": "GameManager$$get_WinningTeam::Tape2Tape.Team get_WinningTeam()",
       "Signature": "Tape2Tape.Team get_WinningTeam()",
       "BodyHash": "9A8F62D056B18CBE33C61DF3FAEEBC97C57313ADD9630F25FF24CAC79C04232A"
+    },
+    {
+      "Name": "GameManager$$InternalInit::System.Void InternalInit()",
+      "Signature": "System.Void InternalInit()",
+      "BodyHash": "4400FD6110D0B5324238D3FD078EACFB805DE78550175B4F930D60ADAB0A584A"
     },
     {
       "Name": "GameManager$$InternalOnDestroy::System.Void InternalOnDestroy()",
@@ -9186,6 +9236,11 @@
       "BodyHash": "1A99240D84973A8B3CFC4F9968BB1EBD59B0AFE492F19CEC7DA0F6C7F8260267"
     },
     {
+      "Name": "Tape2Tape.Team$$FindSideGoalie::Goaltender.Goaltender FindSideGoalie(System.Boolean north)",
+      "Signature": "Goaltender.Goaltender FindSideGoalie(System.Boolean north)",
+      "BodyHash": "D574557393C25CF3C35C7DCA9D317EDEEBB4B31262D3D9DA887CD2F0FB019C21"
+    },
+    {
       "Name": "Tape2Tape.Team$$get_AllForwards::System.Collections.Generic.List\u00601\u003CSkaters.Forward\u003E get_AllForwards()",
       "Signature": "System.Collections.Generic.List\u00601\u003CSkaters.Forward\u003E get_AllForwards()",
       "BodyHash": "4679AE79F51BD8B498BFF59A5AE90F15AB56D730954EA093DA3B841E9E8B31AC"
@@ -9226,14 +9281,29 @@
       "BodyHash": "4EA4D7D0094D68BE837D54BE631C8E4DF6328BF25A5E5BC6A18CAFBD9AECDED4"
     },
     {
+      "Name": "Tape2Tape.Team$$OnEndOfPeriodFinished::System.Void OnEndOfPeriodFinished()",
+      "Signature": "System.Void OnEndOfPeriodFinished()",
+      "BodyHash": "C8BDD26FDD63D005143167607EAF2F538DB4DD72E95806B4D167E5F0DB18889E"
+    },
+    {
       "Name": "Tape2Tape.Team$$SetGoaltenderEquipmentSize::System.Void SetGoaltenderEquipmentSize()",
       "Signature": "System.Void SetGoaltenderEquipmentSize()",
       "BodyHash": "66AAA699496630000BD76BE059BADC9D41D896158D0DF5562BA548B1136DA2DC"
     },
     {
+      "Name": "Tape2Tape.Team$$SetSide::System.Void SetSide()",
+      "Signature": "System.Void SetSide()",
+      "BodyHash": "6C0CAA704AF2C349B2CCED1EC8A0A32509D9500FEF20C6EE0545A37308D99B24"
+    },
+    {
       "Name": "Tape2Tape.Team$$SwitchLineIfNeeded::System.Void SwitchLineIfNeeded(System.Boolean force = False)",
       "Signature": "System.Void SwitchLineIfNeeded(System.Boolean force = False)",
       "BodyHash": "1D6D8D29B406E27E0685007A6C2657540A564F5BC653163C366242C8500FFBD0"
+    },
+    {
+      "Name": "Tape2Tape.Team$$SwitchSide::System.Void SwitchSide(System.Boolean north)",
+      "Signature": "System.Void SwitchSide(System.Boolean north)",
+      "BodyHash": "CE906D4EF98D592AF9D2F010132713EED253D31356100AB90EF2A90031498561"
     },
     {
       "Name": "Tape2Tape.Team$$ToggleSelectedLine::System.Boolean ToggleSelectedLine()",

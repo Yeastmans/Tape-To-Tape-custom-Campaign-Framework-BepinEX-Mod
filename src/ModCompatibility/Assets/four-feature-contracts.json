@@ -536,6 +536,21 @@
     },
     {
       "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-side",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Tape2Tape.Team",
+      "Method": "SwitchSide",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "System.Boolean"
+      ],
+      "Prefix": "SidePrefix",
+      "Postfix": "",
+      "Finalizer": "SideFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
       "Id": "goalie-completion-goalie",
       "Assembly": "MainScriptsAssembly",
       "DeclaringType": "Goaltender.Goaltender",
@@ -1033,6 +1048,13 @@
     }
   ],
   "ProtectedMethods": [
+    "BishopGames.AbstractEvent$$SafeInvoke",
+    "BishopGames.SingleEvent$$Invoke",
+    "BishopGames.AbstractSingleEvent$$Register",
+    "BishopGames.AbstractEvent$$Register",
+    "BishopGames.AbstractEvent$$.ctor",
+    "Events.GameplayEvents$$.cctor",
+    "GameManager$$InternalInit",
     "AI.AIStates.AIState$$IsKnightOf",
     "AI.AIStates.AIState$$OnGoalScored",
     "AI.AIStates.AIState$$ResetToDefaultState",
@@ -1867,6 +1889,10 @@
     "Tape2Tape.Puck$$OnShot",
     "Tape2Tape.Puck$$TryGetScriptedGoalieRebound",
     "Tape2Tape.Team$$.ctor",
+    "Tape2Tape.Team$$FindSideGoalie",
+    "Tape2Tape.Team$$OnEndOfPeriodFinished",
+    "Tape2Tape.Team$$SetSide",
+    "Tape2Tape.Team$$SwitchSide",
     "Tape2Tape.Team$$ApplyLineForFaceoff",
     "Tape2Tape.Team$$ChangeLine",
     "Tape2Tape.Team$$DestroyRelicControllers",

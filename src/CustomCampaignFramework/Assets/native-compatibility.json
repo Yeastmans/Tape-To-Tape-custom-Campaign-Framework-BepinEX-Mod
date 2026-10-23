@@ -1,6 +1,6 @@
 {
   "RuntimeContract": "t2t-native-v2-20261020",
-  "BaselineId": "B5AAD9100629E15F49F820FAA258480F41B01B99349AA0F6148E44A51319C458",
+  "BaselineId": "40BBD82ED3BAED09F198B4ECEF9D6B6DA9E008EFE4300BC7E91467215AAFB14C",
   "Build": "26150666",
   "GameHash": "FD2E6FDF3900272C2E9B201F3280AF15C44D330D28E131E00FE6C99D007C4B93",
   "MetadataHash": "22E6F00B8CE5F83A3D167410FE6B7C76086B201BC48CB83CFAA3BD4E577CAC37",
@@ -2192,6 +2192,21 @@
       "Prefix": "InitializePrefix",
       "Postfix": "",
       "Finalizer": "InitializeFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-side",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Tape2Tape.Team",
+      "Method": "SwitchSide",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "System.Boolean"
+      ],
+      "Prefix": "SidePrefix",
+      "Postfix": "",
+      "Finalizer": "SideFinalizer"
     },
     {
       "Feature": "goalie-match-completion",

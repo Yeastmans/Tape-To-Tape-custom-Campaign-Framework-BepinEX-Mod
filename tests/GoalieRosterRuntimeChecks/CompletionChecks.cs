@@ -38,7 +38,7 @@ static class CompletionChecks
         GameControllerBase controller = shootout ? new State.GameModeControllers.Shootout.ShootoutGameModeController() : new NormalMatchGameModeController();
         controller.campaignState = campaign; controller.teamSelectionState = new() { homeTeam = campaign.runData.teamData, gameType = ScriptableStates.GameType.Rogue };
         var manager = GameManager.Instance = new() { _homeTeam = new() { _teamData = campaign.runData.teamData, goaltender = new() } };
-        manager._homeTeam.goaltender.Team = manager._homeTeam;
+        manager._homeTeam.goaltender.Team = manager._homeTeam; manager._homeTeam.isHomeTeam = true; manager._homeTeam.teamSelection = controller.teamSelectionState;
         var f = new Fixture { Campaign = campaign, Menu = menu, Controller = controller, Manager = manager };
         f.Context = new() { CampaignState = campaign, GameModeController = controller, GameType = ScriptableStates.GameType.Rogue, MatchNode = menu.currentMapNode.Blueprint };
         Call("FlowFinalizer", new EndOfGameFlowController { _context = f.Context, _campaignState = campaign,
@@ -53,6 +53,26 @@ static class CompletionChecks
         f.Manager._homeTeam.goaltender.goaltenderData = second; f.Manager._homeTeam.goaltender._skaterData = second;
         Call("GoalieFinalizer", f.Manager._homeTeam.goaltender, goalie[3], true, null);
         Call("InitializeFinalizer", init[1], true, null);
+    }
+    static void Side(Fixture f, bool replaceReceiver = false, string fault = null, Goaltender.Goaltender target = null) {
+        var team = f.Manager._homeTeam;
+        bool north = !team.isNorth;
+        object[] args = { team, north, null }; Call("SidePrefix", args);
+        team.isNorth = north;
+        if (replaceReceiver) team.goaltender = new() { Team = team };
+        if (target != null) { team.goaltender = target; target.Team = team; }
+        var source = f.Campaign.runData.teamData.goalie;
+        if (fault == "source") source = GoalieNativeSnapshot.Restore(GoalieNativeSnapshot.Capture(source));
+        if (fault == "receiver-team") team.goaltender.Team = new();
+        if (fault == "selection") team.teamSelection = new() { homeTeam = f.Campaign.runData.teamData, gameType = ScriptableStates.GameType.Rogue };
+        object[] goalie = { team.goaltender, source, fault != "visitor", null };
+        if (fault != "missing") Call("GoaliePrefix", goalie);
+        var live = GoalieNativeSnapshot.Restore(GoalieNativeSnapshot.Capture(source));
+        if (fault == "id") live.id = "other-goalie";
+        team.goaltender.goaltenderData = live; team.goaltender._skaterData = live;
+        if (fault != "missing") Call("GoalieFinalizer", team.goaltender, goalie[3], fault != "initialize-skip", fault == "initialize-throw" ? new Exception("init failed") : null);
+        if (fault == "side") team.isNorth = !north;
+        Call("SideFinalizer", args[2], fault != "skip", fault == "throw" ? new Exception("side failed") : null);
     }
     static void Play(Fixture f) { f.Manager.isGamePlaying = true; Call("NormalPlayFinalizer", f.Manager, true, null); }
     static void NextMatch(Fixture f) {
@@ -83,6 +103,7 @@ static class CompletionChecks
         check(ReferenceEquals(Call("InitializeFinalizer", null, false, originalError), originalError), "MissingInitializationScopePreservesNativeException");
         check(ReferenceEquals(Call("DepartureFinalizer", new Rogue.FreeAgents.FreeAgentManager(), null, false, originalError), originalError), "MissingDepartureScopePreservesNativeException");
         check(ReferenceEquals(Call("UpdateFinalizer", new EndOfGameContext(), null, new UniTask(), false, originalError), originalError), "MissingUpdateScopePreservesNativeException");
+        check(ReferenceEquals(Call("SideFinalizer", null, false, originalError), originalError), "MissingSideScopePreservesNativeException");
         var f = Setup(); Play(f); var update = Begin(f); Departure(f);
         check(!Roster.TrySwap(f.Campaign, Roster.Selection.Revision), "CompletionBoundaryDoesNotEnableInMatchUiSwaps");
         f.Campaign.runData.teamData.goalie.skill = 99;
@@ -195,6 +216,53 @@ static class CompletionChecks
         LaunchChecks.Finish(f.Campaign);
         }
 
+        foreach (bool replaceReceiver in new[] { false, true }) {
+            f = Setup(1); Play(f); var token = Roster.Selection.ArmedAttemptToken;
+            Side(f, replaceReceiver); Play(f); Side(f, replaceReceiver); Play(f);
+            check(Roster.UnavailableReason == null && Roster.Selection.ArmedAttemptToken == token && Roster.Selection.Active.Contract.PlayedMatches == 0,
+                "ReviewedNativeSideHandoffKeepsExactAttemptAcrossPeriods_" + replaceReceiver);
+            update = Begin(f); Departure(f); End(f, update); LaunchChecks.Finish(f.Campaign);
+            check(Roster.Selection.Active.PlayerId == "bench-goalie" && Roster.Selection.Active.Contract.PlayedMatches == 0
+                && Roster.Selection.ProcessedAttemptTokens.Contains(token), "SideHandoffStillDebitsStarterOnceAndPromotesOnlyAtCompletion_" + replaceReceiver);
+        }
+        f = Setup(); Side(f); Play(f);
+        check(Roster.UnavailableReason == null, "OwnedSideSetupBeforeFirstPlayPreservesBinding");
+        var visitor = new Team { isHomeTeam = false, teamSelection = f.Controller.teamSelectionState, goaltender = new() };
+        visitor.goaltender.Team = visitor;
+        for (int period = 0; period < 3; period++) {
+            var priorHome = f.Manager._homeTeam.goaltender;
+            Side(f, target: visitor.goaltender);
+            object[] visitorScope = { visitor, !visitor.isNorth, null }; Call("SidePrefix", visitorScope);
+            visitor.isNorth = !visitor.isNorth; visitor.goaltender = priorHome; priorHome.Team = visitor;
+            var visitorSource = new GoaltenderData { id = "native-opponent" };
+            object[] visitorGoalie = { priorHome, visitorSource, false, null }; Call("GoaliePrefix", visitorGoalie);
+            var visitorLive = GoalieNativeSnapshot.Restore(GoalieNativeSnapshot.Capture(visitorSource));
+            priorHome.goaltenderData = visitorLive; priorHome._skaterData = visitorLive;
+            Call("GoalieFinalizer", priorHome, visitorGoalie[3], true, null);
+            Call("SideFinalizer", visitorScope[2], true, null); Play(f);
+            check(Roster.UnavailableReason == null && Roster.Selection.Active.Contract.PlayedMatches == 0,
+                "NativeSafeEventHomeThenVisitorAlternatesReceiversWithoutBorrowing_" + period);
+        }
+        update = Begin(f); Departure(f); End(f, update); LaunchChecks.Finish(f.Campaign);
+        check(Roster.Selection.Active.Contract.PlayedMatches == 1, "PairedPeriodEventsStillDebitExactlyOnce");
+        foreach (string fault in new[] { "source", "receiver-team", "selection", "visitor", "missing", "id", "side", "skip", "throw", "initialize-skip", "initialize-throw" }) {
+            f = Setup(); Play(f); Side(f, fault: fault); Play(f);
+            update = Begin(f); Departure(f); End(f, update);
+            check(Roster.UnavailableReason != null && Roster.Selection.Active.Contract.PlayedMatches == 0,
+                "UnprovenSideHandoffCannotRepairBinding_" + fault);
+        }
+        f = Setup(); Play(f);
+        object[] failedSide = { f.Manager._homeTeam, true, null }; Call("SidePrefix", failedSide);
+        check(ReferenceEquals(Call("SideFinalizer", failedSide[2], true, originalError), originalError), "OwnedSideFailurePreservesNativeException");
+        check(typeof(GoalieContractRuntime).Assembly.GetType("EndlessMode.GoalieMatchCompletion")
+            .GetField("sideHandoff", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null) == null,
+            "FailedSideFinalizerRestoresThreadScopeBeforeAnyFixtureReset");
+        f = Setup(); Play(f); Side(f); Play(f);
+        check(Roster.UnavailableReason == null, "FailedSideScopeRestoresBeforeIndependentOwnedHandoff");
+        // Opponent switching cannot claim or invalidate the home attempt.
+        object[] opponentSide = { new Team(), true, null }; Call("SidePrefix", opponentSide);
+        Call("SideFinalizer", opponentSide[2], true, null); Play(f);
+        check(Roster.UnavailableReason == null, "UnownedOpponentSideLeavesHomeBindingIntact");
         f = Setup(); Play(f); var live = f.Manager._homeTeam.goaltender.goaltenderData;
         Plugin.Log.Warnings.Clear();
         live.id = "illegal-in-match-goalie"; Play(f); live.id = "launch-goalie";
