@@ -52,9 +52,9 @@ static class GoalieHeadRoundtripChecks
             var g=JsonUtility.FromJson<GoaltenderData>(json);
             var repo=new GoalieRepository();repo._customGoalieRepository._persistentDataPath=native;
             PlayNowPlayerSave.Observe(native,"goalie",g,json);
-            var stage=new CustomizeGoalieData(g);PlayNowPlayerSave.GoalieEditorPostfix(stage,g);
+            var stage=new CustomizeGoalieData(g);var editorMenu=new SkaterCustomizationMenu{CurrentSkater=stage};PlayNowPlayerSave.EditorInitialized(editorMenu,stage,true);
             stage.headSkin=example.Head;g.headSkin=example.Head;
-            PlayNowPlayerSave.HeadConfirmed(new SkaterCustomizationMenu{CurrentSkater=stage});
+            PlayNowPlayerSave.HeadConfirmed(editorMenu);
             repo.SaveCustomGoalie(g);
             var saved=JsonNode.Parse(File.ReadAllText(goalieFile));
             check(saved["headSkin"].GetValue<string>()==example.Head && saved["helmetSkin"].GetValue<string>()==example.Helmet,example.Name+": native confirmed head save keeps independent helmet");

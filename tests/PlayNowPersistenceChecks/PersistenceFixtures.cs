@@ -25,7 +25,7 @@ internal static class PersistenceFixtures {
   var model=TeamRepository.Model(team);File.WriteAllText(PlayNowSaveJournal.NativePath(root,"team","t"),JsonUtility.ToJson(model));repo.m_customTeamRepository.Models.Add(model);PlayNowRosterSave.TeamModelsPostfix(repo.m_customTeamRepository,repo.m_customTeamRepository.Models);
   if(!PlayNowRosterRuntime.TryHydrate(repo,model,team))throw new Exception("fixture hydration failed");return(repo,team);
  }
- internal static SkaterCustomizationMenu Editor(ForwardData p){var stage=new CustomizeForwardData(p);PlayNowPlayerSave.ForwardEditorPostfix(stage,p);return new(){CurrentSkater=stage};}
+ internal static SkaterCustomizationMenu Editor(ForwardData p){var stage=new CustomizeForwardData(p);var menu=new SkaterCustomizationMenu{CurrentSkater=stage};PlayNowPlayerSave.EditorInitialized(menu,stage,true);return menu;}
  internal static CampaignDocument PlayerDoc(string id)=>new(File.ReadAllText(PlayNowSaveJournal.CompanionPath(PlayNowRosterSave.Overrides,"forward",id)));
  internal static CampaignDocument TeamDoc()=>new(File.ReadAllText(PlayNowSaveJournal.CompanionPath(PlayNowRosterSave.Overrides,"team","t")));
 }

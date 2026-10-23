@@ -181,7 +181,7 @@ Test("ThirdPartyCompanionAfterNativePublicationIsPreserved",(root,side)=>{
 });
 Test("GoalieSaveRetainsPersonalSkinOmittedPassReadAndClears",(root,_)=>{
  var(repo,t)=PersistenceFixtures.Create(root);var g=t.goalie;g.skin="painted-goalie";g.helmetSkin="painted-mask";g.headSkin="confirmed-head";
- var stage=new CustomizeGoalieData(g);PlayNowPlayerSave.GoalieEditorPostfix(stage,g);var menu=new SkaterCustomizationMenu{CurrentSkater=stage};PlayNowPlayerSave.HeadConfirmed(menu);
+ var stage=new CustomizeGoalieData(g);var menu=new SkaterCustomizationMenu{CurrentSkater=stage};PlayNowPlayerSave.EditorInitialized(menu,stage,true);PlayNowPlayerSave.HeadConfirmed(menu);
  g.firstName="Goalie Edit";g.skill=87;g.abilityId="";g.talentIds=Array.Empty<string>();repo.m_goalieRepository.SaveCustomGoalie(g);
  var model=JsonNode.Parse(File.ReadAllText(PlayNowSaveJournal.NativePath(root,"goalie","g")));var doc=new CampaignDocument(File.ReadAllText(PlayNowSaveJournal.CompanionPath(PlayNowRosterSave.Overrides,"goalie","g")));
  Assert(model["headSkin"].GetValue<string>()=="confirmed-head" && model["skin"].GetValue<string>()=="personal-goalie" && model["helmetSkin"].GetValue<string>()=="personal-mask" && model["skill"].GetValue<int>()==87,"goalie authority lost");
@@ -213,6 +213,8 @@ Test("NativeFloatSpellingsUseSingleDomainWithoutWeakeningOtherFields",(root,_)=>
  Assert(PlayNowSaveJournal.Hash(Encoding.UTF8.GetBytes(persisted))!=PlayNowSaveJournal.Hash(Encoding.UTF8.GetBytes(equivalent)),"schema comparison weakened byte fingerprints");
 });
 Test("NativeLineupApplyPersistsWithoutSeparateTeamCustomizerSave",(root,_)=>LineupApplyChecks.Run(root,Assert));
+Test("NativeLineupInitializationWithoutConstructorCallbacks",(root,_)=>NativeInitializationChecks.Lineup(root,Assert));
+Test("NativePlayerInitializationWithoutConstructorCallbacks",(root,_)=>NativeInitializationChecks.Player(root,Assert));
 Test("ActualStudioExportRuntimeSaveReimportUpdate",(root,_)=>StudioBoundaryChecks.Run(root,Assert));
 Test("ActualGoalieHeadSaveImportReexportUpdate",(root,_)=>GoalieHeadRoundtripChecks.Run(root,Assert));
 Console.WriteLine($"{pass} passed; {fail} failed");return fail==0?0:1;

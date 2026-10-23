@@ -4,8 +4,9 @@ using Data;
 using Tape2Tape.Customization;
 using System.Text.Json;
 namespace Il2CppSystem.Collections.Generic { public class List<T>:System.Collections.Generic.List<T> { static int next; public IntPtr Pointer=(IntPtr)(++next); } }
+namespace Il2CppSystem { public class Object { static int next; public IntPtr Pointer=(IntPtr)(++next); public T TryCast<T>() where T:class=>this as T; } }
 namespace UnityEngine {
- public class Object { static int next; public IntPtr Pointer; public int Instance=++next; public Object(){Pointer=(IntPtr)Instance;} public int GetInstanceID()=>Instance; public T TryCast<T>() where T:class=>this as T; public static void Destroy(object x){} }
+ public class Object : Il2CppSystem.Object { public int Instance; public Object(){Instance=(int)Pointer;} public int GetInstanceID()=>Instance; public static void Destroy(object x){} }
  public struct Color {public float r,g,b,a;public Color(float x,float y,float z,float w=1){r=x;g=y;b=z;a=w;}}
  public static class JsonUtility {public static readonly JsonSerializerOptions Options=new(){IncludeFields=true};public static string ToJson(object x)=>JsonSerializer.Serialize(x,x.GetType(),Options);public static T FromJson<T>(string x)=>JsonSerializer.Deserialize<T>(x,Options);}
 }
@@ -49,11 +50,11 @@ namespace Tape2Tape.Customization.UI {
  public class CustomizeForwardData:CustomizeSkaterData {public string headSkin,stickSkin;public CustomizeForwardData(ForwardData data){SkaterData=data;headSkin=data.headSkin;stickSkin=data.stickSkin;}}
  public class CustomizeGoalieData:CustomizeSkaterData {public string headSkin;public CustomizeGoalieData(GoaltenderData data){SkaterData=data;headSkin=data.headSkin;}}
  public struct SelectSkaterColorEvent {public SkaterColorItem Item;public int Index;}
- public class SkaterCustomizationMenu:UnityEngine.Object {public CustomizeSkaterData CurrentSkater;public SelectSkaterColorEvent m_CurrentColorBeingPicked;public void OnPanelHeadClick(){}public void OnPanelStickClick(){}public void OnColorPicked(){}public void Hide(){}}
+ public class SkaterCustomizationMenu:UnityEngine.Object {public CustomizeSkaterData CurrentSkater;public void Init(CustomizeSkaterData data){CurrentSkater=data;}public SelectSkaterColorEvent m_CurrentColorBeingPicked;public void OnPanelHeadClick(){}public void OnPanelStickClick(){}public void OnColorPicked(){}public void Hide(){}}
  public class ForwardCustomizationHandler:UnityEngine.Object {public ForwardData _forwardData;public void LoadForward(){}public void NextFaceSkin(){}public void PrevFaceSkin(){}public void NextStickSkin(){}public void PrevStickSkin(){}}
  public class GoalieCustomizationHandler:UnityEngine.Object {public GoaltenderData _goalieData;public void LoadGoalie(){}}
 }
-namespace HarmonyLib {public class HarmonyMethod {public HarmonyMethod(Type t,string n){}}public class Harmony {public void Patch(object method,HarmonyMethod prefix=null,HarmonyMethod postfix=null,HarmonyMethod finalizer=null){}}public static class AccessTools {public static System.Reflection.ConstructorInfo[] GetDeclaredConstructors(Type t)=>t.GetConstructors();public static object Method(Type t,string name)=>t.GetMethod(name);public static object Constructor(Type t,Type[] args)=>t.GetConstructor(args);}}
+namespace HarmonyLib {public class HarmonyMethod {public HarmonyMethod(Type t,string n){}}public class Harmony {public void Patch(object method,HarmonyMethod prefix=null,HarmonyMethod postfix=null,HarmonyMethod finalizer=null){}}public static class AccessTools {public static System.Reflection.ConstructorInfo[] GetDeclaredConstructors(Type t)=>t.GetConstructors();public static object Method(Type t,string name)=>t.GetMethod(name);public static object Method(Type t,string name,Type[] args)=>t.GetMethod(name,args);public static object Constructor(Type t,Type[] args)=>t.GetConstructor(args);}}
 namespace EndlessMode {
  public static class Plugin {public static string ModContentRoot;public static Logger Log=new();} public class Logger {public void LogWarning(object x){}}
  public static class PlayNowTranslation {
@@ -64,11 +65,11 @@ namespace EndlessMode {
  }
 }
 
-namespace Tape2Tape.Customization.UI { public class TeamRosterData {
+namespace Tape2Tape.Customization.UI { public class TeamRosterData : Il2CppSystem.Object {
  public bool HasChanged = true, RosterValid = true; public Func<bool> ApplyBody; public bool CheckRoster(bool requireMaxForwards)=>RosterValid; public bool ApplyChanges()=>ApplyBody();
  public TeamData OriginalTeamData,TemporaryTeamData;
  public ForwardData m_LW,m_RW,m_C,m_LD,m_RD; public GoaltenderData m_G;
  public Il2CppSystem.Collections.Generic.List<ForwardData> m_BenchForwards=new();
 }}
-namespace Tape2Tape.Hockey.UI { public class LineupMenu { public Tape2Tape.Customization.UI.TeamRosterData Team; public bool m_AreSkatersLocked; public Header m_Header = new(); } public class Header { public Text m_Title = new(); } public class Text { public string text; } }
+namespace Tape2Tape.Hockey.UI { public class LineupMenu : UnityEngine.Object { public class Metadata : Il2CppSystem.Object { public Data.TeamData Team; public bool LockPlayers, IsHomeTeam; } public Tape2Tape.Customization.UI.TeamRosterData Team; public bool m_AreSkatersLocked, m_IsHomeTeam; public Header m_Header = new(); } public class Header { public Text m_Title = new(); } public class Text { public string text; } }
 namespace EndlessMode { public static class NativeSquadBehaviorBridge {public static bool Ready=true;} }

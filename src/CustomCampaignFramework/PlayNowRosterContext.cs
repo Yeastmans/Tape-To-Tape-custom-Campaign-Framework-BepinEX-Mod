@@ -115,6 +115,23 @@ internal static class PlayNowRosterContext
         Fill(__instance, source, roster.Line1, roster.Line2);
         __instance.TemporaryTeamData.activeLineNumber = 1;
     }
+    public static void Initialized(LineupMenu __instance, Il2CppSystem.Object __0, bool __runOriginal)
+    {
+        if (!__runOriginal || __instance?.Team == null || __0 == null || !NativeSquadBehaviorBridge.Ready) return;
+        var metadata = __0.TryCast<LineupMenu.Metadata>();
+        var source = metadata?.Team ?? __0.TryCast<TeamData>();
+        var roster = __instance.Team;
+        bool locked = metadata?.LockPlayers ?? true;
+        bool home = metadata?.IsHomeTeam ?? true;
+        if (source == null || !PlayNowRosterRuntime.TryGet(source, out _)
+            || roster.OriginalTeamData?.Pointer != source.Pointer
+            || roster.TemporaryTeamData == null || roster.TemporaryTeamData.Pointer == source.Pointer
+            || __instance.m_AreSkatersLocked != locked || __instance.m_IsHomeTeam != home) return;
+        // InitData's protected native body constructs the roster before returning.
+        // A ConstructorInfo patch cannot intercept that native constructor call.
+        Constructed(roster);
+        if (locked) RefreshLocked(roster);
+    }
     internal static void RefreshLocked(TeamRosterData roster)
     {
         var source = roster?.OriginalTeamData;
@@ -141,8 +158,8 @@ internal static class PlayNowRosterContext
     {
         harmony.Patch(AccessTools.Method(typeof(LineupMenu), "TryLeaveMenu"),
             prefix: new HarmonyMethod(typeof(PlayNowRosterContext), nameof(Leave)));
-        harmony.Patch(AccessTools.GetDeclaredConstructors(typeof(TeamRosterData)).Single(c => c.GetParameters().Length == 4),
-            postfix: new HarmonyMethod(typeof(PlayNowRosterContext), nameof(Constructed)));
+        harmony.Patch(AccessTools.Method(typeof(LineupMenu), "InitData"),
+            postfix: new HarmonyMethod(typeof(PlayNowRosterContext), nameof(Initialized)));
         foreach (string name in new[] { "UpdateTemporaryTeamData", "ApplyChanges" })
             harmony.Patch(AccessTools.Method(typeof(TeamRosterData), name),
                 prefix: new HarmonyMethod(typeof(PlayNowRosterContext), nameof(Prefix)),

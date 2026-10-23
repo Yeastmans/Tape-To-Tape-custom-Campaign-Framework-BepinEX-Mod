@@ -27,6 +27,7 @@ internal static class PlayNowPlayerSave
         internal CustomizeSkaterData Staged;
         internal PlayNowRosterSave.Revision Revision;
         internal PlayNowEditAuthority Authority;
+        internal SkaterCustomizationMenu Menu;
     }
     internal sealed class Frame
     {
@@ -38,6 +39,7 @@ internal static class PlayNowPlayerSave
     private static readonly Dictionary<string, PlayNowRosterSave.Revision> Loaded = new(StringComparer.Ordinal);
     private static readonly Dictionary<IntPtr, Binding> Players = new();
     private static readonly Dictionary<IntPtr, Editor> Editors = new();
+    private static readonly Dictionary<IntPtr, Editor> MenuEditors = new();
     [ThreadStatic] private static Frame Current;
     private static bool Member(string id)
     {
@@ -121,8 +123,22 @@ internal static class PlayNowPlayerSave
         Editors[player.Pointer] = e;
         return e;
     }
-    public static void ForwardEditorPostfix(CustomizeForwardData __instance, ForwardData data) => Begin(data, __instance);
-    public static void GoalieEditorPostfix(CustomizeGoalieData __instance, GoaltenderData data) => Begin(data, __instance);
+    public static void EditorInitialized(SkaterCustomizationMenu __instance, CustomizeSkaterData __0, bool __runOriginal)
+    {
+        if (!__runOriginal || __instance == null || __instance.CurrentSkater?.Pointer != __0?.Pointer) return;
+        var player = __0?.SkaterData;
+        if (MenuEditors.TryGetValue(__instance.Pointer, out var old))
+        {
+            if (player != null && old.Staged?.Pointer == __0.Pointer && old.Player.Pointer == player.Pointer && old.Instance == player.GetInstanceID()
+                && old.Revision.Id == player.id
+                && Editors.TryGetValue(player.Pointer, out var current) && ReferenceEquals(current, old)) return;
+            if (Editors.TryGetValue(old.Player.Pointer, out var active) && ReferenceEquals(active, old)) Editors.Remove(old.Player.Pointer);
+            MenuEditors.Remove(__instance.Pointer);
+        }
+        if (player == null) return;
+        var editor = Begin(player, __0);
+        if (editor != null) { editor.Menu = __instance; MenuEditors[__instance.Pointer] = editor; }
+    }
     public static void LegacyForwardLoadPostfix(ForwardCustomizationHandler __instance, ForwardData pickedForward)
         => Begin(__instance._forwardData, source: pickedForward);
     public static void LegacyGoalieLoadPostfix(GoalieCustomizationHandler __instance, GoaltenderData pickedGoalie)
@@ -131,7 +147,8 @@ internal static class PlayNowPlayerSave
     {
         var stage = menu?.CurrentSkater; var player = stage?.SkaterData;
         if (player == null || !Editors.TryGetValue(player.Pointer, out var editor) || editor.Instance != player.GetInstanceID()
-            || editor.Staged == null || editor.Staged.Pointer != stage.Pointer || editor.Revision.Id != player.id) return null;
+            || editor.Staged == null || editor.Staged.Pointer != stage.Pointer || editor.Revision.Id != player.id
+            || editor.Menu?.Pointer != menu.Pointer) return null;
         return editor;
     }
     public static void HeadConfirmed(SkaterCustomizationMenu __instance)
@@ -155,7 +172,9 @@ internal static class PlayNowPlayerSave
     // Hide invalidates the exact staged owner, so delayed callbacks cannot reuse it.
     public static void HidePrefix(SkaterCustomizationMenu __instance)
     {
-        var e = For(__instance); if (e != null) Editors.Remove(e.Player.Pointer);
+        if (__instance == null || !MenuEditors.TryGetValue(__instance.Pointer, out var e)) return;
+        MenuEditors.Remove(__instance.Pointer);
+        if (Editors.TryGetValue(e.Player.Pointer, out var active) && ReferenceEquals(active, e)) Editors.Remove(e.Player.Pointer);
     }
     public static void LegacyHeadConfirmed(ForwardCustomizationHandler __instance)
     {
@@ -252,8 +271,8 @@ internal static class PlayNowPlayerSave
         Patch(typeof(PersistentDataCustomGoalieRepository), "SaveCustomGoalie", nameof(GoalieWriterPrefix));
         foreach (string n in new[] { "LoadCustomForwards", "Preload" }) Patch(typeof(PersistentDataCustomForwardRepository), n, nameof(ForwardLoadPrefix));
         foreach (string n in new[] { "LoadCustomGoalies", "Preload" }) Patch(typeof(PersistentDataCustomGoalieRepository), n, nameof(GoalieLoadPrefix));
-        h.Patch(AccessTools.Constructor(typeof(CustomizeForwardData), new[] { typeof(ForwardData) }), postfix: new HarmonyMethod(typeof(PlayNowPlayerSave), nameof(ForwardEditorPostfix)));
-        h.Patch(AccessTools.Constructor(typeof(CustomizeGoalieData), new[] { typeof(GoaltenderData) }), postfix: new HarmonyMethod(typeof(PlayNowPlayerSave), nameof(GoalieEditorPostfix)));
+        h.Patch(AccessTools.Method(typeof(SkaterCustomizationMenu), "Init", new[] { typeof(CustomizeSkaterData) }),
+            postfix: new HarmonyMethod(typeof(PlayNowPlayerSave), nameof(EditorInitialized)));
         Patch(typeof(ForwardCustomizationHandler), "LoadForward", postfix: nameof(LegacyForwardLoadPostfix));
         Patch(typeof(GoalieCustomizationHandler), "LoadGoalie", postfix: nameof(LegacyGoalieLoadPostfix));
         Patch(typeof(SkaterCustomizationMenu), "OnPanelHeadClick", postfix: nameof(HeadConfirmed));

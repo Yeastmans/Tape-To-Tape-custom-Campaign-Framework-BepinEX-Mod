@@ -2,12 +2,13 @@ using CampaignCore;
 using Data;
 using Tape2Tape.Customization;
 namespace Il2CppSystem.Collections.Generic { public class List<T> : System.Collections.Generic.List<T> { static int next; public IntPtr Pointer = (IntPtr)(++next); } }
+namespace Il2CppSystem { public class Object { public T TryCast<T>() where T:class=>this as T; } }
 namespace Data
 {
     public class SkaterData { public string id, OriginalId; public T TryCast<T>() where T:class => this as T; }
     public class ForwardData : SkaterData { }
     public class GoaltenderData : SkaterData { }
-    public class TeamData
+    public class TeamData : Il2CppSystem.Object
     {
         static int next; public int InstanceId = ++next; public IntPtr Pointer; public string id;
         public TeamData() { Pointer = (IntPtr)InstanceId; }
@@ -72,4 +73,4 @@ namespace UnityEngine { public static class Resources { public static T Load<T>(
 namespace EndlessMode { public static class SquadBehaviorRuntime { public static bool TryEnabled(string id,string flag,out bool enabled) {enabled=false;return false;} } }
 
 namespace EndlessMode { public static class NativeSquadBehaviorBridge { public static bool Ready=true; } }
-namespace Tape2Tape.Hockey.UI { public class LineupMenu { public Tape2Tape.Customization.UI.TeamRosterData Team; public bool m_AreSkatersLocked; public Header m_Header = new(); } public class Header { public Text m_Title = new(); } public class Text { public string text; } }
+namespace Tape2Tape.Hockey.UI { public class LineupMenu { public class Metadata : Il2CppSystem.Object { public Data.TeamData Team; public bool LockPlayers, IsHomeTeam; } public Tape2Tape.Customization.UI.TeamRosterData Team; public bool m_AreSkatersLocked, m_IsHomeTeam; public Header m_Header = new(); } public class Header { public Text m_Title = new(); } public class Text { public string text; } }
