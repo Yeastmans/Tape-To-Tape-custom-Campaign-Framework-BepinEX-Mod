@@ -237,6 +237,29 @@ Test("ManualSwapWithStaminaOff", () =>
     Check(PlayNowRosterRuntime.TryGet(live._teamData,out var roster) && !roster.StaminaEnabled && roster.Line2[0]=="p5", "line selection changed ownership/policy");
     PlayNowTeamInitialization.Finalizer(null,scope);
 });
+Test("ProductionProfileRosterSitesRouteWithoutAddressDrift", () =>
+{
+    using var stream = typeof(PlayNowRosterContext).Assembly.GetManifestResourceStream("ProductionNativeProfile.json");
+    using var profile = System.Text.Json.JsonDocument.Parse(stream!);
+    var sites = profile.RootElement.GetProperty("Sites").EnumerateArray().Where(s =>
+        s.GetProperty("Feature").GetString() == "two_lines" && s.GetProperty("Query").GetString() == "lines"
+        && s.GetProperty("Kind").GetString() == "query" && s.GetProperty("Method").GetString()!.StartsWith("Tape2Tape.Customization.UI.TeamRosterData$$")).ToArray();
+    Check(sites.Length == 2, "production profile must supply exactly both reviewed roster editor queries");
+    bool Routes(System.Text.Json.JsonElement site) => PlayNowRosterContext.IsRosterSite(site.GetProperty("Feature").GetString(), site.GetProperty("Query").GetString(), site.GetProperty("Kind").GetString(), site.GetProperty("Method").GetString());
+    Check(profile.RootElement.GetProperty("Sites").EnumerateArray().Count(Routes) == 2, "routing escaped the two validated roster method sites");
+    foreach (var site in sites)
+    {
+        string method = site.GetProperty("Method").GetString()!;
+        Check(Routes(site), "production roster site cannot route: " + method);
+        Check(!PlayNowRosterContext.IsRosterSite("other", "lines", "query", method)
+            && !PlayNowRosterContext.IsRosterSite("two_lines", "other", "query", method)
+            && !PlayNowRosterContext.IsRosterSite("two_lines", "lines", "eq", method)
+            && !PlayNowRosterContext.IsRosterSite("two_lines", "lines", "query", method + "extra"), "unvalidated feature/query/kind/signature accepted");
+    }
+    foreach (long legacyAddress in new[] { 0x4501226L, 0x45022E0L })
+        Check(!PlayNowRosterContext.IsRosterSite("two_lines", "lines", "query", legacyAddress.ToString("X")), "legacy address alone grants roster authority");
+    Check(!PlayNowRosterContext.IsRosterSite("two_lines", "lines", "query", "Tape2Tape.Customization.UI.TeamRosterData$$ApplyChanges"), "legacy unqualified method without protected signature accepted");
+});
 Test("EditorKeepsAbsoluteLinesWhenSourceLine2", () =>
 {
     var (r,m,t)=Fixture(); Check(PlayNowRosterRuntime.TryHydrate(r,m,t), "hydrate"); t.activeLineNumber=2;
@@ -246,7 +269,6 @@ Test("EditorKeepsAbsoluteLinesWhenSourceLine2", () =>
     PlayNowRosterContext.Prefix(editor,out var state); Check(PlayNowRosterContext.Active,"valid editor scope missing");
     var error=new InvalidOperationException("native failure"); Check(ReferenceEquals(error,PlayNowRosterContext.Finalizer(error,state)),"finalizer swallowed native failure");
     PlayNowRosterContext.Finalizer(null,state); Check(!PlayNowRosterContext.Active,"double cleanup leaked");
-    Check(PlayNowRosterContext.IsRosterSite(0x4501226) && PlayNowRosterContext.IsRosterSite(0x45022E0) && !PlayNowRosterContext.IsRosterSite(0x4270A6C),"scope leaked into campaign query sites");
 });
 Test("UnsupportedBridgeRejectsExportedWriteOnly", () =>
 {

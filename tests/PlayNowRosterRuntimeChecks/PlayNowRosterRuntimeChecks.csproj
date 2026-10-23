@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><TargetFramework>net8.0</TargetFramework><OutputType>Exe</OutputType><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
   <ItemGroup><ProjectReference Include="../../src/CampaignCore/CampaignCore.csproj" />
+    <EmbeddedResource Include="../../src/CustomCampaignFramework/Assets/native-compatibility.json" LogicalName="ProductionNativeProfile.json" />
     <Compile Include="../../src/CustomCampaignFramework/PlayNowRosterRuntime.cs" Link="PlayNowRosterRuntime.cs" />
   <Compile Include="../../src/CustomCampaignFramework/PlayNowRosterContext.cs" Link="PlayNowRosterContext.cs" />
     <Compile Include="../../src/CustomCampaignFramework/SquadStaminaRuntime.cs" Link="SquadStaminaRuntime.cs" />

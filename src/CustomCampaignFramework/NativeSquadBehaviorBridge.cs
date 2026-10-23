@@ -121,7 +121,7 @@ internal static class NativeSquadBehaviorBridge
                         {
                             try
                             {
-                                if (site.Feature == "two_lines" && site.Query == "lines" && PlayNowRosterContext.IsRosterSite(site.Rva) && PlayNowRosterContext.Active) return 1;
+                                if (PlayNowRosterContext.IsRosterSite(site.Feature, site.Query, site.Kind, site.Name) && PlayNowRosterContext.Active) return 1;
                                 if (Plugin.IsDefaultMode || instance == IntPtr.Zero) return original(instance, id, checkMode, method);
                                 var util = new Tape2Tape.CampaignUtil(instance);
                                 string customId = util._campaignState?.GetCurrentSquad()?.id;

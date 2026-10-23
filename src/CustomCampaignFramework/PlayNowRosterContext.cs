@@ -30,7 +30,13 @@ internal static class PlayNowRosterContext
         current = frame;
         return frame;
     }
-    internal static bool IsRosterSite(long rva) => rva == 0x4501226 || rva == 0x45022E0;
+    // Called only for sites loaded by the bridge's validated compatibility
+    // profile. Addresses belong to that profile, not a second build-specific
+    // allowlist here. Require the complete reviewed method contract.
+    internal static bool IsRosterSite(string feature, string query, string kind, string method)
+        => feature == "two_lines" && query == "lines" && kind == "query"
+            && (method == "Tape2Tape.Customization.UI.TeamRosterData$$UpdateTemporaryTeamData::System.Void UpdateTemporaryTeamData()"
+                || method == "Tape2Tape.Customization.UI.TeamRosterData$$ApplyChanges::System.Boolean ApplyChanges()");
 
     public static bool Prefix(TeamRosterData __instance, out IDisposable __state)
     {
