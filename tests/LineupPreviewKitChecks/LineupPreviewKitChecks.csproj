@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net6.0</TargetFramework><LangVersion>latest</LangVersion><CheckEolTargetFramework>false</CheckEolTargetFramework></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/CustomCampaignFramework/LineupPreviewKit.cs" Link="LineupPreviewKit.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/LineupPreviewRoster.cs" Link="LineupPreviewRoster.cs" />
+  </ItemGroup>
+</Project>

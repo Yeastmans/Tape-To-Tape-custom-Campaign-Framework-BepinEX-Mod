@@ -15,9 +15,10 @@ internal static class LineupPreviewKit
 {
 
     [HarmonyPrefix]
-    internal static void Prefix(SkaterPreviewInUI __instance, TeamData team)
+    internal static void Prefix(SkaterPreviewInUI __instance, SkaterData skater, ref TeamData team)
     {
         if (Plugin.IsDefaultMode || __instance == null || team == null) return;
+        GoalieRosterMenu.PreviewTeamFor(__instance, skater, ref team);
         var menu = __instance.GetComponentInParent<LineupMenu>(true);
         if (menu == null || GameManager._instance == null) return;
         var original = menu.Team?.OriginalTeamData ?? team;

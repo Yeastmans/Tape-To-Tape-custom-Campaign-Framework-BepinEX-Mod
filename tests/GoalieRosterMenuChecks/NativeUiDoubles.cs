@@ -31,8 +31,11 @@ namespace UnityEngine {
     public static class Object {
         public static LineupMenu CurrentMenu;
         public static int Destroyed;
-        public static TeamData Instantiate(TeamData source) => new() { goalie = source.goalie };
-        public static void Destroy(object value) => Destroyed++;
+        public static readonly List<object> DestroyedObjects = new();
+        public static TeamData Instantiate(TeamData source) => new() { goalie = source.goalie,
+            homeColors = source.homeColors, awayColors = source.awayColors,
+            homeGoalieColors = source.homeGoalieColors, awayGoalieColors = source.awayGoalieColors };
+        public static void Destroy(object value) { Destroyed++; DestroyedObjects.Add(value); }
         public static T FindObjectOfType<T>() where T : class => CurrentMenu as T;
     }
 }

@@ -22,7 +22,9 @@
     <Compile Include="../GoalieRosterRuntimeChecks/*Doubles.cs" />
   </ItemGroup>
   <Target Name="ExtractProductionHelpers" BeforeTargets="BeforeCompile">
-    <Exec Command="python &quot;$(MSBuildProjectDirectory)/../GoalieRosterRuntimeChecks/extract_helpers.py&quot; &quot;$(MSBuildProjectDirectory)/$(IntermediateOutputPath)AppearanceHelpers.g.cs&quot; menu" />
-    <ItemGroup><Compile Include="$(IntermediateOutputPath)AppearanceHelpers.g.cs" /></ItemGroup>
+    <PropertyGroup><AppearanceHelpersOutput>$([System.IO.Path]::GetFullPath('$(IntermediateOutputPath)AppearanceHelpers.g.cs', '$(MSBuildProjectDirectory)'))</AppearanceHelpersOutput></PropertyGroup>
+    <Exec Command="python &quot;$(MSBuildProjectDirectory)/../GoalieRosterRuntimeChecks/extract_helpers.py&quot; &quot;$(AppearanceHelpersOutput)&quot; menu" />
+    <Exec Command="python &quot;$(MSBuildProjectDirectory)/extract_preview_palette.py&quot; &quot;$(AppearanceHelpersOutput).preview.cs&quot;" />
+    <ItemGroup><Compile Include="$(AppearanceHelpersOutput)" /><Compile Include="$(AppearanceHelpersOutput).preview.cs" /></ItemGroup>
   </Target>
 </Project>

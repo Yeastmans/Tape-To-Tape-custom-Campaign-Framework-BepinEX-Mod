@@ -15,14 +15,14 @@ namespace UnityEngine {
 }
 namespace Rogue.BenchPowers { public class BenchPower { public string ID; } }
 namespace Data {
-    public class SkaterData : Il2CppSystem.Object {
+    public partial class SkaterData : Il2CppSystem.Object {
         public ColorScheme StickColor, SkatesColor;
         public string HomeLogo, AwayLogo;
     }
     public enum NumberFormat { Standard, Rounded }
     public struct DateDMY { public int Day, Month, Year; }
-    public class ColorScheme { public UnityEngine.Color primaryColor, secondaryColor, tertiaryColor; }
-    public class TeamColorsData {
+    public partial class ColorScheme { public UnityEngine.Color primaryColor, secondaryColor, tertiaryColor; }
+    public partial class TeamColorsData {
         public string Value;
         public ColorScheme stickScheme = new(), skatesScheme = new();
         public static TeamColorsData Default { get; } = new();

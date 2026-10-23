@@ -36,7 +36,7 @@ internal static class GoalieRosterMenu
         internal GoalieRecruitment.Offer Offer;
         internal bool? DeparturePrevention;
         internal GoaltenderData Active, Reserve;
-        internal TeamData Preview;
+        internal TeamData Preview, ReservePreview;
         internal LineupMenu Menu, Parent;
         internal EventChoiceMenu Gm;
         internal EventChoicePanel Legacy;
@@ -121,8 +121,8 @@ internal static class GoalieRosterMenu
             s.Snapshot = GoaliePersistenceBridge.Roster.Capture(state.runData, Plugin.ModFolder); s.Revision = s.Snapshot.Revision;
             s.Active = GoalieNativeSnapshot.Restore(s.Snapshot.Active);
             s.Reserve = s.Snapshot.Reserve == null ? null : GoalieNativeSnapshot.Restore(s.Snapshot.Reserve);
-            s.Preview = UnityEngine.Object.Instantiate(state.runData.teamData);
-            s.Preview.goalie = s.Active;
+            s.Preview = PreviewTeam(state.runData.teamData, s.Active);
+            if (s.Reserve != null) s.ReservePreview = PreviewTeam(state.runData.teamData, s.Reserve);
             if (gm != null) { gm.m_IsTakenOver = true; gm.SetVisibility(false, true); }
             if (legacy != null) SetLegacyVisible(legacy, false);
             if (parent != null) {
@@ -136,6 +136,36 @@ internal static class GoalieRosterMenu
             if (host == null) throw new InvalidOperationException("Open the campaign lineup to manage goalies.");
             host.StartCoroutine(Show(s).WrapToIl2Cpp());
         } catch (Exception ex) { Fail(s, ex); }
+    }
+    private static TeamData PreviewTeam(TeamData source, GoaltenderData goalie)
+    {
+        var preview = UnityEngine.Object.Instantiate(source);
+        try {
+            preview.goalie = goalie;
+            // SkaterPreviewInUI repaints from homeColors/awayColors after its
+            // asynchronous skin merge. Each card therefore needs its own team
+            // carrier, including that goalie's personal home/away overrides.
+            preview.homeColors = PlayNowTranslation.GoaliePreviewColors(source.homeGoalieColors ?? source.homeColors, goalie, false);
+            preview.awayColors = PlayNowTranslation.GoaliePreviewColors(source.awayGoalieColors ?? source.awayColors, goalie, true);
+            preview.homeGoalieColors = preview.homeColors;
+            preview.awayGoalieColors = preview.awayColors;
+            return preview;
+        } catch { UnityEngine.Object.Destroy(preview); throw; }
+    }
+    internal static void PreviewTeamFor(SkaterPreviewInUI owner, SkaterData player, ref TeamData team)
+    {
+        try {
+            var s = Current;
+            if (owner == null || player == null || team == null || !Valid(s) || s.Menu == null || s.Menu.IsHiding) return;
+            var menu = owner.GetComponentInParent<LineupMenu>(true);
+            if (menu?.Pointer != s.Menu.Pointer || team.Pointer != menu.Team?.TemporaryTeamData?.Pointer) return;
+            // The native large-preview continuation supplies menu.Team rather
+            // than the card's team. Redirect this render argument only; never
+            // replace or recolor the canonical/menu roster's shared TeamData.
+            var preview = player.Pointer == s.Active?.Pointer ? s.Preview
+                : player.Pointer == s.Reserve?.Pointer ? s.ReservePreview : null;
+            if (preview != null) team = preview;
+        } catch (Exception ex) { Plugin.Log.LogWarning("[GoalieRoster] Kept native preview: " + ex.Message); }
     }
     private static IEnumerator Show(Selection s)
     {
@@ -186,7 +216,7 @@ internal static class GoalieRosterMenu
         // generated generic List.Add wrapper would pass the boxed header.
         var boxedCards = cards.Cast<Il2CppSystem.Collections.IList>();
         boxedCards.Add(new SkaterDataForUI(s.Preview, s.Active, ESkaterPosition.Goalie, null, null, EStatBonusesPreviewMode.None, null));
-        if (s.Snapshot.ReserveEnabled) boxedCards.Add(new SkaterDataForUI(s.Preview, s.Reserve, ESkaterPosition.Goalie, null, null, EStatBonusesPreviewMode.None, null));
+        if (s.Snapshot.ReserveEnabled) boxedCards.Add(new SkaterDataForUI(s.ReservePreview ?? s.Preview, s.Reserve, ESkaterPosition.Goalie, null, null, EStatBonusesPreviewMode.None, null));
         menu.m_ActiveSkaters = cards; menu.m_BenchSkaters.Clear();
         menu.m_ActivePlayersList.Refresh(cards.Cast<Il2CppSystem.Collections.Generic.IReadOnlyList<SkaterDataForUI>>());
         menu.m_BenchPlayersList.Clear(); menu.m_HideBench = true;
@@ -490,6 +520,7 @@ internal static class GoalieRosterMenu
             s.Parent.LoadCurrentTeam(); s.Parent.SelectFirstPlayer();
         }
         if (s.Preview != null) UnityEngine.Object.Destroy(s.Preview);
+        if (s.ReservePreview != null) UnityEngine.Object.Destroy(s.ReservePreview);
         if (s.Active != null) UnityEngine.Object.Destroy(s.Active);
         if (s.Reserve != null) UnityEngine.Object.Destroy(s.Reserve);
     }

@@ -8,6 +8,7 @@ using Tape2Tape.Customization.UI;
 using Rogue.NPC.GeneralManagerNPC;
 using System.Reflection;
 
+try {
 int checks = 0;
 void Check(bool value, string name) { if (!value) throw new Exception(name); Console.WriteLine("PASS " + name); checks++; }
 BridgeDoubleHooks.Enable();
@@ -451,4 +452,75 @@ Check(frozenOffer.Contract.Duration == 1000 && frozenOffer.Contract.PlayedMatche
     && GoaliePersistenceBridge.Roster.Selection.Active.Contract == null && state.Repository.Saves == previewSaves,
     "NativeGmPreviewConditionsRemainDetachedFromFrozenOfferAndRoster");
 GoalieRecruitment.Closed(firstMenu);
+state = Fresh();
+var canonicalTeam = state.runData.teamData;
+canonicalTeam.homeColors.jerseyScheme.primaryColor = new(0, .7f, .9f, 1);
+canonicalTeam.awayColors.jerseyScheme.primaryColor = new(1, 1, 1, 1);
+var gold = new GoaltenderData { id = "gold", colorSchemes = new() };
+gold.colorSchemes.jerseyScheme.primaryColor = new(.96f, .78f, .08f, 1);
+var green = new GoaltenderData { id = "green", colorSchemes = new() };
+green.colorSchemes.jerseyScheme.primaryColor = new(.08f, .86f, .27f, 1);
+roster.TryRecruit(state, gold, GoalieSlot.Active, roster.Selection.Revision);
+roster.TryRecruit(state, green, GoalieSlot.Reserve, roster.Selection.Revision);
+var canonicalGold = canonicalTeam.goalie;
+var beforePreviewSave = state.Repository.Saves;
+pair = Offer(state); selection = Recruit(state, pair);
+var goldCardTeam = selection.Menu.m_ActivePlayersList.m_SkaterCards[0].CurrentSkaterData.ActiveTeam;
+var greenCardTeam = selection.Menu.m_ActivePlayersList.m_SkaterCards[1].CurrentSkaterData.ActiveTeam;
+Check(goldCardTeam.homeColors.jerseyScheme.primaryColor.Equals(gold.colorSchemes.jerseyScheme.primaryColor)
+    && greenCardTeam.homeColors.jerseyScheme.primaryColor.Equals(green.colorSchemes.jerseyScheme.primaryColor),
+    "GoalieCardCarriersContainDistinctEffectivePalettes");
+Check(!ReferenceEquals(goldCardTeam, greenCardTeam) && !ReferenceEquals(goldCardTeam, canonicalTeam)
+    && !ReferenceEquals(goldCardTeam.homeColors, greenCardTeam.homeColors)
+    && !ReferenceEquals(goldCardTeam.homeColors.jerseyScheme, canonicalGold.colorSchemes.jerseyScheme),
+    "GoaliePreviewTeamsAndSchemesAreDetachedPerCard");
+Check(canonicalTeam.homeColors.jerseyScheme.primaryColor.Equals(new UnityEngine.Color(0, .7f, .9f, 1))
+    && canonicalGold.colorSchemes.jerseyScheme.primaryColor.Equals(gold.colorSchemes.jerseyScheme.primaryColor)
+    && state.Repository.Saves == beforePreviewSave, "PreviewPreservesCanonicalTeamGoalieAndSaves");
+var nativeRender = new Tape2Tape.Customization.UI.SkaterPreviewInUI { Parent = selection.Menu };
+var nativeMenuTeam = selection.Menu.Team.TemporaryTeamData;
+TeamData RenderTeam(SkaterData player, Tape2Tape.Customization.UI.SkaterPreviewInUI preview) {
+    var input = nativeMenuTeam;
+    LineupPreviewKit.Prefix(preview, player, ref input);
+    return input;
+}
+Check(ReferenceEquals(RenderTeam(selection.Active, nativeRender), goldCardTeam)
+    && ReferenceEquals(RenderTeam(selection.Reserve, nativeRender), greenCardTeam),
+    "NativeLargePreviewRoutesMenuTemporaryTeamThroughExactSelectedGoalie");
+Check(ReferenceEquals(RenderTeam(new GoaltenderData { id = selection.Active.id }, nativeRender), nativeMenuTeam)
+    && ReferenceEquals(RenderTeam(selection.Active, new Tape2Tape.Customization.UI.SkaterPreviewInUI { Parent = new LineupMenu() }), nativeMenuTeam),
+    "PreviewRoutingRejectsSameIdCloneAndForeignMenu");
+Check(ReferenceEquals(selection.Menu.Team.TemporaryTeamData, nativeMenuTeam), "PreviewRoutingDoesNotMutateNativeMenuRoster");
+Plugin.IsDefaultMode = true;
+Check(ReferenceEquals(RenderTeam(selection.Active, nativeRender), nativeMenuTeam), "DefaultModeRetainsNativePreviewTeam");
+Plugin.IsDefaultMode = false;
+var foreignTeam = new TeamData();
+LineupPreviewKit.Prefix(nativeRender, selection.Active, ref foreignTeam);
+Check(!ReferenceEquals(foreignTeam, goldCardTeam), "ForeignTeamInputCannotBorrowOwnedGoaliePalette");
+selection.Menu.TryLeaveMenu(false);
+Check(ReferenceEquals(RenderTeam(selection.Active, nativeRender), nativeMenuTeam), "ClosedGoalieMenuDoesNotRedirectLaterRender");
+GoalieRosterMenu.Finish(selection);
+Check(UnityEngine.Object.DestroyedObjects.Count(o => ReferenceEquals(o, goldCardTeam)) == 1
+    && UnityEngine.Object.DestroyedObjects.Count(o => ReferenceEquals(o, greenCardTeam)) == 1
+    && !UnityEngine.Object.DestroyedObjects.Contains(canonicalTeam) && !UnityEngine.Object.DestroyedObjects.Contains(canonicalGold),
+    "CloseDestroysBothOwnedPreviewTeamsOnceAndPreservesCanonicalObjects");
+CampaignAppearanceRuntime.RestoreRecruit(gold, new CampaignDocument("Appearance Team Painted = yes\nAppearance Own Custom jersey Colors = yes\nAppearance Own Jersey Color = 245,200,20\nAppearance Own Custom jersey Away Colors = no\n"));
+Check(PlayNowTranslation.GoaliePreviewColors(canonicalTeam.awayColors, gold, true).jerseyScheme.primaryColor.Equals(new UnityEngine.Color(1, 1, 1, 1)),
+    "HomeOnlyGoalieOverrideDoesNotLeakIntoInheritedAwayPreview");
+var savedGoldPalette = gold.colorSchemes;
+CampaignAppearanceRuntime.RestoreRecruit(gold, new CampaignDocument("Appearance Team Painted = yes\nAppearance Own Custom jersey Colors = yes\nAppearance Own Jersey Color = 245,200,20\nAppearance Own Custom jersey Away Colors = yes\nAppearance Own Jersey Away Color = 200,20,245\n"));
+var homePreview = PlayNowTranslation.GoaliePreviewColors(canonicalTeam.homeColors, gold, false);
+var awayPreview = PlayNowTranslation.GoaliePreviewColors(canonicalTeam.awayColors, gold, true);
+Check(homePreview.jerseyScheme.primaryColor.Equals(new UnityEngine.Color(245f/255, 200f/255, 20f/255, 1))
+    && awayPreview.jerseyScheme.primaryColor.Equals(new UnityEngine.Color(200f/255, 20f/255, 245f/255, 1)),
+    "AuthoredGoalieHomeAndAwayUseTheirOwnExplicitPalette");
+Check(ReferenceEquals(savedGoldPalette, gold.colorSchemes) && !CampaignAppearanceRuntime.Away(gold)
+    && canonicalTeam.awayColors.jerseyScheme.primaryColor.Equals(new UnityEngine.Color(1, 1, 1, 1)),
+    "ResolvingBothPreviewKitsDoesNotChangePlayerKitOrCanonicalAway");
+var inheritedGoalie = new GoaltenderData { id = "inherited" };
+CampaignAppearanceRuntime.RestoreRecruit(inheritedGoalie, new CampaignDocument("Appearance Team Painted = yes\nAppearance Own Custom jersey Colors = no\nAppearance Own Custom jersey Away Colors = no\n"));
+Check(PlayNowTranslation.GoaliePreviewColors(canonicalTeam.homeColors, inheritedGoalie, false).jerseyScheme.primaryColor.Equals(canonicalTeam.homeColors.jerseyScheme.primaryColor)
+    && PlayNowTranslation.GoaliePreviewColors(canonicalTeam.awayColors, inheritedGoalie, true).jerseyScheme.primaryColor.Equals(canonicalTeam.awayColors.jerseyScheme.primaryColor),
+    "InheritedGoaliePreviewKeepsBothTeamKits");
 Console.WriteLine($"PASS {checks} source-linked goalie menu and native-order checks");
+} catch (Exception ex) { Console.Error.WriteLine(ex); Environment.ExitCode = 1; }

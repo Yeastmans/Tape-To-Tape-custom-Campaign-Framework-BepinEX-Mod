@@ -172,20 +172,38 @@ internal static class PlayNowTranslation
         if (skater == null || __result == null) return;
         try
         {
-            var doc = CampaignAppearanceRuntime.Read(skater);
-            var exported = doc == null ? ReadPlayer(skater) : null;
-            if (doc == null && exported == null) return;
-            bool away = TryKit(colors, out bool a) ? a : CampaignAppearanceRuntime.Away(skater);
-            var copy = TeamColorsData.CopyFrom(__result);
-            Paint(copy, doc ?? PlayerKitColors.Palette(exported, away), away);
-            // Explicit piece colors win over team aliases such as Bicep Color.
-            var own = CampaignAppearanceRuntime.OwnPalette(skater, away);
-            if (own != null) Paint(copy, own, away);
-            if (skater.HasCustomStickColor) copy.stickScheme = ColorScheme.CopyFrom(skater.StickColor);
-            if (skater.HasCustomSkatesColor) copy.skatesScheme = ColorScheme.CopyFrom(skater.SkatesColor);
-            __result = copy;
+            ApplyPlayerColors(colors, skater, ref __result);
         }
         catch (Exception ex) { Plugin.Log.LogError($"[PlayNow] Color translation failed: {ex}"); }
+    }
+
+    // Native UI continuations repaint from the preview team's raw palette.
+    // Resolve that palette up front using the same per-player overlay as the
+    // normal merge postfix, with an explicit kit for detached preview teams.
+    internal static TeamColorsData GoaliePreviewColors(TeamColorsData colors, GoaltenderData goalie, bool away)
+    {
+        colors ??= TeamColorsData.Default;
+        var personal = CampaignAppearanceRuntime.PreviewPalette(goalie, away) ?? goalie?.colorSchemes;
+        var result = personal == null ? TeamColorsData.CopyFrom(colors)
+            : TeamColorsData.CopyFrom(TeamColorsData.Merge(colors, personal));
+        if (goalie != null) ApplyPlayerColors(colors, goalie, ref result, away);
+        return result;
+    }
+
+    private static void ApplyPlayerColors(TeamColorsData colors, SkaterData skater, ref TeamColorsData __result, bool? kit = null)
+    {
+        var doc = CampaignAppearanceRuntime.Read(skater);
+        var exported = doc == null ? ReadPlayer(skater) : null;
+        if (doc == null && exported == null) return;
+        bool away = kit ?? (TryKit(colors, out bool a) ? a : CampaignAppearanceRuntime.Away(skater));
+        var copy = TeamColorsData.CopyFrom(__result);
+        Paint(copy, doc ?? PlayerKitColors.Palette(exported, away), away);
+        // Explicit piece colors win over team aliases such as Bicep Color.
+        var own = CampaignAppearanceRuntime.OwnPalette(skater, away);
+        if (own != null) Paint(copy, own, away);
+        if (skater.HasCustomStickColor) copy.stickScheme = ColorScheme.CopyFrom(skater.StickColor);
+        if (skater.HasCustomSkatesColor) copy.skatesScheme = ColorScheme.CopyFrom(skater.SkatesColor);
+        __result = copy;
     }
 
     internal static void Paint(TeamColorsData copy, CampaignDocument doc, bool away)

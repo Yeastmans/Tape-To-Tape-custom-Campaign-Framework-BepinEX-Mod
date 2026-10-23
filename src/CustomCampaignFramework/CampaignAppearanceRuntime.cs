@@ -266,14 +266,29 @@ internal static class CampaignAppearanceRuntime
     {
         if (AppearanceDecalRuntime.ClearIncompatibleLogo(player)) AppearanceContract.ClearJerseyLogo(binding.Effective);
         var forward = player.TryCast<ForwardData>(); var goalie = player.TryCast<GoaltenderData>();
+        var palette = KitPalette(binding, binding.Away);
+        if (forward != null) forward.colorSchemes = palette;
+        else if (goalie != null) goalie.colorSchemes = palette;
+    }
+    // A detached preview must resolve the requested kit without changing the
+    // player's current kit or its saved colorSchemes. Empty restored metadata
+    // has no authored authority; retain that native player's saved palette.
+    internal static TeamColorsData PreviewPalette(SkaterData player, bool away)
+    {
+        CheckContext();
+        if (player == null || !Bindings.TryGetValue(player.Pointer, out var binding) || binding.Export
+            || binding.Team.Fields.Count + binding.Player.Fields.Count + binding.Own.Fields.Count == 0) return null;
+        return KitPalette(binding, away);
+    }
+    private static TeamColorsData KitPalette(Binding binding, bool away)
+    {
         // Never start from the donor's own palette: a piece the player doesn't own must show
         // the team. With the team's palettes painted natively (Team), everything but the
         // player's explicit overrides stays unset and the game supplies the selected kit.
         var palette = Unset();
-        if (!binding.TeamPainted) PlayNowTranslation.Paint(palette, binding.Effective, binding.Away);
-        Overlay(palette, binding.Own, binding.Effective, binding.Away);
-        if (forward != null) forward.colorSchemes = palette;
-        else if (goalie != null) goalie.colorSchemes = palette;
+        if (!binding.TeamPainted) PlayNowTranslation.Paint(palette, binding.Effective, away);
+        Overlay(palette, binding.Own, binding.Effective, away);
+        return palette;
     }
     internal static void Player(SkaterData player, PlayerConfig config, bool away)
     {
