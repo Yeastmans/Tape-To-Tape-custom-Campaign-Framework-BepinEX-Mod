@@ -8,8 +8,14 @@ using Avalonia.Platform;
 // Inspect the actual published binaries, not the editor assembly referenced by other test suites.
 try
 {
+if (args.Length is < 1 or > 3) throw new ArgumentException("Usage: GameArtPackageChecks <publish-directory> [runtime-dll] [source-root]");
 string publish = Path.GetFullPath(args[0]);
-string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
+string root = args.Length > 2 ? Path.GetFullPath(args[2])
+    : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
+if (!File.Exists(Path.Combine(root, "src/CampaignCreator/CampaignCreator.csproj"))
+    || !Directory.Exists(Path.Combine(root, "assets/studio-guide"))
+    || !Directory.Exists(Path.Combine(root, "src/CustomCampaignFramework/Assets/MapSeams")))
+    throw new ArgumentException("Source root must contain the CampaignCreator project, guide illustrations and approved MapSeams: " + root);
 void Check(bool ok, string text) { if (!ok) throw new Exception(text); Console.WriteLine("PASS " + text); }
 var bannedFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
     "head-preview", "head-templates", "team-logos", "base-rosters", "base-maps", "flat-equipment", "node-images", "map-preview", "game-art", "spine-runtime", "node_modules"
