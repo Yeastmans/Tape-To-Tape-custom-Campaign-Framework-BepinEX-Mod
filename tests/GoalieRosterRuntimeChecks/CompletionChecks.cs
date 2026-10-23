@@ -196,9 +196,22 @@ static class CompletionChecks
         }
 
         f = Setup(); Play(f); var live = f.Manager._homeTeam.goaltender.goaltenderData;
+        Plugin.Log.Warnings.Clear();
         live.id = "illegal-in-match-goalie"; Play(f); live.id = "launch-goalie";
         update = Begin(f); Departure(f); End(f, update);
         check(Roster.Selection.Active.Contract.PlayedMatches == 0 && Roster.UnavailableReason != null, "ChangedLiveParticipantCannotBeRepairedIntoFalseCompletionProof");
+        check(Plugin.Log.Warnings.Any(x => x.Contains("[GoalieIdentity]") && x.Contains("reason=live-id")
+            && x.Contains("expectedId=launch-goalie") && x.Contains("observedId=illegal-in-match-goalie")),
+            "RejectedLiveIdentityReportsExactStableIdMismatch");
+
+        f = Setup(); Play(f); Plugin.Log.Warnings.Clear();
+        var unrelatedClone = GoalieNativeSnapshot.Restore(GoalieNativeSnapshot.Capture(f.Manager._homeTeam.goaltender.goaltenderData));
+        f.Manager._homeTeam.goaltender.goaltenderData = unrelatedClone;
+        f.Manager._homeTeam.goaltender._skaterData = unrelatedClone;
+        Play(f);
+        check(Roster.UnavailableReason != null && Roster.Selection.Active.Contract.PlayedMatches == 0
+            && Plugin.Log.Warnings.Any(x => x.Contains("[GoalieIdentity]") && x.Contains("reason=live-data")),
+            "UnprovenSameIdCloneStillRejectedAndIdentifiesChangedDataPointer");
 
         foreach (string invalid in new[] { "first-clone", "second-clone", "visitor", "failed-initialize", "failed-play", "foreign-play" }) {
             f = Setup();

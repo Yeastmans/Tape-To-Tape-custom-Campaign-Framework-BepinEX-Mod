@@ -124,15 +124,39 @@ internal static class GoalieMatchCompletion
     private static void ObserveOrigin(GoalieMatchLaunchGate.LaunchOrigin origin) => previewOrigin = origin;
     private static bool Owned(Session session) => session != null && !session.Invalid && !session.Completing
         && GoalieMatchLaunchGate.TryReuseOrigin(session.Origin, session.Origin.Campaign, session.Origin.HomeTeam);
-    private static bool Bound(Binding binding) => binding != null && Owned(binding.Session)
-        && GameManager.Instance?.Pointer == binding.Manager.Pointer
-        && binding.Controller.campaignState?.Pointer == binding.Session.Origin.Campaign.Pointer
-        && binding.Controller.teamSelectionState?.gameType == ScriptableStates.GameType.Rogue
-        && binding.Controller.teamSelectionState.homeTeam?.Pointer == binding.Session.Origin.HomeTeam.Pointer
-        && binding.Manager._homeTeam?.goaltender?.Pointer == binding.Goalie?.Pointer
-        && binding.Live != null && binding.Goalie.goaltenderData?.Pointer == binding.Live.Pointer
-        && binding.Goalie._skaterData?.Pointer == binding.Live.Pointer
-        && binding.Live.id == binding.Session.Origin.Attempt.GoalieId;
+    private static bool Bound(Binding binding) => BindingFailure(binding) == null;
+    private static string BindingFailure(Binding binding)
+    {
+        if (binding == null || !Owned(binding.Session)) return "origin";
+        if (GameManager.Instance?.Pointer != binding.Manager.Pointer) return "manager";
+        if (binding.Controller.campaignState?.Pointer != binding.Session.Origin.Campaign.Pointer) return "controller-campaign";
+        if (binding.Controller.teamSelectionState?.gameType != ScriptableStates.GameType.Rogue) return "game-type";
+        if (binding.Controller.teamSelectionState.homeTeam?.Pointer != binding.Session.Origin.HomeTeam.Pointer) return "selection-team";
+        if (binding.Manager._homeTeam?.goaltender?.Pointer != binding.Goalie?.Pointer) return "goalie-receiver";
+        if (binding.Live == null || binding.Goalie.goaltenderData?.Pointer != binding.Live.Pointer) return "live-data";
+        if (binding.Goalie._skaterData?.Pointer != binding.Live.Pointer) return "skater-data";
+        if (binding.Live.id != binding.Session.Origin.Attempt.GoalieId) return "live-id";
+        return null;
+    }
+    private static void ReportBindingFailure(Binding binding, string reason)
+    {
+        // Read-only evidence before invalidation. Keep pointer identity strict:
+        // a same-ID clone is not proof of an authorized native handoff.
+        static string Pointer(IntPtr? value) => value?.ToString("X") ?? "null";
+        var origin = binding.Session.Origin;
+        Plugin.Log.LogWarning("[GoalieIdentity] reason=" + reason
+            + "; run=" + origin.Attempt.RunId + "; token=" + origin.Attempt.Token
+            + "; expectedId=" + origin.Attempt.GoalieId + "; observedId=" + binding.Goalie?.goaltenderData?.id
+            + "; participant=" + binding.Session.Participant
+            + "; expectedManager=" + Pointer(binding.Manager?.Pointer) + "; manager=" + Pointer(GameManager.Instance?.Pointer)
+            + "; controller=" + Pointer(binding.Controller?.Pointer)
+            + "; expectedCampaign=" + Pointer(origin.Campaign?.Pointer) + "; campaign=" + Pointer(binding.Controller?.campaignState?.Pointer)
+            + "; expectedTeam=" + Pointer(origin.HomeTeam?.Pointer) + "; selectionTeam=" + Pointer(binding.Controller?.teamSelectionState?.homeTeam?.Pointer)
+            + "; gameType=" + binding.Controller?.teamSelectionState?.gameType
+            + "; expectedReceiver=" + Pointer(binding.Goalie?.Pointer) + "; receiver=" + Pointer(binding.Manager?._homeTeam?.goaltender?.Pointer)
+            + "; expectedLive=" + Pointer(binding.Live?.Pointer) + "; goalieData=" + Pointer(binding.Goalie?.goaltenderData?.Pointer)
+            + "; skaterData=" + Pointer(binding.Goalie?._skaterData?.Pointer));
+    }
     private static void NodePrefix(MapNode __instance, out GoalieMatchLaunchGate.LaunchOrigin __state)
     {
         __state = previewOrigin?.Destination?.Pointer == __instance?.Pointer ? previewOrigin : null;
@@ -205,8 +229,12 @@ internal static class GoalieMatchCompletion
     {
         // A destroyed scene's delayed event is not a live identity mutation.
         if (binding?.Manager?.Pointer != GameManager.Instance?.Pointer) return;
-        if (!Bound(binding)) {
-            if (Owned(binding?.Session)) Unavailable(binding.Session, "The live goalie identity changed during this match.");
+        string failure = BindingFailure(binding);
+        if (failure != null) {
+            if (Owned(binding?.Session)) {
+                try { ReportBindingFailure(binding, failure); }
+                finally { Unavailable(binding.Session, "The live goalie identity changed during this match."); }
+            }
             return;
         }
         if (!binding.Manager.isGamePlaying) return;
