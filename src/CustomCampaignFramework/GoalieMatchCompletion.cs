@@ -79,6 +79,8 @@ internal static class GoalieMatchCompletion
         internal Team Team;
         internal GoaltenderData Source;
         internal bool North, Failed;
+        internal string FailureStage, Entry, InitializeEntry, InitializeExit;
+        internal int InitializeCalls;
     }
     private sealed class CloneObservation
     {
@@ -215,6 +217,38 @@ internal static class GoalieMatchCompletion
             && scope.Team.teamSelection.homeTeam.goalie?.Pointer == scope.Source.Pointer
             && scope.Source.id == binding.Session.Origin.Attempt.GoalieId;
     }
+    private static string CaptureSide(Func<string> capture)
+    {
+        try { return capture(); }
+        catch (Exception ex) { return "snapshot-error:" + ex.GetType().Name; }
+    }
+    private static string SideSnapshot(SideHandoff scope)
+    {
+        static string P(IntPtr? value) => value?.ToString("X") ?? "null";
+        var before = scope.Before; var origin = before?.Session.Origin;
+        return "owned=" + SideOwned(scope) + "; manager=" + P(GameManager.Instance?.Pointer)
+            + "; expectedManager=" + P(before?.Manager?.Pointer) + "; team=" + P(scope.Team?.Pointer)
+            + "; managerHome=" + P(before?.Manager?._homeTeam?.Pointer) + "; isHome=" + scope.Team?.isHomeTeam
+            + "; selection=" + P(scope.Team?.teamSelection?.Pointer) + "; controllerSelection=" + P(before?.Controller?.teamSelectionState?.Pointer)
+            + "; campaign=" + P(before?.Controller?.campaignState?.Pointer) + "; expectedCampaign=" + P(origin?.Campaign?.Pointer)
+            + "; selectedHome=" + P(scope.Team?.teamSelection?.homeTeam?.Pointer) + "; expectedHome=" + P(origin?.HomeTeam?.Pointer)
+            + "; gameType=" + scope.Team?.teamSelection?.gameType + "; source=" + P(scope.Source?.Pointer)
+            + "; currentSource=" + P(scope.Team?.teamSelection?.homeTeam?.goalie?.Pointer)
+            + "; sourceId=" + scope.Source?.id + "; expectedId=" + origin?.Attempt.GoalieId
+            + "; requestedNorth=" + scope.North + "; actualNorth=" + scope.Team?.isNorth
+            + "; receiver=" + P(scope.Team?.goaltender?.Pointer) + "; receiverTeam=" + P(scope.Team?.goaltender?.Team?.Pointer);
+    }
+    private static void ReportSideFailure(SideHandoff scope, bool original, Exception error)
+    {
+        Plugin.Log.LogWarning("[GoalieSide] rejected; utc=" + DateTime.UtcNow.ToString("O")
+            + "; token=" + scope.Before.Session.Origin.Attempt.Token + "; stage=" + (scope.FailureStage ?? "outer-finalizer")
+            + "; original=" + original + "; exception=" + (error?.GetType().FullName ?? "none")
+            + "; currentScope=" + ReferenceEquals(sideHandoff, scope) + "; failed=" + scope.Failed
+            + "; initialized=" + scope.InitializeCalls + "; candidate=" + (scope.Candidate != null)
+            + "; candidateBinding=" + (scope.Candidate == null ? "missing" : BindingFailure(scope.Candidate) ?? "valid")
+            + "; beforeBinding=" + BindingFailure(scope.Before) + "; final={" + SideSnapshot(scope) + "}"
+            + "; entry={" + scope.Entry + "}; initializeEntry={" + scope.InitializeEntry + "}; initializeExit={" + scope.InitializeExit + "}");
+    }
     private static void SidePrefix(Team __instance, bool __0, out SideHandoff __state)
     {
         __state = new SideHandoff { Previous = sideHandoff, Team = __instance, North = __0 }; sideHandoff = __state;
@@ -223,8 +257,10 @@ internal static class GoalieMatchCompletion
             if (manager == null || !Managers.TryGetValue(manager.Pointer, out var before)
                 || manager._homeTeam?.Pointer != __instance?.Pointer || !Bound(before)) return;
             __state.Before = before; __state.Source = before.Session.Origin.HomeTeam.goalie;
-            if (!SideOwned(__state) || __state.Previous?.Before != null) __state.Failed = true;
-        } catch (Exception ex) { __state.Failed = true; Warn(ex.Message); }
+            var evidenceScope = __state;
+            __state.Entry = CaptureSide(() => SideSnapshot(evidenceScope));
+            if (!SideOwned(__state) || __state.Previous?.Before != null) { __state.Failed = true; __state.FailureStage = "side-prefix"; }
+        } catch (Exception ex) { __state.Failed = true; __state.FailureStage = "side-prefix-exception"; Warn(ex.Message); }
     }
     private static Exception SideFinalizer(SideHandoff __state, bool __runOriginal, Exception __exception)
     {
@@ -240,7 +276,10 @@ internal static class GoalieMatchCompletion
                     + "; id=" + candidate.Live.id + "; oldReceiver=" + __state.Before.Goalie.Pointer.ToString("X")
                     + "; receiver=" + candidate.Goalie.Pointer.ToString("X") + "; oldLive=" + __state.Before.Live.Pointer.ToString("X")
                     + "; live=" + candidate.Live.Pointer.ToString("X"));
-            } else Unavailable(__state.Before.Session, "Native goalie side switching did not preserve the originating home goalie.");
+            } else {
+                try { ReportSideFailure(__state, __runOriginal, __exception); }
+                finally { Unavailable(__state.Before.Session, "Native goalie side switching did not preserve the originating home goalie."); }
+            }
         } catch (Exception ex) { if (__state?.Before != null) Unavailable(__state.Before.Session, ex.Message); }
         finally { if (__state != null && ReferenceEquals(sideHandoff, __state)) sideHandoff = __state.Previous; }
         return __exception;
@@ -251,9 +290,13 @@ internal static class GoalieMatchCompletion
         try {
             var side = sideHandoff;
             if (side?.Before != null) {
+                side.InitializeCalls++;
+                side.InitializeEntry = CaptureSide(() => "receiver=" + __instance?.Pointer.ToString("X") + "; receiverTeam=" + __instance?.Team?.Pointer.ToString("X")
+                    + "; input=" + __0?.Pointer.ToString("X") + "; inputId=" + __0?.id + "; campaign=" + __1
+                    + "; candidate=" + (side.Candidate != null) + "; failed=" + side.Failed + "; " + SideSnapshot(side));
                 if (side.Failed || side.Candidate != null || !SideOwned(side) || !__1 || __0?.Pointer != side.Source.Pointer
                     || __instance?.Pointer != side.Team.goaltender?.Pointer || __instance.Team?.Pointer != side.Team.Pointer) {
-                    side.Failed = true; return;
+                    side.Failed = true; side.FailureStage ??= "goalie-prefix"; return;
                 }
                 __state = new CloneObservation { Side = side, First = __0 }; return;
             }
@@ -270,11 +313,17 @@ internal static class GoalieMatchCompletion
             if (__state == null) return __exception;
             if (__state.Side is SideHandoff side) {
                 var output = __instance.goaltenderData;
+                side.InitializeExit = CaptureSide(() => "original=" + __runOriginal + "; exception=" + (__exception?.GetType().FullName ?? "none")
+                    + "; currentScope=" + ReferenceEquals(sideHandoff, side) + "; candidate=" + (side.Candidate != null)
+                    + "; output=" + output?.Pointer.ToString("X") + "; outputId=" + output?.id
+                    + "; input=" + __state.First?.Pointer.ToString("X") + "; skater=" + __instance._skaterData?.Pointer.ToString("X")
+                    + "; receiver=" + __instance.Pointer.ToString("X") + "; receiverTeam=" + __instance.Team?.Pointer.ToString("X")
+                    + "; " + SideSnapshot(side));
                 if (__exception != null || !__runOriginal || !ReferenceEquals(sideHandoff, side) || side.Candidate != null
                     || !SideOwned(side) || output == null || output.Pointer == __state.First.Pointer
                     || output.id != side.Before.Session.Origin.Attempt.GoalieId || __instance._skaterData?.Pointer != output.Pointer
                     || __instance.Pointer != side.Team.goaltender?.Pointer || __instance.Team?.Pointer != side.Team.Pointer) {
-                    side.Failed = true; return __exception;
+                    side.Failed = true; side.FailureStage ??= "goalie-finalizer"; return __exception;
                 }
                 side.Candidate = new Binding { Session = side.Before.Session, Controller = side.Before.Controller,
                     Manager = side.Before.Manager, Goalie = __instance, Live = output };
@@ -285,7 +334,7 @@ internal static class GoalieMatchCompletion
                 || !Owned(binding.Session) || live == null || live.Pointer == __state.First.Pointer
                 || live.id != __state.First.id || __instance._skaterData?.Pointer != live.Pointer) { binding.Session.Invalid = true; return __exception; }
             binding.Live = live; __state.Scope.Observed = true;
-        } catch (Exception ex) { if (__state?.Side != null) __state.Side.Failed = true; if (__state?.Scope?.Binding != null) __state.Scope.Binding.Session.Invalid = true; Warn(ex.Message); }
+        } catch (Exception ex) { if (__state?.Side != null) { __state.Side.Failed = true; __state.Side.FailureStage ??= "goalie-finalizer-exception"; } if (__state?.Scope?.Binding != null) __state.Scope.Binding.Session.Invalid = true; Warn(ex.Message); }
         return __exception;
     }
     private static Exception InitializeFinalizer(Initialization __state, bool __runOriginal, Exception __exception)

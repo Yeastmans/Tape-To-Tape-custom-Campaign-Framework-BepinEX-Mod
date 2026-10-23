@@ -100,6 +100,8 @@ static class CompletionChecks
     }
     internal static void Run(Action<bool, string> check) {
         var originalError = new Exception("foreign failure");
+        check((string)Call("CaptureSide", new Func<string>(() => throw new InvalidOperationException("diagnostic getter"))) == "snapshot-error:InvalidOperationException",
+            "ThrowingDiagnosticCaptureCannotEscapeIntoHandoffDecision");
         check(ReferenceEquals(Call("InitializeFinalizer", null, false, originalError), originalError), "MissingInitializationScopePreservesNativeException");
         check(ReferenceEquals(Call("DepartureFinalizer", new Rogue.FreeAgents.FreeAgentManager(), null, false, originalError), originalError), "MissingDepartureScopePreservesNativeException");
         check(ReferenceEquals(Call("UpdateFinalizer", new EndOfGameContext(), null, new UniTask(), false, originalError), originalError), "MissingUpdateScopePreservesNativeException");
@@ -246,10 +248,12 @@ static class CompletionChecks
         update = Begin(f); Departure(f); End(f, update); LaunchChecks.Finish(f.Campaign);
         check(Roster.Selection.Active.Contract.PlayedMatches == 1, "PairedPeriodEventsStillDebitExactlyOnce");
         foreach (string fault in new[] { "source", "receiver-team", "selection", "visitor", "missing", "id", "side", "skip", "throw", "initialize-skip", "initialize-throw" }) {
-            f = Setup(); Play(f); Side(f, fault: fault); Play(f);
+            f = Setup(); Play(f); Plugin.Log.Warnings.Clear(); Side(f, fault: fault); Play(f);
             update = Begin(f); Departure(f); End(f, update);
             check(Roster.UnavailableReason != null && Roster.Selection.Active.Contract.PlayedMatches == 0,
                 "UnprovenSideHandoffCannotRepairBinding_" + fault);
+            check(Plugin.Log.Warnings.Any(x => x.Contains("[GoalieSide]") && x.Contains("rejected") && x.Contains("token=")),
+                "RejectedSideHandoffPreservesPredicateEvidence_" + fault);
         }
         f = Setup(); Play(f);
         object[] failedSide = { f.Manager._homeTeam, true, null }; Call("SidePrefix", failedSide);
