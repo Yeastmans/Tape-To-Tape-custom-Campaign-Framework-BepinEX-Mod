@@ -41,6 +41,7 @@
     <ProjectReference Include="../ModCompatibility/ModCompatibility.csproj" />
     <Content Include="../ModCompatibility/Assets/native-baseline.json" Link="mod-runtime/native-baseline.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="$(StudioRuntimeBinary)" Link="mod-runtime/CustomCampaignFramework.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="../CustomCampaignFramework/Assets/MapSeams/*.png" Link="mod-runtime/MapSeams/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="$(StudioRuntimeHash)" Link="mod-runtime/runtime-sha256.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="../ModCompatibility/Assets/replaces-sha256.txt" Link="mod-runtime/replaces-sha256.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="../ModCompatibility/THIRD_PARTY_NOTICES.txt" Link="THIRD_PARTY_NOTICES-ModCompatibility.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />

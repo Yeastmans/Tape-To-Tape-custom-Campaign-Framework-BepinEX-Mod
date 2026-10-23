@@ -1,6 +1,6 @@
 # Four-feature candidate guide
 
-This document records the earlier local review candidate for game build 26085704. Its build paths and receipts are historical. Revision 24 targets public game build 26150666; use [the revision 24 validation record](RELEASE-R24-VALIDATION.md) for release evidence and remaining acceptance checks. The earlier build/FourFeatureCandidate and final-integration receipts do not prove the revision 24 payload.
+This document records the earlier local review candidate for game build 26085704. Its build paths and receipts are historical. Revision 25 targets public game build 26150666; use [the revision 25 validation record](RELEASE-R25-VALIDATION.md) for release evidence and remaining acceptance checks. The earlier build/FourFeatureCandidate and final-integration receipts do not prove the revision 25 payload.
 
 ## Authoring and use
 

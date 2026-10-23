@@ -52,6 +52,11 @@ function Check-NoGameArt([string]$Folder) {
     $forbidden = @('head-preview','head-templates','team-logos','base-rosters','base-maps','flat-equipment','node-images','map-preview','game-art','spine-runtime','node_modules','campaigns','library','.studio-drafts','.studio-staging')
     foreach ($file in Get-ChildItem -LiteralPath $Folder -File -Recurse -Force) {
         $relative = $file.FullName.Substring($Folder.TrimEnd('\').Length + 1)
+        if ($relative -match '^mod-runtime[\\/]MapSeams[\\/]([^\\/]+\.png)$') {
+            $approved = Join-Path $repository ('src/CustomCampaignFramework/Assets/MapSeams/' + $Matches[1])
+            Same-Hash $approved $file.FullName ('Approved staged seam ' + $Matches[1])
+            continue
+        }
         $parts = $relative -split '[/\\]'
         if (@($parts | Where-Object { $_ -in $forbidden }).Count -or $file.Extension.ToLowerInvariant() -in @('.png','.jpg','.jpeg','.webp','.skel','.atlas','.bundle') -or $file.Name -like '*Spine*') {
             throw "Extracted artwork, runtime or user content must not be bundled: $relative"
@@ -145,10 +150,10 @@ if ($embeddedArtwork.Count -ne 1 -or $embeddedArtwork[0].Include -ne $brandIcon 
 }
 if (!(Test-Path -LiteralPath (Join-Path $repository 'assets/branding/CampaignStudio.ico') -PathType Leaf)) { throw 'The Studio brand icon is missing.' }
 $seamSource = Join-Path $repository 'src/CustomCampaignFramework/Assets/MapSeams'
-$seamOutput = Join-Path $repository 'src/CustomCampaignFramework/bin/Release/net6.0/MapSeams'
+$seamOutput = Join-Path $stage 'mod-runtime/MapSeams'
 $sourceSeams = @(Get-ChildItem -LiteralPath $seamSource -File -Filter '*.png')
 $outputSeams = @(Get-ChildItem -LiteralPath $seamOutput -File)
-if ($sourceSeams.Count -ne 6 -or $outputSeams.Count -ne $sourceSeams.Count) { throw 'The mod must contain exactly the six approved map seams.' }
+if ($sourceSeams.Count -ne 6 -or $outputSeams.Count -ne $sourceSeams.Count -or @(Get-ChildItem -LiteralPath $seamOutput -Directory).Count) { throw 'The staged mod must contain exactly the six approved map seams.' }
 foreach ($file in $sourceSeams) { Same-Hash $file.FullName (Join-Path $seamOutput $file.Name) ('Map seam ' + $file.Name) }
 
 $installerOutput = Join-Path $buildRoot 'installer'

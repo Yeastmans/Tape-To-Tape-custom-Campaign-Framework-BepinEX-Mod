@@ -1,5 +1,7 @@
 # Revision 24 validation
 
+**Withdrawn:** Revision 24 was returned to draft after extraction proved that its separate game-install plugin was stale (`65136D...`), although Studio bundled the reviewed `34A662...` runtime. Do not install revision 24. Its tag and evidence are retained; revision 25 corrects the package. The runtime observations below remain evidence for the exact binaries named, not acceptance of the withdrawn installer.
+
 Target: Tape to Tape public v1.0.0 CS13980, Steam build 26150666. The game title, installed depot, generated interop and native hashes were checked on 2026-10-23. Steam had already switched the expired `roguelite` beta to public; no newer depot download was queued.
 
 ## Release status

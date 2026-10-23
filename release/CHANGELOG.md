@@ -1,6 +1,16 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
-## Beta 1.0 revision 24 — 2026-10-23
+## Beta 1.0 revision 25 — 2026-10-23
+
+- Corrects the withdrawn revision 24 installer: the game and Studio receive the same verified public-v1.0 runtime and complete map-seam assets. Both destinations are checked in the extracted installer before publication.
+- Includes two-line Play Now exports with stamina, independent Home/Away logos and kit copy controls, campaign goalie recruitment, reserve swapping and optional contracts. Assigned visible goalie talents appear in the native GM talent box and lineup Abilities panel; GM offers show goalie stats except Shot Power.
+- Supports public game build 26150666. Runtime code is unchanged from the reviewed final revision 24 candidate; the packaging correction also covers the normal Studio build workflow.
+
+Live checks confirmed goalie talent display, recruitment, reserve swapping, contract expiry after a played match, palette persistence through restart and two-line match swapping. Complete visual verification of every Creator screen and a native Play Now lineup edit/save/restart roundtrip remain unverified. See [revision 25 validation](../docs/RELEASE-R25-VALIDATION.md) for exact coverage. Save and close Studio and the game before installing.
+
+## Beta 1.0 revision 24 — 2026-10-23 (withdrawn)
+
+The installer contained a stale game-install DLL. Use revision 25; the original tag is preserved for traceability.
 
 - Supports Tape to Tape public v1.0.0 CS13980, Steam build 26150666. Use the public branch (Betas: None).
 - Export two full skater lines to Play Now with the authored stamina setting. Native lineup edits survive restart; Studio warns before an update replaces them.

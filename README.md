@@ -2,11 +2,11 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 24](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r24-build-1792779666764) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 25](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r25-build-1792790958063) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
 **Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **public v1.0 release, build 26150666**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
 
-Beta 1.0 revision 24 supports the public v1.0 game and adds two-line Play Now exports, independent Home/Away logos, campaign reserve goalies and optional goalie contracts. See the [changelog](release/CHANGELOG.md) and [release validation](docs/RELEASE-R24-VALIDATION.md).
+Beta 1.0 revision 25 supports the public v1.0 game and adds two-line Play Now exports, independent Home/Away logos, campaign reserve goalies and optional goalie contracts. See the [changelog](release/CHANGELOG.md) and [release validation](docs/RELEASE-R25-VALIDATION.md).
 
 **This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. Reporting bugs on [Discord](https://discord.gg/hscxnYghb) or [GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues) helps immensely.
 

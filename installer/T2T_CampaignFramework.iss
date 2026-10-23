@@ -1,6 +1,6 @@
 ; Studio lives in Program Files; user data is migrated before any cleanup.
 #define AppName "T2T Campaign Studio"
-#define AppVersion "Beta 1.0 revision 24"
+#define AppVersion "Beta 1.0 revision 25"
 #define ExeName "T2T Campaign Studio.exe"
 #ifndef StudioDir
   #define StudioDir "..\build\CampaignStudio"
@@ -10,8 +10,8 @@
 AppId={{D8C4C4D2-8B7A-4A9C-B2D3-C1F4E5A6D7B8}
 AppName={#AppName}
 AppVersion={#AppVersion}
-VersionInfoVersion=1.0.0.24
-VersionInfoDescription=T2T Campaign Studio Beta 1.0 revision 24 Setup
+VersionInfoVersion=1.0.0.25
+VersionInfoDescription=T2T Campaign Studio Beta 1.0 revision 25 Setup
 SetupIconFile=..\assets\branding\CampaignStudio.ico
 DefaultDirName={autopf}\T2T Campaign Studio
 DefaultGroupName={#AppName}
@@ -37,8 +37,8 @@ Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription
 Source: "Migrate-UserContent.ps1"; Flags: dontcopy
 Source: "Retire-LegacyInstall.ps1"; Flags: dontcopy
 Source: "{#StudioDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\release\CustomCampaignFramework.dll"; DestDir: "{code:GameDirectory}\BepInEx\plugins"; Flags: ignoreversion
-Source: "..\src\CustomCampaignFramework\bin\Release\net6.0\MapSeams\*"; DestDir: "{code:GameDirectory}\BepInEx\plugins\MapSeams"; Flags: ignoreversion
+Source: "{#StudioDir}\mod-runtime\CustomCampaignFramework.dll"; DestDir: "{code:GameDirectory}\BepInEx\plugins"; Flags: ignoreversion
+Source: "{#StudioDir}\mod-runtime\MapSeams\*"; DestDir: "{code:GameDirectory}\BepInEx\plugins\MapSeams"; Flags: ignoreversion
 Source: "bepinex\*"; DestDir: "{code:GameDirectory}"; Flags: ignoreversion recursesubdirs createallsubdirs uninsneveruninstall
 
 [InstallDelete]

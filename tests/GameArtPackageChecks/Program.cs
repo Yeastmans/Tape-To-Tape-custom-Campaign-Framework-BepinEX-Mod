@@ -23,12 +23,39 @@ var bannedFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
 foreach (string file in Directory.EnumerateFiles(publish, "*", SearchOption.AllDirectories))
 {
     string relative = Path.GetRelativePath(publish, file);
+    if (args.Length > 1 && Path.GetDirectoryName(relative) == Path.Combine("mod-runtime", "MapSeams")) continue; // exact names/bytes checked below
     if (relative.Split(Path.DirectorySeparatorChar).Any(bannedFolders.Contains)) throw new Exception("Extracted game art is present: " + relative);
     string extension = Path.GetExtension(file).ToLowerInvariant();
     if (extension is ".png" or ".jpg" or ".jpeg" or ".webp" or ".skel" or ".atlas" or ".bundle"
         || Path.GetFileName(file).Contains("Spine", StringComparison.OrdinalIgnoreCase)) throw new Exception("Game pixels or Spine runtime are present: " + relative);
 }
 Check(true, "Published loose files contain no extracted game art or Spine runtime");
+// Inno's game destination must consume the same audited payload as Studio's updater.
+// Checking the publish tree alone misses stale release/bin inputs compiled into Setup.
+var installerRows = File.ReadAllLines(Path.Combine(root, "installer/T2T_CampaignFramework.iss"))
+    .Where(line => line.TrimStart().StartsWith("Source:", StringComparison.OrdinalIgnoreCase)
+        && line.Contains("DestDir: \"{code:GameDirectory}\\BepInEx\\plugins", StringComparison.OrdinalIgnoreCase)).ToArray();
+Check(installerRows.Length == 2
+    && installerRows.Any(line => line.StartsWith("Source: \"{#StudioDir}\\mod-runtime\\CustomCampaignFramework.dll\";", StringComparison.Ordinal))
+    && installerRows.Any(line => line.StartsWith("Source: \"{#StudioDir}\\mod-runtime\\MapSeams\\*\";", StringComparison.Ordinal)),
+    "Installer game plugin and seams consume only the staged Studio mod-runtime payload");
+if (args.Length > 1)
+{
+    string stagedRuntime = Path.Combine(publish, "mod-runtime", "CustomCampaignFramework.dll");
+    Check(File.Exists(stagedRuntime) && SHA256.HashData(File.ReadAllBytes(stagedRuntime)).AsSpan()
+        .SequenceEqual(SHA256.HashData(File.ReadAllBytes(Path.GetFullPath(args[1])))),
+        "Installer/Studio staged plugin equals the explicitly audited runtime DLL");
+    string stagedSeams = Path.Combine(publish, "mod-runtime", "MapSeams");
+    string approvedSeams = Path.Combine(root, "src/CustomCampaignFramework/Assets/MapSeams");
+    var expectedSeams = Directory.GetFiles(approvedSeams, "*.png");
+    Check(Directory.Exists(stagedSeams) && Directory.GetDirectories(stagedSeams).Length == 0
+        && Directory.GetFiles(stagedSeams, "*").Length == 6 && expectedSeams.Length == 6
+        && expectedSeams.All(file => {
+            string staged = Path.Combine(stagedSeams, Path.GetFileName(file));
+            return File.Exists(staged) && File.ReadAllBytes(file).AsSpan().SequenceEqual(File.ReadAllBytes(staged));
+        }),
+        "Installer/Studio staged payload contains exactly the six approved seams");
+}
 var studio = Assembly.LoadFrom(Path.Combine(publish, "T2T Campaign Studio.dll"));
 AppBuilder.Configure<Application>().UseHeadless(new AvaloniaHeadlessPlatformOptions()).SetupWithoutStarting();
 var pictures = AssetLoader.GetAssets(new Uri("avares://T2T Campaign Studio/"), null)
