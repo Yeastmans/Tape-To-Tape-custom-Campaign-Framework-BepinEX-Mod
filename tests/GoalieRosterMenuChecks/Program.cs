@@ -538,5 +538,52 @@ CampaignAppearanceRuntime.RestoreRecruit(inheritedGoalie, new CampaignDocument("
 Check(PlayNowTranslation.GoaliePreviewColors(canonicalTeam.homeColors, inheritedGoalie, false).jerseyScheme.primaryColor.Equals(canonicalTeam.homeColors.jerseyScheme.primaryColor)
     && PlayNowTranslation.GoaliePreviewColors(canonicalTeam.awayColors, inheritedGoalie, true).jerseyScheme.primaryColor.Equals(canonicalTeam.awayColors.jerseyScheme.primaryColor),
     "InheritedGoaliePreviewKeepsBothTeamKits");
+// A native starter snapshot has saved colors but no authored appearance fields.
+// Exercise the real RestoreRecruit -> ForKit -> Paint path before recapturing.
+var nativePalette = new TeamColorsData();
+nativePalette.jerseyScheme.primaryColor = new UnityEngine.Color(20f / 255, 100f / 255, 230f / 255, 1);
+nativePalette.helmetScheme.primaryColor = new UnityEngine.Color(.3f, .2f, .1f, 1);
+var nativeBlue = new GoaltenderData { id = "native-blue-preservation", colorSchemes = nativePalette,
+    StickColor = new ColorScheme { primaryColor = new UnityEngine.Color(.4f, .5f, .6f, 1) },
+    SkatesColor = new ColorScheme { primaryColor = new UnityEngine.Color(.6f, .5f, .4f, 1) } };
+var nativeRecord = GoalieNativeSnapshot.Capture(nativeBlue);
+var restoredBlue = GoalieNativeSnapshot.Restore(nativeRecord);
+var restoredPalette = restoredBlue.colorSchemes;
+string nativePaletteJson = UnityEngine.JsonUtility.ToJson(restoredPalette);
+string stickBeforeKit = UnityEngine.JsonUtility.ToJson(restoredBlue.StickColor);
+string skatesBeforeKit = UnityEngine.JsonUtility.ToJson(restoredBlue.SkatesColor);
+foreach (bool home in new[] { false, true, false }) {
+    CampaignAppearanceRuntime.ForKit(restoredBlue, home);
+    Check(ReferenceEquals(restoredPalette, restoredBlue.colorSchemes)
+        && UnityEngine.JsonUtility.ToJson(restoredBlue.colorSchemes) == nativePaletteJson,
+        "NativeOnlyRestoredGoaliePaletteSurvivesKit_" + home);
+}
+Check(UnityEngine.JsonUtility.ToJson(restoredBlue.StickColor) == stickBeforeKit
+    && UnityEngine.JsonUtility.ToJson(restoredBlue.SkatesColor) == skatesBeforeKit,
+    "KitSelectionRetainsExactRestoredNativeStickAndSkates");
+var recapturedBlue = GoalieNativeSnapshot.Restore(GoalieNativeSnapshot.Capture(restoredBlue));
+Check(UnityEngine.JsonUtility.ToJson(recapturedBlue.colorSchemes) == nativePaletteJson,
+    "RenderedNativeOnlyGoalieRecaptureRetainsSavedPalette");
+var nativeForward = new ForwardData { colorSchemes = nativePalette };
+CampaignAppearanceRuntime.RestoreRecruit(nativeForward, new CampaignDocument("Appearance Team Painted = no"));
+foreach (bool home in new[] { true, false }) {
+    CampaignAppearanceRuntime.ForKit(nativeForward, home);
+    Check(ReferenceEquals(nativeForward.colorSchemes, nativePalette), "NativeOnlyForwardPaletteSurvivesKit_" + home);
+}
+var nullPaletteGoalie = new GoaltenderData { id = "native-null-palette", colorSchemes = null };
+CampaignAppearanceRuntime.RestoreRecruit(nullPaletteGoalie, new CampaignDocument(""));
+CampaignAppearanceRuntime.ForKit(nullPaletteGoalie, true);
+CampaignAppearanceRuntime.ForKit(nullPaletteGoalie, false);
+Check(nullPaletteGoalie.colorSchemes == null, "NativeNullPaletteRemainsNativeNull");
+CampaignAppearanceRuntime.ForKit(gold, true);
+Check(gold.colorSchemes.jerseyScheme.primaryColor.Equals(new UnityEngine.Color(245f/255, 200f/255, 20f/255, 1)),
+    "PopulatedBindingStillPaintsAuthoredHomeKit");
+CampaignAppearanceRuntime.ForKit(gold, false);
+Check(gold.colorSchemes.jerseyScheme.primaryColor.Equals(new UnityEngine.Color(200f/255, 20f/255, 245f/255, 1)),
+    "PopulatedBindingStillPaintsAuthoredAwayKit");
+inheritedGoalie.colorSchemes = nativePalette;
+CampaignAppearanceRuntime.ForKit(inheritedGoalie, true);
+Check(inheritedGoalie.colorSchemes.jerseyScheme.primaryColor.a == 0,
+    "ExplicitNoOverridesStillClearsDonorJerseyForTeamInheritance");
 Console.WriteLine($"PASS {checks} source-linked goalie menu and native-order checks");
 } catch (Exception ex) { Console.Error.WriteLine(ex); Environment.ExitCode = 1; }

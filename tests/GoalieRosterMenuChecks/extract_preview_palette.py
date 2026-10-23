@@ -20,11 +20,13 @@ def method(text, signature):
 
 appearance = (source / "CampaignAppearanceRuntime.cs").read_text(encoding="utf-8-sig")
 translation = (source / "PlayNowTranslation.cs").read_text(encoding="utf-8-sig")
-parts = ["using System; using CampaignCore; using Data; using UnityEngine; using Tape2Tape.Customization.UI; using Tape2Tape.Hockey.UI; namespace EndlessMode;",
+parts = ["using System; using System.Linq; using CampaignCore; using Data; using UnityEngine; using Tape2Tape.Customization.UI; using Tape2Tape.Hockey.UI; namespace EndlessMode;",
          "static partial class CampaignAppearanceRuntime {"]
 for signature in ("internal static CampaignDocument Read(", "internal static bool Away(", "internal static CampaignDocument OwnPalette(",
                   "internal static TeamColorsData PreviewPalette(", "private static TeamColorsData KitPalette(",
-                  "internal static TeamColorsData Unset(", "private static void Overlay("):
+                  "internal static TeamColorsData Unset(", "private static void Overlay(",
+                  "internal static void ForKit(", "private static void Paint(", "private static Binding Get(",
+                  "internal static TeamColorsData PlayNowPalette("):
     parts.append(method(appearance, signature))
 parts += ["}", "static partial class PlayNowTranslation {"]
 for signature in ("internal static TeamColorsData GoaliePreviewColors(", "private static void ApplyPlayerColors(", "internal static void Paint("):

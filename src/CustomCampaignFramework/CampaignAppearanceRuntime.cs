@@ -245,7 +245,15 @@ internal static class CampaignAppearanceRuntime
         CheckContext();
         if (player == null) return;
         if (Bindings.TryGetValue(player.Pointer, out var binding) && !binding.Export)
-        { binding.Away = !home; Paint(player, binding); return; }
+        {
+            binding.Away = !home;
+            // Restored native starters can have a binding for logos/kit state
+            // without any authored palette authority. Preserve their saved
+            // personal colors, as PreviewPalette does, instead of painting Unset.
+            if (binding.Team.Fields.Count + binding.Player.Fields.Count + binding.Own.Fields.Count > 0)
+                Paint(player, binding);
+            return;
+        }
         var exported = PlayNowTranslation.ReadPlayer(player);
         if (exported == null) return;
         binding = Get(player); binding.Export = true; binding.Away = !home;

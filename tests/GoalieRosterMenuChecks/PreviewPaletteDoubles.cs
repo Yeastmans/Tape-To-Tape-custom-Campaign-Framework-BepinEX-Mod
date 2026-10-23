@@ -36,7 +36,7 @@ namespace EndlessMode {
         private static Data.ColorScheme DefaultStickColors() => Data.TeamColorsData.Default.stickScheme;
     }
     static partial class PlayNowTranslation {
-        private static CampaignCore.CampaignDocument ReadPlayer(Data.SkaterData player) => null;
+        internal static CampaignCore.CampaignDocument ReadPlayer(Data.SkaterData player) => null;
         private static bool TryKit(Data.TeamColorsData colors, out bool away) { away = false; return false; }
     }
 }
@@ -57,4 +57,9 @@ namespace EndlessMode {
         // The unrelated ordinary-lineup kit resolver is outside this menu test.
         internal static bool TryResolve(Data.TeamData team, object homeTeam, object awayTeam, out bool home) { home = true; return false; }
     }
+}
+
+namespace Data { public class ForwardData : SkaterData { public TeamColorsData colorSchemes; } }
+namespace EndlessMode {
+    static class AppearanceDecalRuntime { internal static bool ClearIncompatibleLogo(Data.SkaterData player) => false; }
 }
