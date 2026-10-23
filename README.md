@@ -2,11 +2,11 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 23](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r23-build-1792527027345) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 24](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r24-build-1792779666764) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
-**Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **`roguelite` branch, build 26085704**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
+**Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **public v1.0 release, build 26150666**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
 
-Beta 1.0 revision 23 repairs compatibility with **build 26085704**, adds goalie recruitment and Home/Away kit-copy controls, and fixes campaign-logo resolution and independent exported-player equipment. Goalie recruits stay for the run unless replaced again. See the [changelog](release/CHANGELOG.md) and [native audit](docs/NATIVE-26085704-REVIEW.md).
+Beta 1.0 revision 24 supports the public v1.0 game and adds two-line Play Now exports, independent Home/Away logos, campaign reserve goalies and optional goalie contracts. See the [changelog](release/CHANGELOG.md) and [release validation](docs/RELEASE-R24-VALIDATION.md).
 
 **This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. Reporting bugs on [Discord](https://discord.gg/hscxnYghb) or [GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues) helps immensely.
 
@@ -35,9 +35,9 @@ Beta 1.0 revision 23 repairs compatibility with **build 26085704**, adds goalie 
 
 ### Windows
 
-**You need:** Windows x64, your own Steam copy of Tape to Tape, and access to its **`roguelite` branch**. Beta 1.0 targets **game build 26085704**. The Windows installer includes the editor runtime and the required BepInEx 6 IL2CPP loader; Python and a separate .NET installation are not needed to use it.
+**You need:** Windows x64, your own Steam copy of Tape to Tape, on the **public branch**. Beta 1.0 targets **game build 26150666**. The Windows installer includes the editor runtime and the required BepInEx 6 IL2CPP loader; Python and a separate .NET installation are not needed to use it.
 
-1. In Steam, right-click **Tape to Tape → Properties → Betas** and select **`roguelite`**. If it is unavailable, you need branch access before continuing. Let Steam finish updating.
+1. In Steam, right-click **Tape to Tape → Properties → Betas** and select **None** (the public branch). Let Steam finish updating.
 2. Launch the game once, then quit it. Close any old creator or Studio window.
 3. Open [GitHub Releases](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases) and download **`T2T_Custom_Campaign_Framework_Setup.exe`** from **Campaign Studio Beta 1.0**. The GitHub “Source code” ZIP is not the installer.
 4. Run Setup from the Windows account you use to play and accept its administrator prompt. Choose the **Studio application folder**, then the separate **Tape to Tape game folder** containing `Tape to Tape.exe`. Steam's **Manage → Browse local files** opens the game folder.
@@ -243,7 +243,7 @@ The Studio uninstaller retains AppData content and the shared BepInEx runtime. *
 | Problem | What to check |
 | --- | --- |
 | The interface does not match this README | Check that you installed the new **Campaign Studio** release. The v2.1.x Python creator is different. |
-| `roguelite` is missing in Steam | The branch requires access. Confirm you have it before installing this release; do not substitute the old `experimental` instructions. |
+| Old beta branch is unavailable | Choose **None** under Steam Betas. This release supports the public v1.0 build. |
 | Pictures or base-game import lists are missing | Use **Read game artwork**, select the correct game installation and let the read finish. Repeat after a game update if prompted. |
 | The mod stops working after an update | Close the game and open Studio. It checks GitHub at startup and offers newer Studio/mod installers, including beta releases. Use **Check for updates** to retry. **Update mod compatibility** checks the files already installed; if the latest bundle still reports an unsupported game build, a further mod repair is needed. Check `BepInEx/LogOutput.log` if the loader does not start. |
 | My campaign does not appear in game | Save it, select it on Home and restart Tape to Tape. For map or starting-roster changes, choose **New Run**. |

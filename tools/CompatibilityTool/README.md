@@ -7,7 +7,7 @@ Run commands from the repository root. Paths containing spaces must be quoted. P
 ## Verify an existing reviewed baseline
 
 ```powershell
-dotnet run --project .\tools\CompatibilityTool -c Release -- verify 'D:\SteamLibrary\steamapps\common\Tape to Tape' '.\src\ModCompatibility\Assets\native-baseline.json' '26085704' '.\build\compatibility\verified-profile.json'
+dotnet run --project .\tools\CompatibilityTool -c Release -- verify 'D:\SteamLibrary\steamapps\common\Tape to Tape' '.\src\ModCompatibility\Assets\native-baseline.json' '26150666' '.\build\compatibility\verified-profile.json'
 ```
 
 The input baseline is integrity-checked. Verification rejects changed protected behavior, unsupported patch contracts, missing or ambiguous methods and unexpected squad query coverage. Success writes a profile pinned to the inspected game and metadata hashes. This is compatibility validation, not gameplay confirmation. A failure requires native-code review; do not bypass it by replacing hashes.
@@ -22,9 +22,9 @@ CompatibilityTool baseline <game folder> <squad TSV> <Steam build> <flow RVA hex
 
 The checked-in inputs for the current reviewed build are:
 
-- Game build: `26085704` (runtime contract `t2t-native-v2-20261020`).
+- Game build: `26150666`, public v1.0.0 CS13980 (runtime contract `t2t-native-v2-20261020`).
 - Squad manifest: `src/CustomCampaignFramework/Assets/squad-behavior-sites.tsv`.
-- Flow RVA: `4404340`.
+- Flow RVA: `4405600`.
 - Flow identity: `Tape2Tape.Hockey.UI.TitleScreen.<<NewRun>g__StartNewRun|#>d$$MoveNext`.
 - Baseline destination: `src/ModCompatibility/Assets/native-baseline.json`.
 - Runtime profile destination: `src/CustomCampaignFramework/Assets/native-compatibility.json`.
@@ -39,6 +39,6 @@ The shipping build wrapper is documented in [README_BUILD.md](../../README_BUILD
 
 ## Integrated four-feature inventory
 
-Assets/four-feature-contracts.json in ModCompatibility is embedded as FourFeatureContracts.json. Baseline generation includes its exact 46 source-owned named hook contracts, 21 jersey raw contracts and protected native callable groups. Verification preserves both contract sets and rejects missing, extra or altered contracts. The raw adapters have reviewed absolute RVAs and closed generic/unnamed identities, so this candidate requires the exact reviewed 26085704 GameAssembly and metadata; it does not infer relocation from an address-only update. Generated interop files are build provenance, while runtime structural preflight and the existing component-specific provider gates remain authoritative.
+Assets/four-feature-contracts.json in ModCompatibility is embedded as FourFeatureContracts.json. Baseline generation includes its exact 54 source-owned named hook contracts, 21 jersey raw contracts and protected native callable groups. Verification preserves both contract sets and rejects missing, extra or altered contracts. The raw adapters have reviewed absolute RVAs and closed generic/unnamed identities, so this release requires the exact reviewed 26150666 GameAssembly and metadata; it does not infer relocation from an address-only update. Generated interop files are build provenance, while runtime structural preflight and the existing component-specific provider gates remain authoritative.
 
-The final four-feature pair contains 1,448 protected native methods, 137 comparison sites and 109 query calls. Protected methods include dependencies and overloads; they are not an installed hook count. Actual installation-path coverage is recorded separately in the candidate's source, compiled, manual and raw audits. Generate and verify into separate staging paths before promoting the pair. Keep prior release receipts unchanged.
+The reviewed public-build pair contains 1,469 protected native methods, 137 comparison sites and 109 query calls. Protected methods include dependencies and overloads; they are not an installed hook count. Actual installation-path coverage is recorded separately in the release's source, compiled, manual and raw audits. Generate and verify into separate staging paths before promoting the pair. Keep prior release receipts unchanged.

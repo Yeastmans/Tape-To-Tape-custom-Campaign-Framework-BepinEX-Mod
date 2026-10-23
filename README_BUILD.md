@@ -18,8 +18,8 @@ The old `_build_studio_installer.ps1` and `_sync_github.ps1` are not required.
   in a standard Inno Setup 6 installation folder, or supplied with `-IsccPath`.
 - [7-Zip](https://www.7-zip.org/) for the pinned FFmpeg archive. Put `7z.exe` on
   PATH, install it to the standard Program Files location, or use `-SevenZipPath`.
-- Your own Steam installation of **Tape to Tape, roguelite branch, build
-  26071671**, with **current BepInEx-generated IL2CPP interop assemblies** in
+- Your own Steam installation of **Tape to Tape, public v1.0 branch, build
+  26150666**, with **current BepInEx-generated IL2CPP interop assemblies** in
   `BepInEx/interop`. Run your game once with the pinned BepInEx loader to
   generate them, then close it. The build wrapper does not install a loader
   into your game or generate interop by launching it.

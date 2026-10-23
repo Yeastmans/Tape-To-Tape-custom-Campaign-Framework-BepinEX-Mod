@@ -1,6 +1,6 @@
 # Four-feature candidate guide
 
-This is a local review candidate for game build 26085704. Revision 23 remains the published release and does not include these additions. The corrected final-review runtime and self-contained Studio are under build/FourFeatureCandidate-FinalReview/{runtime,studio-publish}. Independent review of the consolidated fixes remains pending. The earlier build/FourFeatureCandidate and final-integration receipts remain historical and are not proof of the corrected payload.
+This document records the earlier local review candidate for game build 26085704. Its build paths and receipts are historical. Revision 24 targets public game build 26150666; use [the revision 24 validation record](RELEASE-R24-VALIDATION.md) for release evidence and remaining acceptance checks. The earlier build/FourFeatureCandidate and final-integration receipts do not prove the revision 24 payload.
 
 ## Authoring and use
 

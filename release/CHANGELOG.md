@@ -1,5 +1,18 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 24 — 2026-10-23
+
+- Supports Tape to Tape public v1.0.0 CS13980, Steam build 26150666. Use the public branch (Betas: None).
+- Export two full skater lines to Play Now with the authored stamina setting. Native lineup edits survive restart; Studio warns before an update replaces them.
+- Give Home and Away kits independent logos. Copy the full selected kit to the other side, including goalie settings, then Save. Embedded Away artwork survives Home changes; campaign artwork is resolved before same-name global images.
+- Enable goalie recruitment per campaign and a reserve slot per playable squad, both off by default. Goalies nodes require campaign recruitment. Recruits can occupy Active or Reserve when enabled; swap between matches.
+- Optional goalie contracts count played matches, honor departure-prevention effects, promote the reserve on expiry, and retain an active goalie when no replacement is available. GM offers and lineup show duration in the native badge; GM offers show goalie attributes except Shot Power.
+- Preserve independent player appearance and goalie face/mask choices through export and reimport. Personal goalie colours survive recruitment, save/reload and lineup previews. Assigned visible goalie talents appear in the native GM talent box and lineup Abilities panel. Campaign opponents retain custom identities and logos.
+- Repairs include native goalie save/cache compatibility and the North-end Initialize handoff used when teams switch ends.
+
+Validation: independent code review, managed regression checks, compiled hook/binding audits and live public-build startup/match/overtime observations. These are distinct forms of evidence. Complete live acceptance for every authoring screen, native lineup Save/restart roundtrip, contract expiry branch and appearance combination is not established; Windows capture/accessibility limitations interrupted Studio checks. See the release validation document for exact coverage and remaining checks. Save and close Studio and the game before installing.
+
+
 ## Beta 1.0 revision 23 — 2026-10-20
 
 - Compatibility repair for Tape to Tape roguelite build **26085704**, including native squad behavior and custom reward queries affected by the game update.
