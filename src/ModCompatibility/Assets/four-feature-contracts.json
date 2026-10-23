@@ -1870,6 +1870,7 @@
     "Tape2Tape.Customization.UI.TeamCustomizationArtifactsList$$Init",
     "Tape2Tape.Customization.UI.TeamRosterData$$.ctor",
     "Tape2Tape.Customization.UI.TeamRosterData$$ApplyChanges",
+    "Tape2Tape.Customization.UI.TeamRosterData$$get_HasChanged",
     "Tape2Tape.Customization.UI.TeamRosterData$$UpdateTemporaryTeamData",
     "Tape2Tape.Customization.UI.TeamRosterData$$get_OriginalTeamData",
     "Tape2Tape.Customization.UI.TeamRosterData$$get_TemporaryTeamData",

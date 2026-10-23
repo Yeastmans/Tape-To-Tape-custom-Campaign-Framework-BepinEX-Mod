@@ -1,8 +1,8 @@
 {
-  "Id": "EF624287E51BE046F1D1A12773DAF060DCD99C4DC12DAC7CF7F2B805CB985C08",
+  "Id": "5F877A5A6C5D52B93CF70F4DDE44C756C99F5B04E19DC2AF6EEFE79FABE4ED7E",
   "Profile": {
     "RuntimeContract": "t2t-native-v2-20261020",
-    "BaselineId": "EF624287E51BE046F1D1A12773DAF060DCD99C4DC12DAC7CF7F2B805CB985C08",
+    "BaselineId": "5F877A5A6C5D52B93CF70F4DDE44C756C99F5B04E19DC2AF6EEFE79FABE4ED7E",
     "Build": "26150666",
     "GameHash": "FD2E6FDF3900272C2E9B201F3280AF15C44D330D28E131E00FE6C99D007C4B93",
     "MetadataHash": "22E6F00B8CE5F83A3D167410FE6B7C76086B201BC48CB83CFAA3BD4E577CAC37",
@@ -8855,6 +8855,11 @@
       "Name": "Tape2Tape.Customization.UI.TeamRosterData$$CheckRoster::System.Boolean CheckRoster(System.Boolean requireMaxForwards)",
       "Signature": "System.Boolean CheckRoster(System.Boolean requireMaxForwards)",
       "BodyHash": "2ABA329BDADDB5CE720744D5E0B363DF8EADC1E6FF2A92FB701DA3F7027FE520"
+    },
+    {
+      "Name": "Tape2Tape.Customization.UI.TeamRosterData$$get_HasChanged::System.Boolean get_HasChanged()",
+      "Signature": "System.Boolean get_HasChanged()",
+      "BodyHash": "39F7A54AB06E098282AB68435667B3A8559BE5A38D935CA10800041FEAF61F1C"
     },
     {
       "Name": "Tape2Tape.Customization.UI.TeamRosterData$$get_OriginalTeamData::Data.TeamData get_OriginalTeamData()",
