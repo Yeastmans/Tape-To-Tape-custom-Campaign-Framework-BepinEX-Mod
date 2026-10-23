@@ -45,13 +45,17 @@ static class CompletionChecks
             _teamSelection = controller.teamSelectionState, _gameModeController = controller }, true, null);
         Initialize(f); T2TUtils.IsInMatch = true; return f;
     }
-    static void Initialize(Fixture f) {
+    static void Initialize(Fixture f, bool north = false) {
+        if (north) f.Manager._homeTeam.goaltender = new Goaltender.GoaltenderNorth { Team = f.Manager._homeTeam };
         object[] init = { f.Controller, null }; Call("InitializePrefix", init);
         var first = GoalieNativeSnapshot.Restore(GoalieNativeSnapshot.Capture(f.Campaign.runData.teamData.goalie));
-        object[] goalie = { f.Manager._homeTeam.goaltender, first, true, null }; Call("GoaliePrefix", goalie);
+        object[] northCall = { f.Manager._homeTeam.goaltender, first, true, null };
+        if (north) Call("NorthPrefix", northCall);
+        object[] goalie = { f.Manager._homeTeam.goaltender, first, !north, null }; Call("GoaliePrefix", goalie);
         var second = GoalieNativeSnapshot.Restore(GoalieNativeSnapshot.Capture(first));
         f.Manager._homeTeam.goaltender.goaltenderData = second; f.Manager._homeTeam.goaltender._skaterData = second;
         Call("GoalieFinalizer", f.Manager._homeTeam.goaltender, goalie[3], true, null);
+        if (north) Call("NorthFinalizer", northCall[3], true, null);
         Call("InitializeFinalizer", init[1], true, null);
     }
     static void Side(Fixture f, bool replaceReceiver = false, string fault = null, Goaltender.Goaltender target = null) {
@@ -65,12 +69,27 @@ static class CompletionChecks
         if (fault == "source") source = GoalieNativeSnapshot.Restore(GoalieNativeSnapshot.Capture(source));
         if (fault == "receiver-team") team.goaltender.Team = new();
         if (fault == "selection") team.teamSelection = new() { homeTeam = f.Campaign.runData.teamData, gameType = ScriptableStates.GameType.Rogue };
-        object[] goalie = { team.goaltender, source, fault != "visitor", null };
+        bool northReceiver = team.goaltender is Goaltender.GoaltenderNorth;
+        object[] northCall = { team.goaltender, source, fault != "north-visitor", null };
+        if (northReceiver && fault != "north-unproven") Call("NorthPrefix", northCall);
+        if (fault == "north-nested") {
+            object[] nested = { team.goaltender, source, true, null }; Call("NorthPrefix", nested);
+            Call("NorthFinalizer", nested[3], true, null);
+            var current = typeof(GoalieContractRuntime).Assembly.GetType("EndlessMode.GoalieMatchCompletion").GetField("northInitialization", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
+            if (!ReferenceEquals(current, northCall[3])) throw new Exception("Nested North scope did not restore its exact parent");
+        }
+        var baseSource = fault == "north-input" ? GoalieNativeSnapshot.Restore(GoalieNativeSnapshot.Capture(source)) : source;
+        object[] goalie = { team.goaltender, baseSource, !northReceiver && fault != "visitor", null };
         if (fault != "missing") Call("GoaliePrefix", goalie);
         var live = GoalieNativeSnapshot.Restore(GoalieNativeSnapshot.Capture(source));
         if (fault == "id") live.id = "other-goalie";
         team.goaltender.goaltenderData = live; team.goaltender._skaterData = live;
         if (fault != "missing") Call("GoalieFinalizer", team.goaltender, goalie[3], fault != "initialize-skip", fault == "initialize-throw" ? new Exception("init failed") : null);
+        if (fault == "north-double") {
+            object[] duplicate = { team.goaltender, source, false, null }; Call("GoaliePrefix", duplicate);
+            Call("GoalieFinalizer", team.goaltender, duplicate[3], true, null);
+        }
+        if (northReceiver && fault != "north-unproven") Call("NorthFinalizer", northCall[3], fault != "north-skip", fault == "north-throw" ? new Exception("north failed") : null);
         if (fault == "side") team.isNorth = !north;
         Call("SideFinalizer", args[2], fault != "skip", fault == "throw" ? new Exception("side failed") : null);
     }
@@ -217,6 +236,27 @@ static class CompletionChecks
         check(Roster.Selection.Active.Contract.PlayedMatches == 1 && f.Campaign.Repository.Saves == 2, "OvertimeShootoutControllerRetainsOriginalAttemptAcrossReinjection_" + cloneAgain);
         LaunchChecks.Finish(f.Campaign);
         }
+
+        f = Setup(1); Play(f); var northToken = Roster.Selection.ArmedAttemptToken;
+        Side(f, target: new Goaltender.GoaltenderNorth()); Play(f);
+        check(Roster.UnavailableReason == null && Roster.Selection.ArmedAttemptToken == northToken,
+            "OwnedNativeNorthOverrideMayPassFalseToBaseWithoutChangingAttempt");
+        Side(f, target: new Goaltender.Goaltender()); Play(f);
+        Side(f, target: new Goaltender.GoaltenderNorth()); Play(f);
+        update = Begin(f); Departure(f); End(f, update); LaunchChecks.Finish(f.Campaign);
+        check(Roster.Selection.Active.PlayerId == "bench-goalie" && Roster.Selection.ProcessedAttemptTokens.Contains(northToken),
+            "AlternatingNorthOverrideChargesOnceAndPromotesOnlyAtCompletion");
+        f = Setup(); Initialize(f, north: true); Play(f); update = Begin(f); Departure(f); End(f, update); LaunchChecks.Finish(f.Campaign);
+        check(Roster.Selection.Active.Contract.PlayedMatches == 1, "InitialControllerNorthOverrideRetainsExactTwoCloneProof");
+        foreach (string fault in new[] { "north-unproven", "north-visitor", "north-input", "north-double", "north-nested", "north-skip", "north-throw", "source", "id", "missing", "initialize-skip", "initialize-throw" }) {
+            f = Setup(); Play(f); Side(f, fault: fault, target: new Goaltender.GoaltenderNorth()); Play(f);
+            update = Begin(f); Departure(f); End(f, update);
+            check(Roster.UnavailableReason != null && Roster.Selection.Active.Contract.PlayedMatches == 0,
+                "UnprovenNorthOverrideCannotAuthorizeHomeClone_" + fault);
+        }
+        check(ReferenceEquals(Call("NorthFinalizer", null, false, originalError), originalError), "MissingNorthScopePreservesNativeException");
+        check(typeof(GoalieContractRuntime).Assembly.GetType("EndlessMode.GoalieMatchCompletion").GetField("northInitialization", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null) == null,
+            "FailedNorthFinalizerRestoresThreadScopeBeforeAnyFixtureReset");
 
         foreach (bool replaceReceiver in new[] { false, true }) {
             f = Setup(1); Play(f); var token = Roster.Selection.ArmedAttemptToken;

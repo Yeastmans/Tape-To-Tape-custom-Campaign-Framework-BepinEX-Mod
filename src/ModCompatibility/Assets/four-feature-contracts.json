@@ -551,6 +551,22 @@
     },
     {
       "Feature": "goalie-match-completion",
+      "Id": "goalie-completion-north-goalie",
+      "Assembly": "MainScriptsAssembly",
+      "DeclaringType": "Goaltender.GoaltenderNorth",
+      "Method": "Initialize",
+      "IsStatic": false,
+      "ReturnType": "System.Void",
+      "Parameters": [
+        "Data.GoaltenderData",
+        "System.Boolean"
+      ],
+      "Prefix": "NorthPrefix",
+      "Postfix": "",
+      "Finalizer": "NorthFinalizer"
+    },
+    {
+      "Feature": "goalie-match-completion",
       "Id": "goalie-completion-goalie",
       "Assembly": "MainScriptsAssembly",
       "DeclaringType": "Goaltender.Goaltender",
@@ -1223,6 +1239,7 @@
     "Goaltender.Goaltender$$.ctor",
     "Goaltender.Goaltender$$GetMaxSpeedFetch",
     "Goaltender.Goaltender$$Initialize",
+    "Goaltender.GoaltenderNorth$$Initialize",
     "Goaltender.Goaltender$$InitializeLogo",
     "Goaltender.Goaltender$$get_goaltenderData",
     "Goaltender.Goaltender.<InitializeSkin>d__91$$MoveNext",

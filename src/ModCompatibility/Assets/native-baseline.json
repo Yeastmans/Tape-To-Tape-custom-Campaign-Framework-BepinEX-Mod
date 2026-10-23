@@ -1,8 +1,8 @@
 {
-  "Id": "40BBD82ED3BAED09F198B4ECEF9D6B6DA9E008EFE4300BC7E91467215AAFB14C",
+  "Id": "6C412AFD771A54EEA9757974A2275C9963A492FA301C43FCD20398F300898059",
   "Profile": {
     "RuntimeContract": "t2t-native-v2-20261020",
-    "BaselineId": "40BBD82ED3BAED09F198B4ECEF9D6B6DA9E008EFE4300BC7E91467215AAFB14C",
+    "BaselineId": "6C412AFD771A54EEA9757974A2275C9963A492FA301C43FCD20398F300898059",
     "Build": "26150666",
     "GameHash": "FD2E6FDF3900272C2E9B201F3280AF15C44D330D28E131E00FE6C99D007C4B93",
     "MetadataHash": "22E6F00B8CE5F83A3D167410FE6B7C76086B201BC48CB83CFAA3BD4E577CAC37",
@@ -2212,6 +2212,22 @@
       },
       {
         "Feature": "goalie-match-completion",
+        "Id": "goalie-completion-north-goalie",
+        "Assembly": "MainScriptsAssembly",
+        "DeclaringType": "Goaltender.GoaltenderNorth",
+        "Method": "Initialize",
+        "IsStatic": false,
+        "ReturnType": "System.Void",
+        "Parameters": [
+          "Data.GoaltenderData",
+          "System.Boolean"
+        ],
+        "Prefix": "NorthPrefix",
+        "Postfix": "",
+        "Finalizer": "NorthFinalizer"
+      },
+      {
+        "Feature": "goalie-match-completion",
         "Id": "goalie-completion-goalie",
         "Assembly": "MainScriptsAssembly",
         "DeclaringType": "Goaltender.Goaltender",
@@ -3669,6 +3685,11 @@
       "Name": "Goaltender.Goaltender$$InitializeLogo::System.Void InitializeLogo(Data.TeamData teamData)",
       "Signature": "System.Void InitializeLogo(Data.TeamData teamData)",
       "BodyHash": "6C1DFD62854CEDE05917328E0CDAD9D91AB3DA9C548A3991ADE52040DAA18BBF"
+    },
+    {
+      "Name": "Goaltender.GoaltenderNorth$$Initialize::System.Void Initialize(Data.GoaltenderData gData, System.Boolean isCampaignTeam = False)",
+      "Signature": "System.Void Initialize(Data.GoaltenderData gData, System.Boolean isCampaignTeam = False)",
+      "BodyHash": "77805FAB09E287A2190BB29FABDD1C3759B9F064368279D539B056CF41A4B9EE"
     },
     {
       "Name": "Goaltender.GoaltenderNorth$$OnResetMap::System.Void OnResetMap()",

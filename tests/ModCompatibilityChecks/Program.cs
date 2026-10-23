@@ -24,8 +24,8 @@ Check(baseline.Profile.Build == "26150666", "Current release targets reviewed St
 Check(baseline.Methods.Any(m => m.Name.StartsWith("Tape2Tape.Hockey.UI.LineupMenu$$LinkStartersAndBenchEnds::", StringComparison.Ordinal)),
     "Updated native lineup navigation remains protected");
 var verified=baseline.Verify(image,"verification");
-Check(verified.RawHooks.Count == 21 && verified.NamedHooks.Count == 52, "Verified profile preserves every raw and named hook");
-Check(verified.NamedHooks.Count(h => h.Feature.StartsWith("goalie-", StringComparison.Ordinal)) == 38,
+Check(verified.RawHooks.Count == 21 && verified.NamedHooks.Count == 53, "Verified profile preserves every raw and named hook");
+Check(verified.NamedHooks.Count(h => h.Feature.StartsWith("goalie-", StringComparison.Ordinal)) == 39,
     "Verified profile preserves all current goalie lifecycle hooks");
 foreach (string feature in new[] { "jersey-logo", "goalie-checkpoint", "goalie-roster-menu", "goalie-match-launch", "goalie-match-completion" }) {
     var altered = JsonSerializer.Deserialize<CompatibilityBaseline>(JsonSerializer.Serialize(baseline))!;

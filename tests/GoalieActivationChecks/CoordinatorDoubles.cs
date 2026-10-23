@@ -57,6 +57,7 @@ public static class Targets {
     public static void M35() {}
     public static void M36() {}
     public static void M37() {}
+    public static void M38() {}
 }
 namespace HarmonyLib {
     public static class Priority { public const int First=800, Normal=400, Last=0; }
@@ -101,8 +102,8 @@ namespace EndlessMode {
         internal static (MethodInfo Native,MethodInfo Prefix,MethodInfo Postfix)[] Resolve() => Enumerable.Range(17,6).Select(i=>(TestState.Method(i),TestState.Patch,i==19?TestState.Patch:null)).ToArray();
     }
     internal static class GoalieMatchCompletion {
-        internal static CampaignCore.NamedManagedHookContract[] Required=Enumerable.Range(0,15).Select(_=>new CampaignCore.NamedManagedHookContract { Feature="completion" }).ToArray();
-        internal static (MethodInfo Native,MethodInfo Prefix,MethodInfo Finalizer)[] Resolve() => Enumerable.Range(23,15).Select(i=>(TestState.Method(i),i<31?TestState.Patch:null,TestState.Patch)).ToArray();
+        internal static CampaignCore.NamedManagedHookContract[] Required=Enumerable.Range(0,16).Select(_=>new CampaignCore.NamedManagedHookContract { Feature="completion" }).ToArray();
+        internal static (MethodInfo Native,MethodInfo Prefix,MethodInfo Finalizer)[] Resolve() => Enumerable.Range(23,16).Select(i=>(TestState.Method(i),i<31?TestState.Patch:null,TestState.Patch)).ToArray();
         internal static void Subscribe(){TestState.Subscribed=true;}
         internal static void Unsubscribe(){TestState.Subscribed=false;}
     }
@@ -111,7 +112,7 @@ internal static class CoordinatorChecks {
     internal static void Run() {
         int count=0;
         void Check(bool ok,string label) {if(!ok)throw new Exception(label);count++;}
-        for(int fail=0;fail<38;fail++) {
+        for(int fail=0;fail<39;fail++) {
             TestState.Reset();TestState.Failure=fail;EndlessMode.GoalieLifecycleActivation.Install();
             Check(!EndlessMode.GoaliePersistenceBridge.Enabled&&!EndlessMode.GoalieRosterMenu.Installed&&!TestState.Subscribed,"partial failure disabled");
             Check(HarmonyLib.Harmony.State.Values.All(p=>!p.Owners.Any(o=>o=="EndlessMode.GoalieLifecycle")),"remove including failing Patch mutation");
@@ -127,11 +128,11 @@ internal static class CoordinatorChecks {
         TestState.Reset();HarmonyLib.Harmony.State[TestState.Method(34)].Prefixes.Single().priority=HarmonyLib.Priority.First;EndlessMode.GoalieLifecycleActivation.Install();
         Check(!EndlessMode.GoaliePersistenceBridge.Enabled&&TestState.Calls==0,"misordered retention observer blocks activation");
         TestState.Reset();EndlessMode.GoalieLifecycleActivation.Install();
-        Check(EndlessMode.GoaliePersistenceBridge.Enabled&&EndlessMode.GoalieRosterMenu.Installed&&TestState.Subscribed&&TestState.Calls==38,"combined activation");
-        Check(HarmonyLib.Harmony.State.Values.Sum(p=>p.Finalizers.Count)==15,"all finalizers installed as finalizers");
+        Check(EndlessMode.GoaliePersistenceBridge.Enabled&&EndlessMode.GoalieRosterMenu.Installed&&TestState.Subscribed&&TestState.Calls==39,"combined activation");
+        Check(HarmonyLib.Harmony.State.Values.Sum(p=>p.Finalizers.Count)==16,"all finalizers installed as finalizers");
         Check(HarmonyLib.Harmony.State.Values.SelectMany(p=>p.Finalizers).All(p=>p.priority==HarmonyLib.Priority.First),"finalizer exception observation first");
         Check(HarmonyLib.Harmony.State[TestState.Method(19)].Postfixes.Single().priority==HarmonyLib.Priority.Last,"preview postfix after custom display");
-        EndlessMode.GoalieLifecycleActivation.Install();Check(TestState.Calls==38,"repeat activation is inert");
+        EndlessMode.GoalieLifecycleActivation.Install();Check(TestState.Calls==39,"repeat activation is inert");
         TestState.Reset();HarmonyLib.Harmony.State[TestState.Method(23)]=new HarmonyLib.Patches();HarmonyLib.Harmony.State[TestState.Method(23)].Prefixes.Add(new(){owner="foreign",priority=800});
         EndlessMode.GoalieLifecycleActivation.Install();Check(!EndlessMode.GoaliePersistenceBridge.Enabled&&TestState.Calls==0,"foreign provenance patch blocks capability");
         Console.WriteLine($"{count} production coordinator checks passed (Harmony doubles; no native execution)");

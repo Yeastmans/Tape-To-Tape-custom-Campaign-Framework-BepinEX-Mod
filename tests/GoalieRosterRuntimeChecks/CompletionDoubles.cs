@@ -8,7 +8,7 @@ namespace State.GameModeControllers.Shootout {
 }
 namespace State { public class TeamSelection : Il2CppSystem.Object { public Data.TeamData homeTeam; public ScriptableStates.GameType gameType; } }
 namespace Tape2Tape { public class Team : Il2CppSystem.Object { public Goaltender.Goaltender goaltender; public Data.TeamData _teamData; public bool isHomeTeam, isNorth; public State.TeamSelection teamSelection; } }
-namespace Goaltender { public class Goaltender : Il2CppSystem.Object { public Data.GoaltenderData goaltenderData; public Data.SkaterData _skaterData; public Tape2Tape.Team Team; } }
+namespace Goaltender { public class Goaltender : Il2CppSystem.Object { public Data.GoaltenderData goaltenderData; public Data.SkaterData _skaterData; public Tape2Tape.Team Team; } public class GoaltenderNorth : Goaltender {} }
 public partial class GameManager { public static GameManager Instance; public Tape2Tape.Team _homeTeam; public bool isGamePlaying; }
 public class GameLoader : Il2CppSystem.Object {
     public State.CampaignState campaignState; public State.TeamSelection teamSelectionState;

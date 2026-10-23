@@ -26,6 +26,7 @@ internal static class GoalieMatchCompletion
         Hook("elite", "STS.Map.EliteMapNode", "LaunchMatch", "System.Void", Array.Empty<string>(), "NodePrefix", "NodeFinalizer"),
         Hook("initialize", "State.GameModeControllers.GameControllerBase", "InitializeGoaltenders", "System.Void", Array.Empty<string>(), "InitializePrefix", "InitializeFinalizer"),
         Hook("side", "Tape2Tape.Team", "SwitchSide", "System.Void", new[] { "System.Boolean" }, "SidePrefix", "SideFinalizer"),
+        Hook("north-goalie", "Goaltender.GoaltenderNorth", "Initialize", "System.Void", new[] { "Data.GoaltenderData", "System.Boolean" }, "NorthPrefix", "NorthFinalizer"),
         Hook("goalie", "Goaltender.Goaltender", "Initialize", "System.Void", new[] { "Data.GoaltenderData", "System.Boolean" }, "GoaliePrefix", "GoalieFinalizer"),
         Hook("faceoff", "GameManager", "OnFaceoff", "System.Void", new[] { "Events.FaceoffArgs" }, "ExecutionPrefix", "NormalPlayFinalizer"),
         Hook("puckdrop", "GameManager", "OnPuckDropLaunch", "System.Void", Array.Empty<string>(), "ExecutionPrefix", "NormalPlayFinalizer"),
@@ -82,11 +83,22 @@ internal static class GoalieMatchCompletion
         internal string FailureStage, Entry, InitializeEntry, InitializeExit;
         internal int InitializeCalls;
     }
+    private sealed class NorthInitialization
+    {
+        internal NorthInitialization Previous;
+        internal Binding Binding;
+        internal SideHandoff Side;
+        internal Initialization Scope;
+        internal Goaltender.GoaltenderNorth Receiver;
+        internal GoaltenderData Input;
+        internal bool Observed, Failed;
+    }
     private sealed class CloneObservation
     {
         internal Initialization Scope;
         internal SideHandoff Side;
         internal GoaltenderData First;
+        internal NorthInitialization North;
     }
     private sealed class Update
     {
@@ -117,6 +129,7 @@ internal static class GoalieMatchCompletion
     private static bool subscribed;
     [ThreadStatic] private static Initialization initialization;
     [ThreadStatic] private static SideHandoff sideHandoff;
+    [ThreadStatic] private static NorthInitialization northInitialization;
     [ThreadStatic] private static Update update;
     [ThreadStatic] private static Departure departure;
 
@@ -132,7 +145,7 @@ internal static class GoalieMatchCompletion
         GoalieMatchLaunchGate.LaunchAuthorized -= ObserveOrigin;
         GoalieContractRuntime.RetentionEvaluated -= ObserveRetention;
         subscribed = false; previewOrigin = null; pendingScene = null; pendingOvertime = null;
-        Controllers.Clear(); Managers.Clear(); Contexts.Clear(); initialization = null; sideHandoff = null; update = null; departure = null;
+        Controllers.Clear(); Managers.Clear(); Contexts.Clear(); initialization = null; sideHandoff = null; northInitialization = null; update = null; departure = null;
     }
     private static void ObserveOrigin(GoalieMatchLaunchGate.LaunchOrigin origin) => previewOrigin = origin;
     private static bool Owned(Session session) => session != null && !session.Invalid && !session.Completing
@@ -284,27 +297,71 @@ internal static class GoalieMatchCompletion
         finally { if (__state != null && ReferenceEquals(sideHandoff, __state)) sideHandoff = __state.Previous; }
         return __exception;
     }
+    // The reviewed North override discards its true caller campaign flag and
+    // invokes the base Initialize with false. Witness that exact owned call;
+    // never infer authority from receiver type or a matching goalie ID alone.
+    private static void NorthPrefix(Goaltender.GoaltenderNorth __instance, GoaltenderData __0, bool __1, out NorthInitialization __state)
+    {
+        __state = new NorthInitialization { Previous = northInitialization }; northInitialization = __state;
+        try {
+            var side = sideHandoff?.Before != null ? sideHandoff : null;
+            var scope = side == null ? initialization : null;
+            var binding = side?.Before ?? scope?.Binding;
+            if (!__1 || !Owned(binding?.Session) || __0 == null || __0.id != binding.Session.Origin.Attempt.GoalieId
+                || __instance?.Pointer != (side?.Team.goaltender ?? binding.Goalie)?.Pointer) return;
+            if (side != null ? !SideOwned(side) || __0.Pointer != side.Source.Pointer
+                : __0.Pointer == binding.Session.Origin.HomeTeam.goalie.Pointer) return;
+            __state.Binding = binding; __state.Side = side; __state.Scope = scope;
+            __state.Receiver = __instance; __state.Input = __0;
+            if (__state.Previous?.Binding != null) FailNorth(__state);
+        } catch (Exception ex) { FailNorth(__state); Warn(ex.Message); }
+    }
+    private static bool NorthBaseWitness(NorthInitialization scope, Goaltender.Goaltender receiver, GoaltenderData input, bool campaign)
+        => !campaign && !scope.Failed && !scope.Observed && Owned(scope.Binding.Session)
+            && receiver?.Pointer == scope.Receiver.Pointer && input?.Pointer == scope.Input.Pointer
+            && (scope.Side != null ? ReferenceEquals(sideHandoff, scope.Side) && SideOwned(scope.Side)
+                : ReferenceEquals(initialization, scope.Scope));
+    private static void FailNorth(NorthInitialization scope)
+    {
+        scope.Failed = true;
+        if (scope.Side != null) { scope.Side.Failed = true; scope.Side.FailureStage ??= "north-override"; }
+        else if (scope.Binding != null) scope.Binding.Session.Invalid = true;
+    }
+    private static Exception NorthFinalizer(NorthInitialization __state, bool __runOriginal, Exception __exception)
+    {
+        try {
+            if (__state?.Binding != null && (__exception != null || !__runOriginal || __state.Failed || !__state.Observed
+                || !ReferenceEquals(northInitialization, __state) || !Owned(__state.Binding.Session)
+                || (__state.Side != null ? !ReferenceEquals(sideHandoff, __state.Side) : !ReferenceEquals(initialization, __state.Scope))))
+                FailNorth(__state);
+        } catch (Exception ex) { if (__state != null) FailNorth(__state); Warn(ex.Message); }
+        finally { if (__state != null && ReferenceEquals(northInitialization, __state)) northInitialization = __state.Previous; }
+        return __exception;
+    }
     private static void GoaliePrefix(Goaltender.Goaltender __instance, GoaltenderData __0, bool __1, out CloneObservation __state)
     {
         __state = null;
         try {
+            var north = northInitialization?.Binding != null ? northInitialization : null;
+            bool campaign = north == null ? __1 : NorthBaseWitness(north, __instance, __0, __1);
+            if (north != null && !campaign) FailNorth(north);
             var side = sideHandoff;
             if (side?.Before != null) {
                 side.InitializeCalls++;
                 side.InitializeEntry = CaptureSide(() => "receiver=" + __instance?.Pointer.ToString("X") + "; receiverTeam=" + __instance?.Team?.Pointer.ToString("X")
                     + "; input=" + __0?.Pointer.ToString("X") + "; inputId=" + __0?.id + "; campaign=" + __1
                     + "; candidate=" + (side.Candidate != null) + "; failed=" + side.Failed + "; " + SideSnapshot(side));
-                if (side.Failed || side.Candidate != null || !SideOwned(side) || !__1 || __0?.Pointer != side.Source.Pointer
+                if (side.Failed || side.Candidate != null || !SideOwned(side) || !campaign || __0?.Pointer != side.Source.Pointer
                     || __instance?.Pointer != side.Team.goaltender?.Pointer || __instance.Team?.Pointer != side.Team.Pointer) {
                     side.Failed = true; side.FailureStage ??= "goalie-prefix"; return;
                 }
-                __state = new CloneObservation { Side = side, First = __0 }; return;
+                __state = new CloneObservation { Side = side, First = __0, North = north }; return;
             }
             var scope = initialization; var binding = scope?.Binding;
-            if (binding == null || !__1 || __instance?.Pointer != binding.Goalie.Pointer) return;
+            if (binding == null || !campaign || __instance?.Pointer != binding.Goalie.Pointer) return;
             if (__0 == null || __0.id != binding.Session.Origin.Attempt.GoalieId
                 || __0.Pointer == binding.Session.Origin.HomeTeam.goalie.Pointer) { binding.Session.Invalid = true; return; }
-            __state = new CloneObservation { Scope = scope, First = __0 };
+            __state = new CloneObservation { Scope = scope, First = __0, North = north };
         } catch (Exception ex) { Warn(ex.Message); }
     }
     private static Exception GoalieFinalizer(Goaltender.Goaltender __instance, CloneObservation __state, bool __runOriginal, Exception __exception)
@@ -325,6 +382,7 @@ internal static class GoalieMatchCompletion
                     || __instance.Pointer != side.Team.goaltender?.Pointer || __instance.Team?.Pointer != side.Team.Pointer) {
                     side.Failed = true; side.FailureStage ??= "goalie-finalizer"; return __exception;
                 }
+                if (__state.North != null) __state.North.Observed = true;
                 side.Candidate = new Binding { Session = side.Before.Session, Controller = side.Before.Controller,
                     Manager = side.Before.Manager, Goalie = __instance, Live = output };
                 return __exception;
@@ -333,6 +391,7 @@ internal static class GoalieMatchCompletion
             if (__exception != null || !__runOriginal || !ReferenceEquals(initialization, __state.Scope)
                 || !Owned(binding.Session) || live == null || live.Pointer == __state.First.Pointer
                 || live.id != __state.First.id || __instance._skaterData?.Pointer != live.Pointer) { binding.Session.Invalid = true; return __exception; }
+            if (__state.North != null) __state.North.Observed = true;
             binding.Live = live; __state.Scope.Observed = true;
         } catch (Exception ex) { if (__state?.Side != null) { __state.Side.Failed = true; __state.Side.FailureStage ??= "goalie-finalizer-exception"; } if (__state?.Scope?.Binding != null) __state.Scope.Binding.Session.Invalid = true; Warn(ex.Message); }
         return __exception;
