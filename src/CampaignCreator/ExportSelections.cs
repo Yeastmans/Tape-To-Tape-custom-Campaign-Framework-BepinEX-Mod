@@ -39,20 +39,20 @@ internal static class ExportSelections
         return "";
     }
 
-    internal static CampaignDocument Logo(CampaignDocument source, string root, ExportReport? report)
+    internal static CampaignDocument Logo(CampaignDocument source, string root, ExportReport? report, string? campaign = null)
     {
         string name = source.Get("Logo From");
         if (source.Get("Export Logo PNG").Length == 0 && name.Length > 0
-            && !name.Equals("none", StringComparison.OrdinalIgnoreCase) && LogoExport.FindFile(root, name) == null)
+            && !name.Equals("none", StringComparison.OrdinalIgnoreCase) && LogoExport.FindFile(root, name, campaign) == null)
         {
             report?.Skip(source, "Logo From", name);
             source = new CampaignDocument(source.ToString());
             AppearanceContract.ClearJerseyLogo(source);
         }
-        return LogoExport.Snapshot(source, root);
+        return LogoExport.Snapshot(source, root, campaign);
     }
 
-    internal static CampaignDocument JerseyLogo(CampaignDocument source, string root, bool away, ExportReport? report)
+    internal static CampaignDocument JerseyLogo(CampaignDocument source, string root, bool away, ExportReport? report, string? campaign = null)
     {
         LogoExport.RequireCompleteEmbedded(source, away);
         var choice = JerseyLogoOptions.Read(source, away);
@@ -64,13 +64,13 @@ internal static class ExportSelections
             LogoExport.CopyIdentityToJersey(source, source, away);
         }
         if (choice.Mode == JerseyLogoMode.Image && source.Get(choice.MetadataPrefix + " PNG").Length == 0
-            && LogoExport.FindFile(root, choice.Source) == null)
+            && LogoExport.FindFile(root, choice.Source, campaign) == null)
         {
             report?.Skip(source, JerseyLogoOptions.Field(away), choice.Source);
             source = new CampaignDocument(source.ToString());
             JerseyLogoOptions.Clear(source, away);
         }
-        return LogoExport.Snapshot(source, root, away);
+        return LogoExport.Snapshot(source, root, away, campaign);
     }
 
     // Run after inheritance, at the last boundary before serializing. Resolving

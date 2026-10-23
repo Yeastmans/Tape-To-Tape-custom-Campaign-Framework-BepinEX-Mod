@@ -113,7 +113,7 @@ internal static class PlayerExport
         string sourceRoot = root;
         d = ExportPlayerResolver.Resolve(d, role);
         d.Set(OwnEquipmentKey, EquipmentIntent(d));
-        d = ExportSelections.Logo(AppearanceContract.Resolve(d, new CampaignDocument(""), new CampaignDocument(""), role), root, report);
+        d = ExportSelections.Logo(AppearanceContract.Resolve(d, new CampaignDocument(""), new CampaignDocument(""), role), root, report, CustomRewardCatalog.CampaignFor(sourceFile));
         root = ExportTranslation.RuntimeRoot(root);
         game = new GameData(sourceRoot); game.LoadCustomRewards(sourceFile);
         if (ExportTranslation.Ids(game, d.Get("Relics"), true, report, d, "Relics").Length > 0

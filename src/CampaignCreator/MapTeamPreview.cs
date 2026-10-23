@@ -21,7 +21,7 @@ public sealed class MapTeamPreview : IDisposable
         string source = team?.Get("Logo From", team.Get("Import Team")) ?? "";
         if (string.IsNullOrWhiteSpace(source) || source.Equals("RANDOM", StringComparison.OrdinalIgnoreCase)) return null;
         string? file;
-        try { file = LogoExport.FindFile(root, source); } catch (ArgumentException) { return null; }
+        try { file = LogoExport.FindFile(root, source, campaign); } catch (ArgumentException) { return null; }
         if (file == null || !File.Exists(file)) return null;
         if (images.TryGetValue(file, out var bitmap)) return bitmap;
         try { return images[file] = new Bitmap(file); }

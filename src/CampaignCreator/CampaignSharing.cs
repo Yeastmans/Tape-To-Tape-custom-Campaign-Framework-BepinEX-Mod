@@ -56,13 +56,14 @@ internal static partial class CampaignSharing
                 string key = slot is bool away ? JerseyLogoOptions.Field(away) : "Logo From";
                 string value = doc.Get(key).Trim();
                 if (value.Length == 0 || value.Equals("none", StringComparison.OrdinalIgnoreCase)) continue;
-                string? resolved = LogoExport.FindFile(contentRoot, value);
+                string? resolved = LogoExport.FindFile(contentRoot, value, campaign);
                 bool custom = Path.IsPathRooted(value) || value.IndexOfAny(['/', '\\']) >= 0
-                    || resolved != null && (resolved.StartsWith(Path.GetFullPath(Path.Combine(contentRoot, "logos")) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                    || resolved != null && (resolved.StartsWith(Path.GetFullPath(campaign) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                        || resolved.StartsWith(Path.GetFullPath(Path.Combine(contentRoot, "logos")) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
                         || resolved.StartsWith(Path.GetFullPath(folder) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
                 if (slot is bool kit && doc.Get(JerseyLogoOptions.Prefix(kit) + " Mode").Equals("embedded", StringComparison.OrdinalIgnoreCase)) custom = true;
                 if (!custom) continue;
-                var snapshot = slot is bool selectedKit ? LogoExport.Snapshot(doc, contentRoot, selectedKit) : LogoExport.Snapshot(doc, contentRoot);
+                var snapshot = slot is bool selectedKit ? LogoExport.Snapshot(doc, contentRoot, selectedKit, campaign) : LogoExport.Snapshot(doc, contentRoot, campaign);
                 string prefix = slot is bool metadataKit ? JerseyLogoOptions.Prefix(metadataKit) : "Export Logo";
                 byte[] bytes = Convert.FromBase64String(snapshot.Get(prefix + " PNG"));
                 string id = "t2t_" + Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant() + ".png";

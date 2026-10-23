@@ -8,8 +8,14 @@ internal static class LogoExport
 {
     private static readonly byte[] PngHeader = { 137, 80, 78, 71, 13, 10, 26, 10 };
     internal static string CustomFolder => Path.Combine(GameSavePaths.Root, "CustomLogos");
-    internal static string? FindFile(string root, string source)
+    internal static string? FindFile(string root, string source, string? campaign = null)
     {
+        if (!string.IsNullOrWhiteSpace(campaign))
+        {
+            string? owned = LogoFiles.Resolve(root, CustomFolder, source, campaign);
+            string campaignRoot = Path.GetFullPath(campaign) + Path.DirectorySeparatorChar;
+            if (Path.IsPathRooted(source) || owned != null && Path.GetFullPath(owned).StartsWith(campaignRoot, StringComparison.OrdinalIgnoreCase)) return owned;
+        }
         // Native names use the logo sprites read from the player's install, never the old GPU-readback
         // PNGs in CustomLogos (which can contain only uninitialized 0xCD pixels).
         if (!string.IsNullOrWhiteSpace(source) && !Path.IsPathRooted(source) &&
@@ -18,7 +24,7 @@ internal static class LogoExport
             return native;
         return LogoFiles.Resolve(root, CustomFolder, source);
     }
-    internal static CampaignDocument Snapshot(CampaignDocument source, string root)
+    internal static CampaignDocument Snapshot(CampaignDocument source, string root, string? campaign = null)
     {
         var result = new CampaignDocument(source.ToString());
         if (result.Get("Export Logo PNG").Length > 0)
@@ -36,7 +42,7 @@ internal static class LogoExport
         {
             result.Set("Export Logo Mode", "none"); return result;
         }
-        string file = FindFile(root, name) ?? throw new ArgumentException($"Logo '{name}' has no image available. Import its PNG or refresh the game's logo catalog before exporting.");
+        string file = FindFile(root, name, campaign) ?? throw new ArgumentException($"Logo '{name}' has no image available. Import its PNG or refresh the game's logo catalog before exporting.");
         byte[] bytes = File.ReadAllBytes(file);
         if (bytes.Length > 16 * 1024 * 1024 || bytes.Length < 24 || !bytes.Take(8).SequenceEqual(new byte[] {137,80,78,71,13,10,26,10}))
             throw new ArgumentException("Choose a PNG logo smaller than 16 MB.");
@@ -49,7 +55,7 @@ internal static class LogoExport
         result.Set("Export Logo PNG", Convert.ToBase64String(bytes));
         return result;
     }
-    internal static CampaignDocument Snapshot(CampaignDocument source, string root, bool away)
+    internal static CampaignDocument Snapshot(CampaignDocument source, string root, bool away, string? campaign = null)
     {
         var result = new CampaignDocument(source.ToString());
         var choice = JerseyLogoOptions.Read(source, away);
@@ -74,7 +80,7 @@ internal static class LogoExport
             result.Set(prefix + " Mode", "embedded");
             return result;
         }
-        string? file = FindFile(root, choice.Source);
+        string? file = FindFile(root, choice.Source, campaign);
         if (file == null) throw new ArgumentException($"{JerseyLogoOptions.Field(away)} '{choice.Source}' has no image available. Import its PNG or refresh the game's logo catalog before exporting.");
         bytes = File.ReadAllBytes(file);
         CheckPng(bytes, JerseyLogoOptions.Field(away));
@@ -122,7 +128,7 @@ internal static class LogoExport
     }
     // Preview shares export validation and embedded precedence; the caller's
     // document and the other kit remain untouched.
-    internal static Bitmap? Preview(string root, CampaignDocument team, bool away)
+    internal static Bitmap? Preview(string root, CampaignDocument team, bool away, string? campaign = null)
     {
         var effective = new CampaignDocument(team.ToString());
         if (JerseyLogoOptions.Read(team, away).Mode == JerseyLogoMode.Inherit)
@@ -131,12 +137,12 @@ internal static class LogoExport
             CopyIdentityToJersey(team, effective, away);
         }
         if (JerseyLogoOptions.Read(effective, away).Mode != JerseyLogoMode.Image) return null;
-        var snapshot = Snapshot(effective, root, away);
+        var snapshot = Snapshot(effective, root, away, campaign);
         return new Bitmap(new MemoryStream(Convert.FromBase64String(snapshot.Get(JerseyLogoOptions.Prefix(away) + " PNG"))));
     }
-    internal static Bitmap? Preview(string root, string source)
+    internal static Bitmap? Preview(string root, string source, string? campaign = null)
     {
-        var file = FindFile(root, source);
+        var file = FindFile(root, source, campaign);
         return file == null ? null : new Bitmap(file);
     }
 }

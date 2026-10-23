@@ -63,6 +63,12 @@ tests/CampaignStudioChecks/*
 !tests/CampaignStudioChecks/PlayerLogoChecks.cs
 !tests/CampaignStudioChecks/ImportLibraryChecks.cs
 !tests/CampaignStudioChecks/GoalieFreeAgentChecks.cs
+!tests/CampaignStudioChecks/ImportValueChecks.cs
+!tests/CampaignStudioChecks/BicepsChecks.cs
+!tests/CreatorImportFixtureChecks/
+tests/CreatorImportFixtureChecks/*
+!tests/CreatorImportFixtureChecks/CreatorImportFixtureChecks.csproj
+!tests/CreatorImportFixtureChecks/Program.cs
 !tests/TeamLookFillChecks/
 tests/TeamLookFillChecks/*
 !tests/TeamLookFillChecks/Program.cs

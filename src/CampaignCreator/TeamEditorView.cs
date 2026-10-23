@@ -18,6 +18,7 @@ internal sealed partial class TeamEditorView : UserControl
     internal int SelectedTab { get => tabs.SelectedIndex; set => tabs.SelectedIndex = Math.Clamp(value, 0, Math.Max(0, tabs.Items.Count - 1)); }
     private readonly CampaignDocument doc;
     private readonly GameData data;
+    private readonly string? campaign;
     private readonly Window owner;
     private readonly Action changed;
     private readonly Action<string, Func<string>> register;
@@ -76,6 +77,7 @@ internal sealed partial class TeamEditorView : UserControl
         Action<string[]>? bulkImportPlayers = null)
     {
         this.owner = owner; this.defaultsOnly = defaultsOnly;
+        campaign = CustomRewardCatalog.CampaignFor(file);
         bool customSquad = IsCustomSquad(file);
         doc = document; this.data = data; this.changed = changed; this.register = register;
         goalieEquipment = new TeamGoalieEquipment(file, defaultsOnly ? document : null);
@@ -453,7 +455,7 @@ internal sealed partial class TeamEditorView : UserControl
         var picker = LogoPicker.Create(root, Value("Logo From"), () => {
             foreach (string key in doc.Fields.Keys.Where(k => k.StartsWith("Export Logo ", StringComparison.OrdinalIgnoreCase))) Track(key, () => "");
             changed(); RefreshUniform();
-        }, defaultsOnly ? "No logo: new teams start without one" : "No logo selected", inline: true);
+        }, defaultsOnly ? "No logo: new teams start without one" : "No logo selected", inline: true, campaign: campaign);
         Track("Logo From", picker.read);
         return picker.control;
     }
@@ -498,7 +500,7 @@ internal sealed partial class TeamEditorView : UserControl
             foreach (string suffix in new[] { "Mode", "ID", "SHA256", "PNG" })
                 team.Set(prefix + " " + suffix, Value(prefix + " " + suffix));
         string source = team.ToString(); // Includes selected kit and complete embedded content identity.
-        if (source != logoSource) { logoSource = source; logoBitmap?.Dispose(); logoBitmap = null; try { logoBitmap = LogoExport.Preview(data.Root, team, away); } catch { } }
+        if (source != logoSource) { logoSource = source; logoBitmap?.Dispose(); logoBitmap = null; try { logoBitmap = LogoExport.Preview(data.Root, team, away, campaign); } catch { } }
         return logoBitmap;
     }
     private void RefreshUniform()

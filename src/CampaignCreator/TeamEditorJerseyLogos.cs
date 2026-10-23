@@ -35,7 +35,7 @@ internal sealed partial class TeamEditorView
         Action<string> present = _ => { };
         var picker = LogoPicker.Create(data.Root, selected is "" or "none" ? "" : selected,
             () => { Set(pickerRead()); mode.SelectedIndex = 2; }, "No image selected", "Choose jersey logo",
-            buttonCaption: "Choose jersey image", bindPresentation: update => present = update);
+            buttonCaption: "Choose jersey image", bindPresentation: update => present = update, campaign: campaign);
         pickerRead = picker.read;
         picker.control.Name = slotAway ? "JerseyLogoImageAway" : "JerseyLogoImageHome";
         mode.SelectionChanged += (_, _) => {

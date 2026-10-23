@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/CampaignCreator/CampaignCreator.csproj" />
+    <Compile Include="../CampaignStudioChecks/ImportValueChecks.cs" Link="ImportValueChecks.cs" />
+    <Compile Include="../CampaignStudioChecks/BicepsChecks.cs" Link="BicepsChecks.cs" />
+    <PackageReference Include="Avalonia.Headless" Version="11.3.22" />
+  </ItemGroup>
+</Project>

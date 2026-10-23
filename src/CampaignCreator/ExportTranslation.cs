@@ -94,11 +94,12 @@ internal static partial class ExportTranslation
     internal sealed record Package(string TeamId, Dictionary<string, string> Saves, Dictionary<string, string> Overrides);
     internal static Package BuildTeam(CampaignDocument team, string teamFile, GameData game, string? sourceRoot = null, ExportReport? report = null)
     {
+        string? campaign = CustomRewardCatalog.CampaignFor(teamFile);
         game.LoadCustomRewards(teamFile);
         game.ValidateCustomLoadout(team);
         var custom = new CustomRewardExportBundle(game);
-        team = ExportSelections.Logo(team, sourceRoot ?? game.Root, report);
-        foreach (bool away in new[] { false, true }) team = ExportSelections.JerseyLogo(team, sourceRoot ?? game.Root, away, report);
+        team = ExportSelections.Logo(team, sourceRoot ?? game.Root, report, campaign);
+        foreach (bool away in new[] { false, true }) team = ExportSelections.JerseyLogo(team, sourceRoot ?? game.Root, away, report, campaign);
         if (team.Get("Team Name").Length == 0) throw new ArgumentException("Name the team before exporting.");
         if (team.Get("Import Team").Length > 0) throw new ArgumentException("Import the team's complete roster into the editor before exporting.");
         if (team.Get("Team Random Talents").Length > 0 && team.Get("Team Random Talents") != "0")
@@ -170,8 +171,8 @@ internal static partial class ExportTranslation
             string role = goalie ? "goalie" : "skater", id = Guid.NewGuid().ToString();
             var doc = Player(ExportPlayerResolver.Resolve(raw, role), team, goalieDefaults, role, game);
             if (doc.Get("Logo From") == team.Get("Logo From")) LogoExport.Copy(team, doc);
-            doc = ExportSelections.Logo(doc, sourceRoot ?? game.Root, report);
-            foreach (bool away in new[] { false, true }) doc = ExportSelections.JerseyLogo(doc, sourceRoot ?? game.Root, away, report);
+            doc = ExportSelections.Logo(doc, sourceRoot ?? game.Root, report, campaign);
+            foreach (bool away in new[] { false, true }) doc = ExportSelections.JerseyLogo(doc, sourceRoot ?? game.Root, away, report, campaign);
             if (statScale != 1) ApplyStatScale(doc, role, statScale);
             var playerModel = PlayerExport.Convert(doc, game, role, id, report);
             custom.Player(playerModel);
@@ -243,7 +244,7 @@ internal static partial class ExportTranslation
     internal static string ExportTeam(CampaignDocument team, string file, GameData game, string root, ExportReport? report = null)
     {
         string sourceRoot = root;
-        team = ExportSelections.Logo(team, root, report);
+        team = ExportSelections.Logo(team, root, report, CustomRewardCatalog.CampaignFor(file));
         root = RuntimeRoot(root);
         game = new GameData(sourceRoot);
         var package = BuildTeam(team, file, game, sourceRoot, report);

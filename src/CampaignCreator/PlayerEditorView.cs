@@ -17,6 +17,7 @@ internal sealed class PlayerEditorView : UserControl
     private readonly TeamGoalieEquipment? goalieDefaults;
     private readonly CampaignDocument noTeamGoalie;
     private readonly GameData data;
+    private readonly string? campaign;
     private readonly string role;
     private readonly Window owner;
     private readonly Action changed;
@@ -41,6 +42,7 @@ internal sealed class PlayerEditorView : UserControl
         Action changed, Action<string, Func<string>> register, Action save, Action? back, Action home, Action export, TextBlock status, string? previewTeamFile = null)
     {
         this.owner = owner; this.doc = doc; this.data = data; this.role = role; this.changed = changed;
+        campaign = CustomRewardCatalog.CampaignFor(file);
         string folder = Path.GetDirectoryName(file)!;
         superstar = Path.GetFileName(folder).Equals("superstars", StringComparison.OrdinalIgnoreCase);
         string teamFile = Path.Combine(Path.GetDirectoryName(folder)!, "team.txt");
@@ -249,7 +251,7 @@ internal sealed class PlayerEditorView : UserControl
     private Bitmap? Crest()
     {
         string source = Value("Logo From");
-        if (source != logoSource) { logoSource = source; logoBitmap?.Dispose(); logoBitmap = null; try { logoBitmap = LogoExport.Preview(data.Root, source); } catch { } }
+        if (source != logoSource) { logoSource = source; logoBitmap?.Dispose(); logoBitmap = null; try { logoBitmap = LogoExport.Preview(data.Root, source, campaign); } catch { } }
         return logoBitmap;
     }
     internal void ApplyExportAppearance(CampaignDocument target)
@@ -399,7 +401,7 @@ internal sealed class PlayerEditorView : UserControl
         else
         {
             Func<string> read = () => values["Logo From"];
-            var picker = LogoPicker.Create(data.Root, values["Logo From"], () => Apply(read()), "Team logo", "Choose player logo");
+            var picker = LogoPicker.Create(data.Root, values["Logo From"], () => Apply(read()), "Team logo", "Choose player logo", campaign: campaign);
             read = picker.read;
             panel.Children.Add(picker.control);
             // Imported base-game crest artwork (Logo Skin) overrides the logo image in game.

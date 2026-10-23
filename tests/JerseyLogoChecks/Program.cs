@@ -70,6 +70,31 @@ try
     Identity(team, target, "CopyInheritedClearsTargetPayload");
 
     var art = new CampaignDocument(team.ToString());
+    var independent = LogoExport.Snapshot(new CampaignDocument("Jersey Logo Away From = " + away), root, true);
+    string awayPayload = independent.Get("Export Jersey Logo Away PNG");
+    foreach (string homeChoice in new[] { "", "none" })
+    {
+        independent.Set("Jersey Logo From", homeChoice);
+        var normalized = LogoExport.Snapshot(independent, root, false);
+        foreach (string suffix in new[] { "Mode", "ID", "SHA256", "PNG" })
+            Check(normalized.Get("Export Jersey Logo Away " + suffix) == independent.Get("Export Jersey Logo Away " + suffix),
+                "Home normalization preserves complete Away " + suffix + " for " + homeChoice);
+        File.Delete(away);
+        try { Check(LogoExport.Snapshot(normalized, root, true).Get("Export Jersey Logo Away PNG") == awayPayload, "Away embedded bytes survive absent source and Home " + homeChoice); }
+        finally { File.WriteAllBytes(away, Convert.FromBase64String(awayPayload)); }
+        File.WriteAllBytes(away, File.ReadAllBytes(home));
+        try { Check(LogoExport.Snapshot(normalized, root, true).Get("Export Jersey Logo Away PNG") == awayPayload, "Away embedded bytes beat replaced source and Home " + homeChoice); }
+        finally { File.WriteAllBytes(away, Convert.FromBase64String(awayPayload)); }
+    }
+    var copied = new CampaignDocument("");
+    independent.Set("Jersey Logo From", home);
+    JerseyLogoOptions.Copy(independent, false, copied, true);
+    Check(!copied.Fields.Keys.Any(k => k.Contains("Away Away", StringComparison.OrdinalIgnoreCase)), "Home copy never copies Away metadata as doubled keys");
+    var frozen = new CampaignDocument(independent.ToString());
+    frozen.Set("Override Team Settings", "yes"); frozen.Set("Body", "Body/HockeyFC/HockeyFC");
+    frozen.Set("Body Away", "Body/Customization/Customization_colors");
+    var frozenResolved = AppearanceContract.Resolve(frozen, new CampaignDocument(""), new CampaignDocument(""), "skater");
+    Check(frozenResolved.Get("Export Jersey Logo Away PNG") == awayPayload, "Premade Home preserves compatible frozen Away embedded payload");
     art = LogoExport.Snapshot(art, root, false);
     art = LogoExport.Snapshot(art, root, true);
     art.Set("Export Jersey Logo Away SHA256", "bad");
@@ -135,6 +160,46 @@ try
         && File.ReadAllBytes(homeFile).SequenceEqual(File.ReadAllBytes(first))
         && LogoFiles.Resolve(imported, Path.Combine(gameSave, "CustomLogos"), installed.Get(JerseyLogoOptions.Field(true))) is { } awayFile
         && File.ReadAllBytes(awayFile).SequenceEqual(File.ReadAllBytes(second)), "Portable install resolves each kit to its own PNG");
+    string campaignLogos = Path.Combine(campaign, "logos"); Directory.CreateDirectory(campaignLogos);
+    Directory.CreateDirectory(Path.Combine(root, "logos"));
+    File.Copy(home, Path.Combine(campaignLogos, "relative.png"));
+    File.Copy(away, Path.Combine(root, "logos", "relative.png"));
+    Directory.CreateDirectory(Path.Combine(root, "_team_logos"));
+    File.Copy(away, LogoFiles.NativeFile(root, "relative"));
+    portable.Set("Logo From", "relative"); portable.Set(JerseyLogoOptions.Field(false), "logos/relative.png");
+    portable.Set(JerseyLogoOptions.Field(true), "relative"); portable.Save(teamFile);
+    foreach (string position in new[] { "Left Wing", "Center", "Right Wing", "Left Defense", "Right Defense", "Goalie" })
+        File.WriteAllText(Path.Combine(Path.GetDirectoryName(playerFile)!, position + ".txt"), "Name = " + position + "\nPosition = " + position + "\nFace = Faces/Toronto/Mathieu\n");
+    var studio = typeof(App).Assembly;
+    object game = Activator.CreateInstance(studio.GetType("CampaignCreator.GameData")!, root)!;
+    object package = studio.GetType("CampaignCreator.ExportTranslation")!.GetMethod("BuildTeam", BindingFlags.NonPublic | BindingFlags.Static)!
+        .Invoke(null, [portable, teamFile, game, root, null])!;
+    var overrides = (Dictionary<string, string>)package.GetType().GetProperty("Overrides")!.GetValue(package)!;
+    var exported = new CampaignDocument(overrides.Single(p => p.Key.EndsWith(".team.txt")).Value);
+    string campaignPixels = Convert.ToBase64String(File.ReadAllBytes(home));
+    Check(exported.Get("Export Logo PNG") == campaignPixels && exported.Get("Export Jersey Logo PNG") == campaignPixels
+        && exported.Get("Export Jersey Logo Away PNG") == campaignPixels, "Creator team export resolves owning campaign before same-name global image");
+    using (var preview = LogoExport.Preview(root, portable, true, campaign))
+        Check(preview?.PixelSize.Width == 2, "Creator preview resolves campaign before same-name native catalog image");
+    File.Delete(Path.Combine(root, "logos", "relative.png")); File.Delete(LogoFiles.NativeFile(root, "relative"));
+    package = studio.GetType("CampaignCreator.ExportTranslation")!.GetMethod("BuildTeam", BindingFlags.NonPublic | BindingFlags.Static)!
+        .Invoke(null, [portable, teamFile, game, root, null])!;
+    overrides = (Dictionary<string, string>)package.GetType().GetProperty("Overrides")!.GetValue(package)!;
+    exported = new CampaignDocument(overrides.Single(p => p.Key.EndsWith(".team.txt")).Value);
+    Check(exported.Get("Export Jersey Logo PNG") == campaignPixels && exported.Get("Export Jersey Logo Away PNG") == campaignPixels,
+        "Creator export finds campaign-only images without any global donor");
+    zipMethod.Invoke(null, [campaign, zipPath, root]);
+    using (var zip = ZipFile.OpenRead(zipPath))
+    {
+        using var reader = new StreamReader(zip.GetEntry("Portable/teams/Portable/team.txt")!.Open());
+        var packaged = new CampaignDocument(reader.ReadToEnd());
+        Check(packaged.Get("Logo From") == packaged.Get(JerseyLogoOptions.Field(false))
+            && packaged.Get("Logo From") == packaged.Get(JerseyLogoOptions.Field(true)), "Campaign sharing uses same campaign pixels for relative and bare-name logo choices");
+    }
+    sharing.GetMethod("Install", BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, [zipPath, imported, "Campaign Relative"]);
+    var relativeInstalled = new CampaignDocument(File.ReadAllText(Path.Combine(imported, "campaigns", "Campaign Relative", "teams", "Portable", "team.txt")));
+    Check(LogoFiles.Resolve(imported, Path.Combine(gameSave, "CustomLogos"), relativeInstalled.Get(JerseyLogoOptions.Field(true))) is { } relativeImage
+        && File.ReadAllBytes(relativeImage).SequenceEqual(File.ReadAllBytes(home)), "Campaign-relative kit survives portable install without global source paths");
     Console.WriteLine($"PASS {checks} jersey logo assertions");
 }
 finally { Directory.Delete(root, true); }

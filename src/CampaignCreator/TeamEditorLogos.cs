@@ -22,7 +22,7 @@ internal static class LogoPicker
 
     internal static (Control control, Func<string> read) Create(string root, string value, Action changed,
         string emptyCaption = "No logo selected", string title = "Choose team logo", bool inline = false,
-        string buttonCaption = "Choose logo", Action<Action<string>>? bindPresentation = null)
+        string buttonCaption = "Choose logo", Action<Action<string>>? bindPresentation = null, string? campaign = null)
     {
         string saved = value;
 
@@ -41,13 +41,13 @@ internal static class LogoPicker
             void Preview(LogoChoice choice)
             {
                 pending = choice; preview.Source = null; bitmap?.Dispose(); bitmap = null;
-                try { preview.Source = bitmap = LogoExport.Preview(root, choice.Source); feedback.Text = bitmap == null ? "Preview unavailable for " + choice.Label : choice.Label; }
+                try { preview.Source = bitmap = LogoExport.Preview(root, choice.Source, campaign); feedback.Text = bitmap == null ? "Preview unavailable for " + choice.Label : choice.Label; }
                 catch (Exception ex) { feedback.Text = ex.Message; }
             }
             var thumbnails = new List<Bitmap>();
             var thumbnailTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<LogoChoice>((choice, _) => {
                 Bitmap? thumb = null;
-                try { if (choice != null) thumb = LogoExport.Preview(root, choice.Source); } catch (Exception) { }
+                try { if (choice != null) thumb = LogoExport.Preview(root, choice.Source, campaign); } catch (Exception) { }
                 if (thumb != null) thumbnails.Add(thumb);
                 return new StackPanel { Width = 132, Height = 148, Spacing = 6, Children = {
                     thumb == null ? (Control)new TextBlock { Text = "Preview unavailable", Height = 100, TextWrapping = TextWrapping.Wrap }
@@ -61,7 +61,7 @@ internal static class LogoPicker
             var catalog = Path.Combine(root, "_game_team_logos.txt");
             var names = File.Exists(catalog) ? File.ReadLines(catalog).Where(n => !string.IsNullOrWhiteSpace(n) && !n.StartsWith('#')).Select(n => n.Trim()).ToList() : new List<string>();
             if (names.Count == 0) names.AddRange(StudioArt.LogoTeams());
-            native.ItemsSource = names.Where(n => n.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).Order().Select(n => new LogoChoice(n, LogoExport.FindFile(root, n) ?? n, n)).ToArray();
+            native.ItemsSource = names.Where(n => n.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).Order().Select(n => new LogoChoice(n, LogoExport.FindFile(root, n, campaign) ?? n, n)).ToArray();
             void RefreshCustom()
             {
                 custom.ItemsSource = new[] { LogoExport.CustomFolder, Path.Combine(root, "logos") }
