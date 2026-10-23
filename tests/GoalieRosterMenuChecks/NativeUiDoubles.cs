@@ -131,7 +131,12 @@ namespace Tape2Tape.Customization.UI {
             if (FailOpening) throw new InvalidOperationException("native menu failed to open");
             var menu = new LineupMenu { Team = new() { OriginalTeamData = data.Team }, m_AreSkatersLocked = data.LockPlayers };
             typeof(GoalieRosterMenu).GetMethod("Initialize", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static).Invoke(null, new object[] { menu });
-            menu.LoadCurrentTeam(); return new() { Value = menu as T };
+            menu.LoadCurrentTeam();
+            // Native Show may finish its first preview before our awaiter
+            // resumes with the final owned card configuration.
+            menu.m_CurrentlyPreviewedSkater = data.Team.goalie;
+            menu.RenderedTeam = menu.Team.TemporaryTeamData;
+            return new() { Value = menu as T };
         }
     }
 }
@@ -144,6 +149,18 @@ namespace Tape2Tape.Hockey.UI {
         public Il2CppSystem.Collections.Generic.List<SkaterDataForUI> m_ActiveSkaters = new(), m_BenchSkaters = new();
         public Header m_Header = new(); public int FirstSelections, Refreshes, ToggleCallbacks, NativeMutations;
         public bool FailNextFocus;
+        public SkaterData m_CurrentlyPreviewedSkater;
+        public TeamData RenderedTeam;
+        public int PreviewRefreshes;
+        public void RefreshSkaterPreview(SkaterData skater) {
+            // Installed native 0x4387B89..0x4387BC5 skips even a different
+            // object when its stable ID matches the previous preview.
+            if (skater is GoaltenderData goalie && m_CurrentlyPreviewedSkater is GoaltenderData previous
+                && goalie.id == previous.id) return;
+            var team = Team.TemporaryTeamData;
+            LineupPreviewKit.Prefix(new SkaterPreviewInUI { Parent = this }, skater, ref team);
+            m_CurrentlyPreviewedSkater = skater; RenderedTeam = team; PreviewRefreshes++;
+        }
         public AbstractNavigable Focused;
         public LineupMenu() { m_ActivePlayersList.OnSkaterCardToggled += TogglePlayerCard; m_BenchPlayersList.OnSkaterCardToggled += TogglePlayerCard; }
         private void TogglePlayerCard(SkaterCard card) { ToggleCallbacks++; if (GoalieRosterMenu.Pick(this, card)) NativeMutations++; }

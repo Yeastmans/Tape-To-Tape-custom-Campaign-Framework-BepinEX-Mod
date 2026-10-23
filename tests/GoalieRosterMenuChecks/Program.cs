@@ -467,6 +467,8 @@ var beforePreviewSave = state.Repository.Saves;
 pair = Offer(state); selection = Recruit(state, pair);
 var goldCardTeam = selection.Menu.m_ActivePlayersList.m_SkaterCards[0].CurrentSkaterData.ActiveTeam;
 var greenCardTeam = selection.Menu.m_ActivePlayersList.m_SkaterCards[1].CurrentSkaterData.ActiveTeam;
+Check(ReferenceEquals(selection.Menu.RenderedTeam, goldCardTeam) && selection.Menu.PreviewRefreshes == 1,
+    "AsyncNewMenuReplacesNativeInitialSameIdPreviewAfterOwnershipIsReady");
 Check(goldCardTeam.homeColors.jerseyScheme.primaryColor.Equals(gold.colorSchemes.jerseyScheme.primaryColor)
     && greenCardTeam.homeColors.jerseyScheme.primaryColor.Equals(green.colorSchemes.jerseyScheme.primaryColor),
     "GoalieCardCarriersContainDistinctEffectivePalettes");
@@ -504,6 +506,20 @@ Check(UnityEngine.Object.DestroyedObjects.Count(o => ReferenceEquals(o, goldCard
     && UnityEngine.Object.DestroyedObjects.Count(o => ReferenceEquals(o, greenCardTeam)) == 1
     && !UnityEngine.Object.DestroyedObjects.Contains(canonicalTeam) && !UnityEngine.Object.DestroyedObjects.Contains(canonicalGold),
     "CloseDestroysBothOwnedPreviewTeamsOnceAndPreservesCanonicalObjects");
+var reusedMenu = UnityEngine.Object.CurrentMenu;
+reusedMenu.m_CurrentlyPreviewedSkater = canonicalGold;
+reusedMenu.RenderedTeam = canonicalTeam;
+int previousPreviews = reusedMenu.PreviewRefreshes;
+GoalieRosterMenu.Open(state);
+var reopened = GoalieRosterMenu.Current;
+Check(reopened != null && !ReferenceEquals(reopened.Active, canonicalGold)
+    && reopened.Active.id == canonicalGold.id && reusedMenu.PreviewRefreshes == previousPreviews + 1
+    && ReferenceEquals(reusedMenu.RenderedTeam, reopened.Preview),
+    "InitialSameIdCachedPreviewIsRefreshedWithOwnedPaletteWithoutNavigation");
+Check(state.Repository.Saves == beforePreviewSave && ReferenceEquals(canonicalTeam.goalie, canonicalGold)
+    && reusedMenu.ToggleCallbacks == 0 && reopened.Confirming == null,
+    "InitialPreviewRefreshDoesNotSaveSwapOrConfirm");
+reopened.Menu.TryLeaveMenu(false);
 CampaignAppearanceRuntime.RestoreRecruit(gold, new CampaignDocument("Appearance Team Painted = yes\nAppearance Own Custom jersey Colors = yes\nAppearance Own Jersey Color = 245,200,20\nAppearance Own Custom jersey Away Colors = no\n"));
 Check(PlayNowTranslation.GoaliePreviewColors(canonicalTeam.awayColors, gold, true).jerseyScheme.primaryColor.Equals(new UnityEngine.Color(1, 1, 1, 1)),
     "HomeOnlyGoalieOverrideDoesNotLeakIntoInheritedAwayPreview");

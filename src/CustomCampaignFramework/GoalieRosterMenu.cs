@@ -128,7 +128,7 @@ internal static class GoalieRosterMenu
             if (parent != null) {
                 // Reuse the current native menu: UIModule can retain menus by
                 // type, so opening a second LineupMenu is not an isolation boundary.
-                s.Menu = parent; WatchClose(s); Configure(s); s.Ready = true; parent.SelectFirstPlayer(); return;
+                s.Menu = parent; WatchClose(s); Configure(s); s.Ready = true; SelectInitialPlayer(s); return;
             }
             // UIModule is not a MonoBehaviour; a known active menu owns the coroutine.
             MonoBehaviour host = gm != null ? gm : legacy != null ? legacy : parent;
@@ -183,8 +183,17 @@ internal static class GoalieRosterMenu
             WatchClose(s);
             if (!Valid(s)) { s.Menu.TryLeaveMenu(false); yield break; }
             if (s.Gm != null) s.Gm.m_MenuOverSelf = s.Menu;
-            Configure(s); s.Ready = true; s.Menu.SelectFirstPlayer();
+            Configure(s); s.Ready = true; SelectInitialPlayer(s);
         } catch (Exception ex) { Fail(s, ex); }
+    }
+    private static void SelectInitialPlayer(Selection s)
+    {
+        // Native RefreshSkaterPreview caches by stable ID, so a restored copy
+        // of the same goalie can retain the earlier ordinary-team repaint.
+        // Invalidate only this menu's rendering cache after ownership is ready.
+        s.Menu.m_CurrentlyPreviewedSkater = null;
+        s.Menu.SelectFirstPlayer();
+        if (Valid(s) && !s.Menu.IsHiding) s.Menu.RefreshSkaterPreview(s.Active);
     }
     private static void WatchClose(Selection s)
     {
