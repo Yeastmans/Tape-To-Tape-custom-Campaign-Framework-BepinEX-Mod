@@ -133,7 +133,7 @@ public sealed class MapGamePreview : UserControl
                 stack.Children.Add(arena);
             }
             else stack.Children.Add(new Border { Width = 32, Height = 32, CornerRadius = new CornerRadius(16), Background = Brush.Parse("#D9223545"), BorderBrush = Brushes.White, BorderThickness = new Thickness(2), Child = new TextBlock { Text = string.IsNullOrEmpty(node.Type) ? "+" : "•", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Foreground = Brushes.White, FontSize = 21 } });
-            string label = string.IsNullOrEmpty(node.Type) ? "Choose node type" : FieldControls.Friendly(node.Type);
+            string label = node.Type == "Coach" && node.CustomCoach != null ? node.CustomCoach.Name : string.IsNullOrEmpty(node.Type) ? "Choose node type" : FieldControls.Friendly(node.Type);
             if (!string.IsNullOrEmpty(node.Team) && teams != null && teams.TryGetValue(node.Team, out var team)) label += "\n" + team;
             if (node.Type is "Elite" or "Boss" && string.IsNullOrEmpty(node.Stadium)) label += "\nArena decided in game";
             stack.Children.Add(new Border { IsVisible = !compact || choices <= 6, Background = Brush.Parse("#DC132234"), CornerRadius = new CornerRadius(7), Padding = new Thickness(7, 4), Child = new TextBlock { Text = compact ? label.Replace('\n', ' ') : label, TextAlignment = TextAlignment.Center, TextWrapping = compact ? TextWrapping.NoWrap : TextWrapping.Wrap, TextTrimming = TextTrimming.CharacterEllipsis, Foreground = isBoss ? Brush.Parse("#FFD68A") : Brushes.White, FontSize = 12 } });

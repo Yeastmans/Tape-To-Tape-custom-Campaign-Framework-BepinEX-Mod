@@ -32,6 +32,10 @@ internal static class CustomRewardCatalog
                 if (!authored.ContainsKey(d.Id)) CustomRewardExport.AddSnapshot(embedded, d);
         foreach (var d in embedded.Values) items[d.Id] = d;
         foreach (var d in authored.Values) items[d.Id] = d;
+        foreach (var coach in CustomCoachCatalog.Saved(campaign)) {
+            CustomCoachCatalog.Validate(root, campaign, coach);
+            CustomCoachPool.AddDependencies(items, coach);
+        }
         return items;
     }
     internal static void ValidateCampaignLoadouts(string root, string campaign, IReadOnlyDictionary<string, CustomRewardDefinition> items) {

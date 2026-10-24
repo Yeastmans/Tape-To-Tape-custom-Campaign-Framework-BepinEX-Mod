@@ -1,8 +1,8 @@
 {
-  "Id": "5F877A5A6C5D52B93CF70F4DDE44C756C99F5B04E19DC2AF6EEFE79FABE4ED7E",
+  "Id": "56EF1908820D7CC30ACE2EC50CBEA73CC3FF15355CBA4EF90032002B8F3A2556",
   "Profile": {
     "RuntimeContract": "t2t-native-v2-20261020",
-    "BaselineId": "5F877A5A6C5D52B93CF70F4DDE44C756C99F5B04E19DC2AF6EEFE79FABE4ED7E",
+    "BaselineId": "56EF1908820D7CC30ACE2EC50CBEA73CC3FF15355CBA4EF90032002B8F3A2556",
     "Build": "26150666",
     "GameHash": "FD2E6FDF3900272C2E9B201F3280AF15C44D330D28E131E00FE6C99D007C4B93",
     "MetadataHash": "22E6F00B8CE5F83A3D167410FE6B7C76086B201BC48CB83CFAA3BD4E577CAC37",
@@ -4167,6 +4167,11 @@
       "BodyHash": "44D9F1BB8FAD562F73E8A3BAFD5A82C4CF9A53B2733A4D6AE0AEA9C2C8856A13"
     },
     {
+      "Name": "Rogue.NPC.CoachNPC.CoachEvent$$GetSpeedrunActRelics::System.Collections.Generic.List\u00601\u003CRogue.Relic\u003E GetSpeedrunActRelics(Rogue.Relics.Repository.IRelicRepository relicRepository, System.Collections.Generic.List\u00601\u003CRogue.Relic\u003E excludedRelics)",
+      "Signature": "System.Collections.Generic.List\u00601\u003CRogue.Relic\u003E GetSpeedrunActRelics(Rogue.Relics.Repository.IRelicRepository relicRepository, System.Collections.Generic.List\u00601\u003CRogue.Relic\u003E excludedRelics)",
+      "BodyHash": "C4E40ED9FABFA2F1C0358A16DBFBBD8D2C48C424E1346ED37C951806A288E363"
+    },
+    {
       "Name": "Rogue.NPC.CoachNPC.CoachEvent$$GetSpeedrunStarterRelics::System.Collections.Generic.List\u00601\u003CRogue.Relic\u003E GetSpeedrunStarterRelics(Rogue.Relics.Repository.IRelicRepository relicRepository)",
       "Signature": "System.Collections.Generic.List\u00601\u003CRogue.Relic\u003E GetSpeedrunStarterRelics(Rogue.Relics.Repository.IRelicRepository relicRepository)",
       "BodyHash": "D61E7033A166F0602193465C35588D3AB57964577C11DFC2FA2350A9743EFA2A"
@@ -4175,6 +4180,11 @@
       "Name": "Rogue.NPC.CoachNPC.CoachEvent$$GetStatRewardRelics::System.Collections.Generic.List\u00601\u003CRogue.Relic\u003E GetStatRewardRelics(Rogue.Relics.Repository.IRelicRepository relicRepository, System.Collections.Generic.List\u00601\u003CRogue.Relic\u003E excludedRelics)",
       "Signature": "System.Collections.Generic.List\u00601\u003CRogue.Relic\u003E GetStatRewardRelics(Rogue.Relics.Repository.IRelicRepository relicRepository, System.Collections.Generic.List\u00601\u003CRogue.Relic\u003E excludedRelics)",
       "BodyHash": "1ADAB7280D3E116B28806F8FCBFC949C8790513180CBA45EAAE175B37AE781FA"
+    },
+    {
+      "Name": "Rogue.NPC.CoachNPC.CoachEvent$$GetUnpickedSpeedrunRelic::Rogue.Relic GetUnpickedSpeedrunRelic(Rogue.Relics.Repository.IRelicRepository relicRepository)",
+      "Signature": "Rogue.Relic GetUnpickedSpeedrunRelic(Rogue.Relics.Repository.IRelicRepository relicRepository)",
+      "BodyHash": "EF14E10FABF0F2BDD1BE4C70060A315422630F180B884952B371C21758781190"
     },
     {
       "Name": "Rogue.NPC.CoachNPC.CoachEvent$$Initialize::System.Void Initialize()",
@@ -5652,6 +5662,21 @@
       "BodyHash": "AAC87D0CDB626B631179600D981B91AFABF7CFEB2A81C9E4A7ACE25CADCE0DF6"
     },
     {
+      "Name": "STS.Map.CoachBlueprint$$showEventPanel::System.Void showEventPanel(STS.Map.CoachMapNode mapMapNode, STS.Map.EventNode eventNode)",
+      "Signature": "System.Void showEventPanel(STS.Map.CoachMapNode mapMapNode, STS.Map.EventNode eventNode)",
+      "BodyHash": "3251DE708E3A747A290967D7685AE4E72C215144E4377B572546F68CC6DD4E20"
+    },
+    {
+      "Name": "STS.Map.CoachMapNode$$LaunchEvent::System.Void LaunchEvent()",
+      "Signature": "System.Void LaunchEvent()",
+      "BodyHash": "CFA574CEEB38AE1B08FBA645631FCAEA7206F36D4143911E828ACF685045BCA7"
+    },
+    {
+      "Name": "STS.Map.CoachMapNode$$Start::System.Void Start()",
+      "Signature": "System.Void Start()",
+      "BodyHash": "745796D5CDA52BDEB6EC0A13B9F18372084DFC9E4679BF4B0F1BDE47931573BF"
+    },
+    {
       "Name": "STS.Map.EliteMapNode$$LaunchMatch::System.Void LaunchMatch()",
       "Signature": "System.Void LaunchMatch()",
       "BodyHash": "72D3202CC2E7ABAC52EF11F54512D0534F1E71C53852FE542487D2C7A7A5EF18"
@@ -5685,6 +5710,11 @@
       "Name": "STS.Map.MapNode$$get_Node::STS.Map.Node get_Node()",
       "Signature": "STS.Map.Node get_Node()",
       "BodyHash": "A2AE282D7EFB81919E49C83A1B4FBE8A46EA2D86B5CCE837EDAE60362F286D65"
+    },
+    {
+      "Name": "STS.Map.MapNode$$SetState::System.Void SetState(STS.Map.NodeStates state)",
+      "Signature": "System.Void SetState(STS.Map.NodeStates state)",
+      "BodyHash": "B003DA56872682D97C917C56D1B81E01D8A0AD8F081160984ADEA65E935E48EF"
     },
     {
       "Name": "STS.Map.MapNode$$SetupTooltip::System.Void SetupTooltip()",
@@ -5765,6 +5795,11 @@
       "Name": "STS.Map.Node$$get_NodeIndex::System.Int32 get_NodeIndex()",
       "Signature": "System.Int32 get_NodeIndex()",
       "BodyHash": "15F9485AD0CEE6AEA1386D44EE7CAA1C16F1FA138DCBC039D9ABC354419DF1BD"
+    },
+    {
+      "Name": "STS.Map.NodeBlueprint$$ShowEventChoiceMenu::System.Void ShowEventChoiceMenu(STS.Map.MapNode mapNode, STS.Map.EventNode eventNode, STS.Map.NodeType nodeType)",
+      "Signature": "System.Void ShowEventChoiceMenu(STS.Map.MapNode mapNode, STS.Map.EventNode eventNode, STS.Map.NodeType nodeType)",
+      "BodyHash": "D6AABBD4622E3C696C90A3C47E4E5DB4D7D741B7563302BB29660115116D7880"
     },
     {
       "Name": "STS.Map.ScrollNonUI$$SetTargetX::System.Void SetTargetX(System.Single x)",
@@ -8977,6 +9012,16 @@
       "BodyHash": "31904247C2A00CA12C4C816D9154271B75DFC4FCCE2F0735C0596F05FE845310"
     },
     {
+      "Name": "Tape2Tape.Hockey.UI.EventChoiceMenu.\u003CGoToNextSetOfChoices\u003Ed__#$$MoveNext::System.Void MoveNext()",
+      "Signature": "System.Void MoveNext()",
+      "BodyHash": "78908261201BCA9E6EFA96B555B1C28CF2CEAE5E65B60A8E78706680E8E4109F"
+    },
+    {
+      "Name": "Tape2Tape.Hockey.UI.EventChoiceMenu.\u003CRerollChoicesInPlace\u003Ed__#$$MoveNext::System.Void MoveNext()",
+      "Signature": "System.Void MoveNext()",
+      "BodyHash": "624F2FC7CAACAEAF33AF4BA3A079B543B7951462BC0FCDE6B129E59949217CE1"
+    },
+    {
       "Name": "Tape2Tape.Hockey.UI.EventChoiceMenu$$BehaviourDestroy::System.Void BehaviourDestroy()",
       "Signature": "System.Void BehaviourDestroy()",
       "BodyHash": "0C27783A87B019F8B1EA2EAA8FAA4D0BED7C1F7B4135E9AB9F5F73284ECD1E49"
@@ -8985,6 +9030,16 @@
       "Name": "Tape2Tape.Hockey.UI.EventChoiceMenu$$Exit::System.Void Exit()",
       "Signature": "System.Void Exit()",
       "BodyHash": "589A4E5254BA2112F49093498BCAA29836B121C72335F098BA4CAB4244778315"
+    },
+    {
+      "Name": "Tape2Tape.Hockey.UI.EventChoiceMenu$$ExitWithNoChoice::System.Void ExitWithNoChoice(System.Boolean confirm)",
+      "Signature": "System.Void ExitWithNoChoice(System.Boolean confirm)",
+      "BodyHash": "046F427DC3A7159FF6085263809465964F031501636E28C92724E090047C901A"
+    },
+    {
+      "Name": "Tape2Tape.Hockey.UI.EventChoiceMenu$$FinishChoices::System.Void FinishChoices(Tape2Tape.Hockey.UI.EventChoiceMenu.EventLayout layout)",
+      "Signature": "System.Void FinishChoices(Tape2Tape.Hockey.UI.EventChoiceMenu.EventLayout layout)",
+      "BodyHash": "1EA0CB9C1B1C4F87B97FD1E0F759047676E555FBB2B12100DFDBF74164DC9B90"
     },
     {
       "Name": "Tape2Tape.Hockey.UI.EventChoiceMenu$$get_IgnoreInput::System.Boolean get_IgnoreInput()",
@@ -9007,6 +9062,11 @@
       "BodyHash": "667AD5333C00FCE193F24EC6DFAB336709C0B7C1B2DA14ED3C5C61BC27F6A97B"
     },
     {
+      "Name": "Tape2Tape.Hockey.UI.EventChoiceMenu$$InstantiateChoices::System.Void InstantiateChoices()",
+      "Signature": "System.Void InstantiateChoices()",
+      "BodyHash": "34D94615A77A41333C3CF7475E12CD32040D6551FA380AB43162D9583174997E"
+    },
+    {
       "Name": "Tape2Tape.Hockey.UI.EventChoiceMenu$$OnClosed::System.Void OnClosed()",
       "Signature": "System.Void OnClosed()",
       "BodyHash": "59E56AFCD41700357E7FC553B83F333DD64A975F837BF3E54BEDB8DA9EEE8FB0"
@@ -9015,6 +9075,16 @@
       "Name": "Tape2Tape.Hockey.UI.EventChoiceMenu$$OnItemClicked::System.Void OnItemClicked(BishopGames.UI.AbstractNavigable btn)",
       "Signature": "System.Void OnItemClicked(BishopGames.UI.AbstractNavigable btn)",
       "BodyHash": "5109E4504853DA3F854550153FE6B7E58D8778F79D9609779AC676CD7ECB78DB"
+    },
+    {
+      "Name": "Tape2Tape.Hockey.UI.EventChoiceMenu$$RefreshSkipShortcut::System.Void RefreshSkipShortcut()",
+      "Signature": "System.Void RefreshSkipShortcut()",
+      "BodyHash": "24D2C50C61F4AB0B4E6A73B645505C56AA5D0D9761188C1AEEF763A4E2605AE6"
+    },
+    {
+      "Name": "Tape2Tape.Hockey.UI.EventChoiceMenu$$RerollChoices::System.Void RerollChoices()",
+      "Signature": "System.Void RerollChoices()",
+      "BodyHash": "D85CEF6AE05FBE98CE2AC591CE1241EC9BEEFAAC0E3B63574A3E4EAB601C7498"
     },
     {
       "Name": "Tape2Tape.Hockey.UI.EventChoiceMenu$$SelectDefaultItem::System.Void SelectDefaultItem()",

@@ -9,6 +9,7 @@
     <ProjectReference Include="../../src/CampaignCore/CampaignCore.csproj" />
     <Compile Include="../../src/CustomCampaignFramework/EligibleRewardFilter.cs" Link="EligibleRewardFilter.cs" />
     <Compile Include="../../src/CustomCampaignFramework/CustomRewardPools.cs" Link="CustomRewardPools.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/CustomCoachScope.cs" Link="CustomCoachScope.cs" />
     <Compile Include="../../src/CustomCampaignFramework/CustomBlademasterPool.cs" Link="CustomBlademasterPool.cs" />
     <Compile Include="../../src/CustomCampaignFramework/SquadBehaviorRuntime.cs" Link="SquadBehaviorRuntime.cs" />
     <Compile Include="../../src/CustomCampaignFramework/RewardPoolPicks.cs" Link="RewardPoolPicks.cs" />

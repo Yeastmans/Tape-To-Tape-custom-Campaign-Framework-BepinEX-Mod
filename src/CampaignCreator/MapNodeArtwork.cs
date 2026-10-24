@@ -32,6 +32,14 @@ public sealed class MapNodeArtwork : IDisposable
     }
     public Bitmap? Get(MapLayoutNode node, int act)
     {
+        if (node.Type == "Coach" && node.CustomCoach?.ImagePng is { Length: > 0 } png) {
+            string key = "custom:" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(png)));
+            if (!images.TryGetValue(key, out var custom)) {
+                using var stream = new MemoryStream(Convert.FromBase64String(png));
+                images[key] = custom = new Bitmap(stream);
+            }
+            return custom;
+        }
         string region = Region(node, act);
         if (region.Length == 0) return null;
         if (!images.TryGetValue(region, out var image))

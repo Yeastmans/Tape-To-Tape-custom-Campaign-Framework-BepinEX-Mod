@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../../src/CampaignCore/CampaignCore.csproj" />
+    <Compile Include="../../src/CustomCampaignFramework/CustomRewardRuntime.CoachSnapshots.cs" Link="CoachSnapshots.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/CustomMapLayout.Receipt.cs" Link="Receipt.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/SquadMapRuntime.cs" Link="SquadMapRuntime.cs" />
+  </ItemGroup>
+  <Target Name="ExtractProductionLoader" BeforeTargets="BeforeCompile">
+    <Exec Command="python &quot;$(MSBuildProjectDirectory)/extract_loader.py&quot; &quot;$(MSBuildProjectDirectory)/$(IntermediateOutputPath)Loader.g.cs&quot;" />
+    <ItemGroup><Compile Include="$(IntermediateOutputPath)Loader.g.cs" /></ItemGroup>
+  </Target>
+</Project>

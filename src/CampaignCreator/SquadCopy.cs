@@ -31,7 +31,8 @@ public static class SquadCopy
                     string copied = Path.Combine(to, Path.GetFileName(file));
                     File.Copy(file, copied); ContentImport.ValidateCopiedFile(copied);
                 }
-                foreach (string dir in Directory.GetDirectories(from)) Copy(dir, Path.Combine(to, Path.GetFileName(dir)));
+                foreach (string dir in Directory.GetDirectories(from).Where(d => !Path.GetFileName(d).Equals(SquadMapOverrides.Folder, StringComparison.OrdinalIgnoreCase)))
+                    Copy(dir, Path.Combine(to, Path.GetFileName(dir)));
             }
             if (!string.IsNullOrEmpty(source)) Copy(source, stage);
             var poolMoves = new List<(string From, string To)>();
@@ -51,6 +52,7 @@ public static class SquadCopy
             string teamFile = Path.Combine(stage, "team.txt");
             var doc = new CampaignDocument(File.Exists(teamFile) ? File.ReadAllText(teamFile) : "");
             doc.Set("Team Name", name);
+            doc.Remove(SquadMapOverrides.ModeKey);
             doc.Set("Squad Template", template);
             if (source.Length == 0)
             {

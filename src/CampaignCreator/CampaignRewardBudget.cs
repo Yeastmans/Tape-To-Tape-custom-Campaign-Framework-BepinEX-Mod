@@ -39,16 +39,25 @@ public static class CampaignRewardBudget
         (r.Id.Equals(token, StringComparison.OrdinalIgnoreCase) || r.Asset.Equals(token, StringComparison.OrdinalIgnoreCase)))?.Family ?? token;
 
     public static IReadOnlyList<RewardBudget> Calculate(string root, string campaign, IReadOnlyDictionary<string, RewardPoolDefinition>? edited = null,
-        IEnumerable<MapLayout>? layouts = null, string? actSequence = null, IReadOnlyDictionary<string, CampaignDocument>? changedFiles = null)
+        IEnumerable<MapLayout>? layouts = null, string? actSequence = null, IReadOnlyDictionary<string, CampaignDocument>? changedFiles = null,
+        string? mapSquadDirectory = null, IReadOnlyList<int>? originalStages = null, IReadOnlyList<bool>? nativeInheritedMaps = null,
+        string? validationSquadDirectory = null)
     {
         CampaignDocument ReadData(string path) => changedFiles != null && changedFiles.TryGetValue(Path.GetFullPath(path), out var change) ? change : Read(path);
         var config = ReadData(Path.Combine(campaign, "campaign.txt"));
         var savedPools = ReadData(Path.Combine(campaign, "reward_pools.txt"));
-        string teamsDir = Path.Combine(campaign, "player_teams");
-        var teams = Directory.Exists(teamsDir) ? Directory.GetDirectories(teamsDir).Select(d => Path.Combine(d, "team.txt")).Where(File.Exists).Select(ReadData).ToList() : [];
+        string teamSetting = config.Get("Use Player Teams", config.Get("Custom Player Teams", "yes"));
+        bool useTeams = teamSetting.Equals("yes", StringComparison.OrdinalIgnoreCase) || teamSetting.Equals("true", StringComparison.OrdinalIgnoreCase);
+        // Campaign edits validate every selectable squad. A single-team edit
+        // validates that team so unrelated broken maps cannot prevent repair.
+        // Disabled squads remain on disk for portability, not active validation.
+        var teamDirectories = (useTeams ? SquadMapOverrides.Squads(campaign) : Array.Empty<string>())
+            .Where(d => validationSquadDirectory == null || Path.GetFullPath(d).Equals(Path.GetFullPath(validationSquadDirectory), StringComparison.OrdinalIgnoreCase)).ToArray();
+        var teamPaths = teamDirectories.ToDictionary(d => ReadData(Path.Combine(d, "team.txt")), d => d);
+        var teams = teamPaths.Keys.ToList();
         if (teams.Count == 0) teams.Add(new CampaignDocument("Squad Template = " + config.Get("Squad Template", "Basic Squad")));
-        var records = Directory.Exists(teamsDir) ? Directory.GetFiles(teamsDir, "*.txt", SearchOption.AllDirectories)
-            .Where(p => !p.Split(Path.DirectorySeparatorChar).Any(s => s.StartsWith('.'))).Select(ReadData).ToList() : [];
+        var records = teamDirectories.SelectMany(d => Directory.GetFiles(d, "*.txt", SearchOption.AllDirectories))
+            .Where(p => !p.Split(Path.DirectorySeparatorChar).Any(s => s.StartsWith('.'))).Select(ReadData).ToList();
         var result = new List<RewardBudget>();
         var customRewards = CustomRewardCatalog.Items(root, campaign);
         // These snapshots live only for this validation. Reuse them across
@@ -64,7 +73,24 @@ public static class CampaignRewardBudget
         }
         var maps = layouts?.ToList();
         List<MapLayout>? native = null;
-        var teamLayouts = new Dictionary<string, List<(int Map, int Act, MapLayout Layout)>>();
+        var teamLayouts = teams.ToDictionary(t => t, t => SquadMapCatalog.Resolve(root, campaign, t, teamPaths.GetValueOrDefault(t),
+            maps, mapSquadDirectory, originalStages, nativeInheritedMaps, actSequence ?? config.Get("Act Sequence", CampaignActSequence.Default), config.Get("Squad Template", "Basic Squad")));
+        var mapErrors = new List<string>();
+        var sources = new Lazy<List<MapLayout>>(() => {
+            var current = MapCatalog.LoadSourceMaps(Path.Combine(root, "_game_maps.txt"));
+            return current.Count > 0 ? current : MapCatalog.LoadBaseMaps(Path.Combine(root, "_game_maps.txt"));
+        });
+        var opponentKeys = CampaignNavigation.Load(campaign).Where(n => n.Context.StartsWith("Opponent ") && n.FilePath != null)
+            .Select(n => Path.GetFileName(Path.GetDirectoryName(n.FilePath))!).ToArray();
+        foreach (var pair in teamLayouts)
+            foreach (var resolved in pair.Value.Where(m => m.SquadOverride))
+            {
+                var errors = resolved.Layout.Validate(opponentKeys).Concat(MapPlacementBounds.Validate(resolved.Layout))
+                    .Concat(MapCatalog.ValidateSource(resolved.Layout, sources.Value))
+                    .Concat(CustomCoachCatalog.Errors(root, campaign, resolved.Layout))
+                    .Concat(GoalieFeatureOptions.ValidateNodes(GoalieFeatureOptions.Recruitment(config), new[] { resolved.Layout }, resolved.Stage));
+                mapErrors.AddRange(errors.Select(e => pair.Key.Get("Team Name", "Squad") + $", map {resolved.Stage}: " + e));
+            }
         RewardPoolDefinition Pool(string kind) {
             if (pools.TryGetValue(kind, out var cached)) return cached;
             var native = edited != null && edited.TryGetValue(kind, out var p) ? p : RewardCatalog.ReadPool(root, savedPools, kind);
@@ -125,21 +151,14 @@ public static class CampaignRewardBudget
                 int NativeMaximum(MapLayout layout) => (native ??= MapCatalog.LoadBaseMaps(Path.Combine(root, "_game_maps.txt")))
                     .Where(v => SquadTemplatePolicy.Identity(v.BaseSquad) == SquadTemplatePolicy.Identity(layout.BaseSquad) && v.BaseMap == layout.BaseMap)
                     .Select(v => RewardRouteBudget.Maximum(v, Cost)).DefaultIfEmpty(RewardRouteBudget.Maximum(layout, Cost)).Max();
-                int route;
-                if (maps != null) route = maps.Sum(m => RewardRouteBudget.Maximum(m, Cost));
-                else
-                {
-                    if (!teamLayouts.TryGetValue(template, out var loaded))
-                        teamLayouts[template] = loaded = OpponentAssignments.LoadLayouts(root, campaign, template, actSequence ?? config.Get("Act Sequence", "1,2,3"));
-                    route = loaded.Sum(m => File.Exists(Path.Combine(campaign, "map_layouts", $"map-{m.Map}.txt")) ? RewardRouteBudget.Maximum(m.Layout, Cost)
-                        : NativeMaximum(m.Layout));
-                }
+                int route = teamLayouts[team].Sum(m => m.Native ? NativeMaximum(m.Layout) : RewardRouteBudget.Maximum(m.Layout, Cost));
                 selections = Math.Max(selections, route);
             }
             // A pool is reused by successive offers. Route length and bonus reward
             // selections cannot require a new unique reward for the entire run.
             int minimum = MinimumChoices(kind);
             var errors = new List<string>();
+            if (result.Count == 0) errors.AddRange(mapErrors.Distinct());
             if (!pool.UseBaseGame)
             {
                 if (pool.Selected.Any(id => !entries.ContainsKey(id))) errors.Add(kind + ": remove or replace unavailable selected rewards.");

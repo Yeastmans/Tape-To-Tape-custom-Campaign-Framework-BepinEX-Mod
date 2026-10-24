@@ -203,6 +203,26 @@ public sealed class CompatibilityBaseline
             if (image.SharedMethodCount(method.Rva) != 1) throw new InvalidDataException("Shared map camera target: " + name);
             protectedMethods.Add(image.Identity(method));
         }
+        // Custom Coach visits bind the actual node before asynchronous menu
+        // initialization, then scope every native selection path to its snapshot.
+        foreach (string name in new[] {
+            "STS.Map.CoachMapNode$$LaunchEvent", "STS.Map.CoachMapNode$$Start",
+            "STS.Map.CoachBlueprint$$showEventPanel", "STS.Map.NodeBlueprint$$ShowEventChoiceMenu",
+            "STS.Map.MapNode$$SetupTooltip", "STS.Map.MapNode$$SetState",
+            "Rogue.NPC.CoachNPC.CoachEvent$$Initialize", "Rogue.NPC.CoachNPC.CoachEvent$$NextChoices",
+            "Rogue.NPC.CoachNPC.CoachEvent$$GetStatRewardRelics", "Rogue.NPC.CoachNPC.CoachEvent$$GetSpeedrunStarterRelics",
+            "Rogue.NPC.CoachNPC.CoachEvent$$GetSpeedrunActRelics", "Rogue.NPC.CoachNPC.CoachEvent$$GetUnpickedSpeedrunRelic",
+            "Tape2Tape.Hockey.UI.EventChoiceMenu$$RefreshSkipShortcut", "Tape2Tape.Hockey.UI.EventChoiceMenu$$RerollChoices",
+            "Tape2Tape.Hockey.UI.EventChoiceMenu$$FinishChoices", "Tape2Tape.Hockey.UI.EventChoiceMenu$$InstantiateChoices",
+            "Tape2Tape.Hockey.UI.EventChoiceMenu$$ExitWithNoChoice",
+            "Tape2Tape.Hockey.UI.EventChoiceMenu.<RerollChoicesInPlace>d__#$$MoveNext",
+            "Tape2Tape.Hockey.UI.EventChoiceMenu.<GoToNextSetOfChoices>d__#$$MoveNext",
+            "EventChoicePanel$$ShowMenu", "EventChoicePanel$$InitializeChoicesButtons", "EventChoicePanel$$HideMenu" })
+        {
+            var method = image.Resolve(name);
+            if (image.SharedMethodCount(method.Rva) != 1) throw new InvalidDataException("Shared custom Coach boundary: " + name);
+            protectedMethods.Add(image.Identity(method));
+        }
         // Preserve authored goalie number text and each bound UI preview's
         // native equipment palette without changing native data or world colors.
         // Exact hook overloads, native format/material helpers and concrete UI

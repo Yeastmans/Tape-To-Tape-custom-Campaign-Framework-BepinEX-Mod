@@ -5,6 +5,7 @@
     <Compile Include="../StudioLearningChecks/GuideIllustrationArt.cs" Link="GuideIllustrationArt.cs" />
     <Compile Include="../../src/CampaignCreator/GameData.cs" Link="GameData.cs" />
     <Compile Include="../../src/CampaignCreator/CustomRewardCatalog.cs" Link="CustomRewardCatalog.cs" />
+    <Compile Include="../../src/CampaignCreator/CustomCoachCatalog.cs" Link="CustomCoachCatalog.cs" />
     <Compile Include="../../src/CampaignCreator/CustomRewardExportBundle.cs" Link="CustomRewardExportBundle.cs" />
     <Compile Include="../../src/CampaignCreator/StudioArt.cs" Link="StudioArt.cs" />
     <Compile Include="../../src/CampaignCreator/GameSavePaths.cs" Link="GameSavePaths.cs" />

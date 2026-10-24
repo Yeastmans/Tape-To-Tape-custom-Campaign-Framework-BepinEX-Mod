@@ -74,7 +74,7 @@ internal sealed partial class TeamEditorView : UserControl
     internal TeamEditorView(Window owner, CampaignDocument document, GameData data, string root, string file,
         Action changed, Action<string, Func<string>> register, Action save, Action back, Action import,
         Action<string> openPlayer, Action<string, bool> addPlayer, Action addSquad, TextBlock status, Action? export = null, bool defaultsOnly = false,
-        Action<string[]>? bulkImportPlayers = null)
+        Action<string[]>? bulkImportPlayers = null, Func<Task<bool>>? saveBeforeMaps = null)
     {
         this.owner = owner; this.defaultsOnly = defaultsOnly;
         campaign = CustomRewardCatalog.CampaignFor(file);
@@ -210,6 +210,7 @@ internal sealed partial class TeamEditorView : UserControl
         reserved.UnionWith(new[] {VanillaCopyData.OpponentId,VanillaCopyData.SquadId,"Vanilla Opponent Roles","Vanilla Starting Relics"});
         reserved.Add("Starting Bench Positions");
         reserved.Add(SquadPlayerPools.ModeKey);
+        reserved.Add(SquadMapOverrides.ModeKey);
         reserved.UnionWith(SquadBehaviors.All.Select(b => b.Key));
         reserved.Add("Description");
         reserved.Add("Opponent Two Lines");
@@ -279,6 +280,9 @@ internal sealed partial class TeamEditorView : UserControl
             playerPools = new SquadPoolsEditor(owner, root, Path.GetDirectoryName(file)!, doc, openPlayer, changed, Track);
             teamTabs.Add(new TabItem { Header = "Player pools", Content = playerPools });
         }
+        if (customSquad && campaign != null && saveBeforeMaps != null)
+            teamTabs.Add(new TabItem { Header = "Maps", Content = new SquadMapsEditor(owner, root, campaign,
+                Path.GetDirectoryName(file)!, doc, changed, Track, saveBeforeMaps) });
         if (!customSquad) teamTabs.Add(new TabItem { Header = "Opponent settings", Content = new OpponentSettingsView(doc, changed, Track) });
         if (customSquad) Place(GoalSoundControls(), 4, 0, 3);
         else settings.Children.Add(GoalSoundControls());

@@ -13,15 +13,17 @@ namespace EndlessMode;
 
 /// <summary>Replace only the generator's argument, never the shared base-game assets.</summary>
 [HarmonyPatch(typeof(TemplateMapGenerator), nameof(TemplateMapGenerator.GetMap))]
-internal static class CustomMapLayout
+internal static partial class CustomMapLayout
 {
     internal static bool Active;
     private static MapLayout appliedLayout;
     private static STS.Map.Map appliedMap;
     private static int appliedStage;
     private static string appliedFolder;
+    private static string appliedSquad, appliedSource;
     private static bool comparingSave;
     private static bool restoring;
+    private static System.Collections.Generic.Dictionary<string, CustomRewardDefinition> pendingCoachRewards;
     internal static MapLayout GeneratingLayout => Active && appliedMap == null && !Plugin.IsDefaultMode
         && appliedFolder == Plugin.ModFolder ? appliedLayout : null;
     internal static string RecruitRoleFor(MapNode node)
@@ -37,6 +39,7 @@ internal static class CustomMapLayout
     internal static void ResetForNewRun()
     {
         ClearApplied();
+        CustomRewardRuntime.ResetCoachRewards();
         if (Plugin.IsDefaultMode) return;
         try
         {
@@ -48,6 +51,8 @@ internal static class CustomMapLayout
     internal static void ClearApplied()
     {
         Active = false; appliedLayout = null; appliedMap = null; appliedFolder = null;
+        appliedSquad = appliedSource = null;
+        pendingCoachRewards = null;
         Stadiums.Clear();
     }
     // Authored stadium animation per node, keyed like Plugin.NodeAssignments.
@@ -122,16 +127,13 @@ internal static class CustomMapLayout
         ClearApplied();
         Plugin.LoadNodeAssignments(false);
         if (Plugin.IsDefaultMode || config == null) return;
-        string file = Path.Combine(Plugin.ModFolder, "map_layouts", $"map-{Plugin.ActsCompleted + 1}.txt");
-        if (!File.Exists(file)) return;
+        string file = "";
         MapConfig clone = null;
         MapTemplateData template = null;
         try
         {
-            var layout = MapLayout.Parse(File.ReadAllText(file));
-            var keys = Plugin.ConfigTeamDirs?.Select(Path.GetFileName) ?? Enumerable.Empty<string>();
-            var errors = layout.Validate(keys);
-            if (errors.Count > 0) throw new ArgumentException(string.Join("; ", errors));
+            var layout = SquadMapRuntime.Load(Plugin.ActsCompleted + 1, out file, out string squadId);
+            if (layout == null) return;
             CaptureSources();
             string sourceName = MapLayout.ResolveBaseSquad(layout.BaseSquad, sources.Keys);
             if (sourceName == null || !sources.TryGetValue(sourceName, out var sourceMaps) || layout.BaseMap >= sourceMaps.Count) throw new ArgumentException("Base squad map is unavailable or ambiguous: " + layout.BaseSquad);
@@ -169,6 +171,7 @@ internal static class CustomMapLayout
             }
             clone.mapTemplates = new Il2CppSystem.Collections.Generic.List<MapTemplateData>();
             clone.mapTemplates.Add(template);
+            pendingCoachRewards = CustomRewardRuntime.PrepareCoachRewards(layout);
             // Commit graph and team assignments together only after construction succeeds.
             Plugin.LoadNodeAssignments(false);
             string prefix = (Plugin.ActsCompleted + 1) + "|";
@@ -180,6 +183,7 @@ internal static class CustomMapLayout
             config = clone;
             Active = true;
             appliedLayout = layout; appliedStage = Plugin.ActsCompleted + 1; appliedFolder = Plugin.ModFolder;
+            appliedSquad = squadId; appliedSource = Path.GetRelativePath(Plugin.ModFolder, file).Replace('\\', '/');
             CommitStadiums(layout, appliedStage);
             Plugin.Log.LogInfo($"[MapEditor] Applied map {Plugin.ActsCompleted + 1}: {layout.Nodes.Count} nodes, {layout.Nodes.Count(n => n.Team.Length > 0)} team slots, {layout.Nodes.Count(n => n.Stadium.Length > 0)} stadiums");
             // The previous map has already been consumed by the generator.
@@ -193,7 +197,7 @@ internal static class CustomMapLayout
             Plugin.LoadNodeAssignments(false);
             if (clone != null) UnityEngine.Object.Destroy(clone);
             if (template != null) UnityEngine.Object.Destroy(template);
-            Plugin.Log.LogError("[MapEditor] Custom map rejected; using the native map: " + ex.Message);
+            Plugin.Log.LogError("[MapEditor] Custom map rejected (" + file + "); using the native map: " + ex.Message);
         }
     }
     [HarmonyPostfix]
@@ -201,6 +205,8 @@ internal static class CustomMapLayout
     {
         if (!Active) return;
         if (__result == null) { ClearApplied(); Plugin.LoadNodeAssignments(false); return; }
+        if (pendingCoachRewards != null) CustomRewardRuntime.CommitCoachRewards(pendingCoachRewards);
+        pendingCoachRewards = null;
         appliedMap = __result;
     }
     [HarmonyFinalizer]
@@ -217,17 +223,22 @@ internal static class CustomMapLayout
     }
     internal static void SaveReceipt(MapManager manager, string serialized)
     {
-        if (comparingSave || !Active || appliedLayout == null || appliedMap == null || Plugin.IsDefaultMode
-            || appliedFolder != Plugin.ModFolder || manager.CurrentMap == null
-            || manager.CurrentMap.Pointer != appliedMap.Pointer || string.IsNullOrEmpty(serialized)) return;
+        if (comparingSave || Plugin.IsDefaultMode || manager?.CurrentMap == null || string.IsNullOrEmpty(serialized)) return;
+        bool hasLayout = Active && appliedLayout != null && appliedMap != null && appliedFolder == Plugin.ModFolder
+            && manager.CurrentMap.Pointer == appliedMap.Pointer;
+        var dependencies = CustomRewardRuntime.CoachRewardSnapshots();
+        if (!hasLayout && dependencies.Length == 0) return;
         try
         {
             string run = RunId(true), hash = SaveHash(serialized);
             string dir = Path.Combine(RuntimeFolder, run); Directory.CreateDirectory(dir);
             var doc = new CampaignDocument("");
             doc.Set("Campaign", Plugin.ActiveCampaign); doc.Set("Run", run); doc.Set("Map Hash", hash);
-            doc.Set("Stage", appliedStage.ToString());
-            doc.Set("Layout", Convert.ToBase64String(Encoding.UTF8.GetBytes(appliedLayout.Serialize())));
+            doc.Set("Stage", (hasLayout ? appliedStage : Plugin.ActsCompleted + 1).ToString());
+            doc.Set("Squad", hasLayout ? appliedSquad : SquadMapRuntime.CurrentId);
+            doc.Set("Map Source", hasLayout ? appliedSource : "native");
+            if (hasLayout) doc.Set("Layout", Convert.ToBase64String(Encoding.UTF8.GetBytes(appliedLayout.Serialize())));
+            CustomRewardExport.Embed(doc, dependencies);
             doc.Save(Path.Combine(dir, hash + ".txt"));
         }
         catch (Exception ex) { Plugin.Log.LogError("[MapEditor] Could not save applied-map receipt: " + ex.Message); }
@@ -267,21 +278,15 @@ internal static class CustomMapLayout
         if (Plugin.IsDefaultMode || manager.CurrentMap == null) return;
         try
         {
-            string run = RunId(false); if (run.Length == 0) return;
             string serialized;
             comparingSave = true;
             try { serialized = manager.SaveMap(); }
             finally { comparingSave = false; }
-            if (string.IsNullOrEmpty(serialized)) return;
-            string hash = SaveHash(serialized), path = Path.Combine(RuntimeFolder, run, hash + ".txt");
-            if (!File.Exists(path)) return;
-            var doc = new CampaignDocument(File.ReadAllText(path));
-            if (doc.Get("Campaign") != Plugin.ActiveCampaign || doc.Get("Run") != run || doc.Get("Map Hash") != hash
-                || !int.TryParse(doc.Get("Stage"), out int stage) || stage != Plugin.ActsCompleted + 1) return;
-            var layout = MapLayout.Parse(Encoding.UTF8.GetString(Convert.FromBase64String(doc.Get("Layout"))));
-            var errors = layout.Validate(Plugin.ConfigTeamDirs?.Select(Path.GetFileName) ?? Enumerable.Empty<string>());
-            if (errors.Count > 0) throw new ArgumentException(string.Join("; ", errors));
+            if (!TryReadReceipt(serialized, SquadMapRuntime.CurrentId, out var doc, out var layout, out int stage)) return;
+            CustomRewardRuntime.RestoreCoachRewards(layout, CustomRewardExport.Read(doc));
+            if (layout == null) return;
             appliedLayout = layout; appliedStage = stage; appliedFolder = Plugin.ModFolder; appliedMap = manager.CurrentMap;
+            appliedSquad = doc.Get("Squad", SquadMapRuntime.CurrentId); appliedSource = doc.Get("Map Source", "legacy campaign receipt");
             Active = true; LoadAssignments(); Plugin.GmForcedLayers.Clear(); Plugin.GmOverrideLayer = -1;
             Plugin.Log.LogInfo("[MapEditor] Restored authored map from matching native save receipt");
         }

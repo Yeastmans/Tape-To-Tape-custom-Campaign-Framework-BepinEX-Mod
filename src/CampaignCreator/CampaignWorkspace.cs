@@ -44,8 +44,15 @@ public sealed partial class CampaignWorkspace : UserControl
     private readonly List<Action<IReadOnlyList<RewardBudget>>> refreshRewardCounts = new();
     private readonly List<Action> refreshRewardRows = new();
     private CustomRewardCreator? customRewardCreator;
-    private IReadOnlyList<RewardBudget> RewardBudgets(IEnumerable<MapLayout>? layouts = null) => CampaignRewardBudget.Calculate(root, directory, rewardPools,
-        layouts ?? mapEditor?.RewardLayouts, fields.TryGetValue("Act Sequence", out var sequence) ? sequence() : settings.Get("Act Sequence", "1,2,3"));
+    private IReadOnlyList<RewardBudget> RewardBudgets(IEnumerable<MapLayout>? layouts = null)
+    {
+        var config = new CampaignDocument(settings.ToString());
+        foreach (var field in fields) config.Set(field.Key, field.Value());
+        return CampaignRewardBudget.Calculate(root, directory, rewardPools, layouts ?? mapEditor?.RewardLayouts,
+            mapEditor?.ActSequence ?? config.Get("Act Sequence", CampaignActSequence.Default),
+            changedFiles: new Dictionary<string, CampaignDocument> { [Path.GetFullPath(Path.Combine(directory, "campaign.txt"))] = config },
+            originalStages: mapEditor?.OriginalStages, nativeInheritedMaps: mapEditor?.NativeInheritedMaps);
+    }
     private void RefreshRewardCounts()
     {
         var budgets = RewardBudgets();

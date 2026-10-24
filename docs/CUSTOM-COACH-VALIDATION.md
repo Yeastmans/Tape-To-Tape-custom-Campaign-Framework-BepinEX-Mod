@@ -1,0 +1,35 @@
+# Custom Coach nodes — local candidate
+
+Human gameplay acceptance: **pending**. Compilation, editor automation, source-linked checks, and native disassembly are technical diagnostics, not an observed gameplay result.
+
+This feature targets Tape to Tape Steam build **26150666**. It adds **Custom → Create new / Load saved** to the map node picker. Custom nodes behave as Coaches and have a world-map name, optional PNG, and exact relic pool. Encounter artwork and dialogue remain native.
+
+The candidate is in `artifacts/custom-coach-nodes-20261023/candidate`. It has not been installed or published. The installed game, current run, and release folder were not changed. Use a separate disposable campaign for acceptance. Installing a candidate through Studio is a separate user action; save a copy of any campaign you choose to use.
+
+## Editor and portability
+
+1. Open the candidate Studio, create a disposable campaign, and open Maps. Choose a node, select **Custom**, then **Create new**. Set a name and choose one ordinary relic. **Save and use** should save a reusable Coach and place it on the map. An empty name or empty selection should show an error without changing the map.
+2. Load the saved Coach onto another node. Edit that placement's name and pool; the first placement and saved library entry should keep their original values. Cancel an edit, then undo and redo a placement change. Each should preserve the expected name, image, pool, and connections. Convert a custom placement to ordinary **Coach**; its custom settings should disappear. Undo should restore them.
+3. Import a transparent, non-square PNG. Verify it appears in the editor preview. Try a non-PNG, truncated image, image over 4 MiB, and image over 2048 pixels on either side: each should be rejected without replacing the previous image. Clear the image and expect normal Coach art. Resize the editor to its minimum size and scroll to reach all fields and save controls.
+4. Save and reopen the map. Share its campaign ZIP with a fresh Studio content folder. Include one custom relic used only by this node. Import and reopen: name, image, selection, custom relic mechanics, and custom relic icon should survive without the original library or PNG file. In another disposable recipient folder, save a different definition under that same custom relic ID in the reward library. Import the normal ZIP, including its matching campaign companion: expect an explicit conflict, no installed campaign, and an unchanged library. Matching definitions should still import. Node relics must not be added to campaign-wide reward pools.
+
+## World-map behavior
+
+Create a short connected map containing Custom Coach A, Custom Coach B, an ordinary Coach, a match, and a boss. Give A and B distinct names, images, and disjoint pools. Use a long name for one Coach. Save the campaign before starting a fresh disposable run with the candidate runtime.
+
+1. Verify each custom name appears in its map tooltip and each image keeps its aspect ratio. Normal Coach art should remain native. Check locked, attainable, selected, and visited states, mouse clicks, controller selection, map zoom, and crowded layers. Artwork must fit without changing links or hiding neighboring nodes.
+2. Visit A and B. Every offered ID must belong to that node's selected pool, including upgrades: an unchecked upgraded ID must not appear. One- and two-relic pools should show only those eligible cards. Check a native reroll and the relic that grants a second Coach pick, when available. Ordinary Coaches and match rewards should still follow their normal campaign settings.
+3. Own all relics in a node's one-relic pool before visiting it. Expect no unrelated reward, an explanation that no eligible relics remain, and a working leave action. Check both mouse and controller. Continue along the map afterward. Repeat in a stat-only run with a pool containing no stat relics.
+4. In a speedrun-style campaign, visit both a starter and a later custom Coach. The fixed speedrun relic must not appear unless selected; eligible choices must stay within the node's pool. Also check an ordinary speedrun Coach to confirm native behavior remains intact.
+5. Save and exit on a map containing custom Coaches. Change the authored map's name/image/pool in Studio, then Continue the existing run. Its previously applied snapshot should still govern the running map. Repeat with a node-only custom relic: obtain it, save, change its authored mechanics under the same ID, restart the game, and Continue. Both the owned relic and a later Coach using that saved dependency should retain the old mechanics; the encounter must not become empty because of the edit. Continue into a later act without custom Coaches, save/restart, and check the acquired relic again. A fresh run made from a newly saved map should use its new authoring. Studio should reject trying to save an old placement whose embedded relic conflicts with its newly edited campaign/library definition; update the placement to the intended definition before saving a new map.
+6. If the campaign uses the legacy event menu, check a depleted pool there too: **Leave** should close the encounter and permit progression. Reopen an ordinary Coach afterward and verify no custom image, pool restriction, or empty-pool message carries over.
+
+Record the candidate SHA-256 from `candidate-identity.json`, test campaign, input method, action, expected result, and observed result. Report any unexpected reward IDs, blocked exit, or changed ordinary Coach. Acceptance remains pending until these human observations are supplied.
+
+## Diagnostic limits
+
+The focused checks cover snapshots, create/load/cancel/undo/save, ZIP portability and conflicts, exact reward selection across normal/stat/speedrun paths, scope cleanup, and event ownership across runs/maps. The native audit confirms call paths against the installed binary and records the compatibility baseline. These checks do not execute Unity gameplay.
+
+Final independent review found two important issues. Both were reproduced with failing regressions and fixed: a matching imported companion could hide a recipient library collision, and Continue could load edited authoring mechanics before restoring the map snapshot. The added persistence checks execute the production receipt reader/writer, early hydration hook, definition loader, and cache retirement with native object boundaries doubled. They cover previous-act dependencies, exact map/run/campaign/stage guards, default mode, and new-run reset. The protected native `DeserializerV2.DeserializeFromModel` method reads the saved map and reconstructs team data; the restore prefix runs before that reconstruction.
+
+Two older map suites have stale assumptions unrelated to this feature: `MapTabsChecks` expects a two-node layer cap, whereas the canonical baseline allows larger layers; `CampaignMapSaveChecks` expects an exact `Basic Squad` catalog label which the current bundled catalog does not contain. Their failures are retained in the task logs; the feature-specific editor/save checks use the current catalog contract.

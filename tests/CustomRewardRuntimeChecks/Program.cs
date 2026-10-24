@@ -428,6 +428,35 @@ Check(PickRelics(RelicCategory.None).list.Single().id == regularRelic.id && Pick
     "Regular and Chaos relic category requests use independent selected pools");
 Write("Pool Mode Relics = Custom\nSelected Relics = regular-relic\n");
 Check(PickRelics(RelicCategory.Chaos).native, "Absent Chaos relic pool preserves native behavior");
+var coachA = new CustomCoachDefinition { Name = "Only Chaos", Relics = { "chaos-relic" } };
+var coachB = new CustomCoachDefinition { Name = "Only regular", Relics = { "regular-relic" } };
+using (new CustomCoachScope(coachA)) {
+    Check(PickRelics(RelicCategory.None).list.Single().id == "chaos-relic", "Node pool overrides campaign pool for normal Coach requests");
+    Check(PickRelics(RelicCategory.Chaos).list.Single().id == "chaos-relic", "Node scope is exact for Chaos requests too");
+    Check(PickRelics(RelicCategory.OnlyStats).list.Count == 0, "Node pool respects stat mode without outside fallback");
+    var actChoices = new Il2CppSystem.Collections.Generic.List<Relic>();
+    Check(!CustomCoachSpeedrunActPool.Prefix(new Rogue.Relics.Repository.RelicRepository(), new(), ref actChoices)
+        && actChoices.Count == 1 && actChoices[0].id == "chaos-relic", "Speedrun act offers only node-selected relics, with no injected preset relic");
+    Check(!CustomCoachSpeedrunActPool.Prefix(new Rogue.Relics.Repository.RelicRepository(), new() { chaosRelic }, ref actChoices)
+        && actChoices.Count == 0, "Owned node-only speedrun relic exhausts the pool without fallback");
+    object[] statArgs = [new Rogue.Relics.Repository.RelicRepository(), new Il2CppSystem.Collections.Generic.List<Relic>(), null];
+    Check(!(bool)typeof(CustomStatCoachPool).GetMethod("Prefix", BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, statArgs)!
+        && ((Il2CppSystem.Collections.Generic.List<Relic>)statArgs[2]).Count == 0, "Stat-specific Coach path does not escape an ineligible node pool");
+    object[] starterArgs = [null];
+    Check(!(bool)typeof(CustomSpeedrunCoachPool).GetMethod("Prefix", BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, starterArgs)!
+        && ((Il2CppSystem.Collections.Generic.List<Relic>)starterArgs[0]).Single().id == "chaos-relic", "Speedrun starter path honors exact node selection");
+    using (new CustomCoachScope(coachB)) Check(PickRelics(RelicCategory.None).list.Single().id == "regular-relic", "Nested event uses its own pool");
+    Check(PickRelics(RelicCategory.None).list.Single().id == "chaos-relic", "Nested scope restores caller pool");
+    Plugin.IsDefaultMode = true;
+    Check(PickRelics(RelicCategory.None).native, "Default game ignores a stale custom event scope");
+    Plugin.IsDefaultMode = false;
+}
+Check(PickRelics(RelicCategory.None).list.Single().id == "regular-relic", "Coach scope ends before later rewards");
+try { using (new CustomCoachScope(coachA)) throw new InvalidOperationException(); } catch (InvalidOperationException) { }
+Check(CustomCoachScope.Current == null, "Exception cleanup cannot leak a node pool");
+var untouchedAct = new Il2CppSystem.Collections.Generic.List<Relic> { regularRelic };
+Check(CustomCoachSpeedrunActPool.Prefix(new Rogue.Relics.Repository.RelicRepository(), new(), ref untouchedAct) && untouchedAct.Single() == regularRelic,
+    "Ordinary speedrun act picker retains native behavior outside node scope");
 Write("Pool Mode Relics = Base Game\nPool Mode Chaos Relics = Custom\nSelected Chaos Relics = missing\n");
 Check(PickRelics(RelicCategory.None).native && PickRelics(RelicCategory.Chaos).list.Count == 0,
     "Invalid custom Chaos relic pool never falls back to unchecked rewards or changes the ordinary pool");

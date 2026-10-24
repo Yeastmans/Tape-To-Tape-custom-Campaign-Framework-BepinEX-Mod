@@ -135,6 +135,7 @@ internal static class CustomMapScenery
             {
                 var match = view.TryCast<MatchMapNode>();
                 if (match != null) PatchMapOpponents.EnsureNodeArt(match);
+                CustomCoachPresentation.Apply(view);
             }
             Canvas.ForceUpdateCanvases();
             var measured = new Dictionary<IntPtr, MapVisualFit.Envelope>();

@@ -1,6 +1,6 @@
 ; Studio lives in Program Files; user data is migrated before any cleanup.
 #define AppName "T2T Campaign Studio"
-#define AppVersion "Beta 1.0 revision 25"
+#define AppVersion "Beta 1.0 revision 26"
 #define ExeName "T2T Campaign Studio.exe"
 #ifndef StudioDir
   #define StudioDir "..\build\CampaignStudio"
@@ -10,8 +10,8 @@
 AppId={{D8C4C4D2-8B7A-4A9C-B2D3-C1F4E5A6D7B8}
 AppName={#AppName}
 AppVersion={#AppVersion}
-VersionInfoVersion=1.0.0.25
-VersionInfoDescription=T2T Campaign Studio Beta 1.0 revision 25 Setup
+VersionInfoVersion=1.0.0.26
+VersionInfoDescription=T2T Campaign Studio Beta 1.0 revision 26 Setup
 SetupIconFile=..\assets\branding\CampaignStudio.ico
 DefaultDirName={autopf}\T2T Campaign Studio
 DefaultGroupName={#AppName}

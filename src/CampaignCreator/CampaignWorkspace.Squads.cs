@@ -38,7 +38,7 @@ public sealed partial class CampaignWorkspace
             return only.IsChecked == saved.Equals("yes", StringComparison.OrdinalIgnoreCase) ? saved : only.IsChecked == true ? "yes" : "no";
         };
         only.IsCheckedChanged += (_, _) => message.Text = "Unsaved custom squad settings";
-        page.Children.Add(new TextBlock { Text = "Each player team has its own template preset, behavior overrides and starting-screen controls. Open a team to change them.", TextWrapping = TextWrapping.Wrap });
+        page.Children.Add(new TextBlock { Text = "Each player team has its own template, behaviors, player pools and optional map edits. Open a team to change them.", TextWrapping = TextWrapping.Wrap });
         page.Children.Add(RosterPage(true, newTeam));
         page.Children.Add(useTeams); page.Children.Add(only);
         page.Children.Add(new TextBlock { Text = "Custom teams only blocks base-game squad selection in this campaign.", TextWrapping = TextWrapping.Wrap });

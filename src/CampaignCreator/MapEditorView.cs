@@ -9,7 +9,7 @@ using CampaignCore;
 
 namespace CampaignCreator;
 
-public sealed class MapEditorView : UserControl
+public sealed partial class MapEditorView : UserControl
 {
     private string campaignDir;
     private readonly List<MapLayout> catalog;
@@ -33,6 +33,8 @@ public sealed class MapEditorView : UserControl
         public int Act, OriginalIndex;
         public bool Inherited;
         public bool NeedsSpacingSave;
+        public bool SquadOverride, SavedSquadOverride;
+        public string OpeningLayout = "";
         public Stack<string> Undo = new(), Redo = new();
     }
     private readonly Canvas canvas = new() { Width = 1500, Height = 700, Background = StudioTheme.Background };
@@ -61,6 +63,9 @@ public sealed class MapEditorView : UserControl
     public MapLayout? CurrentLayout => map;
     public int MapCount => drafts.Count;
     public IReadOnlyList<MapLayout> RewardLayouts => drafts.Select(d => d.Layout!).ToList();
+    public IReadOnlyList<int> OriginalStages => drafts.Select(d => d.OriginalIndex).ToArray();
+    public IReadOnlyList<bool> NativeInheritedMaps => drafts.Select(d => d.Inherited).ToArray();
+    public string ActSequence => string.Join(",", acts);
     public Func<IReadOnlyList<MapLayout>, string?>? RewardValidation { get; set; }
     public Func<bool>? GoalieRecruitmentEnabled { get; set; }
     private bool RecruitmentEnabled => GoalieRecruitmentEnabled?.Invoke() ?? GoalieFeatureOptions.Recruitment(
@@ -71,7 +76,7 @@ public sealed class MapEditorView : UserControl
     {
         if (index >= 0 && index < drafts.Count) LoadStage(index);
     }
-    public bool HasUnsavedChanges => dirty;
+    public bool HasUnsavedChanges => SquadMode ? SquadChanges().Count > 0 : dirty;
     public Dictionary<string, List<string>> AssignedOpponents => OpponentAssignments.FromLayouts(
         drafts.Select((draft, index) => (index + 1, draft.Layout!)));
     /// <summary>Every node that takes an opponent team (Elite/Boss), across all maps, in play order.</summary>
@@ -86,15 +91,19 @@ public sealed class MapEditorView : UserControl
         if (node == null || node.Team.Equals(team, StringComparison.OrdinalIgnoreCase)) return;
         RefreshTeams();
         if (mapIndex == currentStage) Checkpoint();
-        else { draft.Undo.Push(draft.Layout.Serialize()); draft.Redo.Clear(); draft.Inherited = false; dirty = true; }
+        else { draft.Undo.Push(Snapshot(draft)); draft.Redo.Clear(); draft.Inherited = false; draft.SquadOverride = true; dirty = true; }
         node.Team = team;
         if (mapIndex == currentStage) { Draw(); if (selected == node) Inspect(); Validate(); }
     }
-    public MapEditorView(string contentRoot, string campaignDirectory, Func<string>? selectedTemplate = null)
+    public MapEditorView(string contentRoot, string campaignDirectory, Func<string>? selectedTemplate = null, string? squadDirectory = null)
     {
         campaignDir = campaignDirectory;
+        squadDir = squadDirectory;
         this.contentRoot = contentRoot;
-        this.selectedTemplate = selectedTemplate ?? (() => SquadTemplateCatalog.ResolveCampaign(campaignDir));
+        this.selectedTemplate = selectedTemplate ?? (() => SquadMode
+            ? new CampaignDocument(File.ReadAllText(System.IO.Path.Combine(squadDir!, "team.txt"))).Get("Squad Template", SquadTemplateCatalog.ResolveCampaign(campaignDir))
+            : SquadTemplateCatalog.ResolveCampaign(campaignDir));
+        if (SquadMode) squadRevision = SquadMapOverrides.Revision(campaignDir, squadDir!);
         defaultTemplate = this.selectedTemplate();
         teamPreview = new MapTeamPreview(contentRoot, campaignDirectory);
         DetachedFromVisualTree += (_, _) => { connecting = false; artwork.Dispose(); teamPreview.Dispose(); };
@@ -118,6 +127,8 @@ public sealed class MapEditorView : UserControl
         for (int i = 0; i < sequence.Length; i++)
         {
             string file = System.IO.Path.Combine(campaignDir, "map_layouts", $"map-{i + 1}.txt");
+            bool custom = SquadMode && File.Exists(SquadMapOverrides.OverridePath(squadDir!, i + 1));
+            if (custom) file = SquadMapOverrides.OverridePath(squadDir!, i + 1);
             var layout = File.Exists(file) ? MapLayout.Parse(File.ReadAllText(file)) : MapCatalog.TemplateMap(catalog, defaultTemplate, sequence[i]);
             MapCatalog.HydrateNativePools(layout, catalog);
             if (!File.Exists(file)) layout.VanillaRandom = true;
@@ -127,11 +138,13 @@ public sealed class MapEditorView : UserControl
             // Fit node placement. Opening the editor must not silently repair a file.
             if (MapPlacementBounds.Validate(layout).Count == 0 && MapNodePlacement.ArrangeLayers(layout)) dirty = true;
             bool spacingAdjusted = File.Exists(file) && layout.Nodes.Any(n => Math.Abs(n.X - beforeX[n.Id]) > .001);
-            drafts.Add(new MapDraft { Layout = layout, Act = sequence[i], OriginalIndex = i + 1, Inherited = !File.Exists(file), NeedsSpacingSave = spacingAdjusted });
+            drafts.Add(new MapDraft { Layout = layout, Act = sequence[i], OriginalIndex = i + 1, Inherited = !File.Exists(file), NeedsSpacingSave = spacingAdjusted,
+                SquadOverride = custom, SavedSquadOverride = custom });
         }
         NormalizeCampaign();
         foreach (var draft in drafts)
             if (MapPlacementBounds.Validate(draft.Layout!).Count == 0) MapNodePlacement.ArrangeLayers(draft.Layout!);
+        CaptureSquadBaselines();
         var shell = new Grid { Margin = new Thickness(16), RowDefinitions = new RowDefinitions("Auto,*,Auto"), RowSpacing = StudioTheme.SpaceMd };
         var top = new DockPanel();
         var actions = new StackPanel { Orientation = Orientation.Horizontal };
@@ -145,7 +158,8 @@ public sealed class MapEditorView : UserControl
             Checkpoint(); map.LookAct = act; Draw();
             message.Text = $"Map {currentStage + 1} look: Act {act}. Save maps to keep the change.";
         };
-        actions.Children.Add(Action("+ Add map", AddMap));
+        if (!SquadMode) actions.Children.Add(Action("+ Add map", AddMap));
+        else { var reset = Action("Reset this map to campaign", ResetSquadMap); reset.Name = "ResetSquadMap"; actions.Children.Add(reset); }
         actions.Children.Add(Action("Import base-game map", OpenImport));
         var fitPlacement = Action("Fit node placement", FitNodePlacement);
         fitPlacement.Name = "FitNodePlacement";
@@ -173,6 +187,7 @@ public sealed class MapEditorView : UserControl
             message.Text = "Map name changed. Save maps to keep the change.";
         };
         heading.Children.Add(identity);
+        if (SquadMode) heading.Children.Add(squadStatus);
         shell.Children.Add(heading);
         var body = new Grid();
         scaledCanvas.Child = canvas;
@@ -193,7 +208,7 @@ public sealed class MapEditorView : UserControl
         var footer = new DockPanel();
         var controls = new StackPanel { Orientation = Orientation.Horizontal };
         controls.Children.Add(Action("Undo", Undo)); controls.Children.Add(Action("Redo", Redo));
-        var saveButton = Action("Save maps", SaveMap); StudioTheme.Primary(saveButton); controls.Children.Add(saveButton);
+        var saveButton = Action(SquadMode ? "Save team maps" : "Save maps", SaveMap); StudioTheme.Primary(saveButton); controls.Children.Add(saveButton);
         var zoomControls = new StackPanel { Orientation = Orientation.Horizontal };
         var zoomOut = Action("−", () => SetBuilderZoom(builderZoom / 1.2)); zoomOut.Name = "NodeZoomOut";
         var zoomIn = Action("+", () => SetBuilderZoom(builderZoom * 1.2)); zoomIn.Name = "NodeZoomIn";
@@ -257,6 +272,7 @@ public sealed class MapEditorView : UserControl
     }
     private void RefreshTabs()
     {
+        RefreshSquadStatus();
         tabs.Children.Clear();
         for (int i = 0; i < drafts.Count; i++)
         {
@@ -270,7 +286,7 @@ public sealed class MapEditorView : UserControl
             close.Classes.Add("map-close"); close.Margin = new Thickness(0);
             Avalonia.Automation.AutomationProperties.SetName(close, $"Remove Map {i + 1}");
             ToolTip.SetTip(close, $"Remove Map {i + 1}"); close.IsEnabled = drafts.Count > 1;
-            header.Children.Add(select); header.Children.Add(close);
+            header.Children.Add(select); if (!SquadMode) header.Children.Add(close);
             var tab = new Border { Child = header, Classes = { "map-tab" } };
             if (i == currentStage) tab.Classes.Add("active");
             tabs.Children.Add(tab);
@@ -296,11 +312,12 @@ public sealed class MapEditorView : UserControl
     }
     private void AddMap()
     {
+        if (SquadMode) return;
         drafts.Add(new MapDraft { Layout = NewMap(1), Act = 1 }); dirty = true; LoadStage(drafts.Count - 1);
     }
     private void RemoveMap(int index)
     {
-        if (drafts.Count <= 1) return;
+        if (SquadMode || drafts.Count <= 1) return;
         drafts.RemoveAt(index); dirty = true;
         LoadStage(index < currentStage ? currentStage - 1 : Math.Min(currentStage, drafts.Count - 1));
         message.Text = "Map removed from draft. Save maps to keep the change.";
@@ -319,24 +336,27 @@ public sealed class MapEditorView : UserControl
             string type = kind;
             var button = new Button { Content = NodeName(type), Tag = "node-choice:" + type, Width = 185, Margin = new Thickness(4), Padding = new Thickness(10,12) };
             button.Click += (_, _) => {
-                if (placeholder != null && map.Nodes.Contains(placeholder)) { Checkpoint(); placeholder.Type = type; selected = placeholder; Draw(); Inspect(); Validate(); }
+                if (placeholder != null && map.Nodes.Contains(placeholder)) { Checkpoint(); placeholder.Type = type; placeholder.CustomCoach = null; selected = placeholder; Draw(); Inspect(); Validate(); }
                 else AddLayerNode(layer, newLayer, type);
                 dialog.Close();
             };
             choices.Children.Add(button);
         }
+        var custom = new Button { Content = "Custom", Name = "ChooseCustomNode", Tag = "node-choice:Custom", Width = 185, Margin = new Thickness(4), Padding = new Thickness(10,12) };
+        custom.Click += async (_, _) => { dialog.Close(); await ChooseCustomCoach(layer, newLayer, placeholder); };
+        choices.Children.Add(custom);
         var cancel = new Button { Content = "Cancel" }; cancel.Click += (_, _) => dialog.Close();
         dialog.Content = new StackPanel { Margin = new Thickness(20), Spacing = StudioTheme.SpaceMd, Children = {
             new TextBlock { Text = newLayer ? "Add a layer" : $"Layer {layer + 1} - choose a node", FontSize = 23, FontWeight = FontWeight.Bold },
             new TextBlock { Text = "Add choices freely. Layers with three or more nodes use closer row spacing." }, choices, cancel } };
         _ = dialog.ShowDialog(DialogOwner);
     }
-    private void AddLayerNode(int layer, bool newLayer, string type)
+    private void AddLayerNode(int layer, bool newLayer, string type, CustomCoachDefinition? customCoach = null)
     {
         if (map == null || type == "Boss" || (type.Length > 0 && !MapLayout.NodeTypes.Contains(type))) return;
         if (!newLayer && (map.InLayer(layer).Count() >= MapPlacementBounds.MaxNodesPerLayer || map.InLayer(layer).Any(n => n.Type == "Boss"))) return;
         var working = MapLayout.Parse(map.Serialize());
-        var added = new MapLayoutNode { Layer = layer, Type = type };
+        var added = new MapLayoutNode { Layer = layer, Type = type, CustomCoach = customCoach?.Copy() };
         double nextY = newLayer || !working.InLayer(layer).Any() ? MapNodePlacement.MinY
             : working.InLayer(layer).Max(n => NodePosition(n).Y) + MapNodePlacement.VerticalSpacing;
         if (newLayer)
@@ -479,11 +499,15 @@ public sealed class MapEditorView : UserControl
         introAct.Text = $"ACT {currentStage + 1} · Number follows campaign order";
         RefreshTabs();
     }
-    private string Snapshot()
+    private string Snapshot() => Snapshot(drafts[currentStage]);
+    private static string Snapshot(MapDraft draft)
     {
-        var state = new CampaignDocument(map!.Serialize()); state.Set("Editor Act", drafts[currentStage].Act.ToString()); return state.ToString();
+        var state = new CampaignDocument(draft.Layout!.Serialize()); state.Set("Editor Act", draft.Act.ToString());
+        state.Set("Editor Inherited", draft.Inherited ? "yes" : "no");
+        state.Set("Editor Squad Override", draft.SquadOverride ? "yes" : "no");
+        return state.ToString();
     }
-    private void Checkpoint() { if (map == null) return; drafts[currentStage].Inherited = false; undo.Push(Snapshot()); redo.Clear(); dirty = true; }
+    private void Checkpoint() { if (map == null) return; undo.Push(Snapshot()); redo.Clear(); drafts[currentStage].Inherited = false; drafts[currentStage].SquadOverride = true; dirty = true; }
     public void FitNodePlacement()
     {
         if (map == null) return;
@@ -496,11 +520,18 @@ public sealed class MapEditorView : UserControl
     }
     public void Undo() { if (map == null || undo.Count == 0) return; redo.Push(Snapshot()); Restore(undo.Pop()); }
     public void Redo() { if (map == null || redo.Count == 0) return; undo.Push(Snapshot()); Restore(redo.Pop()); }
-    private void Restore(string text) { string? id = selected?.Id; map = MapLayout.Parse(text); drafts[currentStage].Layout = map; NormalizeCampaign(); drafts[currentStage].Act = int.TryParse(new CampaignDocument(text).Get("Editor Act"), out int restoredAct) ? Math.Clamp(restoredAct, 1, 3) : drafts[currentStage].Act; RefreshMapLook(); RefreshGeneration(); selected = map.Nodes.FirstOrDefault(n => n.Id == id); dirty = true; connecting = false; Draw(); Inspect(); Validate(); }
+    private void Restore(string text) {
+        string? id = selected?.Id; map = MapLayout.Parse(text); var draft = drafts[currentStage]; draft.Layout = map; NormalizeCampaign();
+        var state = new CampaignDocument(text);
+        draft.Act = int.TryParse(state.Get("Editor Act"), out int restoredAct) ? Math.Clamp(restoredAct, 1, 3) : draft.Act;
+        draft.Inherited = state.Get("Editor Inherited") == "yes"; draft.SquadOverride = state.Get("Editor Squad Override") == "yes";
+        RefreshMapLook(); RefreshGeneration(); selected = map.Nodes.FirstOrDefault(n => n.Id == id); dirty = true; connecting = false; Draw(); Inspect(); Validate();
+    }
     public void SaveMap() => TrySaveMap(out _);
     public bool TrySaveMap(out string error)
     {
         error = "";
+        if (SquadMode) return TrySaveSquadMaps(out error);
         // A malformed import must stay intact for correction, including when
         // campaign.txt was changed after this editor loaded its valid drafts.
         string configFile = System.IO.Path.Combine(campaignDir, "campaign.txt");
@@ -524,14 +555,18 @@ public sealed class MapEditorView : UserControl
             return false;
         }
         string? reserve = RewardValidation != null ? RewardValidation(RewardLayouts)
-            : string.Join("\n", CampaignRewardBudget.Calculate(contentRoot, campaignDir, layouts: RewardLayouts).SelectMany(b => b.Errors));
+            : string.Join("\n", CampaignRewardBudget.Calculate(contentRoot, campaignDir, layouts: RewardLayouts, actSequence: ActSequence,
+                originalStages: OriginalStages, nativeInheritedMaps: NativeInheritedMaps).SelectMany(b => b.Errors));
         if (!string.IsNullOrWhiteSpace(reserve)) { error = reserve; message.Text = error; return false; }
+        try { CustomCoachCatalog.SaveDependencies(contentRoot, campaignDir, RewardLayouts); }
+        catch (Exception ex) { error = ex.Message; message.Text = error; return false; }
         string folder = System.IO.Path.Combine(campaignDir, "map_layouts"); Directory.CreateDirectory(folder);
         // Keep a recoverable copy before renumbering or removing saved layouts.
         string backup = System.IO.Path.Combine(campaignDir, "map_backups", DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fffffff"));
         Directory.CreateDirectory(backup);
         foreach (string file in Directory.GetFiles(folder, "map-*.txt")) File.Copy(file, System.IO.Path.Combine(backup, System.IO.Path.GetFileName(file)));
         if (File.Exists(configFile)) File.Copy(configFile, System.IO.Path.Combine(backup, "campaign.txt"));
+        SquadMapOverrides.Remap(campaignDir, OriginalStages, backup);
         string assignments = System.IO.Path.Combine(campaignDir, "assignments.txt");
         if (File.Exists(assignments))
         {
@@ -560,12 +595,13 @@ public sealed class MapEditorView : UserControl
     }
     private List<string> ValidateLayout(MapLayout layout, int mapNumber)
         => layout.Validate(teamNames.Keys).Concat(MapPlacementBounds.Validate(layout)).Concat(MapCatalog.ValidateSource(layout, sourceCatalog))
+            .Concat(CustomCoachCatalog.Errors(contentRoot, campaignDir, layout))
             .Concat(GoalieFeatureOptions.ValidateNodes(RecruitmentEnabled, new[] { layout }, mapNumber))
             .Concat(layout.Nodes.Where(n => n.Type is "Elite" or "Boss" && n.Stadium.Length > 0
                 && !NodeSettingsWindow.Stadiums.Any(s => s.Id == n.Stadium))
                 .Select(n => $"Stadium '{n.Stadium}' is unavailable. Choose a current stadium."))
             .Distinct().ToList();
-    private void Validate() { if (map == null) return; var errors = ValidateLayout(map, currentStage + 1); message.Text = errors.Count == 0 ? map.VanillaRandom ? NativeGenerationMessage : "Unsaved map · all nodes connect from entry to boss." : string.Join("  ", errors.Take(3)); }
+    private void Validate() { if (map == null) return; RefreshSquadStatus(); var errors = ValidateLayout(map, currentStage + 1); message.Text = errors.Count == 0 ? map.VanillaRandom ? NativeGenerationMessage : "Unsaved map · all nodes connect from entry to boss." : string.Join("  ", errors.Take(3)); }
     private double BuilderRowScale => Math.Max(1, ((map?.Nodes.GroupBy(n => n.Layer).Select(g => g.Count()).DefaultIfEmpty(1).Max() ?? 1) - 1)
         * (MapNodePlacement.Height + MapNodePlacement.Gap) / ((MapPlacementBounds.PairBottomY - MapPlacementBounds.PairTopY) * MapNodePlacement.Units));
     private Point NodePosition(MapLayoutNode n)
@@ -629,6 +665,7 @@ public sealed class MapEditorView : UserControl
     }
     private void Draw()
     {
+        RefreshSquadStatus();
         gamePreview.Update(map, drafts[currentStage].Act, teamNames, teamPreview);
         canvas.Children.Clear(); tiles.Clear(); connectionPreview = null;
         canvas.Cursor = connecting ? new Cursor(StandardCursorType.Cross) : null;
@@ -692,7 +729,7 @@ public sealed class MapEditorView : UserControl
             bool linked = connecting && selected != null && selected.Outgoing.Contains(n.Id);
             bool candidate = connecting && selected != null && n.Layer == selected.Layer + 1 && !linked;
             string colour = n == selected ? "#86EDD3" : candidate ? linked ? "#86EDD3" : "#689EC4" : n.Type == "Boss" ? "#735285" : "#344A65";
-            string name = n.Team.Length > 0 ? teamNames.GetValueOrDefault(n.Team, "Choose team") : NodeName(n.Type);
+            string name = n.Team.Length > 0 ? teamNames.GetValueOrDefault(n.Team, "Choose team") : NodeTitle(n);
             var contents = new StackPanel { Spacing = 3 };
             contents.Children.Add(new TextBlock { Text = name, FontSize = 19, FontWeight = FontWeight.SemiBold, Foreground = Brush.Parse("#F0F5FB"), TextTrimming = TextTrimming.CharacterEllipsis });
             var picture = artwork.Get(n, map.LookAct > 0 ? map.LookAct : acts[currentStage]);
@@ -775,7 +812,7 @@ public sealed class MapEditorView : UserControl
     {
         if (detailsDialog != null) return;
         selected = node; Draw(); Inspect();
-        var dialog = new Window { Title = NodeName(node.Type) + " settings", Width = 460, Height = 610, MinHeight = 420, WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = Brush.Parse("#131F30") };
+        var dialog = new Window { Title = NodeTitle(node) + " settings", Width = 460, Height = 610, MinHeight = 420, WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = Brush.Parse("#131F30") };
         detailsDialog = dialog;
         var layout = new DockPanel { Margin = new Thickness(24), LastChildFill = true };
         var done = Action("Done", () => dialog.Close()); done.HorizontalAlignment = HorizontalAlignment.Right;
@@ -871,20 +908,25 @@ public sealed class MapEditorView : UserControl
         inspector.Children.Clear();
         if (selected == null || map == null) return;
         var n = selected;
-        inspector.Children.Add(new TextBlock { Text = NodeName(n.Type), FontSize = 27, FontWeight = FontWeight.SemiBold });
+        inspector.Children.Add(new TextBlock { Text = NodeTitle(n), FontSize = 27, FontWeight = FontWeight.SemiBold, TextWrapping = TextWrapping.Wrap });
         inspector.Children.Add(new TextBlock { Text = $"Layer {n.Layer + 1} / Node {map.NativeIndex(n) + 1}", Foreground = Brush.Parse("#8FA6BE"), Margin = new Thickness(0,0,0,12) });
-        var types = new ComboBox { ItemsSource = n.Type == "Boss" ? new[] { "Boss" } : MapLayout.NodeTypes.Where(t => t != "Boss").ToArray(), SelectedItem = n.Type, IsEnabled = n.Type != "Boss", HorizontalAlignment = HorizontalAlignment.Stretch };
+        var types = new ComboBox { Name = "NodeType", ItemsSource = n.Type == "Boss" ? new[] { "Boss" } : MapLayout.NodeTypes.Where(t => t != "Boss").Append("Custom").ToArray(), SelectedItem = n.CustomCoach != null ? "Custom" : n.Type, IsEnabled = n.Type != "Boss", HorizontalAlignment = HorizontalAlignment.Stretch };
         types.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<string>((type, _) => new TextBlock { Text = NodeName(type ?? "") });
-        types.SelectionChanged += (_, _) =>
+        types.SelectionChanged += async (_, _) =>
         {
-            if (types.SelectedItem is not string type || type == n.Type) return;
-            Checkpoint(); n.Type = type;
+            if (types.SelectedItem is string chosen && chosen == "Custom") { await ChooseCustomCoach(n.Layer, false, n); Inspect(); return; }
+            if (types.SelectedItem is not string type || type == n.Type && n.CustomCoach == null) return;
+            Checkpoint(); n.Type = type; n.CustomCoach = null;
             // Event nodes have no opponent picker. Do not retain a hidden match
             // assignment that makes the converted event impossible to save.
             if (type is not "Elite" and not "Boss") { n.Team = ""; n.Stadium = ""; }
             Draw(); Inspect(); Validate();
         };
         inspector.Children.Add(new TextBlock { Text = "Node type" }); inspector.Children.Add(types);
+        if (n.CustomCoach != null) {
+            inspector.Children.Add(new TextBlock { Text = $"Custom Coach · {n.CustomCoach.Relics.Count} selected relics", TextWrapping = TextWrapping.Wrap });
+            inspector.Children.Add(Action("Edit Custom Coach…", async () => await EditCustomCoach(n)));
+        }
         if (n.Type is "Elite" or "Boss")
         {
             if (n.Team.Length > 0 && !teamNames.ContainsKey(n.Team)) inspector.Children.Add(new TextBlock { Text = "The saved opponent is missing. Choose a campaign team.", TextWrapping = TextWrapping.Wrap });

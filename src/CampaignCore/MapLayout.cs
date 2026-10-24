@@ -30,6 +30,7 @@ public sealed class MapLayoutNode
     public string GmRole { get; set; } = GoalieFreeAgents.Skaters;
     public string EliteGroup { get; set; } = "";
     public string EliteTeam { get; set; } = "";
+    public CustomCoachDefinition CustomCoach { get; set; }
 }
 
 /// <summary>A stable-ID editable graph. Native node indexes are derived only at the adapter boundary.</summary>
@@ -74,6 +75,8 @@ public sealed class MapLayout
             n.Layer.ToString(), n.Type, n.X.ToString("R", CultureInfo.InvariantCulture), n.Y.ToString("R", CultureInfo.InvariantCulture),
             n.Team, string.Join(",", n.Outgoing), n.SourceLayer.ToString(), n.SourceNode.ToString(), n.TalentRewards.ToString(), n.RelicRewards.ToString(), n.GmChoices.ToString(), n.EliteGroup, n.EliteTeam }.Select(Encode)));
         // Optional editor metadata keeps the existing 13-field node records compatible.
+        foreach (var n in Nodes.Where(n => n.Type == "Coach" && n.CustomCoach != null))
+            d.Set("Custom coach " + n.Id, n.CustomCoach.Encode());
         foreach (var n in Nodes.Where(n => n.GmRole != GoalieFreeAgents.Skaters)) d.Set("Recruit role " + n.Id, n.GmRole);
         foreach (var n in Nodes.Where(n => n.Stadium.Length > 0)) d.Set("Stadium " + n.Id, Encode(n.Stadium));
         foreach (var n in Nodes.Where(n => n.PeriodCount != 0)) d.Set("Periods " + n.Id, n.PeriodCount.ToString(CultureInfo.InvariantCulture));
@@ -106,6 +109,12 @@ public sealed class MapLayout
         }
         foreach (var node in map.Nodes)
         {
+            string customCoach = d.Get("Custom coach " + node.Id);
+            if (customCoach.Length > 0)
+            {
+                if (node.Type != "Coach") throw new ArgumentException("Custom Coach metadata requires a Coach node.");
+                node.CustomCoach = CustomCoachDefinition.Decode(customCoach);
+            }
             Dictionary<string, decimal> ReadWeights(string prefix)
             {
                 string weights = d.Get(prefix + node.Id);
@@ -149,6 +158,12 @@ public sealed class MapLayout
         foreach (var n in Nodes)
         {
             string label = $"Layer {n.Layer + 1}, node {NativeIndex(n) + 1}";
+            if (n.CustomCoach != null)
+            {
+                if (n.Type != "Coach") errors.Add(label + ": Custom Coach metadata requires a Coach node.");
+                try { n.CustomCoach.Validate(); }
+                catch (Exception ex) { errors.Add(label + ": " + ex.Message); }
+            }
             if (n.PeriodCount < 0 || n.PeriodCount > 3) errors.Add(label + ": periods must be native or 1–3.");
             if (float.IsNaN(n.PeriodLengthMinutes) || float.IsInfinity(n.PeriodLengthMinutes)
                 || n.PeriodLengthMinutes != 0 && (n.PeriodLengthMinutes < 0.5f || n.PeriodLengthMinutes > 20))

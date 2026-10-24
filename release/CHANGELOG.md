@@ -1,5 +1,14 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 26 — 2026-10-23
+
+- Custom Coach nodes: choose **Custom → Create new / Load saved**, then set a world-map name, optional PNG and strict relic pool. Saved library entries and placed copies remain independent. Coach encounter art and dialogue retain native behavior.
+- Squad maps: enable **Use own maps** on a campaign player team, then **Edit team maps**. Each map follows the campaign until edited; count and order remain shared. Reset restores inheritance, and disabling retains edits for later reuse. Disabled overrides can be repaired through **Edit saved team maps**.
+- Whole-campaign sharing includes squad maps and custom Coach dependencies. Existing runs retain their applied map and reward definitions through Continue; new runs/stages use the current saved settings.
+- Supports public game build 26150666 and preserves revision 25's corrected installer staging.
+
+Validation: 2,258 focused checks on unchanged reviewed product code, fresh runtime/Studio/installer builds, and exact extracted/published package checks. Human gameplay acceptance for these additions remains pending. See [revision 26 validation](../docs/RELEASE-R26-VALIDATION.md).
+
 ## Beta 1.0 revision 25 — 2026-10-23
 
 - Corrects the withdrawn revision 24 installer: the game and Studio receive the same verified public-v1.0 runtime and complete map-seam assets. Both destinations are checked in the extracted installer before publication.

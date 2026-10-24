@@ -186,6 +186,7 @@ internal static partial class ExportTranslation
         for (int i = 0; i < positions.Length; i++) model[slots[i]] = rosterIds[positions[i]];
         model["relics"] = custom.Map(relics.Distinct(StringComparer.OrdinalIgnoreCase));
         var teamSidecar = ExportSelections.Sidecar(team, game, "skater", report);
+        teamSidecar.Remove(SquadMapOverrides.ModeKey);
         if (benchHead == null) teamSidecar.Remove("Bench Head");
         teamSidecar.Set("Export Version", "3");
         teamSidecar.Set("Export Relic IDs", string.Join(",", (string[])model["relics"]));

@@ -17,13 +17,13 @@ public static class OpponentAssignments
             .OrderBy(n => n.Layer).ThenBy(n => n.Native)).ToList();
     private static List<MapLayout>? baseMaps;
     /// <summary>The campaign's maps as the map editor would open them, read without creating an editor (which can mark maps dirty).</summary>
-    public static List<(int Map, int Act, MapLayout Layout)> LoadLayouts(string contentRoot, string campaign, string template, string actSequence)
+    public static List<(int Map, int Act, MapLayout Layout)> LoadLayouts(string contentRoot, string campaign, string template, string actSequence, string? squadDirectory = null)
     {
         var result = new List<(int, int, MapLayout)>();
         var sequence = actSequence.Split(',').Select(s => int.TryParse(s.Trim(), out int n) ? Math.Clamp(n, 1, 3) : 1).ToArray();
         for (int i = 0; i < sequence.Length; i++)
         {
-            string file = Path.Combine(campaign, "map_layouts", $"map-{i + 1}.txt");
+            string file = SquadMapOverrides.ResolvePath(campaign, squadDirectory!, i + 1);
             MapLayout layout;
             if (File.Exists(file)) layout = MapLayout.Parse(File.ReadAllText(file));
             else layout = MapCatalog.TemplateMap(baseMaps ??= MapCatalog.LoadBaseMaps(Path.Combine(contentRoot, "_game_maps.txt")), template, sequence[i]);

@@ -28,7 +28,11 @@ internal static class CustomMapVisualBounds
             found = true;
         }
         var skeleton = node.skeletonSprite;
-        if (skeleton != null)
+        var customCoachArt = CustomCoachPresentation.Renderer(node);
+        if (customCoachArt != null) {
+            var b = customCoachArt.bounds; Add(b.min.x, b.max.x, b.min.y, b.max.y);
+        }
+        if (skeleton != null && customCoachArt == null)
         {
             if (initializePose) PrepareNativeEventAnimation(node, skeleton);
             if (initializePose && skeleton.IsValid)

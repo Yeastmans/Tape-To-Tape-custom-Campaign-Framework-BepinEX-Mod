@@ -12,6 +12,8 @@ namespace EndlessMode {
     static partial class Plugin { internal static string ModContentRoot; }
     static partial class CustomRewardRuntime {
         private static bool loaded, creating;
+        private static bool inPlayStale;
+        private static void InvalidateCoachAsset(string id) { }
         private static string definitionsScope;
         private static bool definitionSourcesReady;
         private static long definitionGeneration;

@@ -120,7 +120,8 @@ public static class CreatorContent
                         File.Copy(file, copied); ContentImport.ValidateCopiedFile(copied);
                     }
                 }
-                foreach (var dir in Directory.GetDirectories(from).Where(d => !Path.GetFileName(d).StartsWith('.') && !Path.GetFileName(d).StartsWith('_')))
+                foreach (var dir in Directory.GetDirectories(from).Where(d => !Path.GetFileName(d).StartsWith('.') && !Path.GetFileName(d).StartsWith('_')
+                    && (kind == "campaign" || !Path.GetFileName(d).Equals(SquadMapOverrides.Folder, StringComparison.OrdinalIgnoreCase))))
                     Copy(dir, Path.Combine(to, Path.GetFileName(dir)));
             }
             string stagedFile;
@@ -146,6 +147,7 @@ public static class CreatorContent
                 if (kind is "team" or "player-team")
                 {
                     doc.Set("Team Name", name);
+                    doc.Remove(SquadMapOverrides.ModeKey);
                     if (source.Length == 0) DefaultPlayerLook.ApplyTeamLook(defaultLookRoot ?? root, doc, stage);
                 }
                 doc.Save(stagedFile);

@@ -5031,6 +5031,7 @@ public static class PatchMapNodeTooltip
         try
         {
             if (__instance == null) return;
+            CustomCoachPresentation.Tooltip(__instance);
             // Only MatchMapNode (and subclasses: EliteMapNode, BossMapNode,
             // ChallengeMapNode) have an opponent team.
             var mm = __instance.TryCast<STS.Map.MatchMapNode>();

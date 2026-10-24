@@ -25,6 +25,7 @@ public sealed partial class MainWindow : Window
     private readonly Image preview = new() { Height = 300, Stretch = Stretch.Uniform };
     private readonly TabControl tabs = new();
     private readonly Dictionary<string, Func<string>> editors = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> savedTeamValues = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, int> teamTabs = new(StringComparer.OrdinalIgnoreCase);
     private CampaignDocument? document;
     private string? path;
@@ -239,9 +240,10 @@ public sealed partial class MainWindow : Window
                 playerFile => { if (dirty) { status.Text = "Save your team before editing a player."; return; } OpenFile(playerFile); },
                 async (position, importPlayer) => { if (dirty) { status.Text = "Save your team before adding a player."; return; } await AddRosterPlayer(file, position, importPlayer); },
                 async () => await AddSquad(), status, Export,
-                bulkImportPlayers: async slots => await BulkImportRosterPlayers(file, slots));
+                bulkImportPlayers: async slots => await BulkImportRosterPlayers(file, slots), saveBeforeMaps: SaveBeforeTeamMaps);
             if (teamTabs.TryGetValue(Path.GetFullPath(file), out int selectedTab))
                 ((TeamEditorView)editorShell).SelectedTab = selectedTab;
+            CaptureTeamValues();
             loading = false; dirty = false; status.Text = heading.Text; RefreshAttention(); Content = editorShell; return;
         }
         editorShell = standardEditorShell;
@@ -311,7 +313,7 @@ public sealed partial class MainWindow : Window
     }
     private void MarkDirty()
     {
-        if (!loading && document != null && (editors.Any(pair => pair.Value() != document.Get(pair.Key)) || editorShell is TeamEditorView teamView && teamView.HasEquipmentChanges))
+        if (!loading && document != null && (editorShell is TeamEditorView ? HasPendingTeamEdits() : editors.Any(pair => pair.Value() != document.Get(pair.Key))))
         {
             dirty = true; campaigns.IsEnabled = files.IsEnabled = false;
             status.Text = "Unsaved changes · save before switching files";
@@ -324,11 +326,30 @@ public sealed partial class MainWindow : Window
         var next = new CampaignDocument(document.ToString()); foreach (var (key, get) in editors)
         { string value = get(); if (value != document.Get(key)) next.Set(key, value); } return next;
     }
-    private async void Save()
+    private async void Save() => await TrySaveEditor();
+    private void CaptureTeamValues()
     {
-        if (path == null) return;
+        savedTeamValues.Clear();
+        foreach (var pair in editors) savedTeamValues[pair.Key] = pair.Value();
+    }
+    private bool HasPendingTeamEdits() => editors.Any(pair => !savedTeamValues.TryGetValue(pair.Key, out string? saved) || pair.Value() != saved)
+        || editorShell is TeamEditorView team && team.HasEquipmentChanges;
+    private Task<bool> SaveBeforeTeamMaps()
+    {
+        if (path == null || document == null) return Task.FromResult(false);
+        // Existing invalid maps need to stay accessible for repair. A no-op
+        // launch must not force those maps through team activation validation.
+        // Compare against displayed opening values: defaults in old team files
+        // are not unsaved user edits. Reverting a toggle also needs no save.
+        if (HasPendingTeamEdits()) return TrySaveEditor();
+        dirty = false; campaigns.IsEnabled = files.IsEnabled = true;
+        return Task.FromResult(true);
+    }
+    private async Task<bool> TrySaveEditor()
+    {
+        if (path == null) return false;
         var next = ReadEditor();
-        if (!ValidateEditor(next)) return;
+        if (!ValidateEditor(next)) return false;
         // A new starting power or squad rule can invalidate an otherwise valid
         // custom reward reserve. Check the proposed document before any writes.
         if (path.Contains(Path.DirectorySeparatorChar + "player_teams" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
@@ -340,25 +361,28 @@ public sealed partial class MainWindow : Window
                 if (parent != null)
                 {
                     var changes = new Dictionary<string, CampaignDocument>(StringComparer.OrdinalIgnoreCase) { [Path.GetFullPath(path)] = next };
-                    var errors = CampaignRewardBudget.Calculate(root, parent, changedFiles: changes).SelectMany(b => b.Errors).ToArray();
-                    if (errors.Length > 0) { status.Text = string.Join("\n", errors) + " Update the campaign reward pools before applying this change."; return; }
+                    string squads = Path.Combine(parent, "player_teams");
+                    string squad = Path.Combine(squads, Path.GetRelativePath(squads, path).Split(Path.DirectorySeparatorChar)[0]);
+                    var errors = CampaignRewardBudget.Calculate(root, parent, changedFiles: changes, validationSquadDirectory: squad).SelectMany(b => b.Errors).ToArray();
+                    if (errors.Length > 0) { status.Text = string.Join("\n", errors) + " Resolve the listed map or reward settings before applying this change."; return false; }
                 }
             }
-            catch (Exception ex) { status.Text = ex.Message; return; }
+            catch (Exception ex) { status.Text = ex.Message; return false; }
         }
         if (editorShell is PlayerEditorView && next.Get(FreeAgentContent.Marker).Length == 0 && next.Get(StartingPoolEditor.BaseMarker).Length == 0)
         {
             try { CreatorContent.ValidatePlayerName(path, next.Get("Name"), path); }
-            catch (ArgumentException ex) { status.Text = ex.Message; return; }
+            catch (ArgumentException ex) { status.Text = ex.Message; return false; }
         }
         if (editorShell is TeamEditorView teamView)
         {
             try { teamView.SaveEquipment(); }
-            catch (Exception ex) { status.Text = ex.Message; return; }
+            catch (Exception ex) { status.Text = ex.Message; return false; }
         }
         try { CustomRewardCatalog.PreserveLoadout(data, next, path, editorShell is PlayerEditorView ? role == "goalie" : null); next.Save(path); }
-        catch (Exception ex) { status.Text = ex.Message; return; }
+        catch (Exception ex) { status.Text = ex.Message; return false; }
         document = next;
+        if (editorShell is TeamEditorView) CaptureTeamValues();
         if (homeDraft is { } draft && draft.File == path)
         {
             if (draft.Kind is "squad" or "team" or "skater" or "goalie" or "player")
@@ -372,10 +396,10 @@ public sealed partial class MainWindow : Window
                     OpenFile(saved); status.Text = player ? "Saved player to library" : "Saved team to library";
                 }
                 catch (Exception ex) { status.Text = ex.Message; }
-                return;
+                return !dirty;
             }
             await ChooseContent(draft.Kind, true, draftSource: draft.File);
-            return;
+            return !dirty;
         }
         dirty = false;
         campaigns.IsEnabled = files.IsEnabled = true;
@@ -385,6 +409,7 @@ public sealed partial class MainWindow : Window
         paths = CampaignNavigation.Load(campaignWorkspace?.WorkingDirectory ?? Path.Combine(root, "campaigns", campaigns.SelectedItem?.ToString() ?? ""));
         foreach (var node in paths.SelectMany(n => n.Descendants())) node.IsExpanded = expanded.Contains(node.FilePath ?? node.DisplayName);
         FilterFiles();
+        return true;
     }
     private void Preview(string field, string value)
     {

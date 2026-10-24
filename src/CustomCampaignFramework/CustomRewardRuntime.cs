@@ -22,7 +22,7 @@ using NativeGoalie = global::Goaltender.Goaltender;
 
 namespace EndlessMode;
 
-internal static class CustomRewardRuntime
+internal static partial class CustomRewardRuntime
 {
     private static bool mercyWon;
     private static readonly HashSet<IntPtr> teamsWithOpposingKnockouts = new();
@@ -117,6 +117,16 @@ internal static class CustomRewardRuntime
         foreach (var item in items) Definitions[item.Id] = item;
         EnsureAssets();
     }
+    internal static void RegisterCoach(CustomCoachDefinition coach)
+    {
+        // Callers bind only verified applied map snapshots. Runtime restoration
+        // owns these identities; authoring/import collision checks happen in Studio.
+        var snapshots = new Dictionary<string, CustomRewardDefinition>(StringComparer.OrdinalIgnoreCase);
+        foreach (var d in CoachRewardSnapshots()) snapshots.Add(d.Id, d);
+        CustomCoachPool.AddDependencies(snapshots, coach);
+        SetCoachRewardSnapshots(snapshots);
+        EnsureAssets();
+    }
     internal static bool HasMatch<T>(this Il2CppSystem.Collections.Generic.List<T> list, Func<T, bool> predicate) {
         if (list != null) for (int i = 0; i < list.Count; i++) if (predicate(list[i])) return true;
         return false;
@@ -126,6 +136,7 @@ internal static class CustomRewardRuntime
         if (creating) return;
         creating = true;
         try {
+            if (coachRewards.Count > 0 && (Plugin.IsDefaultMode || coachRewardsScope != DefinitionScope())) ResetCoachRewards();
             if (!loaded) {
                 definitionSourcesReady = false;
                 string scope = Plugin.IsDefaultMode ? null : DefinitionScope();
@@ -157,6 +168,9 @@ internal static class CustomRewardRuntime
                         foreach (var d in items) snapshot[d.Id] = d;
                     } catch (Exception ex) { sourcesReady = false; Plugin.Log.LogError("[CustomRewards] Export " + Path.GetFileName(file) + ": " + ex.Message); }
                 }
+                // The verified run is authoritative for its embedded dependencies,
+                // even if a campaign or library definition was subsequently edited.
+                foreach (var d in CoachRewardSnapshots()) snapshot[d.Id] = d;
                 Definitions.Clear(); foreach (var pair in snapshot) Definitions.Add(pair.Key, pair.Value);
                 definitionsScope = scope;
                 definitionSourcesReady = sourcesReady;
@@ -286,6 +300,19 @@ internal static class CustomRewardRuntime
     private static string DefinitionScope()
     {
         return Path.GetFullPath(Plugin.ModFolder).ToUpperInvariant() + "\n" + Path.GetFullPath(Plugin.ModContentRoot).ToUpperInvariant();
+    }
+    private static void InvalidateCoachAsset(string id)
+    {
+        // Never destroy or rewrite a carrier that a native team may still own.
+        // Let Unity unload our retired carriers/art once their last owner leaves.
+        static void Retire(ScriptableObject asset, Sprite image)
+        {
+            if (asset != null) asset.hideFlags &= ~HideFlags.DontUnloadUnusedAsset;
+            if (image != null) { image.hideFlags &= ~HideFlags.DontUnloadUnusedAsset; if (image.texture != null) image.texture.hideFlags &= ~HideFlags.DontUnloadUnusedAsset; }
+        }
+        if (relics.Remove(id, out var r)) Retire(r, r?.sprite);
+        if (talents.Remove(id, out var t)) Retire(t, t?.icon);
+        PatchBossLaunchMatch.AllRelicCache = null;
     }
     private static Sprite Icon(CustomRewardDefinition d)
     {

@@ -31,6 +31,11 @@ internal static class CustomRewardPools
     internal static RewardPoolDefinition Read(string kind)
     {
         if (Plugin.IsDefaultMode || RewardPoolPicks.Probing) return null;
+        if (CustomCoachScope.Current is { } coach && (kind == "Relics" || kind == "Chaos Relics")) {
+            var nodePool = new RewardPoolDefinition { UseBaseGame = false };
+            nodePool.Selected.UnionWith(coach.Relics);
+            return nodePool;
+        }
         string file = Path.Combine(Plugin.ModFolder, "reward_pools.txt");
         if (!File.Exists(file)) return null;
         try
@@ -222,6 +227,27 @@ internal static class CustomSpeedrunCoachPool
         try { __result = CustomRewardPools.Select("Speedrun Coach relic", 3, CustomRewardPools.Assets<Relic>(pool.Selected, r => r.id), owned,
             r => r.id, r => r, CustomRewardPools.PickRelics, r => UnityEngine.Object.Instantiate(r)); }
         catch (Exception ex) { Plugin.Log.LogError("[RewardPool] Custom Speedrun Coach selection failed: " + ex); }
+        return false;
+    }
+}
+
+// The native act picker injects a hard-coded speedrun relic before its normal
+// roll. A node-owned pool must replace that whole operation, including upgrades.
+[HarmonyPatch(typeof(Rogue.NPC.CoachNPC.CoachEvent), "GetSpeedrunActRelics")]
+internal static class CustomCoachSpeedrunActPool
+{
+    [HarmonyPrefix]
+    internal static bool Prefix(IRelicRepository __0, Il2CppSystem.Collections.Generic.List<Relic> __1,
+        ref Il2CppSystem.Collections.Generic.List<Relic> __result)
+    {
+        if (Plugin.IsDefaultMode || RewardPoolPicks.Probing || CustomCoachScope.Current == null) return true;
+        var pool = CustomRewardPools.Read("Relics");
+        __result = new Il2CppSystem.Collections.Generic.List<Relic>();
+        try { __result = CustomRewardPools.Select("Custom Coach speedrun act", 3,
+            CustomRewardPools.Assets<Relic>(pool.Selected, r => r.id), __1,
+            r => r.id, r => r.level > 1 ? __0.GetRelic(r.GetIl2CppType(), 1, false) : r,
+            CustomRewardPools.PickRelics, r => UnityEngine.Object.Instantiate(r)); }
+        catch (Exception ex) { Plugin.Log.LogError("[CustomCoach] Speedrun selection failed: " + ex); }
         return false;
     }
 }

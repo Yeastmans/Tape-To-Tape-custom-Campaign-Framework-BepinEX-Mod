@@ -70,6 +70,7 @@
     <Compile Include="../CampaignCore/RewardPoolSelection.cs" Link="Core/RewardPoolSelection.cs" />
     <Compile Include="../CampaignCore/SelectedPlayerPool.cs" Link="Core/SelectedPlayerPool.cs" />
     <Compile Include="../CampaignCore/SquadPlayerPools.cs" Link="Core/SquadPlayerPools.cs" />
+    <Compile Include="../CampaignCore/SquadMapOverrides.cs" Link="Core/SquadMapOverrides.cs" />
     <Compile Include="../CampaignCore/VanillaCopyData.cs" Link="Core/VanillaCopyData.cs" />
     <Compile Include="../CampaignCore/AssetCatalog.cs" Link="Core/AssetCatalog.cs" />
     <Compile Include="../CampaignCore/FieldSchema.cs" Link="Core/FieldSchema.cs" />
@@ -78,6 +79,8 @@
     <Compile Include="../CampaignCore/PlayerColorModel.cs" Link="Core/PlayerColorModel.cs" />
     <Compile Include="../CampaignCore/PlayerKitColors.cs" Link="Core/PlayerKitColors.cs" />
     <Compile Include="../CampaignCore/MapLayout.cs" Link="Core/MapLayout.cs" />
+    <Compile Include="../CampaignCore/CustomCoachDefinition.cs" Link="Core/CustomCoachDefinition.cs" />
+    <Compile Include="../CampaignCore/CustomCoachPool.cs" Link="Core/CustomCoachPool.cs" />
     <Compile Include="../CampaignCore/MapSceneryTiling.cs" Link="Core/MapSceneryTiling.cs" />
     <Compile Include="../CampaignCore/MapVisualFit.cs" Link="Core/MapVisualFit.cs" />
     <Compile Include="../CampaignCore/MapSpriteGeometry.cs" Link="Core/MapSpriteGeometry.cs" />
