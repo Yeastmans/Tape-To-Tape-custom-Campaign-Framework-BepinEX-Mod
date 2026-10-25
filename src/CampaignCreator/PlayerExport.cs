@@ -116,14 +116,7 @@ internal static class PlayerExport
         d = ExportSelections.Logo(AppearanceContract.Resolve(d, new CampaignDocument(""), new CampaignDocument(""), role), root, report, CustomRewardCatalog.CampaignFor(sourceFile));
         root = ExportTranslation.RuntimeRoot(root);
         game = new GameData(sourceRoot); game.LoadCustomRewards(sourceFile);
-        if (ExportTranslation.Ids(game, d.Get("Relics"), true, report, d, "Relics").Length > 0
-            || ExportTranslation.Ids(game, d.Get("Team Relics"), true, report, d, "Team Relics").Length > 0)
-            throw new ArgumentException("Relics act on a team in Play Now. Export this player's team to carry its relics too.");
-        string id = Guid.NewGuid().ToString();
-        var obj = Convert(d, game, role, id, report);
-        var custom = new CustomRewardExportBundle(game); custom.Player(obj);
-        var sidecar = TranslationSidecar(d, game, role, obj, report);
-        custom.EmbedPlayer(sidecar, obj);
+        var (id, obj, sidecar) = Build(d, game, role, report);
         string save = Path.Combine(GameSavePaths.Root, "TeamDataModels");
         if (!Directory.Exists(save)) throw new DirectoryNotFoundException("Game save folder not found. Launch the game once before exporting.");
         string target = Path.Combine(save, (role == "goalie" ? "CustomGoalie-" : "CustomForward-") + id + ".json");
@@ -131,6 +124,19 @@ internal static class PlayerExport
         string sidecarPath = Path.Combine(overrides, id + ".txt");
         string snapshot = Path.Combine(sourceRoot, "library", "Exported Players", id + ".txt");
         return Write(obj, sidecar, target, sidecarPath, snapshot);
+    }
+    internal static (string Id, Dictionary<string, object> Model, CampaignDocument Sidecar) Build(
+        CampaignDocument d, GameData game, string role, ExportReport? report = null)
+    {
+        if (ExportTranslation.Ids(game, d.Get("Relics"), true, report, d, "Relics").Length > 0
+            || ExportTranslation.Ids(game, d.Get("Team Relics"), true, report, d, "Team Relics").Length > 0)
+            throw new ArgumentException("Relics act on a team in Play Now. Export this player's team to carry its relics too.");
+        string id = ExportFileNames.NewId(d.Get("Name"), role == "goalie" ? "Goalie" : "Player");
+        var obj = Convert(d, game, role, id, report);
+        var custom = new CustomRewardExportBundle(game); custom.Player(obj);
+        var sidecar = TranslationSidecar(d, game, role, obj, report);
+        custom.EmbedPlayer(sidecar, obj);
+        return (id, obj, sidecar);
     }
     internal static string Write(Dictionary<string, object> obj, CampaignDocument sidecar, string target, string sidecarPath, string snapshot)
     {

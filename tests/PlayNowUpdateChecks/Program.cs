@@ -324,4 +324,40 @@ File.WriteAllText(liveSidecarFile,liveSidecar.ToString());
 string pendingJournal = Path.Combine(importFixture.Overrides, "save-journal");Directory.CreateDirectory(pendingJournal);File.WriteAllText(Path.Combine(pendingJournal,"team-old-team.json"),"pending");
 try { load.Invoke(null, [importFixture.Library, importFixture.Save]); throw new Exception("Pending pair was reimported"); }
 catch (TargetInvocationException ex) when (ex.InnerException is IOException) { Check(true, "Reimport rejects an interrupted pair until runtime recovery"); }
+// Exercise new readable identities through the production team builder, then
+// the existing update transaction, without touching game saves or AppData.
+object NamedPackage(string name)
+{
+    string source = Path.Combine(root, "named-source"), players = Path.Combine(source, "players");
+    Directory.CreateDirectory(players);
+    var team = new CampaignDocument("Team Name = " + name + "\nSquad Template = Basic Squad\nSquad Behavior two_lines = On\n");
+    string file = Path.Combine(source, "team.txt"); team.Save(file);
+    string[] skaterPositions = ["Left Wing", "Center", "Right Wing", "Left Defense", "Right Defense"];
+    string[] positions = skaterPositions.Concat(skaterPositions.Select(p => "Line 2 " + p)).Append("Goalie").ToArray();
+    for (int i = 0; i < positions.Length; i++)
+        File.WriteAllText(Path.Combine(players, positions[i] + ".txt"), $"Name = {name} Player {i}\nPosition = {positions[i]}\nFace = Faces/Anyteam/Black_Helmet\n");
+    var gameType = exporter.Assembly.GetType("CampaignCreator.GameData", true)!;
+    return Call("BuildTeam", team, file, Activator.CreateInstance(gameType, source)!, source, null)!;
+}
+foreach (bool isLegacy in new[] { true, false })
+{
+    string folder = Path.Combine(root, isLegacy ? "legacy-guid-name-update" : "named-identity-update");
+    string save = Path.Combine(folder, "native"), supplemental = Path.Combine(folder, "overrides"), library = Path.Combine(folder, "library");
+    Directory.CreateDirectory(save);
+    object originalPackage = isLegacy ? Package(Guid.NewGuid().ToString("D"), "legacy-player-", "Before") : NamedPackage("Ice Wolves");
+    string target = (string)Call("Write", originalPackage, save, supplemental, library)!;
+    using var before = JsonDocument.Parse(File.ReadAllText(target));
+    string teamId = before.RootElement.GetProperty("Id").GetString()!;
+    string[] previousIds = slots.Select(slot => before.RootElement.GetProperty(slot).GetString()!).ToArray();
+    object selected = ((IEnumerable)Call("ExistingTeams", save, supplemental, library)!).Cast<object>().Single();
+    string updated = (string)Call("WriteUpdate", NamedPackage("Renamed Wolves"), selected, save, supplemental, library)!;
+    Check(updated == target && Directory.GetFiles(save, "CustomTeam-*.json").Length == 1, "Renaming a " + (isLegacy ? "GUID-only" : "named") + " export preserves its filename without duplicating the team");
+    using var after = JsonDocument.Parse(File.ReadAllText(updated));
+    Check(after.RootElement.GetProperty("Id").GetString() == teamId && after.RootElement.GetProperty("TeamName").GetString() == "Renamed Wolves", "Update changes the displayed team name while preserving its identity");
+    Check(slots.Select(slot => after.RootElement.GetProperty(slot).GetString()).SequenceEqual(previousIds), "Existing owned players retain their original IDs and filenames");
+    var teamSidecar = new CampaignDocument(File.ReadAllText(Path.Combine(supplemental, teamId + ".team.txt")));
+    Check(PlayNowRosterCodec.TryRead(teamSidecar, out var roster, out _), "Named-ID updates retain a readable full roster");
+    Check(roster.Line2.All(id => id.StartsWith(isLegacy ? "Renamed-Wolves-Player-" : "Ice-Wolves-Player-")), "New slots get readable identities while existing second-line identities remain stable");
+    Check(PlayNowRosterCodec.PlayerIds(roster).All(id => File.Exists(Path.Combine(supplemental, id + ".txt")) && Directory.GetFiles(save).Any(f => f.EndsWith(id + ".json", StringComparison.Ordinal))), "Every updated roster link has matching native and supplemental files");
+}
 Console.WriteLine($"{checks} Play Now checks passed. Isolated evidence: {root}");

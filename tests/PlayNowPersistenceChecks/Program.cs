@@ -30,6 +30,24 @@ void Test(string name,Action<string,string> run){
  catch(Exception ex){Console.WriteLine("FAIL "+name+": "+ex);fail++;}
  finally {if(Directory.Exists(root))Directory.Delete(root,true);}
 }
+Test("ReadableIdentitiesPersistWithoutRenaming",(root,side)=>{
+ foreach(string kind in new[]{"team","forward","goalie"}) {
+  string id=(kind=="team"?"Ice-Wolves":kind=="forward"?"Jane-Smith":"Sam-Lee")+"-"+Guid.NewGuid().ToString("D");
+  var model=kind=="team"?JsonNode.Parse(Native):new JsonObject(); model[kind=="team"?"Id":"id"]=id;
+  string native=PlayNowSaveJournal.NativePath(root,kind,id), companion=PlayNowSaveJournal.CompanionPath(side,kind,id);
+  for(int revision=0;revision<2;revision++) {
+   var doc=kind=="team"?Doc():new CampaignDocument("Export Version = 3\n");
+   doc.Set(kind=="team"?"Team Name":"Name",revision==0?"Original name":"Renamed display");
+   PlayNowSaveJournal.Commit(root,side,kind,id,model.ToJsonString(),doc,
+    PlayNowSaveJournal.Hash(PlayNowSaveJournal.Read(native)),PlayNowSaveJournal.Hash(PlayNowSaveJournal.Read(companion)));
+   Assert(File.Exists(native) && File.Exists(companion),"readable save pair was not written");
+   Assert(JsonNode.Parse(File.ReadAllText(native))[kind=="team"?"Id":"id"].GetValue<string>()==id,"native identity changed");
+   Assert(new CampaignDocument(File.ReadAllText(companion)).Get(kind=="team"?"Team Name":"Name")==doc.Get(kind=="team"?"Team Name":"Name"),"readable companion was not reloaded");
+   Assert(!PlayNowSaveJournal.Recover(root,side,kind),"completed named save left a pending transaction");
+  }
+ }
+ Assert(Directory.GetFiles(Path.Combine(root,"TeamDataModels"),"*.json").Length==3,"later name edits created duplicate saves");
+});
 Test("NativeSavePersistsEditedBothLines",(root,side)=>{
  var d=Doc("p9,p8,p7,p6,p5");var m=JsonNode.Parse(Native); m["leftWingerId"]="p1";m["centerId"]="p0";
  PlayNowRosterCodec.Write(d,new PlayNowRoster(new[]{"p1","p0","p2","p3","p4"},new[]{"p9","p8","p7","p6","p5"},"g",false));

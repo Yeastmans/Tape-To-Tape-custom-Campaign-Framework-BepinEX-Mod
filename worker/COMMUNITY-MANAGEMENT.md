@@ -41,6 +41,24 @@ preserves the original PNG, its proportions and transparency. Icons are optional
 Studio does not automatically select a team logo. Local client/browser and
 simulated-storage checks cover this flow; a human end-to-end upload remains pending.
 
+## Readable ZIP download deployment — 2026-10-24
+
+Worker version `0a4dd948-5c93-40c5-95bd-4de57d33e7c9` serves campaign-title ZIP
+filenames through `Content-Disposition`, including a Unicode filename and an
+ASCII fallback. Download names are bounded and filesystem-safe; display titles
+and ZIP contents remain unchanged. Older uploads fall back to their readable
+stored filename. Source SHA-256:
+`736A101DAAF7BC94218C41D71EA855C04CCC079BFD0C4D61F402BA401FB1B4B5`.
+
+Both existing public ZIPs were downloaded and matched their preserved original
+SHA-256 hashes. Catalog IDs, paths, revisions, sizes and metadata, existing
+management access, encrypted secret bindings, routes and runtime settings were
+verified unchanged. Keep the `CAMPAIGN_FILE_ID_ALIASES` variable and management
+signing secret on later deployments; the aliases preserve the public IDs used
+by existing Studio installations after the storage-account migration. No
+campaign was uploaded, replaced or deleted by these checks. Browser acceptance
+remains pending. Local receipts: `artifacts/release-r27-readable-filenames-20261024/worker-deployment/`.
+
 ## Worker setup
 
 Keep the existing encrypted `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, and

@@ -11,6 +11,7 @@
     <Compile Include="../../src/CampaignCreator/GameSavePaths.cs" Link="GameSavePaths.cs" />
     <Compile Include="../../src/CampaignCreator/ExportSelections.cs" Link="ExportSelections.cs" />
     <Compile Include="../../src/CampaignCreator/PlayerExport.cs" Link="PlayerExport.cs" />
+    <Compile Include="../../src/CampaignCreator/ExportFileNames.cs" Link="ExportFileNames.cs" />
     <Compile Include="../../src/CampaignCreator/ExportPlayerResolver.cs" Link="ExportPlayerResolver.cs" />
     <Compile Include="../../src/CampaignCreator/ExportTranslation.cs" Link="ExportTranslation.cs" />
     <Compile Include="../../src/CampaignCreator/RosterLines.cs" Link="RosterLines.cs" />

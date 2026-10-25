@@ -147,7 +147,7 @@ internal static partial class ExportTranslation
                 + (twoLines ? ", plus a complete Line 2" : "") + ". Missing: " + string.Join(", ", missing) + ".");
         var saves = new Dictionary<string, string>(); var overrides = new Dictionary<string, string>();
         var rosterIds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        string tid = Guid.NewGuid().ToString();
+        string tid = ExportFileNames.NewId(team.Get("Team Name"), "Team");
         var model = new Dictionary<string, object> { ["Id"] = tid, ["TeamName"] = team.Get("Team Name"), ["City"] = team.Get("City"),
             ["nickname"] = team.Get("Abbreviation"), ["logoId"] = team.Get("Export Logo ID"), ["hasBigLogo"] = team.Get("Export Logo Mode") == "embedded",
             ["homeColors"] = Colors(team, false), ["awayColors"] = Colors(team, true), ["isLocked"] = false,
@@ -168,12 +168,13 @@ internal static partial class ExportTranslation
         {
             var (file, raw) = entry;
             bool goalie = position.Equals("Goalie", StringComparison.OrdinalIgnoreCase);
-            string role = goalie ? "goalie" : "skater", id = Guid.NewGuid().ToString();
+            string role = goalie ? "goalie" : "skater";
             var doc = Player(ExportPlayerResolver.Resolve(raw, role), team, goalieDefaults, role, game);
             if (doc.Get("Logo From") == team.Get("Logo From")) LogoExport.Copy(team, doc);
             doc = ExportSelections.Logo(doc, sourceRoot ?? game.Root, report, campaign);
             foreach (bool away in new[] { false, true }) doc = ExportSelections.JerseyLogo(doc, sourceRoot ?? game.Root, away, report, campaign);
             if (statScale != 1) ApplyStatScale(doc, role, statScale);
+            string id = ExportFileNames.NewId(doc.Get("Name"), goalie ? "Goalie" : "Player");
             var playerModel = PlayerExport.Convert(doc, game, role, id, report);
             custom.Player(playerModel);
             saves[(role == "goalie" ? "CustomGoalie-" : "CustomForward-") + id + ".json"] = JsonSerializer.Serialize(playerModel);

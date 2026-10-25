@@ -20,7 +20,15 @@ p=Copy();p.Sites[0].Target++;Reject(()=>p.Validate(p.GameHash,baseline.Id),"Call
 p=Copy();p.FlowBytes="90909090909090";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Starting-flow ABI cannot be replaced by arbitrary bytes");
 p=Copy();p.SurfaceBytes="90";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Rink ABI remains guarded");
 var image=new NativeImage(game);
-Check(baseline.Profile.Build == "26150666", "Current release targets reviewed Steam build 26150666");
+Check(baseline.Profile.Build == "26188487", "Current release targets reviewed Steam build 26188487");
+Check(baseline.Profile.FlowRva == 0x4406307 && baseline.Profile.FlowBytes == "400FB6C60A4758",
+    "Fresh-run profile pins the reviewed SIL flag and native continuation");
+foreach (string dependency in new[] { "ProfileData$$SelectRogueRunSettings::",
+    "ProfileData.<>c__DisplayClass#$$<SelectRogueRunSettings>b__0::" })
+    Check(baseline.Methods.Count(m => m.Name.StartsWith(dependency, StringComparison.Ordinal)) == 1,
+        "Fresh-run setting persistence remains protected: " + dependency);
+p=Copy();p.RuntimeContract="t2t-native-v2-20261020";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Previous starting-flow register ABI is rejected");
+p=Copy();p.FlowBytes="410FB6C60A4758";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Previous R14B starting flag bytes are rejected");
 Check(baseline.Methods.Any(m => m.Name.StartsWith("Tape2Tape.Hockey.UI.LineupMenu$$LinkStartersAndBenchEnds::", StringComparison.Ordinal)),
     "Updated native lineup navigation remains protected");
 var verified=baseline.Verify(image,"verification");

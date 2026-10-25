@@ -210,3 +210,18 @@ tests/SquadMapRuntimeChecks/*
 !tests/SquadMapRuntimeChecks/BoundaryDoubles.cs
 !tests/SquadMapRuntimeChecks/Program.cs
 !tests/SquadMapRuntimeChecks/SquadMapRuntimeChecks.csproj
+
+# Community worker source regression checks
+!tests/CommunityWorkerChecks/
+tests/CommunityWorkerChecks/*
+!tests/CommunityWorkerChecks/worker.test.mjs
+
+# Current-game starting flow and generated interop identity checks
+!tests/NativeStartingFlowChecks/
+tests/NativeStartingFlowChecks/*
+!tests/NativeStartingFlowChecks/NativeStartingFlowChecks.csproj
+!tests/NativeStartingFlowChecks/Program.cs
+!tests/GeneratedInteropIdentityChecks/
+tests/GeneratedInteropIdentityChecks/*
+!tests/GeneratedInteropIdentityChecks/GeneratedInteropIdentityChecks.csproj
+!tests/GeneratedInteropIdentityChecks/Program.cs

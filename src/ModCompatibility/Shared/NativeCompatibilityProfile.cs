@@ -11,7 +11,7 @@ namespace CampaignCore;
 // Data only: shared by Studio's verifier and the plugin's hash/byte guarded loader.
 public sealed class NativeCompatibilityProfile
 {
-    public const string Contract = "t2t-native-v2-20261020";
+    public const string Contract = "t2t-native-v3-20261024";
     public string RuntimeContract { get; set; } = Contract;
     public string BaselineId { get; set; } = "";
     public string Build { get; set; } = "";
@@ -20,7 +20,7 @@ public sealed class NativeCompatibilityProfile
     public int SurfaceRva { get; set; }
     public string SurfaceBytes { get; set; } = "48895C24084889742410574881EC90000000";
     public int FlowRva { get; set; }
-    public string FlowBytes { get; set; } = "410FB6C60A4758";
+    public string FlowBytes { get; set; } = "400FB6C60A4758";
     public List<NativeComparisonSite> Sites { get; set; } = new();
     public List<RawNativeHookContract> RawHooks { get; set; } = new();
     public List<NamedManagedHookContract> NamedHooks { get; set; } = new();
@@ -31,7 +31,7 @@ public sealed class NativeCompatibilityProfile
             throw new InvalidDataException("Compatibility data belongs to another mod or game build. Open Campaign Studio to refresh it.");
         if (!Regex.IsMatch(GameHash, "^[a-fA-F0-9]{64}$") || !Regex.IsMatch(MetadataHash,"^[a-fA-F0-9]{64}$") || string.IsNullOrWhiteSpace(Build))
             throw new InvalidDataException("Incomplete compatibility identity.");
-        if (SurfaceRva <= 0 || FlowRva <= 0 || SurfaceBytes != "48895C24084889742410574881EC90000000" || FlowBytes != "410FB6C60A4758")
+        if (SurfaceRva <= 0 || FlowRva <= 0 || SurfaceBytes != "48895C24084889742410574881EC90000000" || FlowBytes != "400FB6C60A4758")
             throw new InvalidDataException("Unsupported native hook ABI.");
         if (Sites.Count == 0 || Sites.Count > 2000 || Sites.Select(s=>s.Rva).Distinct().Count()!=Sites.Count)
             throw new InvalidDataException("Missing or repeated comparison sites.");

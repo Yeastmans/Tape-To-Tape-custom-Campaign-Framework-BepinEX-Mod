@@ -16,6 +16,8 @@
 //   DROPBOX_REFRESH_TOKEN
 //   CAMPAIGN_MANAGEMENT_SECRET  (stable random secret, at least 32 characters)
 //   CAMPAIGN_ADMIN_SECRET       (optional; enables manual legacy assignment)
+// Optional plain-text variable: CAMPAIGN_FILE_ID_ALIASES, a JSON object mapping
+// migrated Dropbox file IDs to their original public Studio IDs. Keep forever.
 
 const UA = "T2T-CampaignCreator-Worker/1.0";
 // Per-upload sanity cap — rejects zips larger than this to prevent abuse.
@@ -46,9 +48,19 @@ function displayName(file) {
   if (isManagedPath(file.path_display || file.path_lower)) name = name.replace(/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12} - /i, "");
   return name.replace(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z - /, "").replace(/\.zip$/i, "").trim() || "Campaign";
 }
-function publicFile(file, presentation) {
+function publicFileId(file, env) {
+  if (!env?.CAMPAIGN_FILE_ID_ALIASES) return file.id;
+  let aliases;
+  try { aliases = JSON.parse(env.CAMPAIGN_FILE_ID_ALIASES); } catch { fail(503, "Campaign migration settings are invalid."); }
+  if (!aliases || typeof aliases !== "object" || Array.isArray(aliases)) fail(503, "Campaign migration settings are invalid.");
+  if (!Object.hasOwn(aliases, file.id)) return file.id;
+  const id = aliases[file.id];
+  if (typeof id !== "string" || !/^id:[^\s]{1,250}$/.test(id)) fail(503, "Campaign migration settings are invalid.");
+  return id;
+}
+function publicFile(file, presentation, env) {
   const name = presentation?.displayName || displayName(file);
-  return { id: file.id, name, campaignName: presentation?.campaignName || name,
+  return { id: publicFileId(file, env), name, campaignName: presentation?.campaignName || name,
     author: presentation?.author || "", description: presentation?.description || "", icon: presentation?.icon || "",
     path: file.path_display || file.path_lower, rev: file.rev,
     size: file.size, modified: file.server_modified || file.client_modified, contentHash: file.content_hash || "" };
@@ -105,8 +117,8 @@ async function readPresentation(file, env, token) {
   return { path, revision: details.rev, presentation: presentationInput(stored.metadata) };
 }
 async function presentFile(file, env, token) {
-  try { return publicFile(file, (await readPresentation(file, env, token))?.presentation); }
-  catch { return publicFile(file); } // A missing/corrupt/unavailable preview never hides a public ZIP.
+  try { return publicFile(file, (await readPresentation(file, env, token))?.presentation, env); }
+  catch { return publicFile(file, undefined, env); } // A missing/corrupt/unavailable preview never hides a public ZIP.
 }
 async function savePresentation(file, presentation, env) {
   const token = await getAccessToken(env), prior = await readPresentation(file, env, token);
@@ -189,9 +201,10 @@ async function deleteManaged(req, env) {
   const file = await managedFile(capability, env);
   if (!file) fail(404, "This campaign is no longer posted.");
   if (file.rev !== rev) fail(409, "This campaign changed. Refresh it before deleting.");
+  const id = publicFileId(file, env);
   const response = await dropboxJson(env, "delete_v2", { path: file.id, parent_rev: rev });
   if (!response.ok) fail(response.status === 409 ? 409 : 502, "The campaign could not be deleted. Refresh it before retrying.");
-  return json({ ok: true, deleted: true, id: file.id, path: file.path_display || file.path_lower });
+  return json({ ok: true, deleted: true, id, path: file.path_display || file.path_lower });
 }
 async function claimLegacy(req, env) {
   const provided = req.headers.get("X-Campaign-Admin") || "";
@@ -344,7 +357,7 @@ async function finishUpload(req, env) {
   if (presentation !== undefined) {
     try {
       await savePresentation(file, presentation, env);
-      return json({ ok: true, ...publicFile(file, presentation), metadataSaved: true });
+      return json({ ok: true, ...publicFile(file, presentation, env), metadataSaved: true });
     } catch {
       // ZIP and JSON are separate atomic Dropbox commits. Never turn a successful
       // ZIP commit into a generic upload error that encourages a duplicate upload.
@@ -437,11 +450,32 @@ async function handleList(env) {
   await Promise.all(Array.from({ length: Math.min(4, files.length) }, async () => {
     while (next < files.length) {
       const index = next++;
-      items[index] = token ? await presentFile(files[index], env, token) : publicFile(files[index]);
+      items[index] = token ? await presentFile(files[index], env, token) : publicFile(files[index], undefined, env);
     }
   }));
   items.sort((a, b) => (b.modified || "").localeCompare(a.modified || ""));
   return json({ ok: true, count: items.length, items });
+}
+
+function downloadFilename(name) {
+  let stem = (name || "Campaign").normalize("NFC")
+    .replace(/[<>:"/\\|?*\x00-\x1f\x7f\u202a-\u202e\u2066-\u2069\ud800-\udfff]/gu, "_")
+    .trim().replace(/[. ]+$/g, "").replace(/(?:\.zip|\.t2tcampaign)+$/i, "").replace(/[. ]+$/g, "");
+  if (/^(con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])(?:\.|$)/i.test(stem)) stem = "Campaign-" + stem;
+  // Bound UTF-8 bytes as well as characters, without splitting a Unicode scalar.
+  const encoder = new TextEncoder(); let readable = "", bytes = 0;
+  for (const c of stem) {
+    bytes += encoder.encode(c).length;
+    if (bytes > 120) break;
+    readable += c;
+  }
+  return (readable.replace(/[. ]+$/g, "") || "Campaign") + ".zip";
+}
+function downloadDisposition(name) {
+  const filename = downloadFilename(name);
+  const ascii = filename.replace(/[^\x20-\x7e]|%/g, "_");
+  const encoded = encodeURIComponent(filename).replace(/['()*]/g, c => "%" + c.charCodeAt(0).toString(16).toUpperCase());
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encoded}`;
 }
 
 // -- GET /download?path=/Foo.zip : stream the zip bytes back.
@@ -458,13 +492,26 @@ async function handleDownload(url, env) {
     },
   });
   if (!r.ok) return json({ error: "Community storage could not download this campaign." }, 502);
+  let name = displayName({ name: path.split("/").at(-1), path_display: path });
+  try {
+    // Dropbox supplies the file identity with the bytes; optional presentation
+    // lookup must never turn an otherwise usable ZIP download into an error.
+    const file = JSON.parse(r.headers.get("Dropbox-API-Result") || "{}");
+    if (typeof file.id === "string" && typeof file.name === "string") {
+      name = displayName(file);
+      const presentation = (await readPresentation(file, env, token))?.presentation;
+      name = presentation?.campaignName || presentation?.displayName || name;
+    }
+  } catch { /* Retain the readable storage-name fallback. */ }
   const contentLength = r.headers.get("Content-Length") || "";
   return new Response(r.body, {
     status: 200,
     headers: {
       "Content-Type": "application/zip",
+      "Content-Disposition": downloadDisposition(name),
       "Content-Length": contentLength,
       "Access-Control-Allow-Origin": "*",
+      "Access-Control-Expose-Headers": "Content-Disposition",
     },
   });
 }

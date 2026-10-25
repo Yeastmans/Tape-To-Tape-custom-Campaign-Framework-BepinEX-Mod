@@ -1,5 +1,14 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 27 — 2026-10-24
+
+- New Play Now team, skater and goalie exports include the team/player name plus a unique ID in their filenames. Updating an existing export keeps its original filenames, including after changing display names.
+- Community campaign ZIP downloads use the campaign title. Existing campaigns, download links and ownership codes remain unchanged; the community worker has been deployed and its existing ZIP contents verified.
+- Supports public v1.0 game build 26188487. Updates the native compatibility baseline and repairs the custom starting-flow integration for the game's changed new-run sequence.
+- Retains revision 26's reusable custom Coach nodes and squad-specific maps.
+
+Validation: 304 filename and export checks on the reviewed implementation, fresh compatibility diagnostics, independent native review, fresh runtime/Studio/installer builds, and exact extracted/published package checks. Human gameplay acceptance remains pending. See [revision 27 validation](../docs/RELEASE-R27-VALIDATION.md).
+
 ## Beta 1.0 revision 26 — 2026-10-23
 
 - Custom Coach nodes: choose **Custom → Create new / Load saved**, then set a world-map name, optional PNG and strict relic pool. Saved library entries and placed copies remain independent. Coach encounter art and dialogue retain native behavior.

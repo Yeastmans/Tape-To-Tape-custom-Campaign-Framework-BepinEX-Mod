@@ -19,7 +19,7 @@ The old `_build_studio_installer.ps1` and `_sync_github.ps1` are not required.
 - [7-Zip](https://www.7-zip.org/) for the pinned FFmpeg archive. Put `7z.exe` on
   PATH, install it to the standard Program Files location, or use `-SevenZipPath`.
 - Your own Steam installation of **Tape to Tape, public v1.0 branch, build
-  26150666**, with **current BepInEx-generated IL2CPP interop assemblies** in
+  26188487**, with **current BepInEx-generated IL2CPP interop assemblies** in
   `BepInEx/interop`. Run your game once with the pinned BepInEx loader to
   generate them, then close it. The build wrapper does not install a loader
   into your game or generate interop by launching it.
@@ -29,6 +29,24 @@ not source dependencies to redistribute. The build accepts your game folder
 explicitly and checks GameAssembly and metadata against the source's reviewed
 compatibility profile. An old `interop_backup` is not a substitute for the
 current build's generated interop.
+
+For reviewed release maintenance, interop may instead be generated in an isolated
+directory from an exact snapshot of the current game and metadata, using the
+pinned loader's Cpp2IL/Il2CppInterop pipeline and matching Unity libraries. This
+does not require starting the game. Record and verify the pipeline options,
+input hashes, generated assemblies and ABI checks before using that output.
+Supply its absolute directory through both `-p:InteropLive` and `-p:InteropDir`
+when compiling `src/CustomCampaignFramework/CustomCampaignFramework.csproj`.
+The regular packaging wrapper still expects `BepInEx/interop` under its supplied
+game directory; isolated release assembly staging is a maintainer operation.
+
+The reviewed R27 pair uses runtime contract `t2t-native-v3-20261024`, with 1,485
+protected methods, 137 comparison sites, 109 squad query calls, 54 named hooks and
+21 raw hooks. The [native review](docs/NATIVE-26188487-REVIEW.md) records the
+fresh-run callback ABI change and diagnostics. For reproducible Release runtime
+builds, use `--disable-build-servers -p:UseSharedCompilation=false
+-p:DebugType=None -p:DebugSymbols=false` and set
+`DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER=1`.
 
 ## Restore pinned build dependencies
 

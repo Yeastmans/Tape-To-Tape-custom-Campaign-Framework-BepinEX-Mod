@@ -62,6 +62,15 @@ public sealed class CompatibilityBaseline
         if(baseline.FlowIndex<0) throw new InvalidDataException("Unknown starting-flow boundary.");
         protectedMethods.UnionWith(new[]{baseline.FlowMethod,"Arena.IceSetup$$SwitchIceType","Tape2Tape.CampaignUtil$$IsPlayingSquad","System.String$$op_Equality","System.String$$op_Inequality"});
         if(baseline.Sites.Any(s=>s.Site.Kind=="inline_eq")) protectedMethods.Add(InlineComparisonContract.SequenceEqual);
+        // Build 26188487 moves the fresh-run selection persistence out of
+        // ConfirmSelections into this helper and its native ref-data callback.
+        foreach (string name in new[] { "ProfileData$$SelectRogueRunSettings",
+            "ProfileData.<>c__DisplayClass#$$<SelectRogueRunSettings>b__0" })
+        {
+            var method = image.Resolve(name);
+            if (image.SharedMethodCount(method.Rva) != 1) throw new InvalidDataException("Shared run-selection dependency: " + name);
+            protectedMethods.Add(image.Identity(method));
+        }
         protectedMethods.Add("Skaters.SkinHelper$$OverrideSkinsWithCustomTeamUniform");
         // The compiler inlines attribute-lock consumers into ForwardStats, which
         // now reach the generic Talent.Get body directly. The narrow reward

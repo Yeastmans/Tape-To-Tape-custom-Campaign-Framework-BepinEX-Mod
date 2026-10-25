@@ -2,11 +2,11 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 26](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r26-build-1792804491104) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 27](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r27-build-1792890087486) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
-**Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **public v1.0 release, build 26150666**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
+**Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **public v1.0 release, build 26188487**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
 
-Beta 1.0 revision 26 adds reusable custom Coach nodes with their own world-map names, artwork and exact relic pools, plus squad-specific maps that follow the campaign until individually edited. It retains the revision 25 features and supports public v1.0 game build 26150666. See the [changelog](release/CHANGELOG.md) and [release validation](docs/RELEASE-R26-VALIDATION.md).
+Beta 1.0 revision 27 gives new Play Now team and player exports readable filenames, preserves existing export filenames when updating, and supports public v1.0 game build 26188487. Community campaign downloads now use readable campaign titles. Custom Coach nodes and squad-specific maps from revision 26 remain included. See the [changelog](release/CHANGELOG.md) and [release validation](docs/RELEASE-R27-VALIDATION.md).
 
 **This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. Reporting bugs on [Discord](https://discord.gg/hscxnYghb) or [GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues) helps immensely.
 
@@ -35,7 +35,7 @@ Beta 1.0 revision 26 adds reusable custom Coach nodes with their own world-map n
 
 ### Windows
 
-**You need:** Windows x64, your own Steam copy of Tape to Tape, on the **public branch**. Beta 1.0 targets **game build 26150666**. The Windows installer includes the editor runtime and the required BepInEx 6 IL2CPP loader; Python and a separate .NET installation are not needed to use it.
+**You need:** Windows x64, your own Steam copy of Tape to Tape, on the **public branch**. Beta 1.0 targets **game build 26188487**. The Windows installer includes the editor runtime and the required BepInEx 6 IL2CPP loader; Python and a separate .NET installation are not needed to use it.
 
 1. In Steam, right-click **Tape to Tape → Properties → Betas** and select **None** (the public branch). Let Steam finish updating.
 2. Launch the game once, then quit it. Close any old creator or Studio window.

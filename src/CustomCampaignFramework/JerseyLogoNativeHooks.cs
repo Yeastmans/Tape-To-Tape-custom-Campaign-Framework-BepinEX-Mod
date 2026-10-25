@@ -403,20 +403,22 @@ internal static class JerseyLogoNativeHooks
             var profile = NativeCompatibility.Load(module.FileName);
             var contracts = Contracts();
             opponentScopes = new NativeOpponentScopes(contracts) { Module = module.BaseAddress };
-            if (profile.GameHash != "FD2E6FDF3900272C2E9B201F3280AF15C44D330D28E131E00FE6C99D007C4B93" || profile.MetadataHash != "22E6F00B8CE5F83A3D167410FE6B7C76086B201BC48CB83CFAA3BD4E577CAC37")
-                throw new InvalidDataException("Jersey adapters require pinned build 26150666.");
+            if (profile.GameHash != "54982E5C98932B701B4549086BF08ECC792DA5DE43A5E3627F8804FE657AFF58" || profile.MetadataHash != "9FB0F8B4CBB1D238AF057973C3E65BA7CDC27201C3D3E5EE0664C87FCEE38F58")
+                throw new InvalidDataException("Jersey adapters require pinned build 26188487.");
             JerseyLogoManagedTargets.ValidateBeforeInstall(contracts, profile.RawHooks, profile.NamedHooks);
             // Resolve the complete named plan (including patch callbacks) before any
             // native mutation. Installation consumes these same resolved targets.
             var managed = ResolveManaged();
             foreach (var dependency in new[] {
-                ("MainScriptsAssembly", "83FAB7CBC1625A290AA5B72699F78BD2C300D3245414F6C3976184F8D2A5C9AF"),
-                ("spine-csharp", "DEC561B73C5328C01275C395E0180A75A4355C0AD87960BDEEDBBDD78713EBAD"),
-                ("Il2CppInterop.HarmonySupport", "F7612EA2E5A4D473B771F34EE3B20CF32DC0C4ECEA0185416474999A17FBCC07"),
-                ("Il2CppInterop.Runtime", "65AB051A681C2C1E52DF7596FF738BE401AAE72CFF882FF18241CF54A3EA38A4") })
+                ("MainScriptsAssembly", "1F8CDAC2969A1200FD7D9FC3D425A639526639FFFA697A48122DD2341D6E1814", true),
+                ("spine-csharp", "1A246C25CAE5262ECA51DDB6BDA305CC2D651B2404FDEE971783ED92A6D53CBA", true),
+                ("Il2CppInterop.HarmonySupport", "F7612EA2E5A4D473B771F34EE3B20CF32DC0C4ECEA0185416474999A17FBCC07", false),
+                ("Il2CppInterop.Runtime", "65AB051A681C2C1E52DF7596FF738BE401AAE72CFF882FF18241CF54A3EA38A4", false) })
             {
                 var assembly = AppDomain.CurrentDomain.GetAssemblies().Single(a => a.GetName().Name == dependency.Item1);
-                if (Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(assembly.Location))) != dependency.Item2) throw new InvalidDataException("Jersey bridge dependency changed: " + dependency.Item1);
+                var image = File.ReadAllBytes(assembly.Location);
+                string hash = dependency.Item3 ? GeneratedInteropIdentity.Hash(image) : Convert.ToHexString(SHA256.HashData(image));
+                if (hash != dependency.Item2) throw new InvalidDataException("Jersey bridge dependency changed: " + dependency.Item1);
             }
             foreach (var contract in contracts)
             {

@@ -162,7 +162,7 @@ internal static class CustomRewardCapabilities
     private static void InstallGoalRepeat(ProcessModule module)
     {
         try {
-            var add = module.BaseAddress + 0x403d280; var cancel = module.BaseAddress + 0x403cf20;
+            var add = module.BaseAddress + 0x403d9c0; var cancel = module.BaseAddress + 0x403d660;
             Verify(add, "48895C2408488974241048897C241841564883EC60");
             Verify(cancel, "48895C2418574883EC40803D");
             cancelStats = Marshal.GetDelegateForFunctionPointer<CancelStatsFn>(cancel);
@@ -191,7 +191,7 @@ internal static class CustomRewardCapabilities
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8)
                 throw new PlatformNotSupportedException("Native capability rules require the audited Windows x64 build.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().First(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-            if (NativeCompatibility.Load(module.FileName).GameHash != "FD2E6FDF3900272C2E9B201F3280AF15C44D330D28E131E00FE6C99D007C4B93")
+            if (NativeCompatibility.Load(module.FileName).GameHash != "54982E5C98932B701B4549086BF08ECC792DA5DE43A5E3627F8804FE657AFF58")
                 throw new InvalidOperationException("Native capability queries have not been audited for this game build.");
             var cached = module.BaseAddress + 0xe8ff80; var direct = module.BaseAddress + 0xe8ff20; var get = module.BaseAddress + 0xe8fc70;
             Verify(cached, "48895C2408574883EC2048837A3800");
@@ -263,25 +263,25 @@ internal static class CustomRewardCapabilities
     private static readonly List<FixedQuery> fixedCallbacks = new();
     private static void InstallFixedQueries(ProcessModule module)
     {
-        Fixed<Kick>(module, 0x636ef0, "HaveTalentCached", "48895C2408574883EC20488B1D77FF1F08488BF948837B38");
-        Fixed<Slugger>(module, 0x636f60, "HaveTalentCached", "48895C2408574883EC20488B1DDFFE1F08488BF948837B38");
-        Fixed<ChargeShot>(module, 0x636fe0, "HaveTalentCached", "48895C2408574883EC20488B1D1FFE1F08488BF948837B38");
-        Fixed<WonderWall>(module, 0x63a330, "HaveTalentCached", "48895C2408574883EC20488B1DA7E92108488BF948837B38");
-        Fixed<OffensiveBodycheck>(module, 0x63e6d0, "HaveTalentCached", "48895C2408574883EC20488B1D876C1D08488BF948837B38");
-        Fixed<HyperDrive>(module, 0x63e840, "HaveTalentCached", "48895C2408574883EC20488B1DB77B1D08488BF948837B38");
-        Fixed<SpringBoard>(module, 0x63eb80, "HaveTalentCached", "48895C2408574883EC20488B1DA78C1D08488BF948837B38");
-        Fixed<Rogue.Powerups.Chaos.FragileTalent>(module, 0x6406a0, "HaveTalent", "48895C2408574883EC20488B1D0F211908488BF948837B38");
-        Fixed<GoldenPuck>(module, 0x646400, "HaveTalentCached", "48895C2408574883EC20488B1D2FB72308488BF948837B38");
-        Fixed<PrinceAI>(module, 0x6470e0, "HaveTalentCached", "48895C2408574883EC20488B1DD7F02308488BF948837B38");
-        Fixed<Rogue.Powerups.Chaos.Anchor>(module, 0x647150, "HaveTalentCached", "48895C2408574883EC20488B1DFFF02308488BF948837B38");
-        Fixed<SpikedArmor>(module, 0x6471c0, "HaveTalentCached", "48895C2408574883EC20488B1DA7F12308488BF948837B38");
-        Fixed<Gambler>(module, 0x647790, "HaveTalent", "48895C2408574883EC20488B1DB7222408488BF948837B38");
-        Fixed<Gambler>(module, 0x647950, "HaveTalentCached", "48895C2408574883EC20488B1DEF1F2408488BF948837B38");
-        Fixed<DestroyerShot>(module, 0x647f10, "HaveTalentCached", "48895C2408574883EC20488B1D5F262408488BF948837B38");
-        Fixed<PingKing>(module, 0x648200, "HaveTalent", "48895C2408574883EC20488B1D3F5D2408488BF948837B38");
-        Fixed<Velcro>(module, 0x6499c0, "HaveTalentCached", "48895C2408574883EC20488B1D3FCA2508488BF948837B38");
-        Fixed<DefensiveDeflect>(module, 0x649a30, "HaveTalentCached", "48895C2408574883EC20488B1DDFC92508488BF948837B38");
-        Fixed<KarlsonBehavior>(module, 0x658370, "HaveTalentCached", "48895C2408574883EC20488B1DCFA01A08488BF948837B38");
+        Fixed<Kick>(module, 0x636ef0, "HaveTalentCached", "48895C2408574883EC20488B1DC70D2008488BF948837B38");
+        Fixed<Slugger>(module, 0x636f60, "HaveTalentCached", "48895C2408574883EC20488B1D970D2008488BF948837B38");
+        Fixed<ChargeShot>(module, 0x636fe0, "HaveTalentCached", "48895C2408574883EC20488B1DD70D2008488BF948837B38");
+        Fixed<WonderWall>(module, 0x63a330, "HaveTalentCached", "48895C2408574883EC20488B1D57F92108488BF948837B38");
+        Fixed<OffensiveBodycheck>(module, 0x63e6d0, "HaveTalentCached", "48895C2408574883EC20488B1DF77B1D08488BF948837B38");
+        Fixed<HyperDrive>(module, 0x63e840, "HaveTalentCached", "48895C2408574883EC20488B1DA78C1D08488BF948837B38");
+        Fixed<SpringBoard>(module, 0x63eb80, "HaveTalentCached", "48895C2408574883EC20488B1D879C1D08488BF948837B38");
+        Fixed<Rogue.Powerups.Chaos.FragileTalent>(module, 0x6406a0, "HaveTalent", "48895C2408574883EC20488B1D2F311908488BF948837B38");
+        Fixed<GoldenPuck>(module, 0x646400, "HaveTalentCached", "48895C2408574883EC20488B1DF7C52308488BF948837B38");
+        Fixed<PrinceAI>(module, 0x6470e0, "HaveTalentCached", "48895C2408574883EC20488B1DAF042408488BF948837B38");
+        Fixed<Rogue.Powerups.Chaos.Anchor>(module, 0x647150, "HaveTalentCached", "48895C2408574883EC20488B1DB7FF2308488BF948837B38");
+        Fixed<SpikedArmor>(module, 0x6471c0, "HaveTalentCached", "48895C2408574883EC20488B1D1F002408488BF948837B38");
+        Fixed<Gambler>(module, 0x647790, "HaveTalent", "48895C2408574883EC20488B1D57322408488BF948837B38");
+        Fixed<Gambler>(module, 0x647950, "HaveTalentCached", "48895C2408574883EC20488B1DB72F2408488BF948837B38");
+        Fixed<DestroyerShot>(module, 0x647f10, "HaveTalentCached", "48895C2408574883EC20488B1DB7352408488BF948837B38");
+        Fixed<PingKing>(module, 0x648200, "HaveTalent", "48895C2408574883EC20488B1D5F6C2408488BF948837B38");
+        Fixed<Velcro>(module, 0x6499c0, "HaveTalentCached", "48895C2408574883EC20488B1DB7D92508488BF948837B38");
+        Fixed<DefensiveDeflect>(module, 0x649a30, "HaveTalentCached", "48895C2408574883EC20488B1D57D92508488BF948837B38");
+        Fixed<KarlsonBehavior>(module, 0x658370, "HaveTalentCached", "48895C2408574883EC20488B1D87AE1A08488BF948837B38");
     }
     private static void Fixed<T>(ProcessModule module, int rva, string query, string prologue)
     {

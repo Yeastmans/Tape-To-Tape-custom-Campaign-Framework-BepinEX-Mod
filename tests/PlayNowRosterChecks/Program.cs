@@ -215,5 +215,76 @@ Case("MalformedRosterAndRemap", () =>
     Check(preserved.Get("Unrelated") == "keep" && ReadRoster(preserved, out _, out _), "Write replaces only the extension fields");
 });
 
+Case("ReadableNewTeamAndPlayerFiles", () =>
+{
+    var fixture = Fixture("readable-names", true);
+    fixture.Team.Set("Team Name", "Ice Wolves");
+    foreach (string file in Directory.GetFiles(Path.Combine(fixture.Root, "players")))
+    {
+        var player = new CampaignDocument(File.ReadAllText(file));
+        player.Set("Name", player.Get("Position") == "Goalie" ? "Sam Lee" : "Jane Smith");
+        player.Save(file);
+    }
+    var package = Export(fixture);
+    string teamFile = package.Saves.Keys.Single(name => name.StartsWith("CustomTeam-"));
+    Check(teamFile.StartsWith("CustomTeam-Ice-Wolves-"), "New team filename must start with its readable name");
+    foreach (var (file, json) in package.Saves)
+    {
+        using var model = JsonDocument.Parse(json);
+        bool team = file.StartsWith("CustomTeam-"), goalie = file.StartsWith("CustomGoalie-");
+        string id = model.RootElement.GetProperty(team ? "Id" : "id").GetString()!;
+        string prefix = team ? "CustomTeam-" : goalie ? "CustomGoalie-" : "CustomForward-";
+        Check(file == prefix + id + ".json", "Readable filename must exactly match the embedded identity");
+        Check(id.StartsWith(team ? "Ice-Wolves-" : goalie ? "Sam-Lee-" : "Jane-Smith-"), "Every exported roster member needs its own readable name");
+        Check(Guid.TryParseExact(id[^36..], "D", out _), "Readable identity retains a complete GUID suffix");
+        Check(package.Overrides.ContainsKey(id + (team ? ".team.txt" : ".txt")), "Readable native identity must find its supplemental file");
+    }
+    var again = Export(fixture);
+    Check(!package.Saves.Keys.Intersect(again.Saves.Keys).Any(), "Repeated exports and duplicate player names stay independent");
+});
+
+Case("ReadableStandalonePlayerFiles", () =>
+{
+    Type playerExport = studio.Assembly.GetType("CampaignCreator.PlayerExport", true)!;
+    var build = playerExport.GetMethod("Build", methods);
+    Check(build != null, "Standalone exporter needs a checkable pre-write package");
+    foreach (string role in new[] { "skater", "goalie" })
+    {
+        string name = role == "skater" ? "Émile / Smith" : "Sam Lee";
+        var doc = new CampaignDocument("Name = " + name + "\nFace = Faces/Anyteam/Black_Helmet\n");
+        object game = Activator.CreateInstance(gameType, root)!;
+        object package = Invoke(build!, null, doc, game, role, null)!;
+        var tuple = package.GetType();
+        string id = (string)tuple.GetField("Item1")!.GetValue(package)!;
+        var model = (Dictionary<string, object>)tuple.GetField("Item2")!.GetValue(package)!;
+        var sidecar = (CampaignDocument)tuple.GetField("Item3")!.GetValue(package)!;
+        Check(id.StartsWith(role == "skater" ? "Emile-Smith-" : "Sam-Lee-"), "Standalone identity includes the player's name");
+        Check((string)model["id"] == id && sidecar.Get("Name") == name, "Readable IDs preserve full display names and matching supplemental content");
+        string output = Path.Combine(root, "standalone", role); Directory.CreateDirectory(output);
+        string target = Path.Combine(output, (role == "goalie" ? "CustomGoalie-" : "CustomForward-") + id + ".json");
+        string supplemental = Path.Combine(output, "overrides", id + ".txt");
+        string snapshot = Path.Combine(output, "library", id + ".txt");
+        Directory.CreateDirectory(Path.GetDirectoryName(supplemental)!);
+        Invoke(playerExport.GetMethod("Write", methods)!, null, model, sidecar, target, supplemental, snapshot);
+        Check(File.Exists(target) && File.Exists(supplemental) && File.Exists(snapshot), "Standalone native, supplemental and library files share the readable identity");
+    }
+});
+
+Case("ExportIdentityHandlesUnusableAndLongNames", () =>
+{
+    Type? names = studio.Assembly.GetType("CampaignCreator.ExportFileNames");
+    Check(names != null, "Export filename helper must exist");
+    string NewId(string? name, string fallback) => (string)Invoke(names!.GetMethod("NewId", methods)!, null, name, fallback)!;
+    foreach (var (name, prefix) in new[] { ("Émile / Smith", "Emile-Smith"), ("  Jane---Smith  ", "Jane-Smith"),
+        ("CON", "CON"), ("", "Player"), ("世界 🏒", "Player"), ("../\\:*?\"<>|", "Player"), (new string('A', 200), new string('A', 48)) })
+    {
+        string id = NewId(name, "Player");
+        Check(id[..^37] == prefix && Guid.TryParseExact(id[^36..], "D", out _), "Name has the expected bounded prefix and complete GUID: " + prefix);
+        Check(id.Length <= 85 && id.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_'), "Export identity is bounded and filename-safe");
+    }
+    Check(NewId(null, "Team").StartsWith("Team-") && NewId("???", "Goalie").StartsWith("Goalie-"), "Each export type supplies a readable fallback");
+    Check(NewId("Same", "Player") != NewId("Same", "Player"), "Duplicate names do not collide");
+});
+
 Console.WriteLine($"{passed} assertions passed; {failed} cases failed. Isolated evidence: {root}");
 return failed == 0 ? 0 : 1;
