@@ -26,7 +26,7 @@ public sealed partial class MainWindow
         var proceed = new Button { Name = "StudioUninstallConfirm", Content = "Open uninstaller" };
         var cancel = new Button { Name = "StudioUninstallCancel", Content = "Cancel", IsDefault = true, IsCancel = true };
         var dialog = UpdateDialog("Uninstall Campaign Studio", "Open the Windows uninstaller?",
-            "Studio will close and the Windows uninstaller will ask you to confirm removing Campaign Studio and the bundled mod. Your saved campaigns, players and custom heads are kept.", cancel, proceed);
+            "Studio will close and the Windows uninstaller will ask you to confirm removing Campaign Studio, BepInEx and all mods in the game's BepInEx folder. Your saved campaigns, players and custom heads are kept in Local AppData.", cancel, proceed);
         dialog.Name = "StudioUninstallDialog";
         proceed.Click += (_, _) => dialog.Close(true);
         cancel.Click += (_, _) => dialog.Close(false);

@@ -1,6 +1,6 @@
 ; Studio lives in Program Files; user data is migrated before any cleanup.
 #define AppName "T2T Campaign Studio"
-#define AppVersion "Beta 1.0 revision 27"
+#define AppVersion "Beta 1.0 revision 28"
 #define ExeName "T2T Campaign Studio.exe"
 #ifndef StudioDir
   #define StudioDir "..\build\CampaignStudio"
@@ -10,8 +10,8 @@
 AppId={{D8C4C4D2-8B7A-4A9C-B2D3-C1F4E5A6D7B8}
 AppName={#AppName}
 AppVersion={#AppVersion}
-VersionInfoVersion=1.0.0.27
-VersionInfoDescription=T2T Campaign Studio Beta 1.0 revision 27 Setup
+VersionInfoVersion=1.0.0.28
+VersionInfoDescription=T2T Campaign Studio Beta 1.0 revision 28 Setup
 SetupIconFile=..\assets\branding\CampaignStudio.ico
 DefaultDirName={autopf}\T2T Campaign Studio
 DefaultGroupName={#AppName}
@@ -33,13 +33,30 @@ CloseApplicationsFilter=*.exe,*.dll
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Shortcuts:"
 
+[Messages]
+ConfirmUninstall=Are you sure you want to remove %1, BepInEx and all mods in the game's BepInEx folder?%n%nYour saved campaigns, players and custom heads in Local AppData will be kept.
+
 [Files]
 Source: "Migrate-UserContent.ps1"; Flags: dontcopy
 Source: "Retire-LegacyInstall.ps1"; Flags: dontcopy
 Source: "{#StudioDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#StudioDir}\mod-runtime\CustomCampaignFramework.dll"; DestDir: "{code:GameDirectory}\BepInEx\plugins"; Flags: ignoreversion
 Source: "{#StudioDir}\mod-runtime\MapSeams\*"; DestDir: "{code:GameDirectory}\BepInEx\plugins\MapSeams"; Flags: ignoreversion
+; UninstallDelete owns removal of the complete loader tree. Avoid individually
+; deleting bundled DLLs through a directory that was later replaced by a junction.
 Source: "bepinex\*"; DestDir: "{code:GameDirectory}"; Flags: ignoreversion recursesubdirs createallsubdirs uninsneveruninstall
+
+[UninstallDelete]
+; Inno expands these paths during installation and saves them in its uninstall log.
+; Remove generated files and files retained by older uninsneveruninstall bundles too.
+; Only these named runtime paths are removed; game files and AppData are untouched.
+Type: filesandordirs; Name: "{code:GameDirectory}\BepInEx"
+Type: filesandordirs; Name: "{code:GameDirectory}\dotnet"
+Type: files; Name: "{code:GameDirectory}\winhttp.dll"
+Type: files; Name: "{code:GameDirectory}\doorstop_config.ini"
+Type: files; Name: "{code:GameDirectory}\.doorstop_version"
+Type: files; Name: "{code:GameDirectory}\BepInEx_LICENSE.txt"
+Type: files; Name: "{code:GameDirectory}\changelog.txt"
 
 [InstallDelete]
 ; PrepareToInstall must finish migration successfully before these are reached.
@@ -90,6 +107,22 @@ begin
     Result := Processes.Count > 0;
   except
     Log('Could not determine whether Tape to Tape is running. Installation postponed.');
+  end;
+end;
+
+function InitializeUninstall(): Boolean;
+begin
+  Result := not GameIsRunning();
+  if not Result then
+    SuppressibleMsgBox('Close Tape to Tape before uninstalling Campaign Studio and BepInEx, then retry.', mbError, MB_OK, IDOK);
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  // Recheck after confirmation: the game may have started while it was open.
+  if (CurUninstallStep = usUninstall) and GameIsRunning() then begin
+    SuppressibleMsgBox('Close Tape to Tape before uninstalling Campaign Studio and BepInEx, then retry.', mbError, MB_OK, IDOK);
+    Abort;
   end;
 end;
 

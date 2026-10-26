@@ -2,7 +2,7 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 27](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r27-build-1792890087486) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 28](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r28-build-1792980257437) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
 **Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **public v1.0 release, build 26188487**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
 
@@ -234,7 +234,9 @@ Downloaded heads are added to your head library. Identical heads are reused; a d
 | `<Tape to Tape>\BepInEx\LogOutput.log` | Loader/mod diagnostics from the game. |
 | `%USERPROFILE%\AppData\LocalLow\Excellent Rectangle\Tape to Tape` | The game's native saves and exported custom content. |
 
-The Studio uninstaller retains AppData content and the shared BepInEx runtime. **None (base game)** is the campaign selector's off option; it is not an uninstaller for every mod feature.
+The Studio uninstaller removes Studio, the entire BepInEx folder (including all other mods, configuration and generated files inside it), and the bundled loader files from the game folder. Your saved campaigns, players and custom heads in Local AppData are kept, as are the game's own files. Close Tape to Tape before uninstalling. This applies whether you start uninstall from Studio or Windows Settings. **None (base game)** is the campaign selector's off option; it is not an uninstaller for every mod feature.
+
+Older Studio uninstallers leave BepInEx installed. Run the updated Studio installer once before uninstalling to replace the old uninstaller with this cleanup behavior.
 
 ## Troubleshooting
 

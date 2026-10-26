@@ -186,7 +186,7 @@ public sealed partial class MainWindow
         var updateMod = Button("Update mod compatibility", async () => { if(!readingGameArt) await EnsureModCompatibility(force: true); }); updateMod.Name = "HomeUpdateModCompatibility";
         var updates = Button("Check for updates", async () => await CheckForStudioUpdates(manual: true)); updates.Name = "HomeCheckForUpdates";
         var uninstall = Button("Uninstall", async () => await UninstallStudio()); uninstall.Name = "HomeUninstall";
-        ToolTip.SetTip(uninstall, "Open the Windows uninstaller for Campaign Studio and the mod. You will be asked to confirm.");
+        ToolTip.SetTip(uninstall, "Uninstall Campaign Studio, BepInEx and all mods in the game's BepInEx folder. Saved content in Local AppData is kept. You will be asked to confirm.");
         ToolTip.SetTip(updates, "Check GitHub for a newer Studio and mod installer, including beta updates. Installation always asks first.");
         ToolTip.SetTip(readArt, "Rebuild heads, logos, equipment, stadiums and map pictures from your installed copy of Tape to Tape");
         ToolTip.SetTip(bug, "Open a pre-filled bug report on the mod's GitHub page");

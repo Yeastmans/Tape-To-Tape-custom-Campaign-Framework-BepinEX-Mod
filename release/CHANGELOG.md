@@ -1,5 +1,16 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 28 — 2026-10-25
+
+- Uninstall automatically removes the complete BepInEx folder, including other mods, plugin configuration and generated files, plus the bundled loader and dotnet runtime.
+- Keeps Tape to Tape's own game files and saved campaigns, players and custom heads in Local AppData. Uninstall confirmations explain the removal scope.
+- Blocks uninstall while Tape to Tape is running and checks again after confirmation.
+- Game-mod runtime and compatibility remain unchanged from revision 27 (public game build 26188487).
+
+**Existing users: install this update once, then uninstall Studio. Older uninstallers still retain BepInEx.** The same cleanup runs from Studio's Uninstall button and Windows Settings.
+
+Validation: eight disposable native uninstall scenarios, Studio's eight Home uninstall checks, installer migration checks, source review and package verification. No real installed game was uninstalled. See [revision 28 validation](../docs/RELEASE-R28-VALIDATION.md).
+
 ## Beta 1.0 revision 27 — 2026-10-24
 
 - New Play Now team, skater and goalie exports include the team/player name plus a unique ID in their filenames. Updating an existing export keeps its original filenames, including after changing display names.
