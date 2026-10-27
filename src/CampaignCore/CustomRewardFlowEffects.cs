@@ -438,6 +438,140 @@ public static partial class CustomRewardEffects
         _ when AiEffects.Contains(effect) => "Use this native positioning behavior while the chosen condition holds. It affects AI control only. The most recently acquired applicable custom item takes priority. Normal possession and match-state rules still apply.",
         _ => LifecycleHelp(effect)
     };
+    private static string BriefQueryDescription(CustomRewardDefinition d)
+    {
+        string team = d.Target == OpposingTeam ? "the opposing team" : "your team";
+        string owner = d.IsGoalie ? "this goalie" : "this skater";
+        string skaters = d.Target == Actor ? owner : d.Target == OpposingTeam ? "opposing skaters" : "your skaters";
+        string opponent = d.Target == OpposingTeam ? "your team" : "opponents";
+        if (d.Trigger == "Puck fart timer") return "Every " + d.Seconds + "s, the puck releases " + Summary(d).ToLowerInvariant() + ".";
+        if (d.Trigger == "Random fart timer") return "Every " + d.Seconds + "–" + d.IntervalMaxSeconds + "s: " + Summary(d) + " around " + owner + ".";
+        if (CustomRewardTriggers.IsShotCalculation(d.Trigger)) return Capital(RecipientText(d, owner)) + ": " + Summary(d) + " for this shot (" + d.Trigger.Replace(" calculation", "").ToLowerInvariant() + ").";
+        if (IsCultist(d.Effect)) return "AI casts " + d.Effect.ToLowerInvariant().Replace("cultist ", "") + " during this skater's spell cycle.";
+        if (IsTransferHelmet(d.Effect)) return "Equip " + d.Effect.Replace(" attribute", "") + ": " + (d.Amount >= 0 ? "+" : "") + d.Amount + " " + d.Stat + " for its current wearer.";
+        if (d.Effect == ExtraGoal || d.Effect == ExtraGoals) {
+            string goals = d.Trigger switch {
+                "Goal value calculation" => "Each goal",
+                "Critical goal value calculation" => "Each critical goal",
+                "Enraged goal value calculation" => "Each goal scored while enraged",
+                "Injured goal value calculation" => "Each goal scored while injured",
+                "First goal value calculation" => "The match's opening goal",
+                "Team first goal value calculation" => "The first goal each match",
+                _ => "Each goal in the " + d.Trigger.Replace(" goal value calculation", "").ToLowerInvariant()
+            };
+            string scorer = d.Target == Actor ? owner : team;
+            string subject = d.Trigger == "First goal value calculation" ? "If " + scorer + " scores the match's opening goal, it"
+                : d.Trigger == "Team first goal value calculation" ? d.Target == Actor ? "If " + owner + " scores your team's first goal of the match, it" : Capital(team) + "'s first goal each match"
+                : goals + " by " + scorer;
+            return subject + " counts as " + (d.Effect == ExtraGoal ? 2 : (long)System.Math.Min(d.Amount, 9999) + 1) + " goals. "
+                + (d.Effect == ExtraGoal ? "Copies do not stack." : "Extra goals stack; goals and assists count each one.");
+        }
+        if (IsCategoryGrant(d.Effect)) {
+            string category = d.Effect == GrantSpeedTalent ? "Speed" : d.Effect == GrantCheckingTalent ? "Checking" : d.Effect == GrantDefenseTalent ? "defensive" : d.Effect == GrantShootingTalent ? "shooting" : "slapshot";
+            return "Each skater gains a " + category + " talent " + (d.Effect == GrantSlapshotTalent ? "at the start of the run" : "when acquired") + " (level " + d.Amount + " where available).";
+        }
+        if (IsRink(d.Effect)) return "Play on the " + d.Effect.ToLowerInvariant() + ". Latest acquired rink relic wins.";
+        if (IsInjuryPrevention(d.Effect)) return d.Effect + " for " + skaters + ". Existing injuries remain.";
+        return d.Effect switch {
+            PickupAttribute => "Permanently gain " + (d.Amount >= 0 ? "+" : "") + d.Amount + " " + d.Stat + " when acquired. Consumes the talent.",
+            BossAttribute => "Permanently gain " + (d.Amount >= 0 ? "+" : "") + d.Amount + " " + d.Stat + " after " + (d.Trigger == "Boss won" ? "each boss win" : "the " + d.Trigger.ToLowerInvariant().Replace("won", "win")) + ".",
+            BossSize => "Permanently change size by " + (d.Amount >= 0 ? "+" : "") + d.Amount + " steps after " + (d.Trigger == "Boss won" ? "each boss win" : "the " + d.Trigger.ToLowerInvariant().Replace("won", "win")) + ".",
+            AlternateOverall => "Alternate +" + d.Amount + " / -" + d.Amount + " Overall after each completed match, starting positive.",
+            RetainPowers => "Eligible benchwarmers retain up to " + d.Amount + " random powers for the next run. Starting powers are excluded.",
+            DefenseTeleport => "Teleport back when the opponent gains possession.",
+            LiquidateTalents => "When acquired, remove eligible talents and save their count. Quest talents and Liquidation carriers stay.",
+            UpgradeOwnTalents => "Upgrade all eligible talents on this skater when acquired.",
+            ScorelessExpiry => "Lose this talent after a completed match without scoring.",
+            RandomMatchAttribute => "+" + d.Amount + " to a random attribute after each match, with Gauntlet scaling. Bonuses last while owned.",
+            CenterDefenderChecks => "While playing centre, lend Bonecrusher level " + d.Amount + " to LD and RD.",
+            FogScoreboard => "Glitch the scoreboard while this human-controlled skater has the puck.",
+            ReboundCriticals => "+" + d.Amount + "% critical chance if a teammate shot in the last " + d.Seconds + "s.",
+            HungerRage => "Enrage after " + d.Seconds + "s without the puck. Picking it up ends enrage and resets the timer.",
+            GoldenHelmet => "Equip an extra Golden Helmet.",
+            HelmetMultiplier => "This skater's helmet effects × " + d.Amount + ".",
+            PreferRewards => "Prioritize this skater for player rewards. Reward exclusions take priority.",
+            ExcludeRewards => "Exclude this skater from player rewards where other eligible choices exist.",
+            SpreadAttributeGains => "Split each permanent attribute gain or loss equally across all four attributes.",
+            PlayedMatchContract => "Leave after " + d.Amount + " played matches. Benched matches do not count; Handcuffs prevents departure.",
+            LoadedPuckBag => Summary(d) + ". While on the ice, puck values affect either team. Adds team score only; denied goals keep the puck. First active bag wins.",
+            AngusZero => "Angus has 0 Overall.",
+            OpposingBonecrusher => "Opposing skaters gain Bonecrusher for the match.",
+            OpposingBriefcase => "The opposing team gains Briefcase's goal reversal for the match.",
+            FreezeOwnRelics => "Freeze two eligible relics on your team for the match.",
+            FrogOwnPair => "Two of your skaters become frogs for the match.",
+            MinimumTeamSize => "Your skaters shrink to the smallest size for the match.",
+            BlueLineLaunch => "Launch opponents when they cross either blue line (force " + d.Amount + ").",
+            DefensiveBlueLineKnockout => "Knock out opposing puck carriers for " + d.Seconds + "s when they cross your blue line.",
+            OffensiveBlueLineKnockout => "Knock out your puck carrier for " + d.Seconds + "s when they cross the opposing blue line.",
+            KnockoutDuration => "Opponents stay knocked out for " + d.Amount + "% of the normal duration.",
+            ParticipationBonus => "Skaters who sat out the entire match get +" + d.Amount + " Overall after each win, while this relic is owned.",
+            BreakawayShotPenalty => "Opponents shoot at half strength on breakaways.",
+            BreakawayShotFall => "Opponents stumble after shooting on a breakaway.",
+            OpeningInjuries => "Your team's first " + d.Amount + " qualifying knockouts each match cause injury attempts.",
+            CyclicInjuries => "Every " + d.Amount + " qualifying team knockouts cause an injury attempt. Resets each match.",
+            PuckInjuries => "Puck-caused knockouts have a " + d.Amount + "% injury chance.",
+            VoodooAttribute => "One random playing opponent gets -" + d.Amount + " Overall for the match.",
+            HotAttribute => "One random playing skater gets +" + d.Amount + " Overall for the match. A different skater receives any Cold penalty.",
+            ColdAttribute => "One random playing skater gets -" + d.Amount + " Overall for the match. A different skater receives any Hot bonus.",
+            OpeningCriticals => "Your team's first " + d.Amount + " shots each match are critical.",
+            HealedInjuryBonus => "Skaters gain " + (d.Amount >= 0 ? "+" : "") + d.Amount + " Overall per healed injury while this relic is owned.",
+            CelebrationInjuries => "Knocking out a celebrating opposing scorer can injure them.",
+            BenchCapacity => "Add one bench slot when acquired.",
+            BenchTalentSlot => "The Comfy Cushion bench slot awards a random talent. Requires that slot.",
+            DonateBenchAttribute => "When acquired, take all " + d.Stat + " from up to two random benchwarmers and divide it among the other skaters.",
+            DonateBenchTalents => "When acquired, move non-quest talents from up to two random benchwarmers to other skaters.",
+            UpgradeAngusTalents => "Upgrade Angus's eligible talents when acquired.",
+            UpgradeAngusAbility => "Upgrade Angus's eligible ability when acquired.",
+            GrantSlapshotTalent => "Each eligible skater gains a slapshot talent at the start of the run.",
+            ShareTalent => "At match start, loan one teammate's eligible talent to compatible teammates for the match.",
+            FrogHelmets => "Opposing Golden Helmet wearers become frogs.",
+            OctopusAttacks => "Tentacles attack advancing opposing puck carriers. Strikes hit either team within " + d.Radius + " units.",
+            PostGoal => "A shot off the opposing post can score once per match.",
+            FartForce => "Your team's fart force × " + (d.Amount / 100f) + ".",
+            FartRange => "Your team's fart range × " + (d.Amount / 100f) + ".",
+            FartKnockouts => "Fart bursts knock out " + (d.Target == BothTeams ? "skaters on both teams" : "opponents") + " in range.",
+            CopyOpponentRelics => "Copy one eligible opposing relic for the match; two on Expert. Opponents keep theirs.",
+            StealOpponentRelics => "Steal up to two eligible opposing relics for the match.",
+            FreezeOpponentRelic => "Disable one eligible opposing relic for the match.",
+            GoalPlanks => "Defensive planks protect your goal.",
+            BreakawayAd => "Show an ad over the rink during opposing breakaways.",
+            PossessionExplosion => "Carrying the puck for " + d.Seconds + "s knocks out its carrier on either team. Passing resets the timer.",
+            FasterChecks => "A successful knockout speeds up the rest of that bodycheck animation 4×.",
+            SpeedOneTimerAccuracy => "Speed bonuses also add to one-timer Accuracy.",
+            AttributeRewardChoice => "Talent rewards include an additional attribute choice.",
+            RiggedFaceoffs => Capital(team) + " wins faceoffs. Opposing faceoff effects and referee-team rules still apply.",
+            PlayableReferees => "Referees join your team and can be controlled. Latest acquired custom recruitment wins.",
+            ManualGoalDenial => d.Amount + " manual goal reversals during replays. Charges last across the run; unusable at zero charges. Human teams only.",
+            SecondScorerHelmet => "Your team's second-highest scorer also gets a Golden Helmet. Copies share one helmet.",
+            TrainingMultiplier => "Training attribute rewards × " + (d.Amount / 100f) + ".",
+            ExtraCoachPicks => "+" + d.Amount + " " + (d.Amount == 1 ? "pick" : "picks") + " at each Coach.",
+            WinByTwo => Capital(opponent) + " must win by at least two goals.",
+            PossessionOvertime => "Keep playing after the buzzer while " + team + " has possession, including eligible passes and buzzer shots.",
+            ConvertSpeedBonuses => "Speed bonuses become Shot Power bonuses. Base attributes stay intact.",
+            ConvertSpeedTraining => "Speed training becomes Shot Power training.",
+            SoccerWall => "A soccer wall defends your goal. One wall per team.",
+            EnragedDuration => Capital(team) + "'s enraged duration × " + (d.Amount / 100f) + ".",
+            ExtraReferee => "Add a second referee. Copies share the same referee.",
+            RefereeBlock => "Referees try to block opposing shots. Latest acquired custom referee behavior wins.",
+            RefereePursuit => "Referees bodycheck opponents. The latest acquired custom referee behavior wins.",
+            RefereeSize => "Referee size " + (d.Amount >= 0 ? "+" : "") + d.Amount + " steps for the match. Latest custom size rule wins.",
+            NetWidth => "Both goals are " + d.Amount + "% of their normal width. Latest custom width rule wins.",
+            NetHeight => "Both goals are " + d.Amount + "% of their normal height. Latest custom height rule wins.",
+            SoccerNetLook => "Both goals look like soccer nets.",
+            DenyGoal => d.Amount + "% chance to deny " + (d.Target == Actor ? "this skater's goal" : "an opposing goal") + " before it counts." + (d.IsRelic ? "" : " Active while this skater plays."),
+            InjuryMultiplier => Capital(skaters) + "' injury chance × " + (d.Amount / 100f) + ". Injury prevention still applies.",
+            InjuryHealing => "New injuries to " + skaters + " take " + d.Amount + " extra recovery games (minimum one). Existing injuries are unchanged.",
+            KeepFreeAgents => "Your free agents never leave while this relic is owned.",
+            BenchMultiplier => Capital(d.Target == Actor ? owner : team) + "'s bench bonuses × " + (d.Amount / 100f) + "." + (!d.IsRelic && d.Target == Team ? " Active while this skater plays." : ""),
+            CopyFreeAgentStats => "At run start, " + (d.Target == Actor ? owner : "each skater") + " copies a random unlocked free agent's four base attributes.",
+            CopyFreeAgentLook => "At run start, " + (d.Target == Actor ? owner : "each skater") + " copies a random unlocked free agent's face, gear, surname and number.",
+            TalentRewards => "+" + d.Amount + " talent reward " + (d.Amount == 1 ? "choice" : "choices") + " after each match.",
+            RelicRewards => "+" + d.Amount + " relic reward " + (d.Amount == 1 ? "choice" : "choices") + " after each match.",
+            Rerolls => "+" + d.Amount + " rerolls " + (d.Trigger == "Map event choices" ? "at map events" : "when choosing rewards") + ".",
+            _ => QueryDescription(d)
+        };
+    }
+
     private static string QueryDescription(CustomRewardDefinition d) => d.Trigger == "Random fart timer" ? "Every " + d.Seconds + " to " + d.IntervalMaxSeconds + " seconds: " + Summary(d) + " around this skater. Native timer pauses and fart interactions apply; only the selected interaction is enabled."
         : d.Trigger == "Puck fart timer" ? "Every " + d.Seconds + " seconds: " + Summary(d) + " around the puck. Uses the native puck warning color, pause handling and cleanup; only the selected interaction is enabled."
         : d.Effect == PickupAttribute || d.Effect == BossAttribute ? (d.Amount > 0 ? "+" : "") + d.Amount + " " + d.Stat + " at " + d.Trigger.ToLowerInvariant() + ". " + Help(d.Effect)

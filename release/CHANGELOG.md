@@ -1,5 +1,13 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 29 — 2026-10-26
+
+- Custom relics, regular talents, Chaos talents and goalie talents use shorter descriptions modeled on the base game's wording.
+- Keeps important effects, values, recipients, conditions, durations and limits. Detailed creator help remains available, and custom written descriptions are preserved.
+- Description wording only; reward mechanics and saved item formats are unchanged.
+
+Validation: 1,135 focused checks passed. Across 6,433 generated examples, descriptions average 56% shorter. Runtime, Studio and installer builds plus package verification accompany this release; live gameplay acceptance remains pending.
+
 ## Beta 1.0 revision 28 — 2026-10-25
 
 - Uninstall automatically removes the complete BepInEx folder, including other mods, plugin configuration and generated files, plus the bundled loader and dotnet runtime.

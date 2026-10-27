@@ -56,37 +56,7 @@ public sealed class CustomRewardDefinition
     public bool IsGoalie => Kind == CustomGoalieTalents;
     public string NativePool => IsRelic ? "Relics" : IsGoalie ? "Goalie Talents" : Kind == CustomChaosTalents ? "Chaos Talents" : "Talents";
     public string CatalogKind => IsGoalie ? "Goalie Talents" : IsRelic ? "Relics" : "Talents";
-    public string RulesText
-    {
-        get
-        {
-            if (Target == CustomRewardEffects.OtherTeammates || CustomRewardEffects.IsSkaterSelection(Target) || CustomRewardTriggers.IsCampaignEvent(Trigger) || Target == CustomRewardEffects.BothTeams || Target == CustomRewardEffects.OpposingTeam || CustomRewardTriggers.IsOpponentAction(Trigger) || Target == CustomRewardEffects.Opponent || CustomRewardTriggers.IsQuery(Trigger) || Chance != 100 || AmountBasis != "Fixed amount" || ResetOn.Length > 0 || Effect != CustomRewardEffects.StatChange || CustomRewardTriggers.IsCondition(Trigger) && Trigger != "While owned" || IsGoalie || Stat.StartsWith("Goalie "))
-                return CustomRewardEffects.Describe(this);
-            if (Trigger == "While owned")
-                return $"{(IsRelic || Target == "Whole team" ? "Your skaters gain" : "This skater gains")} {Signed(Amount)} {Stat} while this {(IsRelic ? "relic" : "talent")} is owned.";
-            string count = Threshold == 1 ? "a" : Threshold.ToString(CultureInfo.InvariantCulture);
-            string Event(string singular, string plural) => count + " " + (Threshold == 1 ? singular : plural);
-            string action = Trigger switch {
-                "Goal" => "scores " + Event("goal", "goals"),
-                "Hat trick" => "scores " + Event("hat trick", "hat tricks"),
-                "Assist" => "records " + (Threshold == 1 ? "an assist" : Threshold + " assists"),
-                "Check" => "lands " + Event("check", "checks"),
-                "Blocked shot" => "blocks " + Event("shot", "shots"),
-                "Interception" => "intercepts " + Event("pass", "passes"),
-                "Knockout" => "knocks out " + (Threshold == 1 ? "an opponent" : Threshold + " opponents"),
-                "Pass received" => "receives " + Event("pass", "passes"),
-                "Puck pickup" => "picks up the puck" + (Threshold == 1 ? "" : " " + Threshold + " times"),
-                _ => CustomRewardTriggers.Action(Trigger, Threshold)
-            };
-            string duration = Duration == "Seconds" ? $"for {Seconds} {(Seconds == 1 ? "second" : "seconds")}" : "for the " + Duration.ToLowerInvariant().Replace("of ", "of the ");
-            string recipient = Target == "Whole team" ? "your skaters gain" : IsRelic ? "that skater gains" : "they gain";
-            string limit = ActivationsPerMatch == 1 ? "once" : IsUnlimited(ActivationsPerMatch) ? "any number of times" : "up to " + ActivationsPerMatch + " times";
-            string stacks = MaxStacks == 1 ? "Does not stack." : IsUnlimited(MaxStacks) ? "Stacks without limit." : $"Stacks up to {MaxStacks} times per recipient ({Signed((long)Amount * MaxStacks)} {Stat} maximum).";
-            return $"When {(IsRelic ? "a teammate" : "this skater")} {action} in a match, {recipient} {Signed(Amount)} {Stat} {duration}.\n"
-                + (IsRelic ? $"Each skater can trigger this {limit} per match. " : $"Activates {limit} per match. ")
-                + stacks + (Duration == "Seconds" ? " Triggering it again refreshes the timer." : "");
-        }
-    }
+    public string RulesText => CustomRewardEffects.Describe(this);
     public string FullDescription => NeedsRedesign ? "Excluded from rewards until redesigned. This item came from the removed curse/payoff preview. Its identity and icon are preserved."
         : (Description.Length == 0 ? "" : Description + "\n") + RulesText;
     private static string Signed(long n) => (n >= 0 ? "+" : "") + n.ToString(CultureInfo.InvariantCulture);

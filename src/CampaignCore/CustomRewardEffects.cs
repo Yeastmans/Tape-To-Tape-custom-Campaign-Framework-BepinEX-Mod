@@ -414,38 +414,100 @@ public static partial class CustomRewardEffects
         => (CustomRewardDefinition.IsUnlimited(d.ActivationsPerMatch) ? "Unlimited activations " : "Up to " + d.ActivationsPerMatch + " activations ") + per;
     public static string StackText(CustomRewardDefinition d)
         => CustomRewardDefinition.IsUnlimited(d.MaxStacks) ? "No limit on active stacks per recipient." : "Maximum " + d.MaxStacks + " active stacks per recipient.";
-    public static string Describe(CustomRewardDefinition d)
+    public static string Describe(CustomRewardDefinition d) => DescribeBrief(d).TrimEnd();
+
+    // Reward cards follow the base game's effect-first wording. Detailed native
+    // behavior remains in Help(), which the creator displays separately.
+    private static string DescribeBrief(CustomRewardDefinition d)
     {
-        if (CustomRewardTriggers.IsCampaignEvent(d.Trigger)) return (d.Chance == 100 ? "" : d.Chance + "% chance: ") + "After every " + d.Threshold + " training choices, your team gains " + Summary(d) + " for the rest of the run while this relic is owned. "
-            + ActivationText(d, "per run, ") + (CustomRewardDefinition.IsUnlimited(d.MaxStacks) ? "with no stack limit" : "at most " + d.MaxStacks + " stacks") + ". Counters and earned bonuses persist through Continue. Previews and rerolls do not count.";
-        if (CustomRewardTriggers.IsQuery(d.Trigger)) return QueryDescription(d);
-        if (d.AmountBasis == "If benched for the entire previous match") return (d.Target == Team ? "Your skaters gain " : "This skater gains ") + Summary(d) + " " + CustomRewardTriggers.ConditionText(d.Trigger) + " if this owner never played in their last completed match while owning the item. No bonus before the first completed match. Playing at any point in that match clears eligibility; abandoned matches do not replace it.";
-        if (CustomRewardDefinition.IsPreviousMatchBasis(d.AmountBasis)) return (d.Target == Team ? "Your skaters gain " : "This skater gains ") + Summary(d) + " " + d.AmountBasis.ToLowerInvariant()
-            + " " + CustomRewardTriggers.ConditionText(d.Trigger) + ". Uses this talent owner's last completed match while owning the item; zero before the first. Replaces the count after each completed match. Abandoned matches do not replace it.";
-        if (d.AmountBasis == "Per liquidated talent") return "This skater gains " + Summary(d) + " per talent removed by an owned Liquidation carrier. Uses that carrier's saved native count; no bonus without one. " + CustomRewardTriggers.ConditionText(d.Trigger) + ". Does not remove any talents or permanently change base attributes.";
-        if (d.AmountBasis != "Fixed amount") return (d.Target == Team ? "Your skaters gain " : "This skater gains ") + Summary(d) + " " + d.AmountBasis.ToLowerInvariant() + " " + CustomRewardTriggers.ConditionText(d.Trigger) + ". Counts update during play. "
-            + (d.AmountBasis == "Per other owned talent" ? "This reward is excluded from the talent count. " : d.AmountBasis == "Per injured playing teammate" ? "The owner is excluded from the teammate count. " : "") + "These are current bonuses, not permanent gains.";
+        if (CustomRewardTriggers.IsQuery(d.Trigger)) return BriefQueryDescription(d);
+        string chance = d.Chance == 100 ? "" : d.Chance + "% chance: ";
+        if (CustomRewardTriggers.IsCampaignEvent(d.Trigger))
+            return chance + "Your team gains " + Summary(d) + " for this run after " + (d.Threshold == 1 ? "each training choice" : "every " + d.Threshold + " training choices") + ". "
+                + BriefLimits(d, "per run") + "Bonuses last while owned.";
+
+        bool continuous = CustomRewardTriggers.IsCondition(d.Trigger);
         string owner = d.IsGoalie ? "this goalie" : d.IsRelic ? "a teammate" : "this skater";
-        string recipient = RecipientText(d, owner);
-        bool opposing = IsOpposingSide(d.Target);
-        if (ScalingConditionEffects.Contains(d.Effect)) return (opposing ? Capital(recipient) + ": " : "") + Summary(d) + " " + CustomRewardTriggers.ConditionText(d.Trigger) + "." + ConditionNote(d) + " " + Help(d.Effect);
-        if (IsUpgrade(d.Effect)) return "When " + (d.IsRelic ? "your team " : "this skater ") + CustomRewardTriggers.Action(d.Trigger, d.Threshold) + ", " + d.Effect.ToLowerInvariant() + " (up to " + d.Amount + " different eligible powers). " + Help(d.Effect);
-        string goalie = d.Target == OpposingTeam ? "The opposing goalie" : d.IsRelic ? "Your goalie" : "This goalie";
-        if (d.Effect == CatchSaves) return goalie + " catches eligible saves " + CustomRewardTriggers.ConditionText(d.Trigger) + "." + ConditionNote(d) + " " + Help(CatchSaves);
-        if (d.Effect == GoalieFetchSpeed) return goalie + " gains " + (6 * (double)d.Amount / 100) + " retrieval speed " + CustomRewardTriggers.ConditionText(d.Trigger) + "." + ConditionNote(d) + " " + Help(GoalieFetchSpeed);
-        if (d.Effect == GoalieThrow) return goalie + " uses native stick throws " + CustomRewardTriggers.ConditionText(d.Trigger) + "." + ConditionNote(d) + " " + Help(GoalieThrow);
-        if (ForwardConditionEffects.Contains(d.Effect)) return (opposing ? Capital(recipient) : d.IsRelic || d.Target == Team ? "Your skaters" : "This skater") + ": "
-            + (d.Effect == LoosePuckAttraction || d.Effect == SpikedInjury || d.Effect == RandomAutoShot || IsCharge(d.Effect) || d.Effect == BatKnockout || d.Effect == RandomShotPower || d.Effect == RandomShotAccuracy || d.Effect == LockAttribute || d.Effect == TurningDelay ? Summary(d) : d.Effect.ToLowerInvariant()) + (d.Effect == ExtraSticks ? " +" + d.Amount : "") + " " + CustomRewardTriggers.ConditionText(d.Trigger) + "." + ConditionNote(d) + " " + Help(d.Effect);
-        string effectName = d.Effect == Boost || d.Effect == ShotRecoil ? d.Effect + " (force " + d.Amount + ")" : IsShockwave(d.Effect) || d.Effect == EggExplosion || d.Effect == SonicKnockouts || d.Effect == AttractPuck || d.Effect == BoardBounce ? Summary(d) : d.Effect;
-        string effect = d.Effect == StatChange ? recipient + (Singular(recipient) ? " gains " : " gain ") + Summary(d) : d.Effect == ClockTime ? Summary(d)
-            : IsPuck(d.Effect) ? Summary(d) + " on the current puck" : effectName + ": " + recipient;
-        string condition = d.IsRelic && CustomRewardTriggers.IsOpponentAction(d.Trigger) ? "when " + (d.Trigger == "Opponent goal" ? "an opponent scores" : CustomRewardTriggers.Action(d.Trigger, d.Threshold)) : CustomRewardTriggers.IsCondition(d.Trigger) ? CustomRewardTriggers.ConditionText(d.Trigger) : "when " + owner + " " + CustomRewardTriggers.Action(d.Trigger, d.Threshold);
-        if (CustomRewardTriggers.IsCondition(d.Trigger)) return Capital(effect) + " " + condition + "." + ConditionNote(d) + " The item must be owned.";
-        string duration = d.Effect == StatChange ? (d.Duration == "Seconds" ? "for " + d.Seconds + " seconds" : "for the " + d.Duration.ToLowerInvariant().Replace("of ", "of the "))
-            : Find(d.Effect)?.Timed == true || d.Effect == Knockout ? "for " + d.Seconds + " seconds" : "immediately";
-        return (d.Chance == 100 ? "" : d.Chance + "% chance: ") + Capital(condition) + ", " + effect + " " + duration + ".\n"
-            + ActivationText(d, d.IsRelic && (CustomRewardTriggers.IsOpponentAction(d.Trigger) || d.Trigger == "Referee knocked out" || d.Trigger == "Goal reversed") ? "per team per match. " : "per triggering player per match. ")
-            + (d.Effect == StatChange ? StackText(d) : Find(d.Effect)?.Timed == true ? "Repeated activations refresh the duration." : "The effect happens at this event.")
-            + (d.ResetOn.Length == 0 ? "" : " This item's active bonus resets when " + owner + " " + CustomRewardTriggers.Action(d.ResetOn, 1) + ". Activation limits are unchanged.");
+        string recipient = RecipientText(d, d.IsRelic ? continuous ? "your skaters" : "that skater" : owner);
+        string condition = d.Trigger == "While owned" ? "" : " " + CustomRewardTriggers.ConditionText(d.Trigger);
+        string gain = Capital(recipient) + (Singular(recipient) ? " gains " : " gain ");
+        if (d.AmountBasis == "If benched for the entire previous match")
+            return gain + Summary(d) + condition + " if this skater never played in the last completed match. No bonus before the first match.";
+        if (CustomRewardDefinition.IsPreviousMatchBasis(d.AmountBasis))
+            return gain + Summary(d) + " " + d.AmountBasis.ToLowerInvariant().Replace("previous match", "last completed match") + condition + ". No bonus before the first match.";
+        if (d.AmountBasis == "Per liquidated talent")
+            return gain + Summary(d) + " per liquidated talent" + condition + ". Uses the saved count while Liquidation is owned.";
+        if (d.AmountBasis != "Fixed amount")
+            return gain + Summary(d) + " " + d.AmountBasis.ToLowerInvariant() + condition + "."
+                + (d.AmountBasis == "Per other owned talent" ? " Excludes this talent." : d.AmountBasis == "Per injured playing teammate" ? " Excludes this skater." : "");
+        if (ScalingConditionEffects.Contains(d.Effect))
+            return (d.Effect == ClockSpeed ? "" : Capital(recipient) + ": ") + BriefEffectSummary(d) + condition + "." + ConditionNote(d);
+        if (IsUpgrade(d.Effect))
+            return "When " + (d.IsRelic ? "your team" : owner) + " " + CustomRewardTriggers.Action(d.Trigger, d.Threshold) + ", " + d.Effect.ToLowerInvariant() + " (up to " + d.Amount + "). Upgrades last for the run.";
+        if (ForwardConditionEffects.Contains(d.Effect) || GoalieConditionEffects.Contains(d.Effect) || AiEffects.Contains(d.Effect))
+            return Capital(recipient) + ": " + BriefEffectSummary(d) + condition + "." + ConditionNote(d);
+
+        string effect = d.Effect == StatChange ? gain + Summary(d)
+            : d.Effect == ClockTime ? Summary(d)
+            : IsPuck(d.Effect) ? BriefEffectSummary(d) + " on the current puck"
+            : (d.Effect == Boost || d.Effect == ShotRecoil ? d.Effect + " (force " + d.Amount + ")"
+                : IsShockwave(d.Effect) || d.Effect == AttractPuck || d.Effect == Burst || d.Effect == EggExplosion || d.Effect == SonicKnockouts || d.Effect == BoardBounce ? Summary(d) : d.Effect) + ": " + recipient;
+        if (continuous) return Capital(effect) + condition + "." + ConditionNote(d);
+
+        string when = d.Trigger == "Opponent goal" ? "an opponent scores" + (d.Threshold == 1 ? "" : " " + d.Threshold + " times")
+            : CustomRewardTriggers.IsOpponentAction(d.Trigger) ? CustomRewardTriggers.Action(d.Trigger, d.Threshold)
+            : owner + " " + (d.Trigger == "Goal" && d.Threshold > 1 ? "scores " + d.Threshold + " goals" : CustomRewardTriggers.Action(d.Trigger, d.Threshold));
+        string duration = d.Effect == StatChange ? d.Duration == "Seconds" ? " for " + d.Seconds + "s" : " for " + d.Duration.ToLowerInvariant().Replace("rest of ", "this ")
+            : Find(d.Effect)?.Timed == true || d.Effect == Knockout ? " for " + d.Seconds + "s" : "";
+        string scope = !d.IsRelic ? "per match" : CustomRewardTriggers.IsOpponentAction(d.Trigger) || d.Trigger == "Referee knocked out" || d.Trigger == "Goal reversed" ? "per team per match" : "per skater per match";
+        return chance + "When " + when + ", " + char.ToLowerInvariant(effect[0]) + effect.Substring(1) + duration + ". " + BriefLimits(d, scope)
+            + (d.ResetOn.Length == 0 ? "" : "Bonus resets when " + owner + " " + CustomRewardTriggers.Action(d.ResetOn, 1) + ".");
     }
+
+    private static string BriefLimits(CustomRewardDefinition d, string scope)
+    {
+        string limits = CustomRewardDefinition.IsUnlimited(d.ActivationsPerMatch) ? "Unlimited activations. " : (d.ActivationsPerMatch == 1 ? "Once " : "Up to " + d.ActivationsPerMatch + " times ") + scope + ". ";
+        if (d.Effect == StatChange)
+            limits += d.MaxStacks == 1 ? "Does not stack. " : CustomRewardDefinition.IsUnlimited(d.MaxStacks) ? "Unlimited stacks. " : "Up to " + d.MaxStacks + " stacks per recipient. ";
+        if (d.Effect == StatChange && d.Duration == "Seconds" || Find(d.Effect)?.Timed == true) limits += "Refreshes duration. ";
+        return limits;
+    }
+
+    private static string BriefEffectSummary(CustomRewardDefinition d) => d.Effect switch {
+        ClockSpeed => "Clock runs at " + d.Amount + "% speed",
+        CooldownMultiplier => "abilities recharge at " + d.Amount + "% speed",
+        CritMultiplier => "critical chance × " + (d.Amount / 100f),
+        BonusMultiplier => d.Stat + " bonuses × " + (d.Amount / 100f),
+        InjuryMultiplier => "injury chance × " + (d.Amount / 100f),
+        SpikedInjury => "outgoing injury chance at " + d.Amount + "%",
+        SpikedRetaliation => "bodycheckers fall flat",
+        FragileBody => "10% injury chance when knocked flat",
+        HandPuck => "handle and throw the puck by hand",
+        KickPuck => "kick the puck when stickless",
+        QuickRecovery => "recover faster from knockouts",
+        InstantRecovery => "get up immediately after landing from a knockout",
+        ForbidStick => "cannot use sticks",
+        ForbidCheck => "cannot bodycheck",
+        ExtraSticks => "+" + d.Amount + " reserve sticks",
+        CatchSaves => "catch eligible saves",
+        GoalieFetchSpeed => "+" + (6 * (double)d.Amount / 100) + " speed when retrieving the puck",
+        GoalieThrow => "throw sticks at opponents",
+        PuckGoalieGhost => "Puck passes through the opposing goalie for 0.5s",
+        PhysicalBallChain => "One physical chain per skater",
+        BalanceAttributes => "average live Shot Power, Accuracy, Speed and Checking",
+        IgnoreInjuryPenalties => "injuries do not reduce attributes",
+        BorrowTalent => "borrow one random talent from a benched teammate while on the ice",
+        PunchPass => "pass to a nearby teammate when knocked out with the puck",
+        PunchShot => "shoot when knocked out with the puck",
+        ReturnPass => "prepare a one-timer back to the passer",
+        SlapshotSlowMotion => "40% game speed during slapshot windup",
+        BatAim => "aim bat hits at the target",
+        BatLift => "bat hits keep their full upward speed",
+        BatKnockout => "bat hits knock out skaters on either team within " + d.Radius + " units, except the batter",
+        AnchorProtection => "knockout protection with a punch response",
+        AiKarlson => "use Karlson's puck-carrying AI",
+        AiPrince => "use Prince's puck-carrying AI with support from Knight teammates",
+        AiKnight => "support a Prince puck carrier on Veteran difficulty or higher",
+        _ => Summary(d)
+    };
 }

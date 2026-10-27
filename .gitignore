@@ -226,3 +226,9 @@ tests/GeneratedInteropIdentityChecks/*
 !tests/GeneratedInteropIdentityChecks/GeneratedInteropIdentityChecks.csproj
 !tests/GeneratedInteropIdentityChecks/Program.cs
 !tests/Check-InstallerUninstall.ps1
+
+# Custom reward creator and description regression checks
+!tests/CustomRewardCreatorChecks/
+tests/CustomRewardCreatorChecks/*
+!tests/CustomRewardCreatorChecks/CustomRewardCreatorChecks.csproj
+!tests/CustomRewardCreatorChecks/Program.cs
