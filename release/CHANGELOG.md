@@ -1,5 +1,13 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 30 — 2026-10-26
+
+- Custom runtime reward clones no longer appear in the base-game talent/relic catalogs. Authored definitions remain in their separate Custom sections.
+- Base-game defaults no longer auto-select unknown rewards. Stale copied defaults cannot enable opponent-only or other ineligible rewards.
+- Explicit saved custom choices and definitions are preserved. Shared game runtime is byte-identical to revision 29.
+
+Validation: focused native/custom catalog and headless UI regression checks; current game repository comparison; Windows installer payload and public download hashes verified. Live gameplay remains untested.
+
 ## Beta 1.0 revision 29 — 2026-10-26
 
 - Custom relics, regular talents, Chaos talents and goalie talents use shorter descriptions modeled on the base game's wording.

@@ -232,3 +232,9 @@ tests/GeneratedInteropIdentityChecks/*
 tests/CustomRewardCreatorChecks/*
 !tests/CustomRewardCreatorChecks/CustomRewardCreatorChecks.csproj
 !tests/CustomRewardCreatorChecks/Program.cs
+
+# Reward catalog separation regression checks
+!tests/RewardCatalogSeparationChecks/
+tests/RewardCatalogSeparationChecks/*
+!tests/RewardCatalogSeparationChecks/RewardCatalogSeparationChecks.csproj
+!tests/RewardCatalogSeparationChecks/Program.cs

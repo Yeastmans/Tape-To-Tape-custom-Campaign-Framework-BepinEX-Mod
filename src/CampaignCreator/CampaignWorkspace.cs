@@ -519,6 +519,10 @@ public sealed partial class CampaignWorkspace : UserControl
             definition.Selected.RemoveWhere(id => custom.ContainsKey(id) && CustomRewardPoolSelection.ForNative(kind).Length > 0);
             var nativeDefaults=rewards.Fields.ContainsKey("Native Defaults "+kind)
                 ? rewards.Get("Native Defaults "+kind).Split(',',StringSplitOptions.RemoveEmptyEntries|StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase) : null;
+            // A copied/imported list may be older than the reviewed native
+            // catalog. It can restrict defaults, never grant reward eligibility.
+            bool OfferedInBasePool(string id) => RewardCatalog.OfferedInBasePool(kind, id)
+                && (nativeDefaults == null || nativeDefaults.Contains(id));
             rewardPools[kind] = definition;
             var selected = definition.Selected;
             var available = entries.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -574,7 +578,7 @@ public sealed partial class CampaignWorkspace : UserControl
                 foreach (var entry in entries.Where(e => !custom.ContainsKey(e.Key) && (CustomRewardCatalog.Belongs(kind, e.Key, custom) || definition.IncludeOtherCategory || selected.Contains(e.Key)))
                     .OrderBy(e => !RewardCatalog.OfferedInBasePool(kind, e.Key)).ThenBy(e => e.Value).Where(e => e.Value.Contains(search.Text ?? "", StringComparison.OrdinalIgnoreCase)))
                 {
-                    bool offered = !custom.ContainsKey(entry.Key) && (nativeDefaults?.Contains(entry.Key) ?? RewardCatalog.OfferedInBasePool(kind, entry.Key));
+                    bool offered = !custom.ContainsKey(entry.Key) && OfferedInBasePool(entry.Key);
                     string reminder = reminders.TryGetValue(entry.Key, out var text) ? text : "No reminder text provided by the game.";
                     if (!CustomRewardCatalog.Belongs(kind, entry.Key, custom) && selected.Contains(entry.Key) && !definition.IncludeOtherCategory)
                         reminder = "Saved custom selection from the other category · kept visible while catalog expansion is off. " + reminder;
@@ -648,7 +652,7 @@ public sealed partial class CampaignWorkspace : UserControl
                 // Keep the base game's current choices when the first custom
                 // item is ticked, then save an explicit combined allow-list.
                 selected.Clear();
-                selected.UnionWith(available.Where(id => !custom.ContainsKey(id) && (nativeDefaults?.Contains(id) ?? RewardCatalog.OfferedInBasePool(kind, id))));
+                selected.UnionWith(available.Where(id => !custom.ContainsKey(id) && OfferedInBasePool(id)));
                 basePool.IsChecked = false;
             };
             refreshRewardRows.Add(Refresh);

@@ -5,6 +5,9 @@ namespace CampaignCreator;
 
 public static class RewardCatalog
 {
+    // Runtime dumps include cloned custom rewards from any campaign played on
+    // this machine. Only CustomRewardCatalog may add their authored definitions.
+    private static bool CustomRuntimeEntry(string value) => value.Trim().StartsWith("CCF_Reward_", StringComparison.OrdinalIgnoreCase);
     public static HashSet<string> FreeAgentBaseTalents(string root)
     {
         // Extracted from TalentRepository: native base rolls plus reachable exact
@@ -26,7 +29,7 @@ public static class RewardCatalog
             string file = Path.Combine(dumps, "_gui_data", "_reward_" + kind.ToLowerInvariant() + ".txt");
             if (File.Exists(file)) foreach (var line in File.ReadLines(file).Where(l => !l.StartsWith('#')))
             {
-                var p = line.Split('|'); if (p.Length < 2 || p[0].Length == 0) continue;
+                var p = line.Split('|'); if (p.Length < 2 || p[0].Length == 0 || CustomRuntimeEntry(p[0])) continue;
                 string label = p[1].Trim();
                 if (label.StartsWith("[Missing:", StringComparison.OrdinalIgnoreCase)) label = FieldControls.Friendly(label.Split('/').ElementAtOrDefault(1) ?? p[0]) + " (name unavailable)";
                 entries[p[0]] = (label.Length > 0 ? label : p[0]) + (kind == "Relics" && p.Length >= 3 ? " · " + p[2] : "");
@@ -57,7 +60,8 @@ public static class RewardCatalog
     public sealed record Entry(string Key, string Name, string Description, int Level, string Id = "", string Asset = "");
 
     // Normal-run pool decoded from the game's repositories.
-    // Ids the file doesn't list are treated as offered, since nothing proves otherwise.
+    // Unverified IDs can remain available for explicit custom selection, but
+    // must never be advertised as part of the base-game reward pool.
     private static Dictionary<string, bool>? normalRunPool;
     public static bool OfferedInNormalRun(string id)
     {
@@ -72,7 +76,7 @@ public static class RewardCatalog
             }
             normalRunPool = pool;
         }
-        return !normalRunPool.TryGetValue(id, out bool offered) || offered;
+        return normalRunPool.TryGetValue(id, out bool offered) && offered;
     }
 
     public static bool OfferedInBasePool(string kind, string id) => kind == RewardPoolDefinition.ChaosTalents
@@ -111,7 +115,8 @@ public static class RewardCatalog
         foreach (string line in File.ReadLines(file))
         {
             var p = line.Split('\t');
-            if (p.Length != 7 || p[0] != kind || !int.TryParse(p[3], out int level)) continue;
+            if (p.Length != 7 || p[0] != kind || !int.TryParse(p[3], out int level)
+                || CustomRuntimeEntry(p[1]) || CustomRuntimeEntry(p[2]) || CustomRuntimeEntry(p[4])) continue;
             string name = p[5];
             if (string.IsNullOrWhiteSpace(name) || name.StartsWith("[Missing:", StringComparison.OrdinalIgnoreCase)) name = p[4] + " (native name missing)";
             result.TryAdd(p[1], new(p[1], name, p[6].Replace("\\n", "\n"), level, p[2], p[4]));
@@ -257,6 +262,7 @@ public static class RewardCatalog
             if (m.Success)
             {
                 current = m.Groups[1].Value;
+                if (CustomRuntimeEntry(current)) { current = null; continue; }
                 string name = m.Groups[2].Value;
                 if (name.StartsWith("[missing:", StringComparison.OrdinalIgnoreCase)) name = current + " (name unavailable)";
                 entries[current] = new(current, name, "", int.TryParse(m.Groups[3].Value, out int level) ? level : 1);
