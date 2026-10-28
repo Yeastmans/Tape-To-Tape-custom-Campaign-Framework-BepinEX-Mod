@@ -1,0 +1,1 @@
+FreeAgentNameChecks.Run(args.Single());

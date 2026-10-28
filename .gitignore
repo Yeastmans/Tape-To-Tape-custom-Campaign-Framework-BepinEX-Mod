@@ -238,3 +238,10 @@ tests/CustomRewardCreatorChecks/*
 tests/RewardCatalogSeparationChecks/*
 !tests/RewardCatalogSeparationChecks/RewardCatalogSeparationChecks.csproj
 !tests/RewardCatalogSeparationChecks/Program.cs
+
+# Free-agent name and identity regression sources
+!tests/FreeAgentNameChecks/
+tests/FreeAgentNameChecks/*
+!tests/FreeAgentNameChecks/FreeAgentNameChecks.csproj
+!tests/FreeAgentNameChecks/FreeAgentNameChecks.cs
+!tests/FreeAgentNameChecks/Program.cs

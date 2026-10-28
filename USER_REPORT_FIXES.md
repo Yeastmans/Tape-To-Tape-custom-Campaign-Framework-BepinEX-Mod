@@ -1,3 +1,46 @@
+# Two-line GM recruitment and free-agent names - 2026-10-28
+
+Included in Beta 1.0 revision 31. See `docs/RELEASE-R31-VALIDATION.md` for the release scope and validation boundaries.
+
+- Full two-line squads now use the ten-position GM selector even with limited
+  contracts off. Native signing and contract policy remain authoritative.
+- Team-to-free-agent imports keep the source name unless it is already used in
+  the destination free-agent pool. Existing numbered squad-pool copies can be
+  renamed through Edit player without changing their file-based identity.
+- Live testing exposed native GM indexing past a pool with one remaining eligible
+  candidate. The two-line handler now creates that one native offer, or ends an
+  exhausted pool, while retaining native eligibility and ordinary selection for
+  two or more candidates.
+
+Validation: 1,960 roster/recruitment checks, 34 contract checks, 17 name/identity
+checks, 69 bulk-import checks, 19 squad-editor checks, 24 existing user-report
+checks, 11 export checks, and 107 published-package checks passed. Both builds
+succeeded; the runtime retains one existing unused-variable warning.
+
+Actual game build 26188487 was tested using a disposable campaign with two solid
+starters, eight scrubs, two lines, contracts off, and three recruits imported with
+the production importer. Brent Burns was hired into Line 2 LW, Cale Makar into
+Line 1 LW, and Nathan MacKinnon into Line 1 RW at the next GM. Single-candidate
+offers and cancellation worked. Closing the game and choosing Continue retained
+all names, identities, stats, talents, line assignments and the zero-contract
+state; the resumed Run Stats screen was inspected. The final native logs contain
+no errors. Forty-six saved-run assertions passed. Reload normalized the three
+recruits' inherited skate skins to the team defaults; those six appearance-field
+differences are recorded separately, and no complete byte-for-byte roster claim
+is made.
+
+The original reported campaign was unavailable. No existing authored content or
+saved-run names were migrated. Shared-pool rename IDs retain their pre-existing
+name-based behavior; the rename identity guarantee above is for own-squad pools.
+
+After testing, all 1,852 original native files were hash-verified and restored,
+along with the original active campaign and installed runtime/profile. The game
+is closed. Test saves, screenshots, fixture builder, regression logs and review
+results are retained under `artifacts/gm-two-lines-names-20261028`; see `receipt.json`
+and `live/restoration.json`.
+
+---
+
 # Beta 1.0 revision 3 - user report update
 
 Release label explicitly approved by the user. The changes below have technical validation; native gameplay confirmation remains pending. Squad pool choices are implemented: Use own pools is off by default (shared), and enabling it provides separate bench, superstar and free-agent selections. Own pools start empty and preserve selections when turned off.

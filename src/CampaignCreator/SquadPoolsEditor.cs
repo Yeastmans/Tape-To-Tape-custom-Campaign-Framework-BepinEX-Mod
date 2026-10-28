@@ -91,7 +91,7 @@ internal sealed class SquadFreeAgentEditor : UserControl
         };
         var panel = new DockPanel { LastChildFill = true };
         var header = new StackPanel { Spacing = 12, Children = {
-            new TextBlock { Text = "Import from Base game, Player library, In-game custom or Campaign custom. Check the players this squad can recruit; unchecked copies stay available to edit.", TextWrapping = TextWrapping.Wrap },
+            new TextBlock { Text = "Import from Base game, Player library, In-game custom or Campaign custom. Team imports keep their names; only duplicates within this free-agent pool are numbered. Check the players this squad can recruit; unchecked copies stay available to edit.", TextWrapping = TextWrapping.Wrap },
             new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Children = { import, make } }, message } };
         DockPanel.SetDock(header, Dock.Top); panel.Children.Add(header); panel.Children.Add(new ScrollViewer { Content = list });
         Content = panel; Refresh();

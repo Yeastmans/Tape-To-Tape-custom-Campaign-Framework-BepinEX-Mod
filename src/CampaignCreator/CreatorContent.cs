@@ -38,23 +38,32 @@ public static class CreatorContent
         }
         string? campaign = PlayerCampaign(location);
         if (campaign == null) return;
-        foreach (var node in CampaignNavigation.Load(campaign).SelectMany(n => n.Descendants()))
+        string directory = Directory.Exists(location) ? location : Path.GetDirectoryName(location)!;
+        var files = IsFreeAgentDirectory(directory)
+            ? Directory.EnumerateFiles(directory, "*.txt", SearchOption.AllDirectories)
+            : CampaignNavigation.Load(campaign).SelectMany(n => n.Descendants()).Select(n => n.FilePath).OfType<string>();
+        foreach (string file in files)
         {
-            if (node.FilePath is not string file || string.Equals(Path.GetFullPath(file), exceptFile == null ? null : Path.GetFullPath(exceptFile), StringComparison.OrdinalIgnoreCase)) continue;
+            if (string.Equals(Path.GetFullPath(file), exceptFile == null ? null : Path.GetFullPath(exceptFile), StringComparison.OrdinalIgnoreCase)) continue;
             if (!ContentImport.Matches(file, "player")) continue;
             var doc = new CampaignDocument(File.ReadAllText(file));
             if (doc.Get(FreeAgentContent.Marker).Length > 0 || doc.Get(StartingPoolEditor.BaseMarker).Length > 0) continue;
             if (doc.Get("Name").Trim().Equals(name, StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("A custom player named '" + name + "' already exists in this campaign. Choose a different name.");
+                throw new ArgumentException("A custom player named '" + name + "' already exists in this "
+                    + (IsFreeAgentDirectory(directory) ? "free-agent pool" : "campaign") + ". Choose a different name.");
         }
     }
 
-    // Copies get their own display name as well as their own file. Reserve names
-    // across the destination campaign, or the local collection outside a campaign.
+    private static bool IsFreeAgentDirectory(string directory) =>
+        Path.GetFileName(Path.TrimEndingDirectorySeparator(directory)).Equals("free_agents", StringComparison.OrdinalIgnoreCase);
+
+    // Free agents are independent recruits: names elsewhere in the campaign
+    // must not rename them. Only another copy in this pool needs a suffix.
+    // Other player collections retain the existing campaign-wide naming rules.
     public static string AvailablePlayerName(string directory, string requested, IEnumerable<string>? reserved = null)
     {
         requested = ValidateName(requested);
-        string scope = PlayerCampaign(directory) ?? directory;
+        string scope = IsFreeAgentDirectory(directory) ? directory : PlayerCampaign(directory) ?? directory;
         var names = new HashSet<string>(reserved ?? [], StringComparer.OrdinalIgnoreCase);
         if (Directory.Exists(scope))
             foreach (string file in Directory.EnumerateFiles(scope, "*.txt", SearchOption.AllDirectories))

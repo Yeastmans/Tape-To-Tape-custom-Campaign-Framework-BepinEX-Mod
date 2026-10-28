@@ -1,5 +1,14 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 31 — 2026-10-28
+
+- Full two-line squads can recruit at GM nodes with limited contracts disabled, choosing a replacement on either line.
+- Team players imported into a squad or shared free-agent pool keep their names. Only duplicate names within that destination pool are numbered.
+- An existing numbered own-squad free agent can be renamed to its original name without changing its file-based identity.
+- Two-line GM recruitment handles one or zero remaining eligible custom recruits without the native two-offer indexing error.
+
+Validation: focused roster/recruitment and name/identity regressions, fresh Windows release build and installer payload checks. Disposable live-game testing of the changed feature source on Steam build 26188487 covered contracts-off hires on both full lines, cancellation, single-candidate offers, and restart/Continue. Existing saved-run names are not migrated. The original third-party reported campaign was unavailable.
+
 ## Beta 1.0 revision 30 — 2026-10-26
 
 - Custom runtime reward clones no longer appear in the base-game talent/relic catalogs. Authored definitions remain in their separate Custom sections.

@@ -10,13 +10,12 @@ using STS.Map;
 namespace EndlessMode;
 
 // Native contracts compact a five-player roster and native GM hires only write
-// indices 0..4. Double Decker instead resolves both lines by player ID. Keep the
-// native contract lifecycle and generated offers, but reconcile those two views.
+// indices 0..4. Two-line recruitment needs explicit placement even when contracts
+// are disabled and both lines are full. Keep native contract policy and generated
+// offers, but reconcile the two roster views by player ID.
 internal static class TwoLineContracts
 {
-    internal static bool Applies(TeamData team)
-        => UsesTwoLines(team) && (SquadBehaviorRuntime.Enabled(Tape2Tape.CampaignUtil.CampaignState.runData.squadId, "gm_contracts", false)
-            || Tape2Tape.CampaignUtil.CampaignState.runData.freeAgents?.Count > 0 || HasVacancy(team));
+    internal static bool Applies(TeamData team) => UsesTwoLines(team);
 
     internal static bool UsesTwoLines(TeamData team)
     {
@@ -24,19 +23,6 @@ internal static class TwoLineContracts
         return team != null && run?.teamData != null && team.Pointer == run.teamData.Pointer
             && team.lines?.Count == 2
             && SquadBehaviorRuntime.Enabled(run.squadId, "two_lines", false);
-    }
-
-    private static bool HasVacancy(TeamData team)
-    {
-        for (int slot = 0; slot < 10; slot++)
-        {
-            string id = SlotId(team, slot);
-            bool present = false;
-            if (team.forwards != null) foreach (var player in team.forwards)
-                if (player != null && player.id == id) { present = true; break; }
-            if (!present) return true;
-        }
-        return false;
     }
 
     internal static string SlotId(TeamData team, int slot)
@@ -140,6 +126,48 @@ internal static class TwoLineContracts
 
     internal static bool IsCurrent(Visit visit) => visit != null && ReferenceEquals(Current, visit)
         && Tape2Tape.CampaignUtil.CampaignState?.runData?.Pointer == visit.Run && Applies(visit.Team);
+
+    internal static bool TrySmallPoolChoices(Visit visit, int hires, out bool result)
+    {
+        result = false;
+        var node = visit.Node;
+        if (hires >= node.NumTimesToOfferChoices) return false;
+        CustomFreeAgentTemplates.EnsureCurrent();
+        if (!CustomFreeAgentTemplates.Active) return false;
+        var state = Tape2Tape.CampaignUtil.CampaignState;
+        var squad = state.GetCurrentSquad();
+        if (squad == null || state.freeAgents == null) return false;
+        var unlocks = node._unlockSystem ?? state._unlockSystem;
+        var owned = visit.Team.GetForwards(false);
+        ForwardData candidate = null;
+        foreach (var player in state.freeAgents)
+        {
+            if (player == null || player.firstName == "Gawain" && state.runData.CurrentAct != 1
+                || node._previouslyOfferedNames.Contains(player.FullName)
+                || unlocks != null && !unlocks.IsUnlocked(player.id)
+                || Tape2Tape.CampaignHelper.IsForwardExcludedBySquad(player, squad)) continue;
+            bool alreadyOwned = false;
+            foreach (var existing in owned)
+                if (existing != null && (existing.id == player.id || existing.FullName == player.FullName))
+                { alreadyOwned = true; break; }
+            if (alreadyOwned) continue;
+            if (candidate != null) return false; // Native selection is safe with two or more candidates.
+            candidate = player;
+        }
+        // Native NextChoices indexes both [0] and [1] even when filtering leaves
+        // fewer than two recruits. Preserve its eligibility and offer creation,
+        // but never invent a fallback player or read beyond the authored pool.
+        ReplaceChoices(node, new List<EventChoice>());
+        node.descTermParams?.Clear();
+        if (candidate == null) GeneralManagerEvent.RerollSkaterNodeRewards();
+        else
+        {
+            node._previouslyOfferedNames.Add(candidate.FullName);
+            node.CreatePlayerChoice(candidate, visit.Team);
+            result = true;
+        }
+        return true;
+    }
 
     internal static void WrapOffers(Visit visit)
     {
@@ -309,6 +337,8 @@ internal static class TwoLineContractChoices
         // native negative count for zero-choice nodes, otherwise count hires.
         __0 = visit.Hires == 0 && __0 < 0 ? __0 : visit.Hires;
         __state.Generate = true; TwoLineContracts.Generating = visit.Team;
+        if (TwoLineContracts.TrySmallPoolChoices(visit, __0, out bool smallPoolResult))
+        { __result = smallPoolResult; return false; }
         return true;
     }
     [HarmonyPostfix] internal static void Postfix(bool __result, Scope __state)

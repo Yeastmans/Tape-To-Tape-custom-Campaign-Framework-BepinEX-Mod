@@ -72,7 +72,7 @@ namespace Il2CppInterop.Runtime
 namespace Data
 {
     public class SkaterData : Harness.NativeObject { public string id, FullName; }
-    public class ForwardData : SkaterData { public int Jersey, Stat = 40; public string Talent = "Original talent"; }
+    public class ForwardData : SkaterData { public int Jersey, Stat = 40; public string Talent = "Original talent", firstName = ""; public bool Excluded; }
     public class Lineup { public string leftWinger, rightWinger, center, leftDefensemen, rightDefensemen; }
     public class TeamData : Harness.NativeObject
     {
@@ -84,6 +84,7 @@ namespace Data
         public bool isMultiLineup => lines.Count == 2;
         public void SetActiveLine(int number) => activeLineNumber = number;
         public int GetActiveLine() => activeLineNumber;
+        public Il2CppSystem.Collections.Generic.List<ForwardData> GetForwards(bool unused = false) => forwards;
         public Il2CppSystem.Collections.Generic.List<ForwardData> benchPlayers
         {
             get
@@ -112,6 +113,7 @@ namespace Data
     {
         public Data.TeamData teamData;
         public string squadId = "Custom_Test";
+        public int CurrentAct = 1;
         public Il2CppSystem.Collections.Generic.List<Rogue.FreeAgents.FreeAgent> freeAgents = new();
         public Dictionary<string, string> forwardInjuries = new();
     }
@@ -119,9 +121,18 @@ namespace Data
 namespace State
 {
     public class DeserializerV2 { }
-    public class CampaignState { public Data.RunData runData; }
+    public class CampaignState
+    {
+        public Data.RunData runData;
+        public Il2CppSystem.Collections.Generic.List<Data.ForwardData> freeAgents = new();
+        public Unlocks.UnlockSystem _unlockSystem = new();
+        public RunSquadScriptableObject GetCurrentSquad() => new();
+    }
+    public class RunSquadScriptableObject { }
 }
 namespace Tape2Tape { public static class CampaignUtil { public static State.CampaignState CampaignState = new(); } }
+namespace Tape2Tape { public static class CampaignHelper { public static bool IsForwardExcludedBySquad(Data.ForwardData player, State.RunSquadScriptableObject squad) => player.Excluded; } }
+namespace Unlocks { public class UnlockSystem { public HashSet<string> Locked = new(); public bool IsUnlocked(string id) => !Locked.Contains(id); } }
 namespace Rogue { }
 namespace Rogue.FreeAgents
 {
@@ -146,7 +157,7 @@ namespace STS.Map
         public IntPtr Pointer => Il2CppInterop.Runtime.Memory.Register(this);
         public EventChoice Copy() => (EventChoice)MemberwiseClone();
     }
-    public class EventNode : Harness.NativeObject { public Il2CppSystem.Collections.Generic.List<EventChoice> eventChoices = new(); }
+    public class EventNode : Harness.NativeObject { public Il2CppSystem.Collections.Generic.List<EventChoice> eventChoices = new(); public List<EventTermParam> descTermParams = new(); }
 }
 namespace Rogue.NPC.GeneralManagerNPC
 {
@@ -154,6 +165,26 @@ namespace Rogue.NPC.GeneralManagerNPC
     {
         public int NumTimesToOfferChoices = 2, Generations, NativeCallbacks, LastCount;
         public bool ThrowDuringGeneration, ThrowAfterInsertion, SkipInsertion;
+        public HashSet<string> _previouslyOfferedNames = new();
+        public Unlocks.UnlockSystem _unlockSystem;
+        public static int Rerolls;
+        public static void RerollSkaterNodeRewards() => Rerolls++;
+        public void CreatePlayerChoice(Data.ForwardData template, Data.TeamData team)
+        {
+            int room = 5;
+            TwoLineContractOfferRoom.Prefix(team, ref room);
+            bool contracts = SquadBehaviorRuntime.Contracts;
+            var p = new Data.ForwardData { id = template.id, FullName = template.FullName, Jersey = template.Jersey };
+            var action = (System.Action)(() =>
+            {
+                NativeCallbacks++;
+                if (room >= 5) throw new Exception("Full roster native error");
+                if (!SkipInsertion) team.AddForwardToActiveLine(p);
+                if (contracts) Tape2Tape.CampaignUtil.CampaignState.runData.freeAgents.Add(new() { id = p.id, Matches = 6 });
+                if (ThrowAfterInsertion) throw new Exception("Native contract callback failed");
+            });
+            eventChoices.Add(new() { Skater = p, onSelection = action, interactable = room < 5, ChoiceType = EEventChoiceType.Skater });
+        }
         public bool NextChoices(int count)
         {
             bool result = false;
@@ -170,6 +201,7 @@ namespace Rogue.NPC.GeneralManagerNPC
                         var team = Tape2Tape.CampaignUtil.CampaignState.runData.teamData;
                         int room = 5;
                         TwoLineContractOfferRoom.Prefix(team, ref room);
+                        bool contracts = SquadBehaviorRuntime.Contracts;
                         eventChoices = new();
                         for (int i = 0; i < 3; i++)
                         {
@@ -179,7 +211,8 @@ namespace Rogue.NPC.GeneralManagerNPC
                                 NativeCallbacks++;
                                 if (room >= 5) throw new Exception("Full roster native error");
                                 if (!SkipInsertion) team.AddForwardToActiveLine(p);
-                                Tape2Tape.CampaignUtil.CampaignState.runData.freeAgents.Add(new() { id = p.id, Matches = 6 });
+                                if (contracts)
+                                    Tape2Tape.CampaignUtil.CampaignState.runData.freeAgents.Add(new() { id = p.id, Matches = 6 });
                                 if (ThrowAfterInsertion) throw new Exception("Native contract callback failed");
                             });
                             eventChoices.Add(new() { Skater = p, onSelection = action, interactable = room < 5, ChoiceType = EEventChoiceType.Skater });
@@ -205,6 +238,7 @@ public class EventChoicePanel : UnityEngine.MonoBehaviour
 }
 namespace EndlessMode
 {
+    public static class CustomFreeAgentTemplates { public static bool Active; public static void EnsureCurrent() { } }
     public static class SquadBehaviorRuntime
     {
         public static bool Two = true, Contracts = true, Default;
