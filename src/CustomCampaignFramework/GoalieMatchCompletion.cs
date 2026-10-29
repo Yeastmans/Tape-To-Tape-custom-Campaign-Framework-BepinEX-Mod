@@ -353,8 +353,8 @@ internal static class GoalieMatchCompletion
         finally { if (__state != null && ReferenceEquals(sideHandoff, __state)) sideHandoff = __state.Previous; }
         return __exception;
     }
-    // The reviewed North override discards its true caller campaign flag and
-    // invokes the base Initialize with false. Witness that exact owned call;
+    // Build 26289478 forwards the North override's true campaign flag into
+    // the base Initialize. Witness that exact owned call;
     // never infer authority from receiver type or a matching goalie ID alone.
     private static void NorthPrefix(Goaltender.GoaltenderNorth __instance, GoaltenderData __0, bool __1, out NorthInitialization __state)
     {
@@ -373,7 +373,7 @@ internal static class GoalieMatchCompletion
         } catch (Exception ex) { FailNorth(__state); Warn(ex.Message); }
     }
     private static bool NorthBaseWitness(NorthInitialization scope, Goaltender.Goaltender receiver, GoaltenderData input, bool campaign)
-        => !campaign && !scope.Failed && !scope.Observed && Owned(scope.Binding.Session)
+        => campaign && !scope.Failed && !scope.Observed && Owned(scope.Binding.Session)
             && receiver?.Pointer == scope.Receiver.Pointer && input?.Pointer == scope.Input.Pointer
             && (scope.Side != null ? ReferenceEquals(sideHandoff, scope.Side) && SideOwned(scope.Side)
                 : ReferenceEquals(initialization, scope.Scope));
@@ -399,6 +399,20 @@ internal static class GoalieMatchCompletion
         __state = null;
         try {
             var north = northInitialization?.Binding != null ? northInitialization : null;
+            // The new true base flag cannot substitute for the North witness.
+            // Receiver type only denies an already-owned expected call; it never
+            // grants authority or invalidates an unrelated visitor's session.
+            if (north == null && __instance?.TryCast<Goaltender.GoaltenderNorth>() != null) {
+                var missingSide = sideHandoff;
+                if (missingSide?.Before != null && SideOwned(missingSide)
+                    && __instance.Pointer == missingSide.Team.goaltender?.Pointer) {
+                    missingSide.Failed = true; missingSide.FailureStage ??= "north-override-missing"; return;
+                }
+                var missingInit = initialization;
+                if (Owned(missingInit?.Binding?.Session) && __instance.Pointer == missingInit.Binding.Goalie?.Pointer) {
+                    missingInit.Binding.Session.Invalid = true; return;
+                }
+            }
             bool campaign = north == null ? __1 : NorthBaseWitness(north, __instance, __0, __1);
             if (north != null && !campaign) FailNorth(north);
             var side = sideHandoff;

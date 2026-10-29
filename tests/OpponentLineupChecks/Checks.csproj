@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><NuGetAudit>false</NuGetAudit></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/CustomCampaignFramework/LineupPreviewRoster.cs" Link="LineupPreviewRoster.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/OpponentLineupSubstitutes.cs" Link="OpponentLineupSubstitutes.cs" Condition="Exists('../../src/CustomCampaignFramework/OpponentLineupSubstitutes.cs')" />
+  </ItemGroup>
+</Project>

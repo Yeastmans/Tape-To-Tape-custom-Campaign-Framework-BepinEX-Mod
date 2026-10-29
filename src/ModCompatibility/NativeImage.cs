@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Reflection.PortableExecutable;
+using System.Buffers.Binary;
 using CampaignCore;
 using Iced.Intel;
 using LibCpp2IL;
@@ -89,6 +90,74 @@ public sealed class NativeImage
         if(codeEnd<starts[index+1]) tableStarts[rva]=codeEnd;
         while(result.Count>0 && result[^1].Mnemonic==Mnemonic.Int3) result.RemoveAt(result.Count-1);
         return decoded[rva]=result.ToArray();
+    }
+    // Symbol ranges also cover adjacent compiler helpers and remain the unit of
+    // protected hashing. A stack proof must instead use one exact x64 frame.
+    public ulong FrameEnd(ulong rva)
+    {
+        using var pe=new PEReader(new MemoryStream(Data,false));
+        var headers=pe.PEHeaders; var header=headers.PEHeader;
+        if(headers.CoffHeader.Machine!=Machine.Amd64 || header?.Magic!=PEMagic.PE32Plus)
+            throw new InvalidDataException("Native stack frames require a PE x64 image.");
+        var directory=header.ExceptionTableDirectory;
+        if(directory.RelativeVirtualAddress<=0 || directory.Size<=0 || directory.Size%12!=0)
+            throw new InvalidDataException("Missing or malformed native runtime-function table.");
+        var section=headers.SectionHeaders.SingleOrDefault(s=>directory.RelativeVirtualAddress>=s.VirtualAddress
+            && (long)directory.RelativeVirtualAddress+directory.Size<=(long)s.VirtualAddress+s.SizeOfRawData);
+        if(section.SizeOfRawData==0)
+            throw new InvalidDataException("Native runtime-function table is outside the image.");
+        var table=pe.GetSectionData(directory.RelativeVirtualAddress).GetContent(0,directory.Size).AsSpan();
+        static (uint Begin,uint End,uint Unwind) Entry(ReadOnlySpan<byte> data,int offset)
+            => (BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(offset,4)),
+                BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(offset+4,4)),
+                BinaryPrimitives.ReadUInt32LittleEndian(data.Slice(offset+8,4)));
+        uint previousEnd=0; int frameOffset=-1;
+        for(int offset=0;offset<table.Length;offset+=12)
+        {
+            var (begin,end,_)=Entry(table,offset);
+            if(begin==0 || begin<previousEnd || end<=begin || end>(uint)header.SizeOfImage)
+                throw new InvalidDataException("Invalid or overlapping native runtime-function range.");
+            previousEnd=end;
+            if(begin==rva) frameOffset=offset;
+        }
+        if(frameOffset<0)
+            throw new InvalidDataException("Missing exact native stack-frame entry: "+rva.ToString("x"));
+        byte[] UnwindBytes(uint address,int length)
+        {
+            if(address==0 || (address&3)!=0 || !headers.SectionHeaders.Any(s=>address>=(uint)s.VirtualAddress
+                && (ulong)address+(uint)length<=(ulong)s.VirtualAddress+(uint)s.SizeOfRawData))
+                throw new InvalidDataException("Native unwind data is outside the image.");
+            return pe.GetSectionData(checked((int)address)).GetContent(0,length).ToArray();
+        }
+        byte[] UnwindHeader(uint address)
+        {
+            var bytes=UnwindBytes(address,4);int version=bytes[0]&7, flags=bytes[0]>>3;
+            if(version is not (1 or 2) || flags>7 || (flags&4)!=0 && (flags&3)!=0)
+                throw new InvalidDataException("Unsupported native unwind record.");
+            return bytes;
+        }
+        var owner=Entry(table,frameOffset);
+        if((UnwindHeader(owner.Unwind)[0]&0x20)!=0)
+            throw new InvalidDataException("Native stack owner is not a primary runtime-function entry.");
+        var owned=new HashSet<(uint Begin,uint End,uint Unwind)> { owner };
+        uint frameEnd=owner.End;
+        // MSVC can split a single frame into contiguous chained unwind regions.
+        // Include one only when its complete parent tuple names an owned region.
+        for(int offset=frameOffset+12;offset<table.Length;offset+=12)
+        {
+            var next=Entry(table,offset);if(next.Begin!=frameEnd) break;
+            var unwindHeader=UnwindHeader(next.Unwind);
+            if((unwindHeader[0]&0x20)==0) break;
+            int chainOffset=4+((unwindHeader[2]+1)&~1)*2;
+            var chain=UnwindBytes(next.Unwind,chainOffset+12);
+            if(!owned.Contains(Entry(chain,chainOffset)))
+                throw new InvalidDataException("Native chained frame has an unowned parent.");
+            owned.Add(next);frameEnd=next.End;
+        }
+        if(!headers.SectionHeaders.Any(s=>(s.SectionCharacteristics&SectionCharacteristics.MemExecute)!=0
+            && rva>=(ulong)s.VirtualAddress && frameEnd<=(ulong)s.VirtualAddress+(uint)s.SizeOfRawData))
+            throw new InvalidDataException("Native stack-frame code is outside the image.");
+        return frameEnd;
     }
     public string? Literal(ulong rva) => LibCpp2IlMain.GetLiteralByAddress(ImageBase+rva);
     public string Signature(Il2CppMethodDefinition method) => NativeSymbolNames.Stable(method.HumanReadableSignature);

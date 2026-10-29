@@ -4,6 +4,23 @@ using STS.Map;
 
 namespace EndlessMode;
 
+// Authored rosters are authoritative even when both sides contain the same
+// players. Gate the whole native pass before it reads the squad's recruit pool;
+// blocking individual replacements would still let it select unrelated recruits.
+[HarmonyPatch(typeof(MatchMapNode), "AssignSubstitute")]
+internal static class PreserveAuthoredOpponentRoster
+{
+    [HarmonyPrefix]
+    internal static bool Prefix(MatchMapNode __instance)
+    {
+        var opponent = __instance?.opponent;
+        if (Plugin.IsDefaultMode || opponent == null ||
+            (!CustomTeamRules.IsCustom(opponent) && !VanillaCampaignRuntime.Owns(opponent))) return true;
+        Plugin.Log.LogInfo($"[OpponentRoster] Preserving authored roster for '{opponent.teamName}'; duplicate-player substitution skipped.");
+        return false;
+    }
+}
+
 // Native launch substitutes opponents who also appear on the player's team.
 // It replaces forwards[index], but leaves Lineup's IDs pointing at the outgoing
 // skater. The second line then resolves to null during spawning and inspection.

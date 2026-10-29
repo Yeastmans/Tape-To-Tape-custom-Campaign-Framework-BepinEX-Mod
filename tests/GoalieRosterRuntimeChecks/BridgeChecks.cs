@@ -62,8 +62,14 @@ static class BridgeChecks
         GoaliePersistenceBridge.SaveCompleted += receipts.Add;
         var saved = repository.SaveToPersistentStorage(Model());
         check(GoalieNativeSnapshot.Deserializer.Talents == repository._talentRepository && GoalieNativeSnapshot.Deserializer.Relics == repository._relicRepository
-            && GoalieNativeSnapshot.Deserializer.Abilities == repository._abilityRepository && GoalieNativeSnapshot.Deserializer.Logos == null,
-            "FreshRunRestorerUsesExactNativeRepositoryBindingsAndNativeNullLogo");
+            && GoalieNativeSnapshot.Deserializer.Abilities == repository._abilityRepository && GoalieNativeSnapshot.Deserializer.Logos == repository._logoRepository,
+            "FreshRunRestorerUsesAllFourNativeRepositoryBindings");
+        var bind = typeof(GoaliePersistenceBridge).GetMethod("BindDeserializer", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var withoutLogo = new RunDataRepositoryV2 { _logoRepository = null };
+        bind.Invoke(null, new object[] { withoutLogo });
+        check(GoalieNativeSnapshot.Deserializer != null && GoalieNativeSnapshot.Deserializer.Talents == withoutLogo._talentRepository
+            && GoalieNativeSnapshot.Deserializer.Logos == null, "NativeNullLogoDependencyRemainsAllowed");
+        bind.Invoke(null, new object[] { repository });
         check(saved.IsCompleted && saved.GetAwaiter().GetResult() && receipts.Last().Durable && repository.Saves == 1,
             "BridgePreparesInjectsStoresReconcilesAndForwardsNativeTrue");
         string checkpointMarker = (string)ES3File.cachedFiles[repository._fileName].Load(GoalieRosterStore.MarkerKey).TryCast<Il2CppSystem.String>();

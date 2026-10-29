@@ -20,11 +20,11 @@ p=Copy();p.Sites[0].Target++;Reject(()=>p.Validate(p.GameHash,baseline.Id),"Call
 p=Copy();p.FlowBytes="90909090909090";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Starting-flow ABI cannot be replaced by arbitrary bytes");
 p=Copy();p.SurfaceBytes="90";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Rink ABI remains guarded");
 var image=new NativeImage(game);
-Check(baseline.Profile.Build == "26188487", "Current release targets reviewed Steam build 26188487");
-Check(baseline.Profile.FlowRva == 0x4406307 && baseline.Profile.FlowBytes == "400FB6C60A4758",
+Check(baseline.Profile.Build == "26289478", "Current release targets reviewed Steam build 26289478");
+Check(baseline.Profile.FlowRva == 0x4430217 && baseline.Profile.FlowBytes == "400FB6C60A4758",
     "Fresh-run profile pins the reviewed SIL flag and native continuation");
 foreach (string dependency in new[] { "ProfileData$$SelectRogueRunSettings::",
-    "ProfileData.<>c__DisplayClass#$$<SelectRogueRunSettings>b__0::" })
+    "ProfileData.<>c__DisplayClass#$$<SelectRogueRunSettings>b__0::", "State.RunDataRepositoryV2.<LoadRunData>d__#$$MoveNext::", "Events.GoalCreditedArg$$.ctor::" })
     Check(baseline.Methods.Count(m => m.Name.StartsWith(dependency, StringComparison.Ordinal)) == 1,
         "Fresh-run setting persistence remains protected: " + dependency);
 p=Copy();p.RuntimeContract="t2t-native-v2-20261020";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Previous starting-flow register ABI is rejected");

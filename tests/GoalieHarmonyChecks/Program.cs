@@ -22,6 +22,7 @@ const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Static;
 int passed=0, failed=0;
 void Check(bool condition,string label) { if(!condition) throw new Exception(label); passed++; Console.WriteLine("PASS "+label); }
 void Run(string label,Action test) { try { test(); } catch(Exception ex) { failed++; Console.WriteLine("FAIL "+label+": "+ex); } }
+Run("production wrapper API contract",()=> { runtime.GetType("EndlessMode.GoaliePersistenceContracts",true)!.GetMethod("ValidateWrapperApi",flags)!.Invoke(null,null); Check(true,"production wrapper API contract resolves against current interop"); });
 MethodInfo Generate(MethodInfo original, PatchInfo patches) {
     using var dmd = new DynamicMethodDefinition(original);
     using var context = new ILContext(dmd.Definition);

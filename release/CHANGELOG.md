@@ -1,5 +1,13 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 32 — 2026-10-29
+
+- Mirror matches preserve both authored rosters, allowing the same players on opposing sides without pulling replacements from the squad's free-agent pool.
+- Supports Tape to Tape Steam build 26289478, including the updated goalie initialization and saved-run logo dependency.
+- Keeps native compatibility checks strict while correctly accounting for separately framed native helper functions.
+
+Validation: focused regression checks, compiled runtime and native compatibility checks, a fresh Windows package, and extracted installer verification. Live mirror testing showed all ten authored opponent skaters, their original stats and goalie, then reached on-ice play and a period-side change. The user reported that it seems to work. Default mode and unowned native opponents retain native substitution behavior.
+
 ## Beta 1.0 revision 31 — 2026-10-28
 
 - Full two-line squads can recruit at GM nodes with limited contracts disabled, choosing a replacement on either line.

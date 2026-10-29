@@ -32,8 +32,8 @@ internal static class FreshRunActivation
         try {
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().Single(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
             var profile = NativeCompatibility.Load(module.FileName);
-            if (profile.GameHash != "54982E5C98932B701B4549086BF08ECC792DA5DE43A5E3627F8804FE657AFF58"
-                || profile.MetadataHash != "9FB0F8B4CBB1D238AF057973C3E65BA7CDC27201C3D3E5EE0664C87FCEE38F58") throw new InvalidOperationException("Fresh run boundary requires audited build 26188487.");
+            if (profile.GameHash != "0E1B540314D591A17215BBC46FD17C2605CCFA58A7D30418D62453FFF0FEB3B6"
+                || profile.MetadataHash != "DE0A546D36EB3C59C68178B5B523B56D30C4609E62D770FA78A9DA0DE93037DC") throw new InvalidOperationException("Fresh run boundary requires audited build 26289478.");
             NamedManagedHookContract.RequireExactSet(Required, profile.NamedHooks, Feature);
             foreach (var h in Resolve()) harmony.Patch(h.Native, new HarmonyMethod(h.Prefix), h.Postfix == null ? null : new HarmonyMethod(h.Postfix));
             foreach (var h in Resolve()) {

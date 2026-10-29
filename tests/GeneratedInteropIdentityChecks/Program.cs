@@ -13,8 +13,8 @@ if(args.Length==3) {
 int checks=0;
 void Check(bool condition,string label){if(!condition)throw new Exception(label);checks++;Console.WriteLine("PASS "+label);}
 foreach(var (name,expected) in new[] {
-    ("MainScriptsAssembly.dll","1F8CDAC2969A1200FD7D9FC3D425A639526639FFFA697A48122DD2341D6E1814"),
-    ("spine-csharp.dll","1A246C25CAE5262ECA51DDB6BDA305CC2D651B2404FDEE971783ED92A6D53CBA") }) {
+    ("MainScriptsAssembly.dll","683F11DAFDEDF6803FC6DC146F17284A15D2C6FF28E41DD4E3C0B074170092D3"),
+    ("spine-csharp.dll","C89305CD267A018E70E5C44492635885C0AD300E28B0E7E6B7DB11B9A28D3F6E") }) {
     var first=File.ReadAllBytes(Path.Combine(args[0],name));var second=File.ReadAllBytes(Path.Combine(args[1],name));
     var before=(byte[])first.Clone();
     Check(!SHA256.HashData(first).SequenceEqual(SHA256.HashData(second)),name+" independent generations have different full-file hashes");

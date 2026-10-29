@@ -16,6 +16,14 @@ public static class InlineComparisonContract
         var block=body.Skip(index).Take(15).ToArray();
         string left=block[0].ToString() switch { "cmp rcx,rdx"=>"rcx", "cmp rbx,rdx"=>"rbx", _=>throw new InvalidDataException("Unsupported comparison registers.") };
         void Require(bool valid, [System.Runtime.CompilerServices.CallerLineNumber] int line=0) { if(!valid) throw new InvalidDataException($"Inline comparison contract changed at rule {line}: "+methodName); }
+        ulong frameEnd=image.FrameEnd(method.Rva);
+        var frame=body.TakeWhile(x=>x.IP<frameEnd).ToArray();
+        Require(index+15<frame.Length);
+        Require(frame.All(x=>x.IP>=method.Rva && x.NextIP<=frameEnd));
+        // Instructions removes terminal trap padding. Verify every omitted byte
+        // up to the PE frame end, so no meaningful instruction can be skipped.
+        if(frame[^1].NextIP<frameEnd)
+            Require(image.Bytes(frame[^1].NextIP,checked((int)(frameEnd-frame[^1].NextIP))).All(b=>b==0xcc));
         string S(int i)=>block[i].ToString();
         Require(block[1].Mnemonic==Mnemonic.Je && block[1].Length is 2 or 6);
         Require(S(2)==$"test {left},{left}" && block[3].Mnemonic==Mnemonic.Je && S(4)=="test rdx,rdx" && block[5].Mnemonic==Mnemonic.Je);
@@ -34,13 +42,15 @@ public static class InlineComparisonContract
             if(previous.Mnemonic==Mnemonic.Mov && previous.Op0Register==Register.RDX && previous.IsIPRelativeMemoryOperand)
             { literal=image.Literal(previous.IPRelativeMemoryAddress); if(literal!=null) break; }
         Require(literal==query);
+        // Prove only the owner's exact PE runtime-function frame. Instructions
+        // and BodyHash intentionally retain adjacent compiler helper coverage.
         // Every owner has a fixed prologue frame. Early-return epilogues may
         // precede a later basic block in address order, but may only unwind to
         // a return/tailcall. No path can change RSP and rejoin the body frame.
         int stack=8; bool branched=false;
-        for(int n=0;n<body.Length;n++)
+        for(int n=0;n<frame.Length;n++)
         {
-            var ins=body[n];
+            var ins=frame[n];
             if(ins.FlowControl is FlowControl.ConditionalBranch or FlowControl.UnconditionalBranch or FlowControl.IndirectBranch) branched=true;
             if(ins.Mnemonic==Mnemonic.Push) { Require(!branched); stack-=8; }
             else if(ins.Mnemonic==Mnemonic.Sub && ins.Op0Register==Register.RSP) { Require(!branched); stack-=checked((int)ins.GetImmediate(1)); }
@@ -49,17 +59,17 @@ public static class InlineComparisonContract
                 Require(branched); int unwound=stack;
                 for(;;n++)
                 {
-                    Require(n<body.Length && n!=index);ins=body[n];
+                    Require(n<frame.Length && n!=index);ins=frame[n];
                     if(ins.Mnemonic==Mnemonic.Add && ins.Op0Register==Register.RSP) unwound+=checked((int)ins.GetImmediate(1));
                     else if(ins.Mnemonic==Mnemonic.Mov && ins.Op0Register==Register.RSP && ins.Op1Register==Register.R11)
                     {
                         int saved=n-1;
-                        while(saved>=0 && body[saved].Mnemonic is Mnemonic.Mov or Mnemonic.Movaps && body[saved].Op0Kind==OpKind.Register && body[saved].Op1Kind==OpKind.Memory && body[saved].Op0Register is not (Register.R11 or Register.RSP) && body[saved].MemoryBase==Register.R11) saved--;
-                        Require(saved>=0 && body[saved].Mnemonic==Mnemonic.Lea && body[saved].Op0Register==Register.R11 && body[saved].MemoryBase==Register.RSP && body[saved].MemoryIndex==Register.None);
-                        unwound+=checked((int)body[saved].MemoryDisplacement64);
+                        while(saved>=0 && frame[saved].Mnemonic is Mnemonic.Mov or Mnemonic.Movaps && frame[saved].Op0Kind==OpKind.Register && frame[saved].Op1Kind==OpKind.Memory && frame[saved].Op0Register is not (Register.R11 or Register.RSP) && frame[saved].MemoryBase==Register.R11) saved--;
+                        Require(saved>=0 && frame[saved].Mnemonic==Mnemonic.Lea && frame[saved].Op0Register==Register.R11 && frame[saved].MemoryBase==Register.RSP && frame[saved].MemoryIndex==Register.None);
+                        unwound+=checked((int)frame[saved].MemoryDisplacement64);
                     }
                     else if(ins.Mnemonic==Mnemonic.Pop && ins.Op0Register!=Register.RSP) unwound+=8;
-                    else if(ins.FlowControl==FlowControl.Return || (ins.FlowControl==FlowControl.UnconditionalBranch && (ins.NearBranchTarget<body[0].IP || ins.NearBranchTarget>=body[^1].NextIP))) { Require(unwound==8);break; }
+                    else if(ins.FlowControl==FlowControl.Return || (ins.FlowControl==FlowControl.UnconditionalBranch && (ins.NearBranchTarget<frame[0].IP || ins.NearBranchTarget>=frameEnd))) { Require(unwound==8);break; }
                     else Require(ins.Mnemonic is Mnemonic.Mov or Mnemonic.Lea or Mnemonic.Nop && ins.Op0Register!=Register.RSP);
                 }
             }

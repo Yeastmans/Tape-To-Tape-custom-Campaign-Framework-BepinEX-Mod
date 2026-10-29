@@ -55,10 +55,10 @@ internal static class GoaliePersistenceContracts
         Method(typeof(CampaignState), "get__runDataRepository", false, typeof(IRunDataRepository));
         Method(typeof(RunDataRepository), "get__runDataRepositoryV2", false, typeof(RunDataRepositoryV2));
         var repository = typeof(RunDataRepositoryV2);
-        var dependencies = new[] { "_talentRepository", "_relicRepository", "_abilityRepository" }.Select(name => repository.GetProperty(name)?.PropertyType
+        var dependencies = new[] { "_talentRepository", "_relicRepository", "_abilityRepository", "_logoRepository" }.Select(name => repository.GetProperty(name)?.PropertyType
             ?? throw new MissingMemberException("Native repository injection contract: " + name)).ToArray();
         var constructors = typeof(DeserializerV2).GetConstructors().Where(c => c.GetParameters().Length == 4).ToArray();
-        if (constructors.Length != 1 || !constructors[0].GetParameters().Take(3).Select(p => p.ParameterType).SequenceEqual(dependencies)
+        if (constructors.Length != 1 || !constructors[0].GetParameters().Select(p => p.ParameterType).SequenceEqual(dependencies)
             || constructors[0].GetParameters()[3].ParameterType.FullName != "Tape2Tape.Customization.ILogoRepository")
             throw new MissingMethodException("Native injected deserializer constructor contract changed.");
     }
@@ -68,9 +68,9 @@ internal static class GoaliePersistenceContracts
             if (!OperatingSystem.IsWindows() || IntPtr.Size != 8) throw new PlatformNotSupportedException("Audited Windows x64 required.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().Single(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
             var profile = NativeCompatibility.Load(module.FileName);
-            if (profile.GameHash != "54982E5C98932B701B4549086BF08ECC792DA5DE43A5E3627F8804FE657AFF58"
-                || profile.MetadataHash != "9FB0F8B4CBB1D238AF057973C3E65BA7CDC27201C3D3E5EE0664C87FCEE38F58")
-                throw new InvalidDataException("Goalie checkpoint adapter requires pinned build 26188487.");
+            if (profile.GameHash != "0E1B540314D591A17215BBC46FD17C2605CCFA58A7D30418D62453FFF0FEB3B6"
+                || profile.MetadataHash != "DE0A546D36EB3C59C68178B5B523B56D30C4609E62D770FA78A9DA0DE93037DC")
+                throw new InvalidDataException("Goalie checkpoint adapter requires pinned build 26289478.");
             NamedManagedHookContract.RequireExactSet(Required, profile.NamedHooks, Feature);
             ValidateWrapperApi();
             foreach (var dependency in new[] {

@@ -1,3 +1,7 @@
+# Mirror-match rosters and build 26289478 — revision 32
+
+Mirror opponents keep their authored players, even when the squad uses the same players. The squad recruitment pool is no longer used for native duplicate replacement on owned opponents. Compatibility is reviewed for Steam build 26289478. See `docs/RELEASE-R32-VALIDATION.md`.
+
 # Two-line GM recruitment and free-agent names - 2026-10-28
 
 Included in Beta 1.0 revision 31. See `docs/RELEASE-R31-VALIDATION.md` for the release scope and validation boundaries.
