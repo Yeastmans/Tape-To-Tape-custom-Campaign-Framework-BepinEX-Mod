@@ -162,7 +162,7 @@ internal static class CustomRewardCapabilities
     private static void InstallGoalRepeat(ProcessModule module)
     {
         try {
-            var add = module.BaseAddress + 0x4063870; var cancel = module.BaseAddress + 0x4063460;
+            var add = module.BaseAddress + 0x406a620; var cancel = module.BaseAddress + 0x406a210;
             Verify(add, "48895C2408488974241048897C241841564883EC60");
             Verify(cancel, "48895C2418574883EC50803D");
             cancelStats = Marshal.GetDelegateForFunctionPointer<CancelStatsFn>(cancel);
@@ -191,7 +191,7 @@ internal static class CustomRewardCapabilities
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8)
                 throw new PlatformNotSupportedException("Native capability rules require the audited Windows x64 build.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().First(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-            if (NativeCompatibility.Load(module.FileName).GameHash != "0E1B540314D591A17215BBC46FD17C2605CCFA58A7D30418D62453FFF0FEB3B6")
+            if (NativeCompatibility.Load(module.FileName).GameHash != "F756BCB8564C2D95C60A121C7A5EBB21DC1B0418421FAF03F4925139944E6142")
                 throw new InvalidOperationException("Native capability queries have not been audited for this game build.");
             var cached = module.BaseAddress + 0xe90060; var direct = module.BaseAddress + 0xe90000; var get = module.BaseAddress + 0xe8fd50;
             Verify(cached, "48895C2408574883EC2048837A3800");
@@ -263,25 +263,25 @@ internal static class CustomRewardCapabilities
     private static readonly List<FixedQuery> fixedCallbacks = new();
     private static void InstallFixedQueries(ProcessModule module)
     {
-        Fixed<Kick>(module, 0x6370f0, "HaveTalentCached", "48895C2408574883EC20488B1D07592008488BF948837B38");
-        Fixed<Slugger>(module, 0x637160, "HaveTalentCached", "48895C2408574883EC20488B1D9F582008488BF948837B38");
-        Fixed<ChargeShot>(module, 0x6371e0, "HaveTalentCached", "48895C2408574883EC20488B1DDF572008488BF948837B38");
-        Fixed<WonderWall>(module, 0x63a6e0, "HaveTalentCached", "48895C2408574883EC20488B1D6F732208488BF948837B38");
-        Fixed<OffensiveBodycheck>(module, 0x63ea80, "HaveTalentCached", "48895C2408574883EC20488B1DCFD01D08488BF948837B38");
-        Fixed<HyperDrive>(module, 0x63ebf0, "HaveTalentCached", "48895C2408574883EC20488B1D77E61D08488BF948837B38");
-        Fixed<SpringBoard>(module, 0x63ef30, "HaveTalentCached", "48895C2408574883EC20488B1DF7F71D08488BF948837B38");
-        Fixed<Rogue.Powerups.Chaos.FragileTalent>(module, 0x6409e0, "HaveTalent", "48895C2408574883EC20488B1D779C1908488BF948837B38");
-        Fixed<GoldenPuck>(module, 0x646790, "HaveTalentCached", "48895C2408574883EC20488B1D2F522408488BF948837B38");
-        Fixed<PrinceAI>(module, 0x647470, "HaveTalentCached", "48895C2408574883EC20488B1DBF8A2408488BF948837B38");
-        Fixed<Rogue.Powerups.Chaos.Anchor>(module, 0x6474e0, "HaveTalentCached", "48895C2408574883EC20488B1DCF862408488BF948837B38");
-        Fixed<SpikedArmor>(module, 0x647550, "HaveTalentCached", "48895C2408574883EC20488B1D1F862408488BF948837B38");
-        Fixed<Gambler>(module, 0x647b20, "HaveTalent", "48895C2408574883EC20488B1DEFA02408488BF948837B38");
-        Fixed<Gambler>(module, 0x647ce0, "HaveTalentCached", "48895C2408574883EC20488B1D3F9E2408488BF948837B38");
-        Fixed<DestroyerShot>(module, 0x6482a0, "HaveTalentCached", "48895C2408574883EC20488B1D6FB92408488BF948837B38");
-        Fixed<PingKing>(module, 0x648590, "HaveTalent", "48895C2408574883EC20488B1D4FEE2408488BF948837B38");
-        Fixed<Velcro>(module, 0x649d60, "HaveTalentCached", "48895C2408574883EC20488B1D17422608488BF948837B38");
-        Fixed<DefensiveDeflect>(module, 0x649dd0, "HaveTalentCached", "48895C2408574883EC20488B1DB7412608488BF948837B38");
-        Fixed<KarlsonBehavior>(module, 0x637890, "HaveTalentCached", "48895C2408574883EC20488B1DD7B62008488BF948837B38");
+        Fixed<Kick>(module, 0x637240, "HaveTalentCached", "48895C2408574883EC20488B1D9FD92008488BF948837B38");
+        Fixed<Slugger>(module, 0x6372b0, "HaveTalentCached", "48895C2408574883EC20488B1D37D92008488BF948837B38");
+        Fixed<ChargeShot>(module, 0x637330, "HaveTalentCached", "48895C2408574883EC20488B1D7FD62008488BF948837B38");
+        Fixed<WonderWall>(module, 0x63a830, "HaveTalentCached", "48895C2408574883EC20488B1D6FFF2208488BF948837B38");
+        Fixed<OffensiveBodycheck>(module, 0x63ebd0, "HaveTalentCached", "48895C2408574883EC20488B1DEF4E1E08488BF948837B38");
+        Fixed<HyperDrive>(module, 0x63ed40, "HaveTalentCached", "48895C2408574883EC20488B1D0F671E08488BF948837B38");
+        Fixed<SpringBoard>(module, 0x63f080, "HaveTalentCached", "48895C2408574883EC20488B1D5F751E08488BF948837B38");
+        Fixed<Rogue.Powerups.Chaos.FragileTalent>(module, 0x640b30, "HaveTalent", "48895C2408574883EC20488B1DCF1E1A08488BF948837B38");
+        Fixed<GoldenPuck>(module, 0x6468e0, "HaveTalentCached", "48895C2408574883EC20488B1D87D32408488BF948837B38");
+        Fixed<PrinceAI>(module, 0x6475c0, "HaveTalentCached", "48895C2408574883EC20488B1D47102508488BF948837B38");
+        Fixed<Rogue.Powerups.Chaos.Anchor>(module, 0x647630, "HaveTalentCached", "48895C2408574883EC20488B1D97102508488BF948837B38");
+        Fixed<SpikedArmor>(module, 0x6476a0, "HaveTalentCached", "48895C2408574883EC20488B1D07102508488BF948837B38");
+        Fixed<Gambler>(module, 0x647c70, "HaveTalent", "48895C2408574883EC20488B1D57222508488BF948837B38");
+        Fixed<Gambler>(module, 0x647e30, "HaveTalentCached", "48895C2408574883EC20488B1DEF1F2508488BF948837B38");
+        Fixed<DestroyerShot>(module, 0x6483f0, "HaveTalentCached", "48895C2408574883EC20488B1D9F3E2508488BF948837B38");
+        Fixed<PingKing>(module, 0x6486e0, "HaveTalent", "48895C2408574883EC20488B1D47732508488BF948837B38");
+        Fixed<Velcro>(module, 0x649eb0, "HaveTalentCached", "48895C2408574883EC20488B1D07C82608488BF948837B38");
+        Fixed<DefensiveDeflect>(module, 0x649f20, "HaveTalentCached", "48895C2408574883EC20488B1DCFC62608488BF948837B38");
+        Fixed<KarlsonBehavior>(module, 0x6379e0, "HaveTalentCached", "48895C2408574883EC20488B1DE7332108488BF948837B38");
     }
     private static void Fixed<T>(ProcessModule module, int rva, string query, string prologue)
     {
@@ -335,7 +335,7 @@ internal static class CustomRewardCapabilities
     }
 }
 
-// These are the 26085704 callers whose native bodies inline the Skater gate
+// These are the 26372689 callers whose native bodies inline the Skater gate
 // and call SkaterData directly. Keep this positive list separate from saved
 // data consumers: BenchBonus.MoveNext, for example, contains both kinds.
 [HarmonyPatch]
@@ -354,7 +354,7 @@ internal static class CustomRewardLiveQueryScope
         yield return AccessTools.Method(typeof(Skaters.SkaterCollision), "IsGuaranteedKnockout");
         yield return AccessTools.Method(typeof(Skaters.SkaterCollision), "HandleHitted");
         yield return AccessTools.Method(typeof(Skaters.Injuries.InjurySystem), "TryInjuryAttempt");
-        yield return AccessTools.Method(typeof(Tape2Tape.Team.__c), "_HasRefBlockShotTalent_b__175_0");
+        yield return AccessTools.Method(typeof(Tape2Tape.Team.__c), nameof(Tape2Tape.Team.__c._HasRefBlockShotTalent_b__177_0));
         yield return AccessTools.Method(typeof(AI.AIStates.AIState), "ResetToDefaultState");
         yield return AccessTools.Method(typeof(AI.AIStates.AIState), "IsKnightOf");
     }

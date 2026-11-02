@@ -1,5 +1,15 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 34 — 2026-11-02
+
+- Adds shared Base Game bench/draft, free-agent and superstar candidate editing, independent imports and safe profile recovery.
+- Preserves native squad capacities, no-bench behavior and starting reward flows.
+- Reviews Steam build 26372689 with all 1,507 protected native methods retained.
+- Repairs the charged-release detour implicated by the Hockey FC control/crash/isolation investigation.
+- Retains revision 33 unlimited upload support.
+
+Validation: see `docs/RELEASE-R34-VALIDATION.md`.
+
 ## Beta 1.0 revision 33 — 2026-11-01
 
 - Removes the former 512 MiB campaign ZIP limit in Studio and the chunked upload service.

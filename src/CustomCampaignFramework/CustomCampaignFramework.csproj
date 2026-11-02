@@ -69,6 +69,7 @@
     <Compile Include="../CampaignCore/SquadTemplatePolicy.cs" Link="Core/SquadTemplatePolicy.cs" />
     <Compile Include="../CampaignCore/RewardPoolSelection.cs" Link="Core/RewardPoolSelection.cs" />
     <Compile Include="../CampaignCore/SelectedPlayerPool.cs" Link="Core/SelectedPlayerPool.cs" />
+    <Compile Include="../CampaignCore/BaseGamePlayerPools.cs" Link="Core/BaseGamePlayerPools.cs" />
     <Compile Include="../CampaignCore/SquadPlayerPools.cs" Link="Core/SquadPlayerPools.cs" />
     <Compile Include="../CampaignCore/SquadMapOverrides.cs" Link="Core/SquadMapOverrides.cs" />
     <Compile Include="../CampaignCore/VanillaCopyData.cs" Link="Core/VanillaCopyData.cs" />

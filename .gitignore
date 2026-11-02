@@ -265,3 +265,25 @@ tests/CommunityClientChecks/*
 !tests/CommunityClientChecks/CommunityClientChecks.csproj
 !tests/CommunityClientChecks/Program.cs
 !tests/CommunityClientChecks/LargeUploadChecks.cs
+
+# Base Game pool profile, editor and native-adapter regression sources
+!tests/BaseGamePoolChecks/
+tests/BaseGamePoolChecks/*
+!tests/BaseGamePoolChecks/*.cs
+!tests/BaseGamePoolChecks/*.csproj
+!tests/BaseGamePoolRuntimeChecks/
+tests/BaseGamePoolRuntimeChecks/*
+!tests/BaseGamePoolRuntimeChecks/*.cs
+!tests/BaseGamePoolRuntimeChecks/*.csproj
+
+# Actual generated-interop reward hook target checks
+!tests/CustomRewardNativeChecks/
+tests/CustomRewardNativeChecks/*
+!tests/CustomRewardNativeChecks/*.cs
+!tests/CustomRewardNativeChecks/*.csproj
+
+# Charged-release native trampoline regression sources
+!tests/ChargedReleaseChecks/
+tests/ChargedReleaseChecks/*
+!tests/ChargedReleaseChecks/*.cs
+!tests/ChargedReleaseChecks/*.csproj

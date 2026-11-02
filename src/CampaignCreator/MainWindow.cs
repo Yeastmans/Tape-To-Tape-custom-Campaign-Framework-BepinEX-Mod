@@ -115,7 +115,7 @@ public sealed partial class MainWindow : Window
             if (dirty) { status.Text = "Save your changes before opening another file."; return; }
             OpenFile(file.FilePath);
         };
-        UnsavedChangesGuard.Attach(this, () => dirty || campaignWorkspace?.HasUnsavedChanges == true || OwnedWindows.OfType<MapEditorWindow>().Any(w => w.HasUnsavedChanges));
+        UnsavedChangesGuard.Attach(this, () => dirty || baseGamePoolsView?.HasUnsavedChanges == true || campaignWorkspace?.HasUnsavedChanges == true || OwnedWindows.OfType<MapEditorWindow>().Any(w => w.HasUnsavedChanges));
         Closed += (_, _) => bitmap?.Dispose();
         LoadCampaigns();
         ShowHome();
@@ -253,13 +253,15 @@ public sealed partial class MainWindow : Window
             && (fields.ContainsKey("Name") || file.Contains(Path.DirectorySeparatorChar + "players" + Path.DirectorySeparatorChar));
         if (player)
         {
+            Action? returnToPools = baseGamePoolsView != null && string.Equals(baseGamePoolPlayerFile, file, StringComparison.OrdinalIgnoreCase)
+                ? ReturnToBaseGamePools : null;
             editorShell = new PlayerEditorView(this, document, data, file, role, MarkDirty,
                 (key, read) => editors[key] = read, Save,
-                returnTeam == null ? null : () => {
+                returnToPools ?? (returnTeam == null ? null : () => {
                     var pendingDraft = homeDraft;
                     DiscardEditorChangesForNavigation();
                     if (File.Exists(returnTeam)) { homeDraft = pendingDraft; OpenFile(returnTeam); } else ShowHome();
-                }, ShowHome, Export, status, returnTeam ?? latestPlayerTeam);
+                }), ShowHome, Export, status, returnToPools != null ? null : returnTeam ?? latestPlayerTeam);
             loading = false; dirty = false; status.Text = heading.Text; RefreshAttention(); Content = editorShell; return;
         }
         if (fields.ContainsKey("Team Name")) foreach (var key in FieldSchema.TeamColors.Concat(FieldSchema.EquipmentColors())) fields.TryAdd(key, "");

@@ -1762,6 +1762,7 @@ public class Plugin : BasePlugin
         // Dumping mutates no game state, so vanilla play is still vanilla.
         if (IsDefaultMode)
         {
+            BaseGamePoolsRuntime.Install();
             CustomRewardPlayNow.InstallForDefault();
             CustomRewardGoalRules.Install();
             CustomRewardCapabilities.Install();

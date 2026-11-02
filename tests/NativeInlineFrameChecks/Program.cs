@@ -7,7 +7,7 @@ if(args.Length!=2)throw new ArgumentException("native-snapshot previous-native-b
 var baseline=CompatibilityBaseline.Read(args[1]);
 var output=Console.Out;NativeImage image;
 try { Console.SetOut(TextWriter.Null);image=new NativeImage(args[0]); } finally { Console.SetOut(output); }
-if(image.GameHash!="0E1B540314D591A17215BBC46FD17C2605CCFA58A7D30418D62453FFF0FEB3B6")throw new InvalidDataException("This regression requires the reviewed26289478snapshot.");
+if(image.GameHash!="F756BCB8564C2D95C60A121C7A5EBB21DC1B0418421FAF03F4925139944E6142")throw new InvalidDataException("This regression requires the reviewed26372689snapshot.");
 int passed=0,failed=0;
 void Check(bool ok,string label){if(!ok)throw new Exception(label);passed++;Console.WriteLine("PASS "+label);}
 void Run(string label,Action action){try{action();}catch(Exception ex){failed++;Console.WriteLine("FAIL "+label+": "+ex.Message);}}
@@ -17,7 +17,7 @@ var oldschool=baseline.Sites.Single(s=>s.Site.Kind=="inline_eq"&&s.Site.Method.C
 NativeComparisonSite Read(SiteContract site,int? index=null,string? query=null)=>InlineComparisonContract.Read(image,site.Site.Method,index??site.InstructionIndex,site.Site.Feature,query??site.Site.Query);
 foreach(var site in new[]{trio,oldschool})Run("reviewed comparison "+site.Site.Query,()=>{var result=Read(site);Check(result.Kind=="inline_eq"&&result.Query==site.Site.Query,"reviewed "+site.Site.Query+" comparison admits exact native argument block");});
 var method=image.Resolve(trio.Site.Method);var body=image.Instructions(method.Rva);string fullHash=image.BodyHash(method);
-const ulong reviewedFrameEnd=0x42A452E;
+const ulong reviewedFrameEnd=0x42AB1BE;
 Run("meaningful adjacent helper retained",()=>Check(body.Any(i=>i.IP>=reviewedFrameEnd&&i.Mnemonic==Mnemonic.Sub&&i.Op0Register==Register.RSP),"full method instruction coverage retains adjacent helper stack prologues"));
 Run("wrong offset",()=>Reject(()=>Read(trio,trio.InstructionIndex+1),"comparison must start at the reviewed instruction"));
 Run("wrong literal",()=>Reject(()=>Read(trio,query:"oldschool"),"different squad literal remains rejected"));
@@ -34,8 +34,8 @@ Run("exact owner frame",()=>Check(image.FrameEnd(method.Rva)==reviewedFrameEnd,"
 Run("interior address is not a frame entry",()=>Reject(()=>image.FrameEnd(method.Rva+1),"an address inside a frame cannot masquerade as its owner"));
 Run("second adjacent-helper owner",()=>{
     var hide=image.Resolve("Tape2Tape.Hockey.UI.ChooseMetaMenu.<Hide>d__#$$MoveNext");
-    Check(image.FrameEnd(hide.Rva)==0x42C2054,"ChooseMeta Hide has its own exact reviewed frame end");
-    Check(image.Instructions(hide.Rva).Any(i=>i.IP>=0x42C2054&&i.Mnemonic==Mnemonic.Sub&&i.Op0Register==Register.RSP),"ChooseMeta adjacent helper remains covered by full instructions");
+    Check(image.FrameEnd(hide.Rva)==0x42c8ce4,"ChooseMeta Hide has its own exact reviewed frame end");
+    Check(image.Instructions(hide.Rva).Any(i=>i.IP>=0x42c8ce4&&i.Mnemonic==Mnemonic.Sub&&i.Op0Register==Register.RSP),"ChooseMeta adjacent helper remains covered by full instructions");
 });
 // Mutate only the in-memory PE directory entry. Native inputs on disk remain unchanged.
 using(var pe=new PEReader(new MemoryStream(image.Data,false))) {
@@ -57,9 +57,9 @@ using(var pe=new PEReader(new MemoryStream(image.Data,false))) {
     Run("missing unwind data",()=>ChangeEntry(8,0,()=>Read(trio),"missing runtime-function unwind data fails closed"));
     var map=baseline.Sites.Single(s=>s.Site.Kind=="inline_eq"&&s.Site.Method.Contains("MapObject$$SetOpponents"));
     var mapMethod=image.Resolve(map.Site.Method);
-    Run("chained owner extent",()=>Check(image.FrameEnd(mapMethod.Rva)==0x38DFC31,"contiguous unwind continuation belongs to the exact MapObject frame"));
-    Run("chained fragment is not a primary owner",()=>Reject(()=>image.FrameEnd(0x38DF91D),"a chained fragment cannot omit its primary frame prologue"));
-    int child=Enumerable.Range(0,directory.Size/12).Single(i=>BinaryPrimitives.ReadUInt32LittleEndian(image.Data.AsSpan(tableOffset+i*12,4))==0x38DF91D);
+    Run("chained owner extent",()=>Check(image.FrameEnd(mapMethod.Rva)==0x38e5f01,"contiguous unwind continuation belongs to the exact MapObject frame"));
+    Run("chained fragment is not a primary owner",()=>Reject(()=>image.FrameEnd(0x38e5bed),"a chained fragment cannot omit its primary frame prologue"));
+    int child=Enumerable.Range(0,directory.Size/12).Single(i=>BinaryPrimitives.ReadUInt32LittleEndian(image.Data.AsSpan(tableOffset+i*12,4))==0x38e5bed);
     uint unwind=BinaryPrimitives.ReadUInt32LittleEndian(image.Data.AsSpan(tableOffset+child*12+8,4));
     var unwindSection=pe.PEHeaders.SectionHeaders.Single(s=>unwind>=s.VirtualAddress&&unwind<s.VirtualAddress+s.SizeOfRawData);
     int unwindOffset=checked(unwindSection.PointerToRawData+(int)unwind-unwindSection.VirtualAddress);
@@ -74,8 +74,8 @@ using(var pe=new PEReader(new MemoryStream(image.Data,false))) {
         try{image.Data.AsSpan(tableOffset+child*12,12).CopyTo(image.Data.AsSpan(parentOffset,12));Reject(()=>Read(map),"chained frame cannot name itself as its parent");}
         finally{saved.CopyTo(image.Data.AsSpan(parentOffset,12));}
     });
-    int tailOffset=pe.PEHeaders.SectionHeaders.Where(s=>0x38DFC30>=s.VirtualAddress&&0x38DFC30<s.VirtualAddress+s.SizeOfRawData)
-        .Select(s=>s.PointerToRawData+0x38DFC30-s.VirtualAddress).Single();
+    int tailOffset=pe.PEHeaders.SectionHeaders.Where(s=>0x38e5f00>=s.VirtualAddress&&0x38e5f00<s.VirtualAddress+s.SizeOfRawData)
+        .Select(s=>s.PointerToRawData+0x38e5f00-s.VirtualAddress).Single();
     Run("only verified terminal trap padding may be absent",()=>{
         byte saved=image.Data[tailOffset];
         try{image.Data[tailOffset]=0xaa;Reject(()=>Read(map),"unaccounted native store cannot be treated as omitted trap padding");}

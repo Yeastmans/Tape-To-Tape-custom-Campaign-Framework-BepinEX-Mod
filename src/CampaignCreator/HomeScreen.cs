@@ -15,6 +15,7 @@ public sealed partial class MainWindow
     public void ShowHome()
     {
         DiscardEditorChangesForNavigation();
+        baseGamePoolsView = null; baseGamePoolPlayerFile = null;
         data = new GameData(root);
         campaignWorkspace = null;
         var muted = StudioTheme.Muted;
@@ -124,6 +125,9 @@ public sealed partial class MainWindow
             Grid.SetColumn(card, i); cards.Children.Add(card);
         }
         center.Children.Add(cards);
+        var basePools = Button("Base Game Pools · bench, free agents and superstars", async () => await ShowBaseGamePools());
+        basePools.Name = "HomeBaseGamePools"; basePools.FontSize = 18; basePools.MinHeight = 48;
+        center.Children.Add(basePools);
         var customRewards = Button("Open Creator & library", async () => {
             var dialog = new Window { Title = "Custom Talents & Relics", Width = 1240, Height = 820, MinWidth = 800, MinHeight = 560, WindowStartupLocation = WindowStartupLocation.CenterOwner };
             var creator = new CustomRewardCreator(dialog, root, () => "", () => { }, libraryOnly: true);

@@ -2,11 +2,11 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 33](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r33-build-1793592069095) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 34](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r34-build-1793622948479) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
-**Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **public v1.0 release, build 26289478**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
+**Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **public v1.0 release, build 26372689**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
 
-Beta 1.0 revision 33 removes the 512 MiB campaign ZIP upload cap and allows upload sessions to last up to seven days. Large ZIPs stream in small chunks; Dropbox file-size and storage limits still apply. The reviewed build 26289478 runtime from revision 32 is included. See the [changelog](release/CHANGELOG.md) and [release validation](docs/RELEASE-R33-VALIDATION.md).
+Beta 1.0 revision 34 adds Base Game Pools on Home for shared bench candidates, free agents and superstars when None (base game) is selected. It updates compatibility for Steam build 26372689 and repairs the charged-release hook behind the investigated Hockey FC crash. Native squad capacities and starting flows remain in charge. See the [changelog](release/CHANGELOG.md) and [release validation](docs/RELEASE-R34-VALIDATION.md).
 
 **This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. Reporting bugs on [Discord](https://discord.gg/hscxnYghb) or [GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues) helps immensely.
 
@@ -35,7 +35,7 @@ Beta 1.0 revision 33 removes the 512 MiB campaign ZIP upload cap and allows uplo
 
 ### Windows
 
-**You need:** Windows x64, your own Steam copy of Tape to Tape, on the **public branch**. Beta 1.0 targets **game build 26188487**. The Windows installer includes the editor runtime and the required BepInEx 6 IL2CPP loader; Python and a separate .NET installation are not needed to use it.
+**You need:** Windows x64, your own Steam copy of Tape to Tape, on the **public branch**. Beta 1.0 targets **game build 26372689**. The Windows installer includes the editor runtime and the required BepInEx 6 IL2CPP loader; Python and a separate .NET installation are not needed to use it.
 
 1. In Steam, right-click **Tape to Tape → Properties → Betas** and select **None** (the public branch). Let Steam finish updating.
 2. Launch the game once, then quit it. Close any old creator or Studio window.

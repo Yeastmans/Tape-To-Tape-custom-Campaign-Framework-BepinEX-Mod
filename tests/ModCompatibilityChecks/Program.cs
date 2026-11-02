@@ -20,9 +20,16 @@ p=Copy();p.Sites[0].Target++;Reject(()=>p.Validate(p.GameHash,baseline.Id),"Call
 p=Copy();p.FlowBytes="90909090909090";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Starting-flow ABI cannot be replaced by arbitrary bytes");
 p=Copy();p.SurfaceBytes="90";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Rink ABI remains guarded");
 var image=new NativeImage(game);
-Check(baseline.Profile.Build == "26289478", "Current release targets reviewed Steam build 26289478");
-Check(baseline.Profile.FlowRva == 0x4430217 && baseline.Profile.FlowBytes == "400FB6C60A4758",
+Check(baseline.Profile.Build == "26372689", "Current release targets reviewed Steam build 26372689");
+Check(baseline.Profile.FlowRva == 0x4436EA7 && baseline.Profile.FlowBytes == "400FB6C60A4758",
     "Fresh-run profile pins the reviewed SIL flag and native continuation");
+foreach (string dependency in new[] { "OldSquadMenu$$InitData::", "OldSquadMenu$$InstantiateRelics::",
+    "OldSquadMenu.<InstantiateRelics>d__#$$MoveNext::", "OldSquadMenu$$HideUnselectedSkaters::",
+    "OldSquadMenu$$OnClickRelic::", "OldSquadMenu$$InstantiateSkaters::",
+    "OldSquadMenu.<InstantiateSkaters>d__#$$MoveNext::", "OldSquadMenu$$GenerateRandomSkaters::",
+    "OldSquadMenu$$CancelReveal::", "OldSquadMenu$$BehaviourDestroy::" })
+    Check(baseline.Methods.Count(m => m.Name.Contains(dependency, StringComparison.Ordinal)) == 1,
+        "Zero-star native reward continuation remains protected: " + dependency);
 foreach (string dependency in new[] { "ProfileData$$SelectRogueRunSettings::",
     "ProfileData.<>c__DisplayClass#$$<SelectRogueRunSettings>b__0::", "State.RunDataRepositoryV2.<LoadRunData>d__#$$MoveNext::", "Events.GoalCreditedArg$$.ctor::" })
     Check(baseline.Methods.Count(m => m.Name.StartsWith(dependency, StringComparison.Ordinal)) == 1,
@@ -52,7 +59,7 @@ foreach(string scope in new[]{"Movements.MovementManager$$CanBodycheck", "Goalte
     "Rogue.NoStickSoccerRelicController$$<AddEffect>b__3_0", "Rogue.Relics.Controllers.SpikeArmorRelicController$$AddEffect",
     "Skaters.ForwardStats$$GetStatAfterInjuryCheck", "Skaters.SkaterAbility$$GetPowerupsInShots", "Skaters.SkaterAbility.<_Pass>d__#$$MoveNext",
     "Skaters.SkaterCollision$$IsGuaranteedKnockout", "Skaters.SkaterCollision$$HandleHitted", "Skaters.Injuries.InjurySystem$$TryInjuryAttempt",
-    "Tape2Tape.Team.<>c$$<HasRefBlockShotTalent>b__175_0", "AI.AIStates.AIState$$ResetToDefaultState", "AI.AIStates.AIState$$IsKnightOf"})
+    "Tape2Tape.Team.<>c$$<HasRefBlockShotTalent>b__177_0", "AI.AIStates.AIState$$ResetToDefaultState", "AI.AIStates.AIState$$IsKnightOf"})
     Check(baseline.Methods.Count(m=>m.Name.StartsWith(scope+"::",StringComparison.Ordinal))==1,"Inlined reward query live scope remains protected: "+scope);
 foreach(string target in new[]{
     "State.CampaignState$$SetCurrentNode::System.Void SetCurrentNode(STS.Map.MapNode mapNode)",

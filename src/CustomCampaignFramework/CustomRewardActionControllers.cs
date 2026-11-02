@@ -44,11 +44,12 @@ internal static class CustomRewardActionControllers
     internal static void Clear() { passControllers.Clear(); CustomRewardRandomShots.Clear(); CustomRewardChargedShots.Clear(); }
     internal static void Install()
     {
+        CustomRewardChargedReleaseRepair.Install();
         if (detour != null) return;
         try {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8) throw new PlatformNotSupportedException("Action queries require the audited Windows x64 build.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().First(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-            if (NativeCompatibility.Load(module.FileName).GameHash != "0E1B540314D591A17215BBC46FD17C2605CCFA58A7D30418D62453FFF0FEB3B6") throw new InvalidOperationException("Action queries have not been audited for this game build.");
+            if (NativeCompatibility.Load(module.FileName).GameHash != "F756BCB8564C2D95C60A121C7A5EBB21DC1B0418421FAF03F4925139944E6142") throw new InvalidOperationException("Action queries have not been audited for this game build.");
             var get = module.BaseAddress + 0xe8fdd0;
             Verify(get, "48897C242041564883EC2048837A38");
             passMethod = Method(typeof(PassPuncherController), get);

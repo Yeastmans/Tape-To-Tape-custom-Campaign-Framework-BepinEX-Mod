@@ -88,7 +88,7 @@ public sealed class CompatibilityBaseline
             "Skaters.SkaterAbility.<_Pass>d__#$$MoveNext",
             "Skaters.SkaterCollision$$IsGuaranteedKnockout", "Skaters.SkaterCollision$$HandleHitted",
             "Skaters.Injuries.InjurySystem$$TryInjuryAttempt",
-            "Tape2Tape.Team.<>c$$<HasRefBlockShotTalent>b__175_0",
+            "Tape2Tape.Team.<>c$$<HasRefBlockShotTalent>b__177_0",
             "AI.AIStates.AIState$$ResetToDefaultState", "AI.AIStates.AIState$$IsKnightOf" })
         {
             var method=image.Resolve(name);
@@ -324,6 +324,45 @@ public sealed class CompatibilityBaseline
             var method = image.Resolve(name);
             int expectedShared = name.Contains("<GetTalents>b__0", StringComparison.Ordinal) ? 3 : 1;
             if (image.SharedMethodCount(method.Rva) != expectedShared) throw new InvalidDataException("Changed free-agent talent dependency sharing: " + name);
+            protectedMethods.Add(image.Identity(method));
+        }
+        // Base Game pool adapter: keep the native bench builder, eligibility,
+        // final superstar stage and reward-grant insertion boundary protected.
+        // Empty eligible stars retain native reward stages and the final grant
+        // boundary; these are reviewed bodies,
+        // not merely address or hash substitutions.
+        foreach (string name in new[]
+        {
+            "Tape2Tape.Hockey.UI.BenchwarmerMenu$$BuildCustomSwapPool",
+            "Tape2Tape.Hockey.UI.BenchwarmerMenu$$IsBenchwarmerUnlocked",
+            "Tape2Tape.CampaignHelper$$IsForwardExcludedBySquad",
+            "Tape2Tape.Hockey.UI.OldSquadMenu$$PopulateSuperStars",
+            "Tape2Tape.Hockey.UI.OldSquadMenu.<PopulateSuperStars>d__#$$MoveNext",
+            "Tape2Tape.Hockey.UI.OldSquadMenu.<InstantiateSuperStars>d__#$$MoveNext",
+            "Tape2Tape.Hockey.UI.OldSquadMenu.<Show>d__#$$MoveNext",
+            "Tape2Tape.Hockey.UI.OldSquadMenu$$ApplyCurrentSelection",
+            "Tape2Tape.Hockey.UI.OldSquadMenu$$ApplyAndExit",
+            "Data.TeamData$$AddForwardToBench",
+        }) protectedMethods.Add(image.Identity(image.Resolve(name)));
+        // FullSequence continues from an absent star into native relic and
+        // random-starter choices. Keep that order, its source pool and menu
+        // reinitialization boundary under the same strict native review gate.
+        foreach (string name in new[]
+        {
+            "Tape2Tape.Hockey.UI.OldSquadMenu$$InitData",
+            "Tape2Tape.Hockey.UI.OldSquadMenu$$InstantiateRelics",
+            "Tape2Tape.Hockey.UI.OldSquadMenu.<InstantiateRelics>d__#$$MoveNext",
+            "Tape2Tape.Hockey.UI.OldSquadMenu$$HideUnselectedSkaters",
+            "Tape2Tape.Hockey.UI.OldSquadMenu$$OnClickRelic",
+            "Tape2Tape.Hockey.UI.OldSquadMenu$$InstantiateSkaters",
+            "Tape2Tape.Hockey.UI.OldSquadMenu.<InstantiateSkaters>d__#$$MoveNext",
+            "Tape2Tape.Hockey.UI.OldSquadMenu$$GenerateRandomSkaters",
+            "Tape2Tape.Hockey.UI.OldSquadMenu$$CancelReveal",
+            "Tape2Tape.Hockey.UI.OldSquadMenu$$BehaviourDestroy",
+        })
+        {
+            var method = image.Resolve(name);
+            if (image.SharedMethodCount(method.Rva) != 1) throw new InvalidDataException("Shared empty-star continuation target: " + name);
             protectedMethods.Add(image.Identity(method));
         }
         var features = ReviewedFeatureContracts.Read();

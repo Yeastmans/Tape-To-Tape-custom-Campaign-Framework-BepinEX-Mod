@@ -94,7 +94,10 @@ internal sealed class PlayerEditorView : UserControl
         var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto,Auto"), ColumnSpacing = StudioTheme.SpaceMd }; StudioTheme.Header(header);
         header.Children.Add(new StackPanel { Children = { Label("TAPE TO TAPE · Campaign Studio",12), Label(role == "goalie" ? "Goalie editor" : "Player editor",26) } });
         var homeButton = Button("Home",home); Grid.SetColumn(homeButton,1); header.Children.Add(homeButton);
-        if (back != null) { var backButton = Button("Back to team",back); Grid.SetColumn(backButton,2); header.Children.Add(backButton); }
+        if (back != null) {
+            bool basePool = Path.GetFullPath(file).StartsWith(Path.GetFullPath(BaseGamePlayerPools.Folder(data.Root)) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+            var backButton = Button(basePool ? "Back to pools" : "Back to team",back); Grid.SetColumn(backButton,2); header.Children.Add(backButton);
+        }
         var helpButton = PageHelpButton.Create(owner); Grid.SetColumn(helpButton,3); header.Children.Add(helpButton); shell.Children.Add(header);
         var identity = new Grid { ColumnDefinitions = new ColumnDefinitions("300,100,180"), ColumnSpacing = StudioTheme.SpaceMd,
             HorizontalAlignment = HorizontalAlignment.Left };

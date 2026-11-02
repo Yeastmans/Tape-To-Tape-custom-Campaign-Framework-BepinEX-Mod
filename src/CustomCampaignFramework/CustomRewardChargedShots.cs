@@ -53,10 +53,3 @@ internal static class CustomRewardChargedShots
     }
     internal static void Clear() => released.Clear();
 }
-
-[HarmonyPatch(typeof(SlapshotState), "ReleaseShot")]
-internal static class CustomRewardChargedRelease
-{
-    [HarmonyPrefix] private static void Prefix(SlapshotState __instance, float __1)
-        => CustomRewardChargedShots.Release(__instance.forward, __1);
-}

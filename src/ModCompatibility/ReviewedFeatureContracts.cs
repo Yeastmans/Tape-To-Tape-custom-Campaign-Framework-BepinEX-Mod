@@ -24,9 +24,9 @@ internal sealed class ReviewedFeatureContracts
         if (profile.RawHooks.Count != RawHooks.Count) throw new InvalidDataException("Unexpected raw feature contracts.");
         // Raw callbacks have reviewed absolute RVAs, closed generic identities,
         // and one explicitly unnamed helper. They cannot be relocated from names.
-        if (image.GameHash != "0E1B540314D591A17215BBC46FD17C2605CCFA58A7D30418D62453FFF0FEB3B6"
-            || image.MetadataHash != "DE0A546D36EB3C59C68178B5B523B56D30C4609E62D770FA78A9DA0DE93037DC")
-            throw new InvalidDataException("Four-feature native adapters require reviewed build 26289478.");
+        if (image.GameHash != "F756BCB8564C2D95C60A121C7A5EBB21DC1B0418421FAF03F4925139944E6142"
+            || image.MetadataHash != "1AC5E68FBC382FDE344621BECC943371ED2EA43133C36ABAAEBB198C8CCB0875")
+            throw new InvalidDataException("Four-feature native adapters require reviewed build 26372689.");
         foreach (var hook in RawHooks) {
             var bytes = image.Bytes((ulong)hook.Rva, hook.Size);
             if (Convert.ToHexString(SHA256.HashData(bytes)) != hook.Sha256

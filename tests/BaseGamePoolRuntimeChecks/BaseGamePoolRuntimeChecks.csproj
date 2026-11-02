@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/CustomCampaignFramework/BaseGamePoolsRuntime.Selection.cs" Link="BaseGamePoolsRuntime.Selection.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/BaseGamePoolsRuntime.cs" Link="BaseGamePoolsRuntime.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/BaseGamePoolsRuntime.EmptyStars.cs" Link="BaseGamePoolsRuntime.EmptyStars.cs" />
+    <ProjectReference Include="../../src/CampaignCore/CampaignCore.csproj" />
+  </ItemGroup>
+</Project>
