@@ -36,7 +36,7 @@ namespace Harness
 }
 namespace HarmonyLib
 {
-    public class Harmony { public Harmony(string id) { } public void Patch(object method, HarmonyMethod prefix = null, HarmonyMethod finalizer = null) { } public void UnpatchSelf() { } }
+    public class Harmony { public Harmony(string id) { } public void Patch(object method, HarmonyMethod prefix = null, HarmonyMethod finalizer = null, HarmonyMethod postfix = null) { } public void UnpatchSelf() { } }
     public class HarmonyMethod { public HarmonyMethod(Type type, string name) { } }
     public static class AccessTools { public static object Method(Type type, string name, Type[] args = null) => new object(); }
 }
@@ -96,26 +96,29 @@ namespace UnityEngine
     }
     public static class Resources
     {
-        public static ForwardData[] Players = { new ForwardData { id = "native", name = "native", firstName = "Native" } };
+        public static ForwardData[] Players = { new ForwardData { id = "native", name = "native", firstName = "Native", skaterCategory = SkaterCategory.FreeAgents } };
         public static T[] FindObjectsOfTypeAll<T>() => Players.Cast<T>().ToArray();
     }
     public static class Random { public static int Range(int min, int max) => max - 1; }
 }
 namespace Data
 {
+    // Exact enum values from the reviewed 26372689 interop metadata.
+    public enum SkaterCategory { Default = 0, Angus = 1, Benchwarmer = 2, FreeAgents = 3, Superstar = 4 }
     public class ForwardData : UnityEngine.Object
     {
         public string id, firstName = "", lastName = "";
         public string FullName => (firstName + " " + lastName).Trim();
         public bool Excluded;
         public bool preventEliminatorRemoval;
+        public SkaterCategory skaterCategory;
         public int Stat = 40;
         public Il2CppSystem.Collections.Generic.List<Rogue.Talent> powerups = new();
         public string ability;
         public int TalentCacheResets;
         public void ResetTalentCache() => TalentCacheResets++;
         public ForwardData Clone() => new() { id = id, name = name + "(Clone)", firstName = firstName, lastName = lastName, Stat = Stat, Excluded = Excluded,
-            powerups = powerups, ability = ability, preventEliminatorRemoval = preventEliminatorRemoval };
+            powerups = powerups, ability = ability, preventEliminatorRemoval = preventEliminatorRemoval, skaterCategory = skaterCategory };
     }
     public class TeamData : Harness.NativeObject
     {
@@ -131,6 +134,7 @@ namespace Data
 }
 namespace State
 {
+    public class DeserializerV2 { }
     public class RunSquadScriptableObject { public int m_MaxBenchwarmersOnBench = 3; public Pool m_CustomSwapPool = new(); }
     public class CampaignState
     {

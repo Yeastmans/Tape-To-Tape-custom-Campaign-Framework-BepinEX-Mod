@@ -41,6 +41,8 @@ internal static partial class BaseGamePoolsRuntime
             Patch(harmony, typeof(GeneralManagerEvent), "NextChoices", nameof(ManagerPrefix), nameof(Restore));
             Patch(harmony, typeof(OldSquadMenu), "GenerateSuperStarSkaters", nameof(StarsPrefix), nameof(Restore));
             harmony.Patch(AccessTools.Method(typeof(UnlockSystem), "IsUnlocked", new[] { typeof(string) }), prefix: new HarmonyMethod(typeof(BaseGamePoolsRuntime), nameof(UnlockPrefix)));
+            harmony.Patch(AccessTools.Method(typeof(DeserializerV2), "DeserializeFromModel"),
+                postfix: new HarmonyMethod(typeof(BaseGamePoolsRuntime), nameof(RestoreLoadedBenchwarmers)));
             InstallEmptyStars(harmony);
             installed = true;
             Plugin.Log.LogInfo("[BaseGamePools] Independent bench, recruitment and superstar adapters installed.");
@@ -130,12 +132,32 @@ internal static partial class BaseGamePoolsRuntime
                 player.preventEliminatorRemoval = false;
             }
             CampaignSquadSetup.ApplyFreshPlayerConfig(player, config);
+            // Native bench-only relics use this category, not roster position.
+            // Native-bound imports retain their stock character classification.
+            if (!native && kind == "draft_pool") player.skaterCategory = SkaterCategory.Benchwarmer;
             if (!native) newAuthoredIds.Add(player.id);
             pool.Add(player);
         }
         cache[kind] = new CachedPool { Revision = revision, Players = pool };
         foreach (string id in newAuthoredIds) authoredIds.Add(id);
         return pool;
+    }
+
+    internal static void RestoreLoadedBenchwarmers(Data.RunData __0)
+    {
+        if (!Plugin.IsDefaultMode || __0?.teamData == null) return;
+        int repaired = 0;
+        foreach (var player in __0.teamData.GetForwards(false))
+        {
+            // R34 saves retain both our stable custom ID and source-pool name.
+            // Acquired bench players keep their role even if new offers are off.
+            if (player == null || player.skaterCategory == SkaterCategory.Benchwarmer
+                || player.id?.StartsWith(BaseGamePlayerPools.CustomIdPrefix, StringComparison.Ordinal) != true
+                || player.name?.StartsWith(BaseGamePlayerPools.CustomIdPrefix + "draft_pool_", StringComparison.Ordinal) != true) continue;
+            player.skaterCategory = SkaterCategory.Benchwarmer;
+            repaired++;
+        }
+        if (repaired > 0) Plugin.Log.LogInfo($"[BaseGamePools] Restored the native benchwarmer category for {repaired} saved custom benchwarmer(s).");
     }
 
     private static Scope Begin()

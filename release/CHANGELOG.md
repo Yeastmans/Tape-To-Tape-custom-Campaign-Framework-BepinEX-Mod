@@ -1,5 +1,13 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 35 — 2026-11-02
+
+- Custom Base Game benchwarmers receive the native Benchwarmer category, so Benchwarmer Boost applies its normal +15 overall.
+- Loading a Base Game run repairs the category of previously saved custom benchwarmers without changing their base stats, powers or identities.
+- Native character categories and independent recruitment/superstar pools retain their normal behavior.
+
+Validation: see `docs/RELEASE-R35-VALIDATION.md`.
+
 ## Beta 1.0 revision 34 — 2026-11-02
 
 - Adds shared Base Game bench/draft, free-agent and superstar candidate editing, independent imports and safe profile recovery.

@@ -67,11 +67,17 @@ try
     state.Squad.m_MaxBenchwarmersOnBench = 3;
     BaseGamePoolsRuntime.BenchPrefix(menu, out scope);
     Check(state.Squad.m_CustomSwapPool[0].firstName == "draft_pool One", "Bench receives shared selected pool");
+    Check(state.Squad.m_CustomSwapPool[0].skaterCategory == SkaterCategory.Benchwarmer,
+        "Added benchwarmer must qualify for native Benchwarmer Boost when its prototype is a free agent");
+    Check(UnityEngine.Resources.Players[0].skaterCategory == SkaterCategory.FreeAgents,
+        "Classifying an added benchwarmer must not change the shared native prototype");
     Check(ReferenceEquals(state.freeAgents, stateOriginal), "Bench does not replace recruitment source");
     BaseGamePoolsRuntime.Restore(scope, new Exception("native bench failure"));
     Check(ReferenceEquals(state.Squad.m_CustomSwapPool, squadOriginal), "Bench failure restores original pool");
     Check(state.Squad.m_MaxBenchwarmersOnBench == 3, "Bench capacity preserved");
     BaseGamePoolsRuntime.RandomPrefix(state, out scope);
+    Check(state.freeAgents[0].skaterCategory == SkaterCategory.FreeAgents,
+        "Benchwarmer classification must not leak into the independent free-agent pool");
     string customId = state.freeAgents[0].id;
     Check(customId == BaseGamePlayerPools.CustomPlayerId("free_agents", "one.txt"), "Imported template gets stable ID");
     bool unlocked = false;
@@ -92,6 +98,8 @@ try
     Pool stars = null;
     Check(!BaseGamePoolsRuntime.StarsPrefix(starMenu, ref stars, out scope), "One-star native indexing bypassed");
     Check(stars.Count == 1 && stars[0].firstName == "superstars One" && starMenu.Creates == 1, "One star uses native offer factory");
+    Check(stars[0].skaterCategory == SkaterCategory.FreeAgents,
+        "Benchwarmer classification must not change the independent superstar pool's existing category");
     Check(state.freeAgents[0].firstName == "superstars One", "Stars independent of FA source");
     BaseGamePoolsRuntime.RandomPrefix(state, out var nestedScope);
     Check(state.freeAgents[0].firstName == "free_agents One", "Nested faceless consumer receives FA source");
@@ -360,6 +368,15 @@ try
         && boundPool[0].powerups[0].name == "Bound talent" && boundPool[0].ability == "Bound ability",
         "Native-bound candidate retains the existing helper path without custom initialization");
     Check(boundPool[0].preventEliminatorRemoval, "Native-bound candidate preserves its own native eliminator immunity");
+    var priorDraftSelection = selected.Pools["draft_pool"];
+    poweredDonor.skaterCategory = SkaterCategory.Angus;
+    File.WriteAllText(Path.Combine(BaseGamePlayerPools.PoolDirectory(relocated, "draft_pool"), "native-angus.txt"),
+        "Name = Native Angus\n" + VanillaCopyData.PlayerId + " = native\n" + VanillaCopyData.PlayerAsset + " = native\n");
+    selected.Pools["draft_pool"] = new[] { "native-angus.txt" };
+    var nativeDraft = BaseGamePoolsRuntime.Candidates(state, "draft_pool", selected);
+    Check(nativeDraft[0].skaterCategory == SkaterCategory.Angus && poweredDonor.skaterCategory == SkaterCategory.Angus,
+        "A native-bound draft candidate preserves its stock category rather than acquiring bench-only relic effects");
+    selected.Pools["draft_pool"] = priorDraftSelection;
     // Native GM reproduction: an unchanged manifest points at two wrappers
     // whose Unity objects were unloaded after an earlier temporary consumer.
     Tape2Tape.CampaignUtil.CampaignState = state;
@@ -400,6 +417,37 @@ try
             kind + " recovers unloaded candidates without changing native/custom identity or selection");
         Check(ReferenceEquals(poolAfter, BaseGamePoolsRuntime.Candidates(state, kind, selected)), kind + " reuses its recovered live cache");
     }
+    // Literal values from the archived R34 Charlotte save. The native relic
+    // accepts category 2; older custom bench entries incorrectly saved 3.
+    var oldBench = new ForwardData {
+        id = "CCF_BASE_POOL_12B2C94588AC5964D2635897A390A3300F4B589A7F9D1AEC267EBE3D36A2353C",
+        name = "CCF_BASE_POOL_draft_pool_custom-8c1788297d4a4e728da131d5a8ed497c(Clone)",
+        firstName = "Charlotte", lastName = "Chapstick", skaterCategory = SkaterCategory.FreeAgents, Stat = 47,
+        ability = "Authored ability", powerups = new() { new Rogue.Talent { name = "Authored talent" } }
+    };
+    var savedTeam = new TeamData();
+    savedTeam.forwards.Add(oldBench);
+    savedTeam.forwards.Add(new ForwardData { id = "native-angus", name = "CCF_BASE_POOL_draft_pool_native-angus(Clone)", skaterCategory = SkaterCategory.Angus });
+    savedTeam.forwards.Add(new ForwardData { id = "CCF_BASE_POOL_free", name = "CCF_BASE_POOL_free_agents_custom-free(Clone)", skaterCategory = SkaterCategory.FreeAgents });
+    savedTeam.forwards.Add(new ForwardData { id = "CCF_BASE_POOL_star", name = "CCF_BASE_POOL_superstars_custom-star(Clone)", skaterCategory = SkaterCategory.Superstar });
+    savedTeam.forwards.Add(new ForwardData { id = "CCF_BASE_POOL_unknown", name = "Unrelated player", skaterCategory = SkaterCategory.Default });
+    var loaded = new RunData { teamData = savedTeam };
+    Plugin.IsDefaultMode = false;
+    BaseGamePoolsRuntime.RestoreLoadedBenchwarmers(loaded);
+    Check(oldBench.skaterCategory == SkaterCategory.FreeAgents, "Loaded category repair remains inert outside Base Game mode");
+    Plugin.IsDefaultMode = true;
+    selected.Enabled = false; BaseGamePlayerPools.Save(relocated, selected);
+    var oldPowers = oldBench.powerups;
+    BaseGamePoolsRuntime.RestoreLoadedBenchwarmers(loaded);
+    Check(oldBench.skaterCategory == SkaterCategory.Benchwarmer,
+        "An existing saved custom benchwarmer must regain native relic eligibility even when new pool offers are disabled");
+    Check(oldBench.Stat == 47 && oldBench.FullName == "Charlotte Chapstick" && oldBench.ability == "Authored ability" && ReferenceEquals(oldBench.powerups, oldPowers),
+        "Loaded category repair preserves player attributes, name and authored powers");
+    Check(savedTeam.forwards.Skip(1).Select(p => p.skaterCategory).SequenceEqual(new[] { SkaterCategory.Angus, SkaterCategory.FreeAgents, SkaterCategory.Superstar, SkaterCategory.Default }),
+        "Native characters, recruits, superstars and unrelated custom players retain their categories");
+    BaseGamePoolsRuntime.RestoreLoadedBenchwarmers(loaded);
+    Check(oldBench.skaterCategory == SkaterCategory.Benchwarmer && savedTeam.forwards.Count == 5,
+        "Repeated load repair does not duplicate players or alter a corrected category");
 }
 catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
 finally { Directory.Delete(root, true); }
