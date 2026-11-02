@@ -84,7 +84,7 @@ are sent in the `X-Campaign-Manage` header, never a URL. JSON responses use
 `Cache-Control: no-store`. Error responses are `{ "error": "public message" }`.
 
 1. `/manage/prepare`, body `{ "name": "Campaign - Author" }`, returns
-   `{ ok, managementCode, path, name }`. This reserves a unique capability for
+   `{ ok, managementCode, kind, path, name }`. This reserves a unique capability for
    `/managed/<uuid> - <timestamp> - <safe name>.zip` without calling Dropbox.
    **Persist the code and path successfully before starting any upload.** The
    reserved namespace cannot be targeted by the legacy upload endpoints.
@@ -103,7 +103,7 @@ are sent in the `X-Campaign-Manage` header, never a URL. JSON responses use
    client may send `{ "metadata": { "displayName": "Campaign - Author",
    "campaignName": "Campaign", "author": "Author", "description": "About this
    campaign", "icon": "data:image/png;base64,..." } }`. The public response is
-   `{ ok, id, name, campaignName, author, description, icon, path, rev, size,
+   `{ ok, id, kind, name, campaignName, author, description, icon, path, rev, size,
    modified, contentHash }`, with metadata status fields described below. Only a
    successful ZIP commit makes the ZIP public.
 5. `/manage/status`, with management header, returns
@@ -119,6 +119,14 @@ are sent in the `X-Campaign-Manage` header, never a URL. JSON responses use
    only that exact file and revision; response `{ ok, deleted: true, id, path }`.
    Missing files return 404; changed revisions return 409. Refresh status to
    reconcile a lost deletion response.
+8. `/manage/icon`, with saved code and `{ "id": "PUBLIC_FILE_ID",
+   "rev": "CURRENT_REVISION", "icon": "data:image/png;base64,..." }`, replaces
+   only the cover. `/health` advertises `campaignCoverEdit: true`. The response
+   contains the public post plus `ok: true, iconSaved: true`. ZIP identity, bytes,
+   revision, download URL and other presentation fields are preserved. Extra
+   body fields, invalid ownership, stale revisions and incomplete or corrupt
+   PNGs are rejected before writing. Sidecar updates are conditional on the exact
+   read revision; concurrent edits return a refreshable conflict.
 
 Chunking streams a ZIP from disk with bounded request memory; removing the total
 application cap does not provide unlimited provider storage. Dropbox currently
@@ -131,10 +139,45 @@ The old single-request multipart `/upload` endpoint retains its **20 MiB file
 limit** and buffered request behavior for legacy clients. It is separate from
 the chunked routes and is not the upload route used by current Studio.
 
-`/list` returns all pages of public ZIPs in the root and reserved managed namespace,
+`/list` returns all pages of campaign ZIPs in the root and `/managed/` namespace,
 including `id`, `rev`, `contentHash` and existing metadata fields. It never returns
-management codes. Downloads accept only those public ZIP paths; folders, private
+management codes or Base Game Pools posts. Downloads accept public ZIP paths in
+either category; folders, private
 subdirectories, arbitrary IDs and traversal paths are rejected.
+
+## Base Game Pools category
+
+Clients require `/health` to advertise `baseGamePools: true` before sharing pool
+sets. The category is selected by `GET /list?kind=base-game-pools` and by
+`POST /manage/prepare` with `{ "name": "Pool set - Author",
+"kind": "base-game-pools" }`. Missing `kind` on these two routes means
+`campaign`; explicit `kind=campaign` is also accepted. Unknown values, empty
+strings and non-string JSON values return HTTP 400. A pool list never includes
+campaigns, and the old `/list` response never includes pool sets.
+
+Pool codes reserve `/managed-pools/<uuid> - <safe name>.zip`; the safe name uses
+the same timestamped filename format as campaign uploads. The signed capability
+binds that exact path, using the unchanged management signing secret and format.
+`/upload/start`, `/upload/chunk`, `/upload/finish`, `/manage/status`,
+`/manage/delete`, `/manage/icon` and `/download?path=...` are shared. No extra
+category field is required for these operations: the reserved path determines
+the category. If `kind` is supplied to upload start or finish it must match the
+authorized category; it cannot move or reinterpret a post. Anonymous and legacy
+uploads remain campaigns. Administrator legacy claims accept only campaign root
+ZIPs, and a legacy file-ID capability cannot manage a file moved into the pool
+namespace.
+
+Prepare responses and public post objects from list, finish, status, claim and
+cover editing include `kind: "campaign"` or `kind: "base-game-pools"`. This value
+comes from the trusted path, never caller presentation metadata. Missing,
+corrupt or unavailable metadata preserves that category and falls back to the
+readable filename. Pool sets use the same optional presentation fields and
+ID-keyed private sidecars as campaigns. The wire field `campaignName` remains
+the short display title for both categories. Store pool ownership codes in a
+separate local management list; do not include them in exported pool packages.
+
+The server separates transport and ownership; Studio validates the versioned
+pool package and all three pool selections before replacing local data.
 
 ## Public campaign presentation
 
@@ -237,10 +280,14 @@ The test harness runs the actual Worker and HMAC code with only Dropbox HTTP
 replaced by an in-memory fixture. It never accesses real Dropbox. It covers
 ownership, lost responses, revision races, replacement preservation, deletion,
 legacy assignment, privacy filtering, pagination and old-client compatibility.
-The Worker suite contains 42 checks, including readable legacy
+The Worker suite contains 64 checks, including readable legacy
 names, presentation round trips, exact field/icon limits, metadata preservation,
 partial success, delayed writes, lost metadata responses, poisoned metadata,
 bounded concurrent reads, bounded error bodies and JSON escaping at the limit.
+It also covers the existing live cover-editing contract and the separate pool
+namespace, category negotiation, cross-owner finish rejection, tampered signed
+paths, legacy claim boundaries, pool download/cover operations and metadata
+fallback. All remote-storage operations in these checks are simulated.
 The helper tests write only temporary files and use a local request substitute.
 The preserved pre-change Worker and initial failing test output are in
 `tests/CommunityWorkerChecks/evidence/`. Live deployment and real ZIP replacement
@@ -267,3 +314,17 @@ probe was committed. This confirms start/chunk acceptance beyond the former cap,
 not a complete large transfer. Users need Studio revision 33 or newer to remove
 the client-side limit. Local receipts are under
 `artifacts/unlimited-campaign-uploads-20261101/deployment/`.
+
+## Base Game Pools source baseline — 2026-11-02
+
+Before this category change, a fresh read-only snapshot of production matched
+the deployed upload-cap source above exactly. The published R35 checkout lacked
+the already-live cover editing code; this update restores that exact capability
+and its regression tests before adding the category delta. Do not deploy the
+older checkout Worker over production. Preserve the existing five encrypted
+bindings, `CAMPAIGN_FILE_ID_ALIASES`, module name, routes and runtime settings.
+
+Local evidence is under `artifacts/base-game-pool-sharing-20261102/worker/`,
+including the current production source, settings/catalog snapshots, failing-first
+and passing test outputs, and the candidate-to-live diff. This source update has
+not itself deployed the category or posted any public test content.

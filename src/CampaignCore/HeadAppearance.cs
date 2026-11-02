@@ -30,7 +30,7 @@ public static class HeadAppearance
     }
     public static string Base(string head)
     {
-        head = head ?? "";
+        head = NativeSkin(head ?? "");
         if (!head.Contains("/"))
         {
             var matches = Variants.Keys.Concat(Variants.Values.Where(v => v.Length > 0))
@@ -41,6 +41,14 @@ public static class HeadAppearance
             && Variants.ContainsKey(head.Substring(0, head.Length - 7))) return head.Substring(0, head.Length - 7);
         return head;
     }
+    // The standard native bench Stu uses this complete skin name even while
+    // bareheaded. Its unsuffixed counterpart is Helmet_Face placeholder artwork,
+    // not a bare variant. Repair the old editor selection without rewriting
+    // ordinary fitted head identities used by preview callers.
+    public static string NativeSkin(string head) =>
+        string.Equals(head, "Faces/Anyteam/Bench_Stumple", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(head, "Bench_Stumple", StringComparison.OrdinalIgnoreCase)
+            ? "Faces/Anyteam/Bench_Stumple_Helmet" : head;
     public static bool CanWearHelmet(string head) => Variants.TryGetValue(Base(head), out var variant) && variant.Length > 0;
     public static bool HasNoHelmetVariant(string head) => Variants.TryGetValue(Base(head), out var variant) && variant.Length == 0;
     public static bool IsNone(string helmet) => string.IsNullOrWhiteSpace(helmet)

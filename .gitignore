@@ -265,6 +265,29 @@ tests/CommunityClientChecks/*
 !tests/CommunityClientChecks/CommunityClientChecks.csproj
 !tests/CommunityClientChecks/Program.cs
 !tests/CommunityClientChecks/LargeUploadChecks.cs
+!tests/CommunityClientChecks/PoolSharingChecks.cs
+
+# Portable Base Game Pools and backup lifecycle checks
+!tests/BaseGamePoolSharingChecks/
+tests/BaseGamePoolSharingChecks/*
+!tests/BaseGamePoolSharingChecks/*.cs
+!tests/BaseGamePoolSharingChecks/*.csproj
+!tests/NativePoolAppearanceChecks/
+tests/NativePoolAppearanceChecks/*
+!tests/NativePoolAppearanceChecks/*.cs
+!tests/NativePoolAppearanceChecks/*.csproj
+!tests/HeadAppearanceRuntimeChecks/
+tests/HeadAppearanceRuntimeChecks/*
+!tests/HeadAppearanceRuntimeChecks/*.cs
+!tests/HeadAppearanceRuntimeChecks/*.csproj
+!tests/StuHeadEditorChecks/
+tests/StuHeadEditorChecks/*
+!tests/StuHeadEditorChecks/*.cs
+!tests/StuHeadEditorChecks/*.csproj
+!tests/BaseGamePoolRunRewardChecks/
+tests/BaseGamePoolRunRewardChecks/*
+!tests/BaseGamePoolRunRewardChecks/*.cs
+!tests/BaseGamePoolRunRewardChecks/*.csproj
 
 # Base Game pool profile, editor and native-adapter regression sources
 !tests/BaseGamePoolChecks/

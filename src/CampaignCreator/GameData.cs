@@ -195,6 +195,7 @@ internal sealed class GameData
     public string? HeadPreview(string role, string value)
     {
         string field = role == "goalie" ? "Helmet Skin" : "Face";
+        if (role == "skater") value = HeadAppearance.NativeSkin(value);
         if (role == "goalie" && (string.IsNullOrWhiteSpace(value) || value.Equals("standard", StringComparison.OrdinalIgnoreCase))) value = "Helmet/Helmet_Customization_colors";
         try { value = Assets.Resolve(role, field, value); }
         catch (ArgumentException) { return null; }

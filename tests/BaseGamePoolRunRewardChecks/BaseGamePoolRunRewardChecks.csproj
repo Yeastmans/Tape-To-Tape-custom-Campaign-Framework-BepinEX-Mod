@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><NuGetAudit>false</NuGetAudit></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/CampaignCore/CampaignCore.csproj" />
+    <Compile Include="../../src/CustomCampaignFramework/CustomRewardRuntime.BaseGameSnapshots.cs" Link="CustomRewardRuntime.BaseGameSnapshots.cs" Condition="Exists('../../src/CustomCampaignFramework/CustomRewardRuntime.BaseGameSnapshots.cs')" />
+    <Reference Include="Mono.Cecil"><HintPath>../../installer/bepinex/BepInEx/core/Mono.Cecil.dll</HintPath></Reference>
+  </ItemGroup>
+</Project>

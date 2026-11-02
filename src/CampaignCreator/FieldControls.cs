@@ -442,6 +442,8 @@ internal static class FieldControls
 
         string leaf = value[(value.LastIndexOf('/') + 1)..];
 
+        if (leaf == "Bench_Stumple_Helmet") return "Bench Stumple";
+
         if (leaf == "Customization_colors") return "Team colours";
 
         return System.Text.RegularExpressions.Regex.Replace(leaf.Replace('_', ' '), "(?<=[a-z])([A-Z])", " $1");

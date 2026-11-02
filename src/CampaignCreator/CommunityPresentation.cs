@@ -30,7 +30,7 @@ internal sealed record CommunityPresentation(string CampaignName, string Author 
         if (displayName.Length == 0)
         {
             string fallback = name.Length > 0 ? name : storageName;
-            if (Regex.IsMatch(Text(item, "path", 2000), "^/managed/" + ManagedPrefix, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+            if (Regex.IsMatch(Text(item, "path", 2000), "^/managed(?:-pools)?/" + ManagedPrefix, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
                 fallback = Regex.Replace(fallback, "^" + ManagedPrefix, "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
             displayName = campaignName.Length > 0 ? (name.Length > 0 ? name : campaignName) : CleanDisplayName(fallback);
         }

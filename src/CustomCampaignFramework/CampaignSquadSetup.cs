@@ -114,6 +114,14 @@ internal static class CampaignSquadSetup
         // Bench menus and free-agent refreshes create fresh clones. The legacy
         // talent helper clears by name only once, so reset each authored list.
         bool nativeCopy=config.Fields.Get(VanillaCopyData.PlayerId).Length>0;
+        // Native empty helmet fields mean bareheaded, not a missing custom-player
+        // default. Protect the clone before generic defaults run, as for copied
+        // opponents. Explicit authored equipment is applied afterward as usual.
+        if (nativeCopy)
+        {
+            if (string.IsNullOrEmpty(player.helmetSkin)) player.helmetSkin = "__NO_HELMET__";
+            if (string.IsNullOrEmpty(player.helmetAwaySkin)) player.helmetAwaySkin = "__NO_HELMET__";
+        }
         if (nativeCopy || (config.Talents?.Count ?? 0) > 0 || config.RandomTalentCount > 0)
         {
             player.powerups = new Il2CppSystem.Collections.Generic.List<Rogue.Talent>();

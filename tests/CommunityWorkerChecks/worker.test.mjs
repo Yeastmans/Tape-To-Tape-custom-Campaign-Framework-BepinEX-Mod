@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { webcrypto } from 'node:crypto';
+import { deflateSync } from 'node:zlib';
 
 globalThis.crypto ??= webcrypto;
 const source = await readFile(new URL('../../worker/t2t-campaigns-worker.js', import.meta.url), 'utf8');
@@ -629,4 +630,344 @@ test('legal metadata near the character limit permits JSON unicode escaping', as
     headers: { 'Content-Type': 'application/json', 'X-Campaign-Manage': post.managementCode, 'X-Campaign-Upload': upload.ticket },
     body: '{"metadata":{"icon":"' + encoded + '"}}' }), env);
   assert.equal(response.status, 200); assert.equal((await response.json()).metadataSaved, true);
+});
+
+function pngChunk(type, data) {
+  const chunk = Buffer.alloc(data.length + 12); chunk.writeUInt32BE(data.length); chunk.write(type, 4); data.copy(chunk, 8);
+  let crc = 0xffffffff;
+  for (const byte of chunk.subarray(4, -4)) {
+    crc ^= byte; for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
+  }
+  chunk.writeUInt32BE((crc ^ 0xffffffff) >>> 0, chunk.length - 4); return chunk;
+}
+function coverPng(pixel = [30, 150, 180, 255], scanlines = Buffer.from([0, ...pixel])) {
+  const ihdr = Buffer.from([0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0, 0, 0]);
+  return 'data:image/png;base64,' + Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    pngChunk('IHDR', ihdr), pngChunk('IDAT', deflateSync(scanlines)), pngChunk('IEND', Buffer.alloc(0))]).toString('base64');
+}
+async function coveredPost() {
+  const db = storage(), post = await prepare(), bytes = new Uint8Array([3, 1, 4]);
+  const upload = await start(post, bytes); await append(post, upload, bytes);
+  const item = await (await finish(post, upload, { ...presentation, icon: coverPng() })).json();
+  return { db, post: { ...post, item } };
+}
+const coverBody = (post, icon = coverPng([255, 20, 80, 255])) => ({ id: post.item.id, rev: post.item.rev, icon });
+
+test('cover editing is advertised independently of ZIP upload metadata', async () => {
+  storage(); const health = await ok('/health', { method: 'GET' });
+  assert.equal(health.campaignCoverEdit, true); assert.ok(health.endpoints.includes('/manage/icon'));
+});
+
+test('cover edit changes only the image and never writes uploads moves or deletes the ZIP', async () => {
+  const { db, post } = await coveredPost(), original = structuredClone(db.find(post.path)), body = coverBody(post);
+  const request = globalThis.fetch, writes = [];
+  globalThis.fetch = async (url, init) => {
+    if (/\/files\/(upload|delete|move|copy)/.test(String(url))) writes.push({ url: String(url), arg: JSON.parse(new Headers(init.headers).get('Dropbox-API-Arg') ?? init.body) });
+    return request(url, init);
+  };
+  const result = await ok('/manage/icon', { code: post.managementCode, body });
+  assert.equal(result.iconSaved, true); assert.equal(result.icon, body.icon);
+  for (const key of ['id', 'path', 'rev', 'size', 'contentHash', 'modified', 'name', 'campaignName', 'author', 'description'])
+    assert.deepEqual(result[key], post.item[key], key + ' must stay unchanged');
+  assert.deepEqual(db.find(post.path), original);
+  assert.equal(writes.length, 1); assert.ok(writes[0].url.endsWith('/files/upload'));
+  assert.ok(writes[0].arg.path.startsWith('/.campaign-metadata/'));
+  const listed = (await ok('/list', { method: 'GET' })).items[0]; assert.equal(listed.icon, body.icon);
+  const download = await call('/download?path=' + encodeURIComponent(post.path), { method: 'GET' });
+  assert.equal(downloadedName(download), 'NHL _ Canucks Reloaded.zip');
+  assert.deepEqual(new Uint8Array(await download.arrayBuffer()), original.bytes);
+});
+
+test('cover edit rejects invalid ownership identities stale revisions and extra metadata without changes', async () => {
+  const { db, post } = await coveredPost(), other = await publish(), before = structuredClone([...db.files]);
+  for (const code of [undefined, 'invalid-code', post.managementCode.slice(0, -4) + 'AAAA', other.managementCode]) {
+    const response = await call('/manage/icon', { code, body: coverBody(post) });
+    assert.equal(response.status, 403); assert.ok(!(await response.text()).includes(code || 'secret'));
+  }
+  for (const [patch, status] of [[{ rev: '' }, 400], [{ rev: '000000001' }, 409], [{ id: '' }, 400],
+    [{ id: other.item.id }, 403], [{ description: 'replace this too' }, 400], [{ path: other.path }, 400]]) {
+    const response = await call('/manage/icon', { code: post.managementCode, body: { ...coverBody(post), ...patch } });
+    assert.equal(response.status, status, JSON.stringify(patch));
+  }
+  assert.deepEqual([...db.files], before);
+});
+
+test('cover edit rejects malformed oversized and incomplete PNG data before storage mutations', async () => {
+  const { db, post } = await coveredPost(), before = structuredClone([...db.files]);
+  const bytes = Buffer.from(coverPng().split(',')[1], 'base64'), corrupt = Buffer.from(bytes); corrupt[corrupt.length - 1] ^= 1;
+  const invalid = ['', null, 7, 'data:image/jpeg;base64,AAAA', 'data:image/png;base64,AAAA',
+    'data:image/png;base64,' + bytes.subarray(0, 33).toString('base64'), 'data:image/png;base64,' + corrupt.toString('base64'),
+    coverPng(undefined, Buffer.from([5, 1, 2, 3, 4])), coverPng(undefined, Buffer.alloc(4000000)),
+    'data:image/png;base64,' + 'A'.repeat(350000)];
+  for (const icon of invalid) {
+    const response = await call('/manage/icon', { code: post.managementCode, body: coverBody(post, icon) });
+    assert.equal(response.status, 400);
+  }
+  const oversized = await call('/manage/icon', { code: post.managementCode, body: new Uint8Array(2200000) });
+  assert.ok([400, 413].includes(oversized.status)); assert.deepEqual([...db.files], before);
+});
+
+test('cover edit preserves migrated public identity and writes the real storage ID sidecar', async () => {
+  const { db, post, copied, environment } = await migratedPost();
+  const selected = { ...post, item: { ...post.item, rev: copied.rev } }, original = structuredClone(copied);
+  const result = await ok('/manage/icon', { code: post.managementCode, body: coverBody(selected), environment });
+  assert.equal(result.id, post.item.id); assert.equal(result.rev, copied.rev); assert.equal(result.path, post.path);
+  assert.deepEqual(db.find(post.path), original);
+  const sidecar = [...db.files.values()].find(x => x.path_display.startsWith('/.campaign-metadata/'));
+  assert.equal(JSON.parse(new TextDecoder().decode(sidecar.bytes)).id, copied.id);
+});
+
+test('invalid migration settings fail cover editing before any sidecar write', async () => {
+  const { db, post, copied } = await migratedPost(), before = structuredClone([...db.files]);
+  const response = await call('/manage/icon', { code: post.managementCode, body: { ...coverBody(post), rev: copied.rev },
+    environment: { ...env, CAMPAIGN_FILE_ID_ALIASES: '{' } });
+  assert.equal(response.status, 503); assert.deepEqual([...db.files], before);
+});
+
+test('cover edit conflicts rather than overwriting a concurrent metadata update', async () => {
+  const { db, post } = await coveredPost(), body = coverBody(post), request = globalThis.fetch;
+  let intercepted = false;
+  globalThis.fetch = async (url, init) => {
+    if (String(url).endsWith('/files/upload') && !intercepted) {
+      intercepted = true;
+      const path = JSON.parse(new Headers(init.headers).get('Dropbox-API-Arg')).path, prior = db.find(path);
+      const stored = JSON.parse(new TextDecoder().decode(prior.bytes)); stored.metadata.description = 'A concurrent description';
+      db.put(path, new TextEncoder().encode(JSON.stringify(stored)), prior);
+    }
+    return request(url, init);
+  };
+  const response = await call('/manage/icon', { code: post.managementCode, body });
+  assert.equal(response.status, 409); assert.match((await response.json()).error, /refresh/i);
+  const current = (await ok('/manage/status', { code: post.managementCode })).item;
+  assert.equal(current.description, 'A concurrent description'); assert.equal(current.icon, post.item.icon);
+  assert.equal(current.rev, post.item.rev);
+});
+
+test('cover merge uses the exact sidecar snapshot whose revision guards the write', async () => {
+  const { db, post } = await coveredPost(), body = coverBody(post), request = globalThis.fetch;
+  let reads = 0;
+  globalThis.fetch = async (url, init) => {
+    if (String(url).endsWith('/files/download')) {
+      const path = JSON.parse(new Headers(init.headers).get('Dropbox-API-Arg')).path;
+      if (path.startsWith('/.campaign-metadata/')) {
+        const response = await request(url, init);
+        if (++reads === 1) {
+          const prior = db.find(path), stored = JSON.parse(new TextDecoder().decode(prior.bytes));
+          stored.metadata.author = 'Concurrent author';
+          db.put(path, new TextEncoder().encode(JSON.stringify(stored)), prior);
+        }
+        return response;
+      }
+    }
+    return request(url, init);
+  };
+  const response = await call('/manage/icon', { code: post.managementCode, body });
+  assert.equal(response.status, 409);
+  const current = (await ok('/manage/status', { code: post.managementCode })).item;
+  assert.equal(current.author, 'Concurrent author'); assert.equal(current.icon, post.item.icon);
+});
+
+test('cover edit detects a ZIP replacement during the sidecar write and never claims unchanged ZIP success', async () => {
+  const { db, post } = await coveredPost(), request = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    if (String(url).endsWith('/files/upload')) db.put(post.path, new Uint8Array([8, 9]), db.find(post.path));
+    return request(url, init);
+  };
+  const response = await call('/manage/icon', { code: post.managementCode, body: coverBody(post) });
+  assert.equal(response.status, 409); assert.deepEqual(db.find(post.path).bytes, new Uint8Array([8, 9]));
+});
+
+test('cover storage errors preserve ZIP and access and report a refreshable failure', async () => {
+  for (const failure of ['failMetadataWrite', 'failMetadataRead', 'loseMetadataWrite']) {
+    const { db, post } = await coveredPost(), original = structuredClone(db.find(post.path)); db[failure]();
+    const response = await call('/manage/icon', { code: post.managementCode, body: coverBody(post) });
+    assert.equal(response.status, 502, failure); assert.match((await response.json()).error, /refresh|retry/i);
+    assert.deepEqual(db.find(post.path), original);
+    assert.equal((await ok('/manage/status', { code: post.managementCode })).exists, true);
+  }
+});
+
+const poolPath = '/managed-pools/11111111-2222-3333-4444-555555555555 - 2026-11-02T00-00-00-000Z - All three pools.zip';
+async function preparePools(name = 'All three pools') {
+  return ok('/manage/prepare', { body: { name, kind: 'base-game-pools' } });
+}
+async function publishPools(metadata) {
+  const post = await preparePools(), bytes = new Uint8Array([2, 7, 1, 8]), upload = await start(post, bytes);
+  await append(post, upload, bytes);
+  const response = await finish(post, upload, metadata);
+  assert.equal(response.status, 200);
+  return { ...post, item: await response.json() };
+}
+
+test('health lets clients negotiate Base Game Pools sharing without losing live capabilities', async () => {
+  storage(); const health = await ok('/health', { method: 'GET' });
+  assert.equal(health.baseGamePools, true);
+  assert.equal(health.campaignManagement, true); assert.equal(health.campaignMetadata, true);
+  assert.equal(health.campaignCoverEdit, true); assert.equal(health.maxCampaignBytes, null);
+});
+
+test('pool listing is separate from legacy and explicit campaign listings across all storage pages', async () => {
+  const db = storage();
+  const legacy = db.put('/Old campaign.zip', new Uint8Array([1]));
+  const managed = db.put('/managed/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee - New campaign.zip', new Uint8Array([2]));
+  const pools = db.put(poolPath, new Uint8Array([3]));
+  db.put('/managed-pools/not-a-reserved-name.zip', new Uint8Array([4]));
+  db.put('/managed-pools/11111111-2222-3333-4444-555555555555 - Nested/private.zip', new Uint8Array([5]));
+  db.put('/.campaign-metadata/private.zip', new Uint8Array([6]));
+  const selected = await ok('/list?kind=base-game-pools', { method: 'GET' });
+  assert.equal(selected.count, 1); assert.equal(selected.items[0].id, pools.id);
+  assert.equal(selected.items[0].kind, 'base-game-pools'); assert.equal(selected.items[0].name, 'All three pools');
+  for (const path of ['/list', '/list?kind=campaign']) {
+    const listed = await ok(path, { method: 'GET' });
+    assert.deepEqual(listed.items.map(item => item.id).sort(), [legacy.id, managed.id].sort());
+    assert.equal(listed.count, 2); assert.ok(listed.items.every(item => item.kind === 'campaign'));
+  }
+});
+
+test('prepare binds a pool code to its reserved pool path while old and explicit campaign requests stay campaigns', async () => {
+  const db = storage();
+  const pools = await preparePools(), legacy = await prepare(), campaign = await ok('/manage/prepare', { body: { name: 'New', kind: 'campaign' } });
+  assert.match(pools.path, /^\/managed-pools\/[0-9a-f-]{36} - [^/]+\.zip$/);
+  assert.equal(pools.kind, 'base-game-pools');
+  for (const post of [legacy, campaign]) {
+    assert.match(post.path, /^\/managed\/[0-9a-f-]{36} - [^/]+\.zip$/); assert.equal(post.kind, 'campaign');
+  }
+  assert.equal(JSON.parse(Buffer.from(pools.managementCode.split('.')[1], 'base64')).path, pools.path);
+  assert.deepEqual(await ok('/manage/status', { code: pools.managementCode }), { ok: true, exists: false, path: pools.path });
+  assert.equal(db.files.size, 0);
+});
+
+test('list and prepare reject unknown or malformed categories before reaching storage', async () => {
+  storage(); let requests = 0; const request = globalThis.fetch;
+  globalThis.fetch = async (...args) => { requests++; return request(...args); };
+  for (const kind of ['', 'pools', 'BASE-GAME-POOLS', ' campaign']) {
+    assert.equal((await call('/list?kind=' + encodeURIComponent(kind), { method: 'GET' })).status, 400, kind);
+    assert.equal((await call('/manage/prepare', { body: { name: 'Invalid', kind } })).status, 400, kind);
+  }
+  for (const kind of [null, false, 0, [], {}])
+    assert.equal((await call('/manage/prepare', { body: { kind } })).status, 400);
+  assert.equal(requests, 0);
+});
+
+test('pool upload finish replacement and deletion retain pool category and exact public identity', async () => {
+  const db = storage(), post = await publishPools({ displayName: 'Pool set - Author', description: 'Three selections', kind: 'campaign' });
+  assert.match(post.item.path, /^\/managed-pools\//); assert.equal(post.item.path, post.path);
+  assert.equal(post.item.kind, 'base-game-pools'); assert.equal(post.item.metadataSaved, true);
+  assert.equal((await ok('/list', { method: 'GET' })).count, 0);
+  assert.equal((await ok('/manage/status', { code: post.managementCode })).item.kind, 'base-game-pools');
+  const bytes = new Uint8Array([8, 6, 7, 5]), upload = await start(post, bytes, 'replace', post.item.rev);
+  assert.equal(upload.path, post.path); await append(post, upload, bytes);
+  const replaced = await finish(post, upload); assert.equal(replaced.status, 200); const item = await replaced.json();
+  assert.equal(item.id, post.item.id); assert.equal(item.path, post.path); assert.equal(item.kind, 'base-game-pools');
+  assert.equal(item.name, 'Pool set - Author'); assert.equal(item.description, 'Three selections');
+  assert.deepEqual(db.find(post.path).bytes, bytes);
+  const deleted = await ok('/manage/delete', { code: post.managementCode, body: { rev: item.rev } });
+  assert.equal(deleted.id, post.item.id); assert.equal(deleted.path, post.path); assert.equal(db.find(post.path), undefined);
+});
+
+test('campaign and pool codes cannot finish each others uploads or redirect their signed destinations', async () => {
+  const db = storage(), campaign = await publish(), pools = await publishPools();
+  assert.notEqual(campaign.item.kind, pools.item.kind);
+  for (const [owner, other] of [[campaign, pools], [pools, campaign]]) {
+    const bytes = new Uint8Array([9, 2, 6]), previous = structuredClone(db.find(other.path));
+    const upload = await ok('/upload/start', { code: owner.managementCode,
+      body: { size: bytes.length, operation: 'replace', rev: owner.item.rev, path: other.path } });
+    assert.equal(upload.path, owner.path); await append(owner, upload, bytes);
+    assert.equal((await finish(other, upload)).status, 403);
+    const finished = await ok('/upload/finish', { code: owner.managementCode, ticket: upload.ticket,
+      body: { path: other.path, metadata: { kind: other.item.kind } } });
+    assert.equal(finished.path, owner.path); assert.equal(finished.id, owner.item.id); assert.equal(finished.kind, owner.item.kind);
+    assert.deepEqual(db.find(other.path), previous);
+  }
+});
+
+test('upload category claims cannot reinterpret an authorized destination or turn anonymous uploads into pools', async () => {
+  const db = storage(), pools = await publishPools(), campaign = await publish();
+  for (const [post, kind] of [[pools, 'campaign'], [campaign, 'base-game-pools'], [pools, 'invalid']]) {
+    const before = structuredClone([...db.files]);
+    assert.equal((await call('/upload/start', { code: post.managementCode,
+      body: { size: 1, operation: 'replace', rev: post.item.rev, kind } })).status, 400);
+    assert.deepEqual([...db.files], before);
+  }
+  for (const kind of ['base-game-pools', 'invalid', null])
+    assert.equal((await call('/upload/start', { body: { name: 'Anonymous', size: 1, kind } })).status, 400);
+  const bytes = new Uint8Array([3]), upload = await ok('/upload/start', { code: pools.managementCode,
+    body: { size: 1, operation: 'replace', rev: pools.item.rev, kind: 'base-game-pools' } });
+  await append(pools, upload, bytes);
+  for (const kind of ['campaign', 'invalid', null])
+    assert.equal((await call('/upload/finish', { code: pools.managementCode, ticket: upload.ticket, body: { kind } })).status, 400);
+  assert.deepEqual(db.find(pools.path).bytes, new Uint8Array([2, 7, 1, 8]));
+  const completed = await ok('/upload/finish', { code: pools.managementCode, ticket: upload.ticket, body: { kind: 'base-game-pools' } });
+  assert.equal(completed.kind, 'base-game-pools'); assert.equal(completed.path, pools.path);
+});
+
+test('tampering a pool capability or upload ticket to the campaign namespace is rejected', async () => {
+  storage(); const post = await preparePools(), bytes = new Uint8Array([1]), upload = await start(post, bytes);
+  const cap = post.managementCode.split('.'), claims = JSON.parse(Buffer.from(cap[1], 'base64'));
+  claims.path = claims.path.replace('/managed-pools/', '/managed/'); cap[1] = Buffer.from(JSON.stringify(claims)).toString('base64');
+  assert.notEqual(cap.join('.'), post.managementCode);
+  assert.equal((await call('/manage/status', { code: cap.join('.') })).status, 403);
+  const ticket = upload.ticket.split('.'), payload = JSON.parse(Buffer.from(ticket[0], 'base64'));
+  payload.path = payload.path.replace('/managed-pools/', '/managed/');
+  payload.publicPath = payload.publicPath.replace('/managed-pools/', '/managed/'); ticket[0] = Buffer.from(JSON.stringify(payload)).toString('base64');
+  assert.notEqual(ticket.join('.'), upload.ticket);
+  assert.equal((await call('/upload/chunk?offset=0', { ticket: ticket.join('.'), body: bytes })).status, 403);
+  assert.equal((await call('/upload/finish', { code: post.managementCode, ticket: ticket.join('.') })).status, 403);
+});
+
+test('pool downloads return the selected ZIP and readable presentation while rejecting unsafe paths', async () => {
+  const db = storage(), file = db.put(poolPath, new Uint8Array([2, 7, 1, 8]));
+  const hash = Buffer.from(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(file.id))).toString('hex');
+  db.put('/.campaign-metadata/' + hash + '.json', new TextEncoder().encode(JSON.stringify({ v: 1, id: file.id,
+    metadata: { campaignName: 'My pool selection' } })));
+  const response = await call('/download?path=' + encodeURIComponent(poolPath), { method: 'GET' });
+  assert.equal(response.status, 200); assert.equal(downloadedName(response), 'My pool selection.zip');
+  assert.deepEqual(new Uint8Array(await response.arrayBuffer()), file.bytes);
+  for (const path of ['/managed-pools/no-uuid.zip', poolPath + '/child.zip', '/managed-pools/../private.zip',
+    poolPath.replace('All three pools', 'bad\\path'), poolPath.replace('All three pools', 'bad\u0000path')])
+    assert.equal((await call('/download?path=' + encodeURIComponent(path), { method: 'GET' })).status, 400, path);
+});
+
+test('pool cover editing preserves the ZIP and rejects a campaign code for the pool identity', async () => {
+  const db = storage(), pools = await publishPools({ displayName: 'Pools', description: 'Keep this', icon: coverPng() }), campaign = await publish();
+  const previous = structuredClone(db.find(pools.path)), body = coverBody(pools);
+  assert.equal(pools.item.kind, 'base-game-pools');
+  assert.equal((await call('/manage/icon', { code: campaign.managementCode, body })).status, 403);
+  const edited = await ok('/manage/icon', { code: pools.managementCode, body });
+  assert.equal(edited.kind, 'base-game-pools'); assert.equal(edited.id, pools.item.id); assert.equal(edited.rev, pools.item.rev);
+  assert.equal(edited.path, pools.path); assert.equal(edited.icon, body.icon); assert.equal(edited.description, 'Keep this');
+  assert.deepEqual(db.find(pools.path), previous);
+  assert.equal((await ok('/list?kind=base-game-pools', { method: 'GET' })).items[0].icon, body.icon);
+});
+
+test('legacy claims remain campaigns and cannot acquire or reinterpret pool posts', async () => {
+  const db = storage(), root = db.put('/Legacy campaign.zip', new Uint8Array([1]));
+  assert.equal((await call('/manage/claim', { admin: env.CAMPAIGN_ADMIN_SECRET, body: { path: root.path_display, kind: 'base-game-pools' } })).status, 400);
+  const claimed = await ok('/manage/claim', { admin: env.CAMPAIGN_ADMIN_SECRET, body: { path: root.path_display, kind: 'campaign' } });
+  assert.equal(claimed.kind, 'campaign');
+  const pool = await publishPools();
+  assert.equal((await call('/manage/claim', { admin: env.CAMPAIGN_ADMIN_SECRET, body: { path: pool.path } })).status, 400);
+  db.files.delete(root.path_lower); db.put(poolPath, root.bytes, root);
+  assert.equal((await call('/manage/status', { code: claimed.managementCode })).status, 403);
+  assert.equal((await call('/upload/start', { code: claimed.managementCode,
+    body: { size: 1, operation: 'replace', rev: db.find(poolPath).rev } })).status, 403);
+});
+
+test('missing corrupt and unavailable pool metadata keep the trusted category and readable fallback', async () => {
+  for (const mode of ['missing', 'corrupt', 'unavailable', 'poisoned']) {
+    const db = storage(), file = db.put(poolPath, new Uint8Array([4, 2]));
+    const hash = Buffer.from(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(file.id))).toString('hex');
+    const path = '/.campaign-metadata/' + hash + '.json';
+    if (mode !== 'missing') db.put(path, new TextEncoder().encode(mode === 'corrupt' ? '{' : JSON.stringify({ v: 1, id: file.id,
+      metadata: { displayName: 'Visible pools', kind: 'campaign', path: '/other.zip', managementCode: 'private-value' } })));
+    if (mode === 'unavailable') db.failMetadataRead();
+    const listed = await ok('/list?kind=base-game-pools', { method: 'GET' });
+    assert.equal(listed.count, 1, mode); const item = listed.items[0];
+    assert.equal(item.kind, 'base-game-pools'); assert.equal(item.id, file.id); assert.equal(item.path, poolPath);
+    assert.equal(item.name, mode === 'poisoned' ? 'Visible pools' : 'All three pools');
+    assert.ok(!JSON.stringify(item).includes('private-value'));
+    assert.equal((await ok('/list', { method: 'GET' })).count, 0);
+    const download = await call('/download?path=' + encodeURIComponent(poolPath), { method: 'GET' });
+    assert.equal(download.status, 200); assert.deepEqual(new Uint8Array(await download.arrayBuffer()), file.bytes);
+  }
 });

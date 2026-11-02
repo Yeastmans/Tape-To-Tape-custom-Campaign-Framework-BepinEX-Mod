@@ -17,9 +17,11 @@ internal sealed class CommunityCampaignDetails : Border, IDisposable
     private readonly TextBlock description = new() { Name = "CommunityCampaignDescription", TextWrapping = TextWrapping.Wrap };
     private Bitmap? bitmap;
     private bool disposed;
+    private readonly string contentName;
 
-    internal CommunityCampaignDetails()
+    internal CommunityCampaignDetails(string contentName = "campaign")
     {
+        this.contentName = contentName;
         Name = "CommunityCampaignDetails";
         Background = StudioTheme.Surface;
         CornerRadius = StudioTheme.Radius;
@@ -37,10 +39,10 @@ internal sealed class CommunityCampaignDetails : Border, IDisposable
         if (disposed) return;
         icon.Source = null;
         bitmap?.Dispose(); bitmap = null;
-        title.Text = name ?? "Choose a campaign";
+        title.Text = name ?? "Choose a " + contentName;
         author.Text = string.IsNullOrWhiteSpace(details?.Author) ? "" : "By " + details.Author;
         author.IsVisible = author.Text.Length > 0;
-        description.Text = name == null ? "Select a campaign to see its icon and description."
+        description.Text = name == null ? "Select a " + contentName + " to see its icon and description."
             : string.IsNullOrWhiteSpace(details?.Description) ? "No description provided." : details.Description;
         fallback.Text = name == null || name.Trim().Length == 0 ? "C" : System.Globalization.StringInfo.GetNextTextElement(name.Trim()).ToUpperInvariant();
         fallback.IsVisible = true;

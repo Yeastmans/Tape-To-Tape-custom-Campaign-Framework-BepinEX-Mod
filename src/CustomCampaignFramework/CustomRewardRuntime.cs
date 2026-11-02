@@ -155,6 +155,17 @@ internal static partial class CustomRewardRuntime
                             if (!authored.ContainsKey(d.Id)) CustomRewardExport.AddSnapshot(snapshot, d);
                     foreach (var d in authored.Values) snapshot[d.Id] = d;
                 }
+                else {
+                    // Default campaigns can acquire authored candidates too.
+                    // Their selected files carry portable rule snapshots. Saved
+                    // run snapshots are applied last below, after current sources.
+                    try {
+                        foreach (var pair in BaseGamePlayerPools.ReadCustomRewards(Plugin.ModContentRoot)) snapshot[pair.Key] = pair.Value;
+                    } catch (Exception ex) {
+                        sourcesReady = false;
+                        Plugin.Log.LogError("[CustomRewards] Base Game pool definitions: " + ex.Message);
+                    }
+                }
                 sourcesReady &= CustomRewardLifecycle.LoadRetained(snapshot);
                 string exports = Path.Combine(Plugin.ModContentRoot, "play_now_overrides");
                 if (Directory.Exists(exports)) foreach (string file in Directory.EnumerateFiles(exports, "*.txt")) {
@@ -171,6 +182,7 @@ internal static partial class CustomRewardRuntime
                 // The verified run is authoritative for its embedded dependencies,
                 // even if a campaign or library definition was subsequently edited.
                 foreach (var d in CoachRewardSnapshots()) snapshot[d.Id] = d;
+                foreach (var d in BaseGameRewardSnapshots()) snapshot[d.Id] = d;
                 Definitions.Clear(); foreach (var pair in snapshot) Definitions.Add(pair.Key, pair.Value);
                 definitionsScope = scope;
                 definitionSourcesReady = sourcesReady;
@@ -357,6 +369,7 @@ internal static partial class CustomRewardRuntime
         EnsureRun(); if (run.Length == 0 || Definitions.Count == 0) return;
         ObserveOwnership(CampaignUtil.CampaignState?.runData?.teamData);
         try {
+            SaveBaseGameRunRewards(run);
             string file = StateFile(); Directory.CreateDirectory(Path.GetDirectoryName(file));
             // A mid-match menu save must not commit gains from an abandoned match.
             string temp = file + ".tmp"; File.WriteAllText(temp, inMatch && !completed ? matchStartProgress : progress.Save());

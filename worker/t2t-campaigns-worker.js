@@ -5,9 +5,10 @@
 //
 // Endpoints:
 //   POST /upload        (multipart/form-data: file, meta)      — upload a campaign zip
-//   GET  /list                                                 — list campaigns
+//   GET  /list?kind=campaign|base-game-pools                    — list one category
 //   GET  /download?path=/Foo.zip                               — stream a campaign zip
 //   POST /manage/prepare, /manage/status, /manage/delete         — private code workflow
+//   POST /manage/icon                                          — replace only an owned campaign's cover
 //   POST /manage/claim                                         — administrator legacy assignment
 //
 // Env vars (Workers > Settings > Variables, all encrypted):
@@ -39,9 +40,21 @@ function isLegacyPath(path) {
   return typeof path === "string" && /^\/[^/\\\x00-\x1f]+\.zip$/i.test(path);
 }
 function isManagedPath(path) {
-  return typeof path === "string" && /^\/managed\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} - [^/\\\x00-\x1f]+\.zip$/i.test(path);
+  return typeof path === "string" && /^\/managed(?:-pools)?\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} - [^/\\\x00-\x1f]+\.zip$/i.test(path);
 }
 function isPublicPath(path) { return isLegacyPath(path) || isManagedPath(path); }
+// The storage namespace is authoritative. Presentation fields and caller claims
+// can never reinterpret a campaign as pools or expose pools to legacy clients.
+function publicKind(path) { return /^\/managed-pools\//i.test(path) ? "base-game-pools" : "campaign"; }
+function inputKind(value) {
+  if (value === undefined) return "campaign";
+  if (value !== "campaign" && value !== "base-game-pools") fail(400, "Choose campaign or base-game-pools.");
+  return value;
+}
+function checkKind(input, kind) {
+  if (Object.hasOwn(input, "kind") && inputKind(input.kind) !== kind)
+    fail(400, "The category must match the authorized upload path.");
+}
 function displayName(file) {
   let name = file.name || "";
   if (isManagedPath(file.path_display || file.path_lower)) name = name.replace(/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12} - /i, "");
@@ -59,7 +72,7 @@ function publicFileId(file, env) {
 }
 function publicFile(file, presentation, env) {
   const name = presentation?.displayName || displayName(file);
-  return { id: publicFileId(file, env), name, campaignName: presentation?.campaignName || name,
+  return { id: publicFileId(file, env), kind: publicKind(file.path_display || file.path_lower), name, campaignName: presentation?.campaignName || name,
     author: presentation?.author || "", description: presentation?.description || "", icon: presentation?.icon || "",
     path: file.path_display || file.path_lower, rev: file.rev,
     size: file.size, modified: file.server_modified || file.client_modified, contentHash: file.content_hash || "" };
@@ -85,6 +98,62 @@ function presentationInput(value) {
     if (width < 1 || height < 1 || width > 512 || height > 512) fail(400, "Campaign icon must be no larger than 512 by 512 pixels.");
   }
   return result;
+}
+// Cover edits accept complete, bounded PNGs. A signature/IHDR alone is not an
+// image: check chunk integrity and the decoded scanlines before saving it.
+const PNG_CRC = Uint32Array.from({ length: 256 }, (_, value) => {
+  for (let bit = 0; bit < 8; bit++) value = (value >>> 1) ^ ((value & 1) ? 0xedb88320 : 0);
+  return value >>> 0;
+});
+async function coverIconInput(value) {
+  if (typeof value !== "string" || !value.trim()) fail(400, "Choose a replacement PNG cover image.");
+  const icon = presentationInput({ icon: value }).icon;
+  try {
+    const bytes = unbase64(icon.slice("data:image/png;base64,".length));
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const width = view.getUint32(16), height = view.getUint32(20), depth = bytes[24], color = bytes[25];
+    const depths = { 0: [1, 2, 4, 8, 16], 2: [8, 16], 3: [1, 2, 4, 8], 4: [8, 16], 6: [8, 16] };
+    if (!depths[color]?.includes(depth) || bytes[26] !== 0 || bytes[27] !== 0 || bytes[28] > 1) throw new Error();
+    const parts = []; let ended = false, palette = false, dataEnded = false;
+    for (let offset = 8; offset < bytes.length;) {
+      if (offset + 12 > bytes.length) throw new Error();
+      const length = view.getUint32(offset), end = offset + length + 12;
+      if (end > bytes.length) throw new Error();
+      const type = String.fromCharCode(...bytes.subarray(offset + 4, offset + 8));
+      if (!/^[A-Za-z]{4}$/.test(type)) throw new Error();
+      let crc = 0xffffffff;
+      for (let index = offset + 4; index < end - 4; index++) crc = (crc >>> 8) ^ PNG_CRC[(crc ^ bytes[index]) & 255];
+      if (((crc ^ 0xffffffff) >>> 0) !== view.getUint32(end - 4)) throw new Error();
+      if (type === "IHDR") { if (offset !== 8 || length !== 13) throw new Error(); }
+      else if (type === "PLTE") {
+        if (palette || parts.length || length < 3 || length > 768 || length % 3 || color === 0 || color === 4 ||
+          (color === 3 && length / 3 > 2 ** depth)) throw new Error();
+        palette = true;
+      } else if (type === "IDAT") {
+        if (dataEnded || (color === 3 && !palette)) throw new Error();
+        parts.push(bytes.subarray(offset + 8, end - 4));
+      } else if (type === "IEND") {
+        if (length || end !== bytes.length || !parts.length) throw new Error();
+        ended = true;
+      } else if ((bytes[offset + 4] & 32) === 0) throw new Error(); // Unknown critical chunk.
+      if (parts.length && type !== "IDAT") dataEnded = true;
+      offset = end;
+    }
+    if (!ended) throw new Error();
+    const bits = depth * ({ 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 })[color];
+    const passes = bytes[28] === 0 ? [[0, 0, 1, 1]] : [[0, 0, 8, 8], [4, 0, 8, 8], [0, 4, 4, 8],
+      [2, 0, 4, 4], [0, 2, 2, 4], [1, 0, 2, 2], [0, 1, 1, 2]];
+    const rows = []; let expected = 0;
+    for (const [x, y, dx, dy] of passes) {
+      const w = Math.max(0, Math.ceil((width - x) / dx)), h = Math.max(0, Math.ceil((height - y) / dy));
+      if (!w || !h) continue;
+      const stride = 1 + Math.ceil(w * bits / 8);
+      for (let row = 0; row < h; row++) { rows.push(expected); expected += stride; }
+    }
+    const decoded = await boundedBody(new Response(new Blob(parts).stream().pipeThrough(new DecompressionStream("deflate"))), expected);
+    if (decoded.length !== expected || rows.some(offset => decoded[offset] > 4)) throw new Error();
+  } catch { fail(400, "Choose a complete, undamaged PNG cover image up to 512 by 512 pixels."); }
+  return icon;
 }
 async function inputJson(req, maximum = 16384, allowEmpty = false) {
   try {
@@ -121,17 +190,24 @@ async function presentFile(file, env, token) {
 }
 async function savePresentation(file, presentation, env) {
   const token = await getAccessToken(env), prior = await readPresentation(file, env, token);
+  // A partial edit must merge this exact snapshot, not a separate earlier read
+  // followed by a newer revision that could authorize overwriting others' edits.
+  const merged = typeof presentation === "function" ? presentation(prior?.presentation) : presentation;
   // Read the sidecar revision BEFORE checking the ZIP revision. Conditional write
   // then prevents an older finish racing a newer finish from replacing its details.
   const current = await metadata(env, file.id);
   if (!current || current.id !== file.id || current.rev !== file.rev) fail(409, "Campaign changed while saving its details.");
   const path = prior?.path || await presentationPath(file.id);
-  const response = await fetch("https://content.dropboxapi.com/2/files/upload", { method: "POST",
+  let response;
+  try { response = await fetch("https://content.dropboxapi.com/2/files/upload", { method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/octet-stream", "User-Agent": UA,
       "Dropbox-API-Arg": JSON.stringify({ path, mode: prior ? { ".tag": "update", update: prior.revision } : "add",
         autorename: false, mute: true, strict_conflict: true }) },
-    body: JSON.stringify({ v: 1, id: file.id, zipRevision: file.rev, metadata: presentation }) });
-  if (!response.ok) fail(502, "Campaign details could not be saved.");
+    body: JSON.stringify({ v: 1, id: file.id, zipRevision: file.rev, metadata: merged }) }); }
+  catch { fail(502, "Campaign details could not be confirmed saved. Refresh your uploads before retrying."); }
+  if (!response.ok) fail(response.status === 409 ? 409 : 502,
+    "Campaign details could not be saved. Refresh your uploads before retrying.");
+  return merged;
 }
 function requireRevision(value) {
   if (typeof value !== "string" || !/^[0-9a-f]{9,}$/i.test(value)) fail(400, "The current campaign revision is required. Refresh the community list.");
@@ -179,21 +255,45 @@ async function managedFile(capability, env) {
   if (!file) return null;
   const path = file.path_display || file.path_lower;
   if (file[".tag"] !== "file" || !isPublicPath(path) ||
-      (capability.type === "legacy" ? file.id !== capability.id : path.toLowerCase() !== capability.path.toLowerCase()))
+      (capability.type === "legacy" ? file.id !== capability.id || publicKind(path) !== "campaign" :
+        path.toLowerCase() !== capability.path.toLowerCase()))
     fail(403, "This code does not authorize the selected campaign.");
   return file;
 }
 async function prepareManagement(req, env) {
-  const input = await inputJson(req);
+  const input = await inputJson(req), kind = inputKind(input.kind);
   if (input.name !== undefined && typeof input.name !== "string") fail(400, "Campaign name must be text.");
-  const path = "/managed/" + crypto.randomUUID() + " - " + safeName(input.name);
+  const path = (kind === "base-game-pools" ? "/managed-pools/" : "/managed/") + crypto.randomUUID() + " - " + safeName(input.name);
   const managementCode = await signManagement({ v: 1, type: "managed", path }, env);
-  return json({ ok: true, managementCode, path, name: path.slice(path.lastIndexOf("/") + 1) });
+  return json({ ok: true, managementCode, kind, path, name: path.slice(path.lastIndexOf("/") + 1) });
 }
 async function managementStatus(req, env) {
   const capability = await readManagement(req, env), file = await managedFile(capability, env);
   return json(file ? { ok: true, exists: true, path: file.path_display || file.path_lower, item: await presentFile(file, env) } :
     { ok: true, exists: false, path: capability.path || "" });
+}
+async function replaceManagedIcon(req, env) {
+  const capability = await readManagement(req, env), input = await inputJson(req, MAX_PRESENTATION_REQUEST_BYTES);
+  if (Object.keys(input).some(key => !["id", "rev", "icon"].includes(key)))
+    fail(400, "A cover edit can contain only the campaign identity, revision and replacement image.");
+  if (typeof input.id !== "string" || !/^id:[^\s]{1,250}$/.test(input.id)) fail(400, "Refresh your uploads to verify this campaign's identity.");
+  const rev = requireRevision(input.rev), file = await managedFile(capability, env);
+  if (!file) fail(404, "This campaign is no longer posted. Refresh your uploads.");
+  if (publicFileId(file, env) !== input.id) fail(403, "This code does not authorize the selected campaign.");
+  if (file.rev !== rev) fail(409, "This campaign changed. Refresh it before replacing the cover.");
+  const icon = await coverIconInput(input.icon);
+  try {
+    const presentation = await savePresentation(file, prior => ({ ...(prior || presentationInput({})), icon }), env);
+    // The ZIP and sidecar are separate Dropbox files. If the ZIP changed during
+    // the sidecar commit, report uncertainty rather than confirming stale identity.
+    const current = await metadata(env, file.id);
+    if (!current || ["id", "rev", "path_display", "path_lower", "size", "content_hash"].some(key => current[key] !== file[key]))
+      fail(409, "The campaign changed while saving its cover.");
+    return json({ ok: true, iconSaved: true, ...publicFile(file, presentation, env) });
+  } catch (error) {
+    fail(error instanceof HttpError ? error.status : 502,
+      (error instanceof HttpError ? error.message : "The cover could not be confirmed saved.") + " Refresh your uploads before retrying.");
+  }
 }
 async function deleteManaged(req, env) {
   const capability = await readManagement(req, env), input = await inputJson(req), rev = requireRevision(input.rev);
@@ -214,6 +314,7 @@ async function claimLegacy(req, env) {
   let mismatch = 0; for (let i = 0; i < a.length; i++) mismatch |= a[i] ^ b[i];
   if (mismatch) fail(403, "Administrator authorization is required.");
   const input = await inputJson(req);
+  checkKind(input, "campaign");
   if (!isLegacyPath(input.path)) fail(400, "Select one legacy campaign ZIP in the public root.");
   const file = await metadata(env, input.path);
   if (!file) fail(404, "This campaign is no longer posted.");
@@ -288,6 +389,7 @@ async function startUpload(req, env) {
   let ownership = {}, path;
   if (req.headers.has("X-Campaign-Manage") || input.operation !== undefined) {
     const capability = await readManagement(req, env);
+    checkKind(input, capability.type === "legacy" ? "campaign" : publicKind(capability.path));
     if (input.operation !== "create" && input.operation !== "replace") fail(400, "Choose create or replace for this campaign upload.");
     const rev = input.operation === "replace" ? requireRevision(input.rev) : undefined;
     const file = await managedFile(capability, env);
@@ -303,6 +405,7 @@ async function startUpload(req, env) {
     ownership = { managed: true, owner: await ownerFingerprint(capability), operation: input.operation, rev,
       targetId: file?.id, publicPath: file?.path_display || file?.path_lower || capability.path };
   } else {
+    checkKind(input, "campaign");
     if (input.name !== undefined && typeof input.name !== "string") fail(400, "Campaign name must be text.");
     path = "/" + safeName(input.name);
   }
@@ -332,6 +435,7 @@ async function appendUpload(req, url, env) {
 async function finishUpload(req, env) {
   const ticket = await readTicket(req, env);
   const input = await inputJson(req, MAX_PRESENTATION_REQUEST_BYTES, true);
+  checkKind(input, publicKind(ticket.publicPath || ticket.path));
   const presentation = input.metadata === undefined ? undefined : presentationInput(input.metadata);
   if (presentation !== undefined && !ticket.managed) fail(403, "Campaign details require verified campaign management access.");
   let mode = "add";
@@ -432,8 +536,9 @@ async function handleUpload(req, env) {
   return json({ ok: true, path: j.path_display || j.path_lower, size: j.size, meta_echo: meta });
 }
 
-// -- GET /list: returns [{ name, path, size, modified }, ...]
-async function handleList(env) {
+// -- GET /list: missing kind remains campaigns only, including for old clients.
+async function handleList(url, env) {
+  const kind = inputKind(url.searchParams.has("kind") ? url.searchParams.get("kind") : undefined);
   const files = []; let cursor;
   do {
     const response = await dropboxJson(env, cursor ? "list_folder/continue" : "list_folder", cursor ? { cursor } :
@@ -441,7 +546,8 @@ async function handleList(env) {
     if (!response.ok) fail(502, "Community storage could not list campaigns.");
     const page = await response.json();
     for (const file of page.entries || [])
-      if (file[".tag"] === "file" && isPublicPath(file.path_display || file.path_lower)) files.push(file);
+      if (file[".tag"] === "file" && isPublicPath(file.path_display || file.path_lower) &&
+        publicKind(file.path_display || file.path_lower) === kind) files.push(file);
     cursor = page.has_more ? page.cursor : null;
   } while (cursor);
   let token; try { token = await getAccessToken(env); } catch { /* previews are optional */ }
@@ -538,20 +644,23 @@ export default {
     try {
       if (url.pathname === "/manage/prepare" && req.method === "POST") return await prepareManagement(req, env);
       if (url.pathname === "/manage/status" && req.method === "POST") return await managementStatus(req, env);
+      if (url.pathname === "/manage/icon" && req.method === "POST") return await replaceManagedIcon(req, env);
       if (url.pathname === "/manage/delete" && req.method === "POST") return await deleteManaged(req, env);
       if (url.pathname === "/manage/claim" && req.method === "POST") return await claimLegacy(req, env);
       if (url.pathname === "/upload/start" && req.method === "POST") return await startUpload(req, env);
       if (url.pathname === "/upload/chunk" && req.method === "POST") return await appendUpload(req, url, env);
       if (url.pathname === "/upload/finish" && req.method === "POST") return await finishUpload(req, env);
       if (url.pathname === "/upload" && req.method === "POST") return await handleUpload(req, env);
-      if (url.pathname === "/list") return await handleList(env);
+      if (url.pathname === "/list") return await handleList(url, env);
       if (url.pathname === "/download") return await handleDownload(url, env);
       if (url.pathname === "/" || url.pathname === "/health") {
         return json({ ok: true, service: "t2t-campaigns", chunkedUpload: true, maxCampaignBytes: null,
           campaignManagement: typeof env.CAMPAIGN_MANAGEMENT_SECRET === "string" && env.CAMPAIGN_MANAGEMENT_SECRET.length >= 32,
           campaignMetadata: true,
+          campaignCoverEdit: true,
+          baseGamePools: true,
           chunkBytes: CHUNK_BYTES, endpoints: ["/upload", "/upload/start", "/upload/chunk", "/upload/finish", "/list", "/download?path=...",
-            "/manage/prepare", "/manage/status", "/manage/delete", "/manage/claim"] });
+            "/manage/prepare", "/manage/status", "/manage/icon", "/manage/delete", "/manage/claim"] });
       }
       return json({ error: "not found" }, 404);
     } catch (e) {

@@ -1,5 +1,14 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 36
+
+- Add separate Base Game Pools upload/download and management controls on Home.
+- Back up all three pools before replacement; add dated Restore backup controls with an undo snapshot.
+- Share selected candidates and referenced assets, validating packages before applying them.
+- Fix Stu Stumple/Bench Stumple artwork and native helmet choices on unchanged candidates.
+- Retain custom reward definitions for saved base-game runs across pool changes.
+- Preserve campaign sharing, cover editing and unlimited chunked uploads.
+
 ## Beta 1.0 revision 35 — 2026-11-02
 
 - Custom Base Game benchwarmers receive the native Benchwarmer category, so Benchwarmer Boost applies its normal +15 overall.

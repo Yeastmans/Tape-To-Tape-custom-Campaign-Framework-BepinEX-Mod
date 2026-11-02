@@ -98,10 +98,14 @@ internal static class LogoExport
             && source.Get(prefix + " PNG").Length == 0)
             throw new ArgumentException($"{JerseyLogoOptions.Field(away)} embedded PNG is missing. Import the original PNG again.");
     }
-    private static void CheckPng(byte[] bytes, string slot)
+    internal static void CheckPng(byte[] bytes, string slot)
     {
         if (bytes.Length > 16 * 1024 * 1024 || bytes.Length < 24 || !bytes.Take(8).SequenceEqual(PngHeader))
             throw new ArgumentException($"{slot} must be a PNG logo smaller than 16 MB.");
+        uint width = System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(16, 4));
+        uint height = System.Buffers.Binary.BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(20, 4));
+        if (width is < 1 or > 8192 || height is < 1 or > 8192)
+            throw new ArgumentException($"{slot} dimensions must be between 1 and 8192 pixels.");
         try
         {
             using var decoded = new Bitmap(new MemoryStream(bytes));

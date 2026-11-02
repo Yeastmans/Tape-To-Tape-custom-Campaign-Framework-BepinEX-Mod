@@ -23,6 +23,17 @@ public sealed class BaseGamePoolSelection
 public static class BaseGamePlayerPools
 {
     public static readonly string[] Kinds = { "draft_pool", "free_agents", "superstars" };
+    public static IReadOnlyDictionary<string, CustomRewardDefinition> ReadCustomRewards(string root)
+    {
+        var result = new Dictionary<string, CustomRewardDefinition>(StringComparer.OrdinalIgnoreCase);
+        var selection = Load(root);
+        if (!selection.Enabled) return result;
+        foreach (string kind in Kinds)
+            foreach (string file in SelectedFiles(root, kind, selection))
+                foreach (var reward in CustomRewardExport.Read(new CampaignDocument(File.ReadAllText(file))))
+                    CustomRewardExport.AddSnapshot(result, reward);
+        return result;
+    }
     public const string CustomIdPrefix = "CCF_BASE_POOL_";
     public static string Folder(string root) => Path.Combine(root, "base_game_pools");
     public static string PoolDirectory(string root, string kind)

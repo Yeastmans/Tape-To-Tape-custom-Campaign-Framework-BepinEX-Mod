@@ -209,9 +209,10 @@ internal static partial class CampaignSharing
         return name;
     }
 
-    internal static async Task<List<CommunityItem>> ListAsync()
+    internal static async Task<List<CommunityItem>> ListAsync(string kind = "campaign")
     {
-        using var doc = JsonDocument.Parse(await http.GetStringAsync(WorkerUrl + "/list"));
+        if (kind is not ("campaign" or "base-game-pools")) throw new ArgumentException("Unknown community content type.");
+        using var doc = JsonDocument.Parse(await http.GetStringAsync(WorkerUrl + "/list" + (kind == "campaign" ? "" : "?kind=base-game-pools")));
         var rootElement = doc.RootElement;
         if (!rootElement.TryGetProperty("ok", out var ok) || !ok.GetBoolean())
             throw new InvalidOperationException(rootElement.TryGetProperty("error", out var e) ? e.GetString() : "The community list couldn't be loaded.");
@@ -219,6 +220,8 @@ internal static partial class CampaignSharing
         if (rootElement.TryGetProperty("items", out var list))
             foreach (var item in list.EnumerateArray())
             {
+                string itemKind = item.TryGetProperty("kind", out var category) ? category.GetString() ?? "campaign" : "campaign";
+                if (itemKind != kind) continue;
                 string storedName = item.GetProperty("name").GetString() ?? "";
                 var presentation = CommunityPresentation.Parse(item, storedName);
                 items.Add(new CommunityItem(presentation.DisplayName, item.GetProperty("path").GetString() ?? "",
@@ -239,6 +242,8 @@ internal static partial class CampaignSharing
     // Ownership is private application data, never campaign content or ZIP payload.
     internal static CommunityCampaignClient Community { get; } = new(http, WorkerUrl,
         new CommunityOwnershipStore(Path.Combine(UserContentPaths.Root, "community-ownership.json")));
+    internal static CommunityCampaignClient PoolsCommunity { get; } = new(http, WorkerUrl,
+        new CommunityOwnershipStore(Path.Combine(UserContentPaths.Root, "community-pool-ownership.json")), "base-game-pools");
 
     /// <summary>Uploads a campaign and saves management access before sending its bytes.</summary>
     internal static async Task<CommunityCampaignPost> UploadAsync(string zipPath, string displayName, string author, string description, string campaignName, IProgress<double>? progress = null, string icon = "")

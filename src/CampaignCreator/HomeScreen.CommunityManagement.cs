@@ -8,9 +8,11 @@ namespace CampaignCreator;
 
 public sealed partial class MainWindow
 {
-    private async Task ShowCommunityManagement()
+    private async Task ShowCommunityManagement(bool pools = false)
     {
-        var dialog = new Window { Title = "Manage campaign uploads", Width = 760, Height = 570, MinWidth = 620, MinHeight = 480,
+        string kind = pools ? "pool set" : "campaign", title = pools ? "Manage Base Game Pools uploads" : "Manage campaign uploads";
+        var client = pools ? CampaignSharing.PoolsCommunity : CampaignSharing.Community;
+        var dialog = new Window { Title = title, Width = 760, Height = 570, MinWidth = 620, MinHeight = 480,
             WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = Background };
         var list = new ListBox { Name = "OwnedCommunityCampaigns", Background = StudioTheme.Input, Height = 220,
             ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<ManagedCampaign>((item, _) => item == null ? new TextBlock() : new StackPanel { Spacing = 4, Children = {
@@ -30,11 +32,11 @@ public sealed partial class MainWindow
         async Task Refresh(bool showMessage = true)
         {
             string? key = (list.SelectedItem as ManagedCampaign)?.Ownership.Key;
-            var owned = await CampaignSharing.Community.OwnedAsync();
+            var owned = await client.OwnedAsync();
             list.ItemsSource = owned;
             list.SelectedItem = owned.FirstOrDefault(x => x.Ownership.Key == key) ?? owned.FirstOrDefault();
             if (showMessage) feedback.Text = owned.Count == 0
-                ? "No saved uploads yet. Upload a campaign to save access automatically, or add access for an older post."
+                ? "No saved uploads yet. Upload a " + kind + " to save access automatically, or add access for an older post."
                 : "Select one of your uploads to replace its ZIP or delete its Dropbox copy.";
         }
         async Task Run(Func<Task> action)
@@ -52,15 +54,16 @@ public sealed partial class MainWindow
             if (busy || list.SelectedItem is not ManagedCampaign { Post: not null } selected) return;
             await Run(async () =>
             {
-                var files = await dialog.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Choose the replacement campaign ZIP", AllowMultiple = false,
-                    FileTypeFilter = [new FilePickerFileType("Campaign ZIP") { Patterns = ["*.zip", "*.t2tcampaign"] }] });
+                var files = await dialog.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Choose the replacement " + kind + " ZIP", AllowMultiple = false,
+                    FileTypeFilter = [new FilePickerFileType(pools ? "Base Game Pools ZIP" : "Campaign ZIP") { Patterns = pools ? ["*.zip", "*.t2tpools"] : ["*.zip", "*.t2tcampaign"] }] });
                 string? file = files.FirstOrDefault()?.TryGetLocalPath();
                 if (file == null) return;
-                CampaignSharing.TopFolder(file);
+                if (pools) await Task.Run(() => BaseGamePoolPackages.Inspect(file));
+                else CampaignSharing.TopFolder(file);
                 var progress = new Progress<double>(value => feedback.Text = $"Replacing {selected.Post.Name}: {value:0}%…");
-                var posted = await CampaignSharing.Community.UploadAsync(file, selected.Ownership.Name, progress, selected);
+                var posted = await client.UploadAsync(file, selected.Ownership.Name, progress, selected);
                 await Refresh(false);
-                feedback.Text = "Updated the posted campaign. The new ZIP is now available from the community list." +
+                feedback.Text = "Updated the posted " + kind + ". The new ZIP is now available from its community list." +
                     (posted.MetadataWarning.Length > 0 ? " " + posted.MetadataWarning : "");
                 feedback.Foreground = posted.MetadataWarning.Length > 0 ? SharingWarn : Brush.Parse("#70DEA2");
             });
@@ -71,21 +74,21 @@ public sealed partial class MainWindow
             if (busy || list.SelectedItem is not ManagedCampaign { Post: not null } selected) return;
             await Run(async () =>
             {
-                if (!await ConfirmCommunityDeletion(dialog, selected.Post.Name)) return;
-                feedback.Text = "Deleting the posted Dropbox campaign…";
-                await CampaignSharing.Community.DeleteAsync(selected);
+                if (!await ConfirmCommunityDeletion(dialog, selected.Post.Name, pools)) return;
+                feedback.Text = "Deleting the posted " + kind + "…";
+                await client.DeleteAsync(selected);
                 await Refresh(false);
-                feedback.Text = "Deleted the posted campaign from Dropbox. Your local campaign and ZIP files are kept.";
+                feedback.Text = "Deleted the posted " + kind + " from Dropbox. Your local files are kept.";
                 feedback.Foreground = Brush.Parse("#70DEA2");
             });
         });
         delete.Name = "DeleteCommunityCampaign";
         restore = Button("Add access for an older post…", async () => await Run(async () =>
         {
-            string? code = await AskCommunityCode(dialog);
+            string? code = await AskCommunityCode(dialog, pools);
             if (code == null) return;
             feedback.Text = "Verifying the management code…";
-            await CampaignSharing.Community.ImportCodeAsync(code);
+            await client.ImportCodeAsync(code);
             await Refresh(false);
             feedback.Text = "Access verified and saved in AppData. You won't need to enter this code again.";
         }));
@@ -94,9 +97,9 @@ public sealed partial class MainWindow
         var actions = new WrapPanel { Orientation = Orientation.Horizontal, Children = { refresh, replace, delete } };
         foreach (var button in new[] { refresh, replace, delete }) button.Margin = new Thickness(0, 0, 8, 8);
         var layout = new Grid { Margin = new Thickness(24), RowDefinitions = new("Auto,*,Auto"), RowSpacing = StudioTheme.SpaceMd };
-        layout.Children.Add(new TextBlock { Text = "Manage campaign uploads", FontSize = 26, FontWeight = FontWeight.Bold });
+        layout.Children.Add(new TextBlock { Text = title, FontSize = 26, FontWeight = FontWeight.Bold });
         layout.Children.Add(WithRow(new ScrollViewer { Content = new StackPanel { Spacing = StudioTheme.SpaceMd, Children = {
-            new TextBlock { Text = "Studio checks each campaign against your saved AppData code. Replacement and deletion affect the posted Dropbox copy; your local campaigns are kept.",
+            new TextBlock { Text = "Studio checks each " + kind + " against your saved AppData code. Replacement and deletion affect the posted Dropbox copy; your local files are kept.",
                 Foreground = StudioTheme.Muted, TextWrapping = TextWrapping.Wrap }, list, feedback
         } } }, 1));
         layout.Children.Add(WithRow(new StackPanel { Spacing = 8, Children = { actions,
@@ -110,27 +113,27 @@ public sealed partial class MainWindow
         await dialog.ShowDialog(this);
     }
 
-    private async Task<bool> ConfirmCommunityDeletion(Window owner, string name)
+    private async Task<bool> ConfirmCommunityDeletion(Window owner, string name, bool pools = false)
     {
         bool confirmed = false;
-        var dialog = new Window { Title = "Delete posted campaign", Width = 520, Height = 270, MinHeight = 250,
+        var dialog = new Window { Title = pools ? "Delete posted pool set" : "Delete posted campaign", Width = 520, Height = 270, MinHeight = 250,
             WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = Background };
         var cancel = Button("Cancel", () => dialog.Close());
         var remove = Button("Delete from Dropbox", () => { confirmed = true; dialog.Close(); });
         dialog.Content = new Grid { Margin = new Thickness(24), RowDefinitions = new("*,Auto"), RowSpacing = StudioTheme.SpaceMd, Children = {
             new ScrollViewer { Content = new StackPanel { Spacing = StudioTheme.SpaceMd, Children = {
                 new TextBlock { Text = "Delete " + name + "?", FontSize = 20, FontWeight = FontWeight.SemiBold, TextWrapping = TextWrapping.Wrap },
-                new TextBlock { Text = "This removes its public community download from Dropbox. Your local campaign and ZIP files stay on your computer.", TextWrapping = TextWrapping.Wrap }
+                new TextBlock { Text = "This removes its public community download from Dropbox. Your local files and backups stay on your computer.", TextWrapping = TextWrapping.Wrap }
             } } },
             WithRow(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, HorizontalAlignment = HorizontalAlignment.Right, Children = { cancel, remove } }, 1)
         } };
         await dialog.ShowDialog(owner); return confirmed;
     }
 
-    private async Task<string?> AskCommunityCode(Window owner)
+    private async Task<string?> AskCommunityCode(Window owner, bool pools = false)
     {
         string? answer = null;
-        var dialog = new Window { Title = "Add campaign access", Width = 560, Height = 270,
+        var dialog = new Window { Title = pools ? "Add pool set access" : "Add campaign access", Width = 560, Height = 270,
             WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = Background };
         var code = new TextBox { Name = "CommunityManagementCode", Watermark = "Management code", PasswordChar = '●' };
         var cancel = Button("Cancel", () => dialog.Close());

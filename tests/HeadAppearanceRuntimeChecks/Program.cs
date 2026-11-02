@@ -15,6 +15,22 @@ void After(SkeletonData skeleton, SkaterType role, bool home, bool headOnly, For
 
 var harmony = new HarmonyLib.Harmony(); HeadAppearanceRuntime.Install(harmony);
 Check(harmony.Target?.Name == "GetSkins" && harmony.Prefix?.Name == "BeforeSkins" && harmony.Postfix?.Name == "AfterSkins", "Both policies attach to the existing native skin helper");
+// 26372689 standard bench Stu stores this complete native name with no helmet.
+// The unsuffixed skin contains Helmet_Face artwork, not Stu's Bench_Will artwork.
+const string Stu = "Faces/Anyteam/Bench_Stumple_Helmet", LegacyStu = "Faces/Anyteam/Bench_Stumple";
+Check(HeadAppearance.Base(Stu) == Stu, "Stu's standalone native identity must not be stripped to Boring Dude's placeholder skin");
+Check(HeadAppearance.Base(LegacyStu) == Stu && HeadAppearance.Base("Bench_Stumple") == Stu,
+    "Saved legacy Stu selections migrate to his actual native head");
+Check(HeadAppearance.Choices(new[] { LegacyStu, Stu }).SequenceEqual(new[] { Stu }),
+    "The skater head picker offers one actual Stu head instead of the placeholder");
+Check(HeadAppearance.NativeChoices.Contains(Stu) && !HeadAppearance.NativeChoices.Contains(LegacyStu),
+    "Random/native head choices use Stu's actual native identity");
+Check(HeadAppearance.Resolve(LegacyStu, false) == Stu && HeadAppearance.Resolve(Stu, true) == Stu,
+    "Both old saved selections and preview resolution use Stu artwork");
+var nativeStu = new ForwardData { headSkin = Stu, helmetSkin = "", helmetAwaySkin = "" };
+HeadAppearanceRuntime.Configure(nativeStu);
+Check(nativeStu.headSkin == Stu && nativeStu.helmetSkin == "__NO_HELMET__" && nativeStu.helmetAwaySkin == "__NO_HELMET__",
+    "Configuring the exact standard bench Stu preserves his head and native bareheaded intent");
 var player = new ForwardData { headSkin = Head + "_Helmet", helmetSkin = "none", helmetAwaySkin = Helmet, glassesSkin = "none", id = "keep", skill = 87 };
 HeadAppearanceRuntime.Configure(player);
 Check(player.headSkin == Head, "Configured fitted head normalizes to base so native live equipment can choose its mesh");

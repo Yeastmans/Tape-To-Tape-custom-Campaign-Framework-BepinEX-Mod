@@ -24,6 +24,7 @@
     <Compile Include="../CampaignCore/CustomRewardFlowEffects.cs" Link="Core/CustomRewardFlowEffects.cs" />
     <Compile Include="../CampaignCore/CustomRewardLifecycleEffects.cs" Link="Core/CustomRewardLifecycleEffects.cs" />
     <Compile Include="../CampaignCore/CustomRewardExport.cs" Link="Core/CustomRewardExport.cs" />
+    <Compile Include="../CampaignCore/BaseGamePoolRunRewards.cs" Link="Core/BaseGamePoolRunRewards.cs" />
     <Compile Include="../CampaignCore/CustomRewardTriggers.cs" Link="Core/CustomRewardTriggers.cs" />
     <Compile Include="../CampaignCore/CustomRewardPoolSelection.cs" Link="Core/CustomRewardPoolSelection.cs" />
     <Compile Include="../CampaignCore/CustomRewardProgress.cs" Link="Core/CustomRewardProgress.cs" />
