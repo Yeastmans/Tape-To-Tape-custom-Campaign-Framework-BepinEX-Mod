@@ -258,3 +258,10 @@ tests/FreeAgentNameChecks/*
 !tests/FreeAgentNameChecks/FreeAgentNameChecks.csproj
 !tests/FreeAgentNameChecks/FreeAgentNameChecks.cs
 !tests/FreeAgentNameChecks/Program.cs
+
+# Large campaign upload client regression sources
+!tests/CommunityClientChecks/
+tests/CommunityClientChecks/*
+!tests/CommunityClientChecks/CommunityClientChecks.csproj
+!tests/CommunityClientChecks/Program.cs
+!tests/CommunityClientChecks/LargeUploadChecks.cs

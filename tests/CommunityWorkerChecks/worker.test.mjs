@@ -295,8 +295,63 @@ test('chunk retries acknowledge received bytes and excessive requests reject bef
   await ok('/upload/chunk?offset=0', { ticket: upload.ticket, body: data });
   assert.equal((await ok('/upload/chunk?offset=0', { ticket: upload.ticket, body: data })).offset, 3);
   assert.equal((await call('/upload/chunk?offset=0', { ticket: upload.ticket, body: new Uint8Array(8 * 1024 * 1024 + 1) })).status, 413);
-  assert.equal((await call('/upload/start', { body: { name: 'too big', size: 512 * 1024 * 1024 + 1 } })).status, 413);
   assert.equal((await call('/upload/finish', { ticket: upload.ticket })).status, 200); assert.equal(db.files.size, 1);
+});
+
+test('chunked uploads advertise no application cap and accept ZIPs above 512 MiB', async () => {
+  storage(); const post = await prepare();
+  const health = await ok('/health', { method: 'GET' }); assert.equal(health.maxCampaignBytes, null);
+  const upload = await ok('/upload/start', { code: post.managementCode, body: { size: 536870913, operation: 'create' } });
+  assert.equal(upload.chunkBytes, 1048576);
+  assert.equal((await append(post, upload, new Uint8Array([80, 75, 3, 4]))).offset, 4);
+});
+
+test('upload cursors above 4 GiB reach Dropbox without truncation', async () => {
+  storage(); const post = await prepare();
+  const upload = await ok('/upload/start', { code: post.managementCode, body: { size: 4294967301, operation: 'create' } });
+  const external = globalThis.fetch;
+  // Dropbox fixture already holds the prefix; only the final five bytes cross this request.
+  globalThis.fetch = async (url, init) => {
+    if (!String(url).endsWith('/upload_session/append_v2')) return external(url, init);
+    const cursor = JSON.parse(new Headers(init.headers).get('Dropbox-API-Arg')).cursor;
+    assert.equal(cursor.offset, 4294967296); assert.equal(cursor.session_id.startsWith('session-'), true);
+    assert.deepEqual(new Uint8Array(init.body), new Uint8Array([1, 2, 3, 4, 5]));
+    return reply(null);
+  };
+  const result = await ok('/upload/chunk?offset=4294967296', { ticket: upload.ticket, body: new Uint8Array([1, 2, 3, 4, 5]) });
+  assert.equal(result.offset, 4294967301);
+});
+
+test('upload lengths and cursors reject invalid or unsafe integers before storage append', async () => {
+  storage(); const post = await prepare();
+  for (const size of [0, -1, 1.5, '536870913', null, 9007199254740992])
+    assert.equal((await call('/upload/start', { code: post.managementCode, body: { size, operation: 'create' } })).status, 400);
+  const upload = await start(post, new Uint8Array([1, 2, 3]));
+  for (const offset of ['-1', '0.5', '9007199254740992', 'NaN', '3'])
+    assert.equal((await call('/upload/chunk?offset=' + offset, { ticket: upload.ticket, body: new Uint8Array([1]) })).status, 400);
+  assert.equal((await append(post, upload, new Uint8Array([1, 2, 3]))).offset, 3);
+});
+
+test('long uploads survive an hour and expire after seven days', async () => {
+  storage(); const post = await prepare(), originalNow = Date.now, issued = originalNow();
+  try {
+    Date.now = () => issued;
+    const upload = await start(post, new Uint8Array([1, 2, 3]));
+    Date.now = () => issued + 60 * 60 * 1000 + 1;
+    assert.equal((await append(post, upload, new Uint8Array([1]))).offset, 1);
+    Date.now = () => issued + 7 * 24 * 60 * 60 * 1000 - 1;
+    assert.equal((await ok('/upload/chunk?offset=1', { ticket: upload.ticket, body: new Uint8Array([2]) })).offset, 2);
+    Date.now = () => issued + 7 * 24 * 60 * 60 * 1000 + 1;
+    assert.equal((await call('/upload/chunk?offset=2', { ticket: upload.ticket, body: new Uint8Array([3]) })).status, 403);
+    assert.equal((await finish(post, upload)).status, 403);
+  } finally { Date.now = originalNow; }
+});
+
+test('legacy multipart upload retains its 20 MiB file bound', async () => {
+  const db = storage(), form = new FormData();
+  form.set('file', new Blob([new Uint8Array(20971521)]), 'large.zip');
+  const result = await worker.fetch(new Request('https://worker.invalid/upload', { method: 'POST', body: form }), env);
+  assert.equal(result.status, 413); assert.equal(db.files.size, 0);
 });
 
 test('old multipart client still publishes a public root ZIP', async () => {

@@ -12,8 +12,6 @@ internal sealed record ManagedCampaign(CommunityOwnership Ownership, CommunityCa
 
 internal sealed class CommunityCampaignClient(HttpClient http, string workerUrl, CommunityOwnershipStore ownership)
 {
-    private const long MaximumBytes = 512L * 1024 * 1024;
-
     private async Task<JsonDocument> SendAsync(string route, object? body = null, string? code = null)
     {
         using var request = new HttpRequestMessage(body == null ? HttpMethod.Get : HttpMethod.Post, workerUrl + route);
@@ -109,7 +107,7 @@ internal sealed class CommunityCampaignClient(HttpClient http, string workerUrl,
     {
         metadata = metadata?.ValidateForUpload(name); // Reject invalid details before reserving ownership or uploading bytes.
         await using var stream = File.OpenRead(zipPath);
-        if (stream.Length <= 0 || stream.Length > MaximumBytes) throw new InvalidOperationException("Campaign ZIPs must be between 1 byte and 512 MB.");
+        if (stream.Length <= 0) throw new InvalidOperationException("Campaign ZIPs must not be empty.");
         ownership.Load(); // Validate persistence before reserving an upload.
         await EnsureManagementAsync(metadata != null);
         CommunityOwnership saved;

@@ -20,9 +20,8 @@
 // migrated Dropbox file IDs to their original public Studio IDs. Keep forever.
 
 const UA = "T2T-CampaignCreator-Worker/1.0";
-// Per-upload sanity cap — rejects zips larger than this to prevent abuse.
+// Legacy single-request multipart file bound; chunked uploads have no total cap.
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024; // 20 MB
-const MAX_CAMPAIGN_BYTES = 512 * 1024 * 1024;
 // Keep each request below the free Worker's CPU budget. Studio reads this size
 // when starting a session, so this also repairs already-released clients.
 const CHUNK_BYTES = 1024 * 1024;
@@ -268,7 +267,7 @@ async function readTicket(req, env) {
     if (parts.length !== 2 || !await crypto.subtle.verify("HMAC", await ticketKey(env), unbase64(parts[1]), unbase64(parts[0]))) throw new Error();
     const value = JSON.parse(new TextDecoder().decode(unbase64(parts[0])));
     if (!Number.isSafeInteger(value.expires) || value.expires < Date.now() ||
-      typeof value.session !== "string" || !value.session || !Number.isSafeInteger(value.size) || value.size <= 0 || value.size > MAX_CAMPAIGN_BYTES) throw new Error();
+      typeof value.session !== "string" || !value.session || !Number.isSafeInteger(value.size) || value.size <= 0) throw new Error();
     return value;
   } catch { fail(403, "Upload session is invalid or expired. Please retry the upload."); }
 }
@@ -284,8 +283,8 @@ async function ownerFingerprint(capability) {
 }
 async function startUpload(req, env) {
   const input = await inputJson(req);
-  if (!Number.isSafeInteger(input.size) || input.size <= 0 || input.size > MAX_CAMPAIGN_BYTES)
-    return json({ error: "Campaigns must be smaller than 512 MB." }, 413);
+  if (!Number.isSafeInteger(input.size) || input.size <= 0)
+    return json({ error: "Campaign ZIP size must be a positive safe integer number of bytes." }, 400);
   let ownership = {}, path;
   if (req.headers.has("X-Campaign-Manage") || input.operation !== undefined) {
     const capability = await readManagement(req, env);
@@ -311,7 +310,7 @@ async function startUpload(req, env) {
   if (!response.ok) return json({ error: "The community storage could not start the upload." }, 502);
   const session = await response.json();
   const ticket = await signTicket({ session: session.session_id, size: input.size,
-    path, ...ownership, expires: Date.now() + 60 * 60 * 1000 }, env);
+    path, ...ownership, expires: Date.now() + 7 * 24 * 60 * 60 * 1000 }, env);
   return json({ ok: true, ticket, chunkBytes: CHUNK_BYTES, path: ownership.publicPath || path });
 }
 async function appendUpload(req, url, env) {
@@ -548,7 +547,7 @@ export default {
       if (url.pathname === "/list") return await handleList(env);
       if (url.pathname === "/download") return await handleDownload(url, env);
       if (url.pathname === "/" || url.pathname === "/health") {
-        return json({ ok: true, service: "t2t-campaigns", chunkedUpload: true, maxCampaignBytes: MAX_CAMPAIGN_BYTES,
+        return json({ ok: true, service: "t2t-campaigns", chunkedUpload: true, maxCampaignBytes: null,
           campaignManagement: typeof env.CAMPAIGN_MANAGEMENT_SECRET === "string" && env.CAMPAIGN_MANAGEMENT_SECRET.length >= 32,
           campaignMetadata: true,
           chunkBytes: CHUNK_BYTES, endpoints: ["/upload", "/upload/start", "/upload/chunk", "/upload/finish", "/list", "/download?path=...",

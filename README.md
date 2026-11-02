@@ -2,11 +2,11 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 32](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r32-build-1793315155230) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 33](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r33-build-1793592069095) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
-**Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **public v1.0 release, build 26188487**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
+**Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **public v1.0 release, build 26289478**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
 
-Beta 1.0 revision 27 gives new Play Now team and player exports readable filenames, preserves existing export filenames when updating, and supports public v1.0 game build 26188487. Community campaign downloads now use readable campaign titles. Custom Coach nodes and squad-specific maps from revision 26 remain included. See the [changelog](release/CHANGELOG.md) and [release validation](docs/RELEASE-R27-VALIDATION.md).
+Beta 1.0 revision 33 removes the 512 MiB campaign ZIP upload cap and allows upload sessions to last up to seven days. Large ZIPs stream in small chunks; Dropbox file-size and storage limits still apply. The reviewed build 26289478 runtime from revision 32 is included. See the [changelog](release/CHANGELOG.md) and [release validation](docs/RELEASE-R33-VALIDATION.md).
 
 **This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. Reporting bugs on [Discord](https://discord.gg/hscxnYghb) or [GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues) helps immensely.
 

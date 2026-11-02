@@ -1,5 +1,15 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 33 — 2026-11-01
+
+- Removes the former 512 MiB campaign ZIP limit in Studio and the chunked upload service.
+- Streams large ZIPs in bounded chunks for both new uploads and replacements.
+- Extends new upload sessions from one hour to seven days.
+- Retains campaign ownership, revision checks and per-request bounds. Dropbox file-size limits and available storage still apply.
+- Includes the existing reviewed Steam build 26289478 runtime from revision 32.
+
+Validation: 42 Worker regressions and 3,098 client assertions, including create and replacement of a real 512 MiB + 17-byte local file through substituted external HTTP. See `docs/RELEASE-R33-VALIDATION.md` for package and deployment evidence and its limits.
+
 ## Beta 1.0 revision 32 — 2026-10-29
 
 - Mirror matches preserve both authored rosters, allowing the same players on opposing sides without pulling replacements from the squad's free-agent pool.

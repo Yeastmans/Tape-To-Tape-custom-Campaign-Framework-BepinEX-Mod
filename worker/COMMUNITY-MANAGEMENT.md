@@ -90,8 +90,12 @@ are sent in the `X-Campaign-Manage` header, never a URL. JSON responses use
    reserved namespace cannot be targeted by the legacy upload endpoints.
 2. `/upload/start`, management header plus `{ "size": 123, "operation": "create" }`,
    returns `{ ok, ticket, chunkBytes, path }`. Use this chunked route for all managed
-   ZIPs, including small ones. The current limit is 512 MiB; advertised chunk size
-   remains 1 MiB. Prior anonymous upload sessions may still send 8 MiB chunks.
+   ZIPs, including small ones. Studio and the chunked Worker routes impose no
+   application limit on total ZIP size; `/health` reports `maxCampaignBytes: null`
+   for this contract. Byte counts must be safe integers: sizes must be positive
+   and offsets nonnegative. Advertised chunk size remains 1 MiB; chunks up to
+   8 MiB remain accepted for older sessions. New upload tickets expire after
+   seven days; previously issued tickets retain their original expiry.
 3. `/upload/chunk?offset=0`, with `X-Campaign-Upload: <ticket>` and raw bytes,
    returns the acknowledged offset. No management code is needed for a chunk.
 4. `/upload/finish` requires both the upload ticket and management header for
@@ -115,6 +119,17 @@ are sent in the `X-Campaign-Manage` header, never a URL. JSON responses use
    only that exact file and revision; response `{ ok, deleted: true, id, path }`.
    Missing files return 404; changed revisions return 409. Refresh status to
    reconcile a lost deletion response.
+
+Chunking streams a ZIP from disk with bounded request memory; removing the total
+application cap does not provide unlimited provider storage. Dropbox currently
+limits an upload session to **2,199,019,061,248 bytes** (about 2 TB) and seven days,
+and the storage account must have enough free quota. See the official
+[Dropbox upload-session documentation](https://docs.dropboxapi.com/dropbox-api/api-reference/user-endpoints/files/upload-session-start).
+Provider failures are returned through the existing upload error paths.
+
+The old single-request multipart `/upload` endpoint retains its **20 MiB file
+limit** and buffered request behavior for legacy clients. It is separate from
+the chunked routes and is not the upload route used by current Studio.
 
 `/list` returns all pages of public ZIPs in the root and reserved managed namespace,
 including `id`, `rev`, `contentHash` and existing metadata fields. It never returns
@@ -214,14 +229,15 @@ campaign package or public support attachment.
 ## Local verification
 
 ```powershell
-node --test .\tests\CommunityWorkerChecks\worker.test.mjs .\tests\CommunityWorkerChecks\admin-helper.test.mjs
+node --test .\tests\CommunityWorkerChecks\worker.test.mjs
+dotnet run --project .\tests\CommunityClientChecks\CommunityClientChecks.csproj
 ```
 
 The test harness runs the actual Worker and HMAC code with only Dropbox HTTP
 replaced by an in-memory fixture. It never accesses real Dropbox. It covers
 ownership, lost responses, revision races, replacement preservation, deletion,
 legacy assignment, privacy filtering, pagination and old-client compatibility.
-The current suite contains 32 worker/helper checks, including readable legacy
+The Worker suite contains 42 checks, including readable legacy
 names, presentation round trips, exact field/icon limits, metadata preservation,
 partial success, delayed writes, lost metadata responses, poisoned metadata,
 bounded concurrent reads, bounded error bodies and JSON escaping at the limit.
@@ -229,3 +245,25 @@ The helper tests write only temporary files and use a local request substitute.
 The preserved pre-change Worker and initial failing test output are in
 `tests/CommunityWorkerChecks/evidence/`. Live deployment and real ZIP replacement
 or deletion require a separate authorized operation; none is performed by tests.
+
+The upload-size regressions accept ZIP sizes above 512 MiB, preserve cursor values
+above 4 GiB, reject invalid sizes/offsets, and verify that seven-day tickets outlive
+one hour while still expiring. They retain chunk and legacy multipart bounds.
+The upload-only client project streams a real 512 MiB plus 17-byte file through
+create and replacement requests, checking sizes, offsets, bounded requests,
+saved ownership and selected revision, as well as rejecting empty files.
+
+## Upload cap removal deployment — 2026-11-01
+
+Live Worker version `f75ed607-3d9d-4c98-81a6-a4f6ce4e539e` serves this upload
+change. Its `/health` reports `maxCampaignBytes: null`. The deployment applies
+only the upload delta to the live source and preserves its existing cover editing,
+runtime settings, secret bindings and migration aliases. Downloaded deployed
+source SHA-256 is `53c1caf1be566e4bb87aa450a011b11bae8030929c9db2f476f2d092d7043554`.
+
+The public campaign catalog was unchanged. A session declared at 536,870,913
+bytes accepted a four-byte chunk; neither that session nor an earlier unfinished
+probe was committed. This confirms start/chunk acceptance beyond the former cap,
+not a complete large transfer. Users need Studio revision 33 or newer to remove
+the client-side limit. Local receipts are under
+`artifacts/unlimited-campaign-uploads-20261101/deployment/`.
