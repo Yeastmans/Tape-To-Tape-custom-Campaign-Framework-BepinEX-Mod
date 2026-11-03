@@ -3,15 +3,19 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using CampaignCore;
 
 namespace CampaignCreator;
 
 public sealed partial class MainWindow
 {
-    private async Task ShowCommunityManagement(bool pools = false)
+    private Task ShowCommunityManagement(bool pools = false)
+        => BuildCommunityManagementWindow(pools ? CampaignSharing.PoolsCommunity : CampaignSharing.Community).ShowDialog(this);
+
+    private Window BuildCommunityManagementWindow(CommunityCampaignClient client)
     {
+        bool pools = client.Kind == "base-game-pools";
         string kind = pools ? "pool set" : "campaign", title = pools ? "Manage Base Game Pools uploads" : "Manage campaign uploads";
-        var client = pools ? CampaignSharing.PoolsCommunity : CampaignSharing.Community;
         var dialog = new Window { Title = title, Width = 760, Height = 570, MinWidth = 620, MinHeight = 480,
             WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = Background };
         var list = new ListBox { Name = "OwnedCommunityCampaigns", Background = StudioTheme.Input, Height = 220,
@@ -22,11 +26,12 @@ public sealed partial class MainWindow
             } }) };
         var feedback = new TextBlock { Foreground = StudioTheme.Muted, TextWrapping = TextWrapping.Wrap };
         bool busy = false;
-        Button replace = null!, delete = null!, refresh = null!, restore = null!, close = null!;
+        Button replace = null!, updateSaved = null!, delete = null!, refresh = null!, restore = null!, close = null!;
         void Controls()
         {
             bool selected = list.SelectedItem is ManagedCampaign { Post: not null };
             replace.IsEnabled = !busy && selected; delete.IsEnabled = !busy && selected;
+            updateSaved.IsEnabled = !busy && selected && pools && File.Exists(Path.Combine(BaseGamePlayerPools.Folder(root), "settings.txt"));
             refresh.IsEnabled = restore.IsEnabled = close.IsEnabled = list.IsEnabled = !busy;
         }
         async Task Refresh(bool showMessage = true)
@@ -37,6 +42,7 @@ public sealed partial class MainWindow
             list.SelectedItem = owned.FirstOrDefault(x => x.Ownership.Key == key) ?? owned.FirstOrDefault();
             if (showMessage) feedback.Text = owned.Count == 0
                 ? "No saved uploads yet. Upload a " + kind + " to save access automatically, or add access for an older post."
+                : pools ? "Select an upload to update from your saved pools, replace its ZIP or delete its public copy."
                 : "Select one of your uploads to replace its ZIP or delete its Dropbox copy.";
         }
         async Task Run(Func<Task> action)
@@ -69,6 +75,37 @@ public sealed partial class MainWindow
             });
         });
         replace.Name = "ReplaceCommunityCampaign"; StudioTheme.Primary(replace);
+        updateSaved = Button("Update from saved pools…", async () =>
+        {
+            if (busy || !pools || list.SelectedItem is not ManagedCampaign { Post: not null } selected) return;
+            await Run(async () =>
+            {
+                string zip = Path.Combine(Path.GetTempPath(), "t2t-pool-update-" + Guid.NewGuid().ToString("N") + ".zip");
+                try
+                {
+                    feedback.Text = "Packaging your saved pools and their custom talents, heads and logos…";
+                    string name = selected.Post.Presentation?.CampaignName ?? "Base Game Pools";
+                    if (name.Length > 160) name = name[..160];
+                    var info = await Task.Run(() =>
+                    {
+                        BaseGamePoolPackages.Export(root, zip, name);
+                        return BaseGamePoolPackages.Inspect(zip);
+                    });
+                    if (!await ConfirmSavedBaseGamePoolUpdate(dialog, selected.Post.Name, info))
+                    { feedback.Text = "Cancelled. Your posted pool set was kept."; return; }
+                    var progress = new Progress<double>(value => feedback.Text = $"Updating {selected.Post.Name}: {value:0}%…");
+                    // No metadata argument: replacement retains the listing's current details and cover.
+                    var posted = await client.UploadAsync(zip, selected.Ownership.Name, progress, selected);
+                    await Refresh(false);
+                    feedback.Text = "Updated the posted pool set from your saved pools. Its title, description and cover were kept." +
+                        (posted.MetadataWarning.Length > 0 ? " " + posted.MetadataWarning : "");
+                    feedback.Foreground = posted.MetadataWarning.Length > 0 ? SharingWarn : Brush.Parse("#70DEA2");
+                }
+                finally { if (File.Exists(zip)) File.Delete(zip); }
+            });
+        });
+        updateSaved.Name = "UpdateCommunityPoolsFromSaved"; StudioTheme.Primary(updateSaved);
+        ToolTip.SetTip(updateSaved, "Save your pool edits first. Updates the selected listing with all three saved pools and their referenced custom talents, heads and logos.");
         delete = Button("Delete from Dropbox…", async () =>
         {
             if (busy || list.SelectedItem is not ManagedCampaign { Post: not null } selected) return;
@@ -94,8 +131,9 @@ public sealed partial class MainWindow
         }));
         restore.Name = "RestoreCommunityAccess";
         close = Button("Close", () => dialog.Close()); close.HorizontalAlignment = HorizontalAlignment.Right;
-        var actions = new WrapPanel { Orientation = Orientation.Horizontal, Children = { refresh, replace, delete } };
-        foreach (var button in new[] { refresh, replace, delete }) button.Margin = new Thickness(0, 0, 8, 8);
+        var actions = new WrapPanel { Orientation = Orientation.Horizontal };
+        foreach (var button in pools ? new[] { refresh, updateSaved, replace, delete } : new[] { refresh, replace, delete })
+        { button.Margin = new Thickness(0, 0, 8, 8); actions.Children.Add(button); }
         var layout = new Grid { Margin = new Thickness(24), RowDefinitions = new("Auto,*,Auto"), RowSpacing = StudioTheme.SpaceMd };
         layout.Children.Add(new TextBlock { Text = title, FontSize = 26, FontWeight = FontWeight.Bold });
         layout.Children.Add(WithRow(new ScrollViewer { Content = new StackPanel { Spacing = StudioTheme.SpaceMd, Children = {
@@ -110,7 +148,25 @@ public sealed partial class MainWindow
         dialog.Closing += (_, e) => { if (busy) e.Cancel = true; };
         dialog.Opened += async (_, _) => await Run(async () => { feedback.Text = "Checking your saved upload codes…"; await Refresh(); });
         Controls();
-        await dialog.ShowDialog(this);
+        return dialog;
+    }
+
+    private async Task<bool> ConfirmSavedBaseGamePoolUpdate(Window owner, string name, BaseGamePoolInfo pools)
+    {
+        bool confirmed = false;
+        var dialog = new Window { Title = "Update posted Base Game Pools", Name = "ConfirmSavedBaseGamePoolUpdateWindow", Width = 560, Height = 350, MinWidth = 440, MinHeight = 300,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = Background };
+        var cancel = Button("Cancel", () => dialog.Close()); cancel.Name = "CancelSavedBaseGamePoolUpdate";
+        var update = Button("Update pool set", () => { confirmed = true; dialog.Close(); }); update.Name = "ConfirmSavedBaseGamePoolUpdate"; StudioTheme.Primary(update);
+        dialog.Content = new Grid { Margin = new Thickness(24), RowDefinitions = new("*,Auto"), RowSpacing = StudioTheme.SpaceMd, Children = {
+            new ScrollViewer { Content = new StackPanel { Spacing = StudioTheme.SpaceMd, Children = {
+                new TextBlock { Text = "Update " + name + "?", FontSize = 22, FontWeight = FontWeight.SemiBold, TextWrapping = TextWrapping.Wrap },
+                new TextBlock { Text = "Replace this listing's public download with your saved pools and their custom talents, heads and logos. Its title, description and cover will stay the same. Your local pools stay unchanged.", TextWrapping = TextWrapping.Wrap },
+                new TextBlock { Text = $"Bench/draft: {pools.BenchCount}\nFree agents: {pools.FreeAgentCount}\nSuperstars: {pools.SuperstarCount}", TextWrapping = TextWrapping.Wrap }
+            } } },
+            WithRow(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, HorizontalAlignment = HorizontalAlignment.Right, Children = { cancel, update } }, 1)
+        } };
+        await dialog.ShowDialog(owner); return confirmed;
     }
 
     private async Task<bool> ConfirmCommunityDeletion(Window owner, string name, bool pools = false)

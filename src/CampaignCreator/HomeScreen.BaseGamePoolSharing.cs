@@ -14,7 +14,7 @@ public sealed partial class MainWindow
         var edit = Button("Edit pools", async () => await ShowBaseGamePools()); edit.Name = "HomeBaseGamePools"; StudioTheme.Primary(edit);
         var upload = Button("Upload", async () => await ShowBaseGamePoolUpload()); upload.Name = "HomeUploadBaseGamePools";
         upload.IsEnabled = File.Exists(Path.Combine(BaseGamePlayerPools.Folder(root), "settings.txt"));
-        ToolTip.SetTip(upload, "Share your saved bench/draft, free-agent and superstar pools with their custom heads and logos. Save your pools first.");
+        ToolTip.SetTip(upload, "Share your saved bench/draft, free-agent and superstar pools with their custom talents, heads and logos. Save your pools first. To update an existing listing, use Manage uploads.");
         var download = Button("Download", async () => await ShowBaseGamePoolDownload()); download.Name = "HomeDownloadBaseGamePools";
         var restore = Button("Restore backup", async () => await new BaseGamePoolRestoreWindow(root, ShowHome).ShowDialog(this)); restore.Name = "HomeRestoreBaseGamePoolsBackup";
         var manage = Button("Manage uploads", async () => await ShowCommunityManagement(pools: true)); manage.Name = "HomeManageBaseGamePoolsUploads";
@@ -69,7 +69,7 @@ public sealed partial class MainWindow
         upload.Name = "UploadBaseGamePoolsConfirm"; StudioTheme.Primary(upload); icon.BusyChanged += Controls;
         var form = new StackPanel { Spacing = StudioTheme.SpaceMd, Children = {
             new TextBlock { Text = "Upload Base Game Pools", FontSize = 26, FontWeight = FontWeight.Bold },
-            new TextBlock { Text = "Share all three pools as one set, including referenced custom heads and logos.", TextWrapping = TextWrapping.Wrap, Foreground = StudioTheme.Muted },
+            new TextBlock { Text = "Share all three pools as one set, including referenced custom talents, heads and logos. To update an existing listing, use Manage uploads.", TextWrapping = TextWrapping.Wrap, Foreground = StudioTheme.Muted },
             new TextBlock { Text = "Pool set name" }, title, new TextBlock { Text = "Your name" }, author,
             new TextBlock { Text = "Description" }, description, icon
         } };

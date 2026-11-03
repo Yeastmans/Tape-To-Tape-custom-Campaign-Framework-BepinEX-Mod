@@ -60,4 +60,15 @@ foreach (string role in new[] { "skater", "goalie" })
     var compatible = new CampaignDocument("Override Team Settings = yes"); compatible.Set(bodyKey, custom);
     Check(AppearanceContract.Resolve(compatible, team, new CampaignDocument(""), role).Get("Logo From") == "Winnipeg", role + " compatible player still inherits logo");
 }
+foreach (string helmetChoice in new[] { "none", "__NO_HELMET__", "", " ", "Faces/Custom/Helmet_Colors" })
+{
+    var player = new CampaignDocument("Override Team Settings = no\nFace = Faces/Toronto/Mathieu\n");
+    player.Set("Helmet", helmetChoice);
+    var kit = new CampaignDocument("Helmet = Faces/Custom/Helmet_Colors\nHelmet Away = Faces/Helmets/Helmet_Wing\nBody = Body/HockeyFC/HockeyFC\n");
+    var result = AppearanceContract.Resolve(player, kit, new CampaignDocument(""), "skater");
+    bool bare = helmetChoice is "none" or "__NO_HELMET__";
+    Check(result.Get("Helmet") == (bare ? "none" : "Faces/Custom/Helmet_Colors")
+        && result.Get("Helmet Away") == (bare ? "none" : "Faces/Helmets/Helmet_Wing") && result.Get("Body") == "Body/HockeyFC/HockeyFC",
+        "Team equipment must honor explicit no helmet without treating blank fields as helmet removal: " + helmetChoice);
+}
 Console.WriteLine($"PASS {count} appearance translation and compatibility checks");

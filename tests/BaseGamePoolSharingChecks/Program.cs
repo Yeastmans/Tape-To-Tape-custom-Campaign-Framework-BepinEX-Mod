@@ -128,6 +128,10 @@ try
     Check(Fingerprint(BaseGamePlayerPools.Folder(destination)) == destinationBefore && BaseGamePoolPackages.Backups(destination).Count == uiBackupCount + 1 && refreshed == 1, "confirming the real restore dialog applies the backup and preserves an undo snapshot");
     if (screenshots != null) { Dispatcher.UIThread.RunJobs(); restoreWindow.CaptureRenderedFrame()!.Save(Path.Combine(screenshots, "restore-backups.png")); }
     restoreWindow.Close(); owner.Close();
+    UploadUpdateChecks.Run(sandbox, Check);
+    HelmetModeChecks.Run(sandbox, Check);
     Console.WriteLine("PASS " + checks + " pool sharing checks");
 }
+catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
 finally { Directory.Delete(sandbox, true); }
+return 0;

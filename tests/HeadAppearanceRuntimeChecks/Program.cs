@@ -14,6 +14,17 @@ void After(SkeletonData skeleton, SkaterType role, bool home, bool headOnly, For
     => typeof(HeadAppearanceRuntime).GetMethod("AfterSkins", Hidden)!.Invoke(null, [skeleton, role, home, headOnly, player, owner, skins]);
 
 var harmony = new HarmonyLib.Harmony(); HeadAppearanceRuntime.Install(harmony);
+var inheritedHelmet = typeof(HeadAppearanceRuntime).GetMethod("ApplyInheritedHelmet", Hidden);
+Check(inheritedHelmet != null, "Inherited team equipment has an explicit no-helmet override path");
+foreach (string choice in new[] { "none", "__NO_HELMET__", "", "Faces/Custom/Helmet_Colors" })
+{
+    var inheritedPlayer = new ForwardData { headSkin = Head, helmetSkin = Helmet, helmetAwaySkin = Helmet, skill = 87, id = "same-player" };
+    var fields = new CampaignDocument("Override Team Settings = no\n"); fields.Set("Helmet", choice);
+    inheritedHelmet!.Invoke(null, [inheritedPlayer, fields]);
+    string expected = choice is "none" or "__NO_HELMET__" ? "__NO_HELMET__" : Helmet;
+    Check(inheritedPlayer.helmetSkin == expected && inheritedPlayer.helmetAwaySkin == expected && inheritedPlayer.skill == 87 && inheritedPlayer.id == "same-player",
+        "Inherited helmet override changes only explicitly selected helmet fields: " + choice);
+}
 Check(harmony.Target?.Name == "GetSkins" && harmony.Prefix?.Name == "BeforeSkins" && harmony.Postfix?.Name == "AfterSkins", "Both policies attach to the existing native skin helper");
 // 26372689 standard bench Stu stores this complete native name with no helmet.
 // The unsuffixed skin contains Helmet_Face artwork, not Stu's Bench_Will artwork.

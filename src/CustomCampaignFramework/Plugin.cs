@@ -6874,6 +6874,7 @@ public static class PatchBossLaunchMatch
     {
         if (pc != null && pc.NumberFormat >= 0) return true;
         if (pc != null && HasSizeOffset(pc)) return true;
+        if (pc != null && HeadAppearance.IsExplicitNone(pc.Fields.Get("Helmet"))) return true;
         if (pc == null || !AppearanceFields.OverridesTeam(pc.Fields)) return false;
         if (pc.LogoSkin != null || pc.NumberSkin != null || pc.Fields.Get("Logo From").Length > 0) return true;
         if (!string.IsNullOrEmpty(pc.Glasses)) return true;
@@ -6914,6 +6915,7 @@ public static class PatchBossLaunchMatch
         if (HasSizeOffset(pc)) f.sizeOffsetPercentage = pc.SizeOffset;
         if (!AppearanceFields.OverridesTeam(pc.Fields))
         {
+            HeadAppearanceRuntime.ApplyInheritedHelmet(f, pc.Fields);
             PatchPlayerTeamInit.HandleNoHelmetSentinel(f);
             ApplyPlayerColorOverrides(f, pc, useAway);
             return;

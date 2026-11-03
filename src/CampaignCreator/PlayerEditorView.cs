@@ -76,7 +76,7 @@ internal sealed class PlayerEditorView : UserControl
         bool custom = PlayerExport.EquipmentIntent(doc) == "yes";
         inheritFromTeam = new ToggleSwitch { Name = "InheritFromTeam", Content = "Team equipment", IsChecked = !custom,
             OnContent = "On · team styles", OffContent = "Off · own styles", HorizontalAlignment = HorizontalAlignment.Stretch };
-        ToolTip.SetTip(inheritFromTeam, "Use the team's equipment styles. Turn off to choose Team, Custom colors, or Premade for each piece and kit.");
+        ToolTip.SetTip(inheritFromTeam, "Use the team's equipment styles. Skaters can still choose No helmet. Turn off to choose Team, Custom colors, or Premade for each piece and kit.");
         foreach (var key in equipment) register(key, () => Independent && (key is "Logo From" or "Logo Skin") && !AppearanceContract.SupportsJerseyLogo(Effective(), role) ? "" : Independent && role == "skater" && (key is "Helmet" or "Helmet Away")
             && !HeadAppearance.CanWearHelmet(values.GetValueOrDefault("Face", "")) ? "none" : values[key]);
         register("Override Team Settings", () => Independent ? "yes" : "no");
@@ -281,6 +281,23 @@ internal sealed class PlayerEditorView : UserControl
         {
             // ownStyle: the base game stores this style on the player (skater stick), whatever the team says.
             var panel=new StackPanel { Spacing=3, IsEnabled=Independent || ownStyle, Children={Label(title.ToUpperInvariant())} };
+            if (role == "skater" && !Independent && skin is "Helmet" or "Helmet Away")
+            {
+                panel.IsEnabled = true;
+                var helmetMode = new ComboBox { Name = "PlayerTeamHelmetMode", ItemsSource = new[] { "Team equipment", "No helmet" },
+                    SelectedIndex = HeadAppearance.IsExplicitNone(values.GetValueOrDefault("Helmet", "")) ? 1 : 0,
+                    HorizontalAlignment = HorizontalAlignment.Stretch };
+                helmetMode.SelectionChanged += (_, _) =>
+                {
+                    values["Helmet"] = values["Helmet Away"] = helmetMode.SelectedIndex == 1 ? "none" : "";
+                    changed(); uniform.InvalidateVisual(); RefreshHead();
+                };
+                panel.Children.Add(helmetMode);
+                panel.Children.Add(new TextBlock { Text = "No helmet applies to both kits and keeps the rest of the team's equipment. Talent and reward helmets keep their native rules.",
+                    FontSize = 11, Foreground = Muted, TextWrapping = TextWrapping.Wrap });
+                destination.Children.Add(panel);
+                return;
+            }
             string? scheme = playerColors != null ? null : title switch {
                 "Helmet" or "Goalie mask" or "Mask shell" => "helmet", "Jersey" or "Goalie jersey" => "jersey",
                 "Pants" => "pants", "Socks" or "Goalie pads" => "socks", "Name & numbers" => "number",

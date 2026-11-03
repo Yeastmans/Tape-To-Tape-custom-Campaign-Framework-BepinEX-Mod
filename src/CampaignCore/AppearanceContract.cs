@@ -127,6 +127,11 @@ public static class AppearanceContract
                 if (fallback.Length > 0) result.Set(key, fallback);
             }
         }
+        if (role == "skater" && !independent && HeadAppearance.IsExplicitNone(player.Get("Helmet")))
+        {
+            result.Set("Helmet", "none");
+            result.Set("Helmet Away", "none");
+        }
         if (role == "skater") { result.Set("Skates", StandardSkates); result.Set("Skates Away", StandardSkates); }
         if (role == "skater" && result.Get("Face").Length > 0)
         {

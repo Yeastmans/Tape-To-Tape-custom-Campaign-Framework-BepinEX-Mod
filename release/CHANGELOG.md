@@ -1,5 +1,12 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 37
+
+- Base Game Pools > Manage uploads now has Update from saved pools. Confirm the listing and the three candidate counts to replace its download without exporting a ZIP first.
+- Updates include referenced custom talents, heads and logos and preserve the existing listing, author, description and cover.
+- Skaters can choose No helmet with Team equipment enabled. This applies to both kits while keeping team clothing; blank values still inherit the team helmet.
+- Cancelled, invalid or failed updates clean up temporary packages and leave local pools untouched.
+
 ## Beta 1.0 revision 36
 
 - Add separate Base Game Pools upload/download and management controls on Home.

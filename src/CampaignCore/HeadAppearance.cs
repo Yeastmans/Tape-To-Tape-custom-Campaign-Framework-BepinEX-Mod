@@ -53,6 +53,8 @@ public static class HeadAppearance
     public static bool HasNoHelmetVariant(string head) => Variants.TryGetValue(Base(head), out var variant) && variant.Length == 0;
     public static bool IsNone(string helmet) => string.IsNullOrWhiteSpace(helmet)
         || helmet.Equals("none", StringComparison.OrdinalIgnoreCase) || helmet == "__NO_HELMET__";
+    // Blank authored values inherit the team's helmet; only a deliberate choice removes it.
+    public static bool IsExplicitNone(string helmet) => !string.IsNullOrWhiteSpace(helmet) && IsNone(helmet);
     public static string Resolve(string head, bool helmet) => helmet && CanWearHelmet(head) ? Variants[Base(head)] : Base(head);
     public static IEnumerable<string> Choices(IEnumerable<string> heads) => heads.Select(Base).Distinct(StringComparer.OrdinalIgnoreCase);
 }

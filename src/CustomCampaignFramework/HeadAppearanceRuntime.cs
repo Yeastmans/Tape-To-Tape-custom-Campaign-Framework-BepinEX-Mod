@@ -20,6 +20,14 @@ internal static class HeadAppearanceRuntime
         if (!headOnly) CampaignAppearanceRuntime.ForKit(forwardData, isHome);
     }
 
+    internal static void ApplyInheritedHelmet(ForwardData data, CampaignDocument fields)
+    {
+        if (data == null || fields == null || !HeadAppearance.IsExplicitNone(fields.Get("Helmet"))) return;
+        // Keep team clothing and the native equipment/talent lifecycle. This is
+        // the same starting-helmet sentinel used by independent player equipment.
+        data.helmetSkin = data.helmetAwaySkin = "__NO_HELMET__";
+    }
+
     internal static void Configure(ForwardData data)
     {
         // Native glasses visibility tests for a nonempty skin string. The

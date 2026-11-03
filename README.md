@@ -2,11 +2,11 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 36](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r36-build-1793662608291) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 37](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r37-build-1793673003060) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
 **Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **public v1.0 release, build 26372689**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
 
-Beta 1.0 revision 36 adds separate Base Game Pools uploads/downloads with automatic backups and Restore backup. It fixes Stu Stumple's head, preserves native helmet choices and retains saved-run custom reward definitions when pools change. See the [changelog](release/CHANGELOG.md) and [validation](docs/RELEASE-R36-VALIDATION.md).
+Beta 1.0 revision 37 lets you update an existing Base Game Pools upload directly from saved pools, including custom talents, heads and logos. Skaters can also select No helmet while Team equipment stays enabled. See the [changelog](release/CHANGELOG.md) and [validation](docs/RELEASE-R37-VALIDATION.md).
 
 **This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. Reporting bugs on [Discord](https://discord.gg/hscxnYghb) or [GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues) helps immensely.
 
