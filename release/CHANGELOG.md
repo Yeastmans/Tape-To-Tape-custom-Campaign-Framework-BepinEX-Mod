@@ -1,5 +1,12 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 38
+
+- Added confirmed Remove controls to Base Game Pools, native candidate lists, campaign player teams and campaign/squad recruitment lists, including goalies.
+- Removing a custom starting bench/superstar now removes its local copied file as well as its slot.
+- Originals and copies elsewhere stay independent. Local recovery archives are excluded from catalogs and shared campaign packages.
+- Base Game Pools keep at least one selected candidate per section; Custom teams only protects the last team, including stale editor windows. Failed saves restore the affected player and slot metadata.
+
 ## Beta 1.0 revision 37
 
 - Base Game Pools > Manage uploads now has Update from saved pools. Confirm the listing and the three candidate counts to replace its download without exporting a ZIP first.

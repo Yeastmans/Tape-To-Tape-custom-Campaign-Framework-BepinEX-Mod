@@ -267,7 +267,23 @@ public sealed partial class CampaignWorkspace : UserControl
                 editTeam.IsEnabled = team.FilePath != null;
                 editTeam.HorizontalAlignment = HorizontalAlignment.Stretch;
                 editTeam.HorizontalContentAlignment = HorizontalAlignment.Left;
-                list.Children.Add(editTeam);
+                var removeTeam = ActionButton("Remove…", async () =>
+                {
+                    try
+                    {
+                        if (team.FilePath is not string file || !CanLeave(true)) return;
+                        if (teams.Count == 1 && fields["Custom Squads Only"]().Equals("yes", StringComparison.OrdinalIgnoreCase))
+                            throw new InvalidOperationException("Turn off Custom teams only or add another player team before removing the last one.");
+                        if (!await ContentRemoval.Confirm(owner, team.DisplayName, "Remove this player team and its roster, pools and team-specific maps from this campaign?")) return;
+                        string parent = Path.Combine(directory, "player_teams"), teamDirectory = Path.GetDirectoryName(file)!;
+                        if (!Path.GetFullPath(Path.GetDirectoryName(teamDirectory)!).Equals(Path.GetFullPath(parent), StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("This player team does not belong to the campaign.");
+                        ContentRemoval.RemoveCampaignTeam(directory, Path.GetFileName(teamDirectory)); Refresh(); message.Text = "Removed “" + team.DisplayName + "” from this campaign.";
+                    }
+                    catch (Exception ex) { message.Text = ex.Message; }
+                });
+                removeTeam.Name = "RemoveCampaignPlayerTeam"; removeTeam.Tag = team.FilePath;
+                var teamRow = new Grid { ColumnDefinitions = new("*,Auto"), ColumnSpacing = 12 };
+                teamRow.Children.Add(editTeam); Grid.SetColumn(removeTeam, 1); teamRow.Children.Add(removeTeam); list.Children.Add(teamRow);
             }
         }
         if (custom) page.Children.Add(new ScrollViewer { Content = list, MaxHeight = 280 });
@@ -417,8 +433,19 @@ public sealed partial class CampaignWorkspace : UserControl
                         freeAgentsDirty = true; message.Text = "Unsaved free agent selection";
                     };
                     var edit = ActionButton("Edit player", () => { if (CanLeave(true)) open(file); });
-                    var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 10 };
-                    row.Children.Add(check); Grid.SetColumn(edit, 1); row.Children.Add(edit); list.Children.Add(row);
+                    var remove = ActionButton("Remove…", async () =>
+                    {
+                        try
+                        {
+                            if (!CanLeave(true) || !await ContentRemoval.Confirm(owner, player.DisplayName, "Remove this free-agent copy from this campaign?")) return;
+                            ContentRemoval.RemovePoolFile(Path.GetDirectoryName(file)!, Path.GetFileName(file));
+                            selectedCustomAgents.Remove(key); Refresh(); message.Text = "Removed “" + player.DisplayName + "”.";
+                        }
+                        catch (Exception ex) { message.Text = ex.Message; }
+                    });
+                    remove.Name = "RemoveCampaignFreeAgent"; remove.Tag = file;
+                    var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"), ColumnSpacing = 10 };
+                    row.Children.Add(check); Grid.SetColumn(edit, 1); row.Children.Add(edit); Grid.SetColumn(remove, 2); row.Children.Add(remove); list.Children.Add(row);
                 }
         }
         var actions = new WrapPanel { Orientation = Orientation.Horizontal };

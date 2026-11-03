@@ -19,7 +19,7 @@ internal static partial class CampaignSharing
     internal const string LogoBundle = "_logos";
     internal const string HeadBundle = "_heads";
     // Local-only folders: save state, Studio backups and removed teams never ship.
-    private static readonly string[] SkipFiles = ["save.txt", "save.txt.bak"];
+    private static readonly string[] SkipFiles = ["save.txt", "save.txt.bak", ContentRemoval.LockFile];
     private static readonly string[] SkipFolders = [LogoBundle, HeadBundle, "map_backups", "_map_runtime", "_removed_opponents", "custom_reward_progress", GoalieRosterStore.FolderName];
     private static readonly HttpClient http = CreateClient();
 
@@ -48,6 +48,7 @@ internal static partial class CampaignSharing
             : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (string file in Directory.GetFiles(campaign, "*.txt", SearchOption.AllDirectories))
         {
+            if (ContentRemoval.IsArchivedPath(file)) continue;
             if (Path.GetRelativePath(campaign, file).Split(Path.DirectorySeparatorChar).Any(p => SkipFolders.Contains(p, StringComparer.OrdinalIgnoreCase))) continue;
             var doc = new CampaignDocument(File.ReadAllText(file));
             bool rewritten = false;
@@ -93,6 +94,7 @@ internal static partial class CampaignSharing
         using var zip = ZipFile.Open(destination, ZipArchiveMode.Create);
         foreach (string file in Directory.GetFiles(campaign, "*", SearchOption.AllDirectories))
         {
+            if (ContentRemoval.IsArchivedPath(file)) continue;
             var parts = Path.GetRelativePath(campaign, file).Split(Path.DirectorySeparatorChar);
             if (parts[..^1].Any(p => SkipFolders.Contains(p, StringComparer.OrdinalIgnoreCase)) || SkipFiles.Contains(parts[^1], StringComparer.OrdinalIgnoreCase)) continue;
             string entryName = top + "/" + string.Join('/', parts);

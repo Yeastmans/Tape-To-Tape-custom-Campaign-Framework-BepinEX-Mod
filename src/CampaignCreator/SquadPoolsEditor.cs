@@ -50,6 +50,7 @@ internal sealed class SquadPoolsEditor : UserControl
 
 internal sealed class SquadFreeAgentEditor : UserControl
 {
+    private readonly Window owner;
     private readonly string directory;
     private readonly HashSet<string> selected;
     private readonly StackPanel list = new() { Spacing = 8 };
@@ -59,7 +60,7 @@ internal sealed class SquadFreeAgentEditor : UserControl
     internal bool HasChanges { get; private set; }
     internal SquadFreeAgentEditor(Window owner, string root, string squad, Action<string> edit, Action changed)
     {
-        this.changed = changed; this.edit = edit;
+        this.owner = owner; this.changed = changed; this.edit = edit;
         directory = Path.Combine(squad, "player_teams", "free_agents");
         selected = (SelectedPlayerPool.Read(directory) ?? (Directory.Exists(directory) ? Directory.GetFiles(directory, "*.txt") : []))
             .Select(f => Path.GetFileName(f)).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -106,8 +107,19 @@ internal sealed class SquadFreeAgentEditor : UserControl
             check.IsCheckedChanged += (_, _) => { if (check.IsChecked == true) selected.Add(key); else selected.Remove(key); HasChanges = true; changed(); Count(); };
             var button = new Button { Content = "Edit player", Padding = StudioTheme.ButtonPadding };
             button.Click += (_, _) => edit(file);
-            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 12 };
-            row.Children.Add(check); Grid.SetColumn(button, 1); row.Children.Add(button); list.Children.Add(row);
+            var remove = new Button { Name = "RemoveSquadFreeAgent", Tag = key, Content = "Remove…", Padding = StudioTheme.ButtonPadding };
+            remove.Click += async (_, _) =>
+            {
+                try
+                {
+                    if (!await ContentRemoval.Confirm(owner, check.Content?.ToString() ?? key, "Remove this candidate from this squad's free-agent pool? Current pool choices will be saved.")) return;
+                    ContentRemoval.RemovePoolFile(directory, key, selected);
+                    selected.Remove(key); HasChanges = false; changed(); Refresh();
+                }
+                catch (Exception ex) { message.Text = ex.Message; }
+            };
+            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"), ColumnSpacing = 12 };
+            row.Children.Add(check); Grid.SetColumn(button, 1); row.Children.Add(button); Grid.SetColumn(remove, 2); row.Children.Add(remove); list.Children.Add(row);
         }
         Count();
     }

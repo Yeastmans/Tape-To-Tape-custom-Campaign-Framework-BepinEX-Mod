@@ -14,7 +14,7 @@ internal static partial class CampaignSharing
             .Concat(Directory.EnumerateFiles(campaign, "goalie-equipment.cfg", SearchOption.AllDirectories)).Where(file =>
             !Path.GetRelativePath(campaign, file).Split(Path.DirectorySeparatorChar)
                 .Any(part => SkipFolders.Contains(part, StringComparer.OrdinalIgnoreCase))
-            && !SkipFiles.Contains(Path.GetFileName(file), StringComparer.OrdinalIgnoreCase));
+            && !SkipFiles.Contains(Path.GetFileName(file), StringComparer.OrdinalIgnoreCase) && !ContentRemoval.IsArchivedPath(file));
 
     private static string? HeadName(string value)
     {

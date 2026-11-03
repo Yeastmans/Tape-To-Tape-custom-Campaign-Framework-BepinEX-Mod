@@ -88,11 +88,22 @@ public sealed class BaseGamePoolsView : UserControl
                 check.IsCheckedChanged += (_, _) => { profile.SetSelected(kind, file, check.IsChecked == true); Changed(); UpdateCount(kind); UpdateMoveActions(kind); };
                 var editButton = Button("Edit", "BaseGamePoolEdit_" + kind + "_" + index, () => edit(path));
                 var replace = Button("Replace…", "BaseGamePoolReplace_" + kind + "_" + index, () => { }); replace.Click += async (_, _) => await Import(kind, file, replace);
+                var remove = Button("Remove…", "BaseGamePoolRemove_" + kind + "_" + index, () => { });
+                remove.Click += async (_, _) =>
+                {
+                    try
+                    {
+                        if (TopLevel.GetTopLevel(this) is not Window owner || !await ContentRemoval.Confirm(owner, name,
+                            "Remove this pool entry and any unused older copies of the same base-game player? Current pool selections will be saved.")) return;
+                        profile.RemoveCandidate(kind, file); HasUnsavedChanges = false; RefreshCandidates(); feedback.Text = "Removed “" + name + "” and saved pools.";
+                    }
+                    catch (Exception ex) { feedback.Text = ex.Message; }
+                };
                 var up = Button("↑", "BaseGamePoolUp_" + kind + "_" + index, () => { profile.Move(kind, file, -1); Changed(); RefreshCandidates(); });
                 var down = Button("↓", "BaseGamePoolDown_" + kind + "_" + index, () => { profile.Move(kind, file, 1); Changed(); RefreshCandidates(); });
                 ToolTip.SetTip(up, "Move selected candidate up"); ToolTip.SetTip(down, "Move selected candidate down");
                 moveActions[kind].Add((file, up, down));
-                var actions = new WrapPanel { Orientation = Orientation.Horizontal, Children = { editButton, replace, up, down } };
+                var actions = new WrapPanel { Orientation = Orientation.Horizontal, Children = { editButton, replace, remove, up, down } };
                 foreach (var action in actions.Children.OfType<Button>()) { action.Padding = new Thickness(8, 5); action.Margin = new Thickness(0, 0, 6, 4); }
                 list.Children.Add(new Border { Padding = new Thickness(4, 3, 4, 8), BorderBrush = StudioTheme.Border, BorderThickness = new Thickness(0, 0, 0, 1), Child = new StackPanel { Spacing = 4, Children = { check, actions } } }); index++;
             }

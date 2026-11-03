@@ -29,7 +29,18 @@ public sealed class NativePlayerPoolEditor : UserControl
                 check.IsCheckedChanged+=(_,_)=>{if(check.IsChecked==true)selected.Add(key);else selected.Remove(key);HasChanges=true;changed();UpdateCount();};
                 var button=new Button {Content="Edit player",Padding=StudioTheme.ButtonPadding};
                 button.Click+=(_,_)=>{try {Save();edit(Path.Combine(directory(),key));}catch(Exception ex){count.Text=ex.Message;}};
-                var row=new Grid {ColumnDefinitions=new ColumnDefinitions("*,Auto"),ColumnSpacing=12};row.Children.Add(check);Grid.SetColumn(button,1);row.Children.Add(button);list.Children.Add(row);
+                var remove=new Button {Name="RemoveNativePoolCandidate",Tag=key,Content="Remove…",Padding=StudioTheme.ButtonPadding};
+                remove.Click+=async(_,_)=>
+                {
+                    try
+                    {
+                        if(!await ContentRemoval.Confirm(owner,doc.Get("Name",key),"Remove this candidate from this pool? Current pool selections will be saved."))return;
+                        ContentRemoval.RemovePoolFile(directory(),key,selected);
+                        selected.Remove(key);HasChanges=false;changed();Refresh();
+                    }
+                    catch(Exception ex){count.Text=ex.Message;}
+                };
+                var row=new Grid {ColumnDefinitions=new ColumnDefinitions("*,Auto,Auto"),ColumnSpacing=12};row.Children.Add(check);Grid.SetColumn(button,1);row.Children.Add(button);Grid.SetColumn(remove,2);row.Children.Add(remove);list.Children.Add(row);
             }
             UpdateCount();
         }

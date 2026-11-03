@@ -68,6 +68,7 @@ public static partial class ContentImport
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (string file in files.Distinct(StringComparer.OrdinalIgnoreCase))
         {
+            if (ContentRemoval.IsArchivedPath(file)) continue;
             if (!Matches(file, kind)) continue;
             var doc = new CampaignDocument(System.IO.File.ReadAllText(file));
             if (custom && (doc.Get(FreeAgentContent.Marker).Length > 0 || doc.Get(StartingPoolEditor.BaseMarker).Length > 0)) continue;

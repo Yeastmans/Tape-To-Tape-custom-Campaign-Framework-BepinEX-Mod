@@ -71,7 +71,7 @@ public static class CampaignNavigation
         if (Directory.Exists(squads))
         {
             var children = Directory.GetDirectories(squads).Order(StringComparer.OrdinalIgnoreCase)
-                .Where(d => !reserved.Contains(Path.GetFileName(d), StringComparer.OrdinalIgnoreCase)).Select(d => Team(d, 0)).ToList();
+                .Where(d => !reserved.Contains(Path.GetFileName(d), StringComparer.OrdinalIgnoreCase) && !ContentRemoval.IsArchivedPath(d)).Select(d => Team(d, 0)).ToList();
             if (children.Count > 0) nodes.Add(new("Custom Squads", "", null, children));
         }
         foreach (var (folder, label) in new[] { ("draft_pool", "Starting Bench"), ("free_agents", "Free Agents"), ("superstars", "Superstars") })
@@ -80,7 +80,9 @@ public static class CampaignNavigation
             foreach (var parent in new[] { root, squads })
             {
                 string dir = Path.Combine(parent, folder);
-                if (Directory.Exists(dir)) children.AddRange(Directory.GetFiles(dir, "*.txt", SearchOption.AllDirectories).Order(StringComparer.OrdinalIgnoreCase).Select(Player));
+                if (Directory.Exists(dir)) children.AddRange(Directory.GetFiles(dir, "*.txt", SearchOption.AllDirectories)
+                    .Where(f => !ContentRemoval.IsArchivedPath(f))
+                    .Order(StringComparer.OrdinalIgnoreCase).Select(Player));
             }
             if (children.Count > 0) nodes.Add(new(label, "", null, children));
         }

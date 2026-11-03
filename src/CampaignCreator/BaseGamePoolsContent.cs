@@ -101,6 +101,23 @@ public sealed class BaseGamePoolsContent
         if (from < 0 || to < 0 || to >= current.Count) return;
         (current[from], current[to]) = (current[to], current[from]); Selection.Pools[kind] = current.ToArray();
     }
+    public void RemoveCandidate(string kind, string file)
+    {
+        BaseGamePlayerPools.CustomPlayerId(kind, file);
+        if (!Candidates(kind).Contains(file, StringComparer.OrdinalIgnoreCase)) throw new ArgumentException("Choose a candidate from this pool.");
+        var next = new BaseGamePoolSelection { Enabled = Selection.Enabled };
+        foreach (string pool in BaseGamePlayerPools.Kinds)
+            next.Pools[pool] = pool == kind ? Selection.Pools[pool].Where(f => !f.Equals(file, StringComparison.OrdinalIgnoreCase)).ToArray() : Selection.Pools[pool].ToArray();
+        // Validate all current draft selections before moving any copy.
+        foreach (string pool in BaseGamePlayerPools.Kinds) _ = BaseGamePlayerPools.SelectedFiles(Root, pool, next);
+        string directory = BaseGamePlayerPools.PoolDirectory(Root, kind);
+        var files = new List<string> { file };
+        if (NativeIdentity(Path.Combine(directory, file)) is { } identity)
+            files.AddRange(Directory.GetFiles(directory, "*.txt").Where(path => NativeIdentity(path) == identity)
+                .Select(Path.GetFileName).OfType<string>().Where(name => !name.Equals(file, StringComparison.OrdinalIgnoreCase) && !next.Pools[kind].Contains(name, StringComparer.OrdinalIgnoreCase)));
+        ContentRemoval.ArchiveFiles(directory, files, () => BaseGamePlayerPools.Save(Root, next));
+        Selection = next; IsRecoveryDraft = false;
+    }
     public void RestoreDefaults(string? cache) => PrepareDefaults(cache, false);
     private void PrepareDefaults(string? cache, bool preserveExisting)
     {

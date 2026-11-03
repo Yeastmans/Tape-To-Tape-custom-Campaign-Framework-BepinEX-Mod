@@ -36,7 +36,20 @@ public sealed partial class StartingPoolEditor
                 var details = PlayerDetails(player); Grid.SetRow(details, 1); body.Children.Add(details);
                 AddAction(Button("Edit player", () => { Save(); edit(file); }));
                 AddAction(Button("Import player", async () => await AddCustomPlayer(slot, true)));
-                AddAction(Button("Remove", () => { customSlots[slot] = null; HasChanges = true; changed(); RefreshCustomCards(); }));
+                AddAction(Button("Remove…", async () =>
+                {
+                    try
+                    {
+                        if (!await ContentRemoval.Confirm(owner, player.Get("Name", "Player"), "Remove this starting candidate from this pool? Current pool choices will be saved.")) return;
+                        string key = customSlots[slot]!;
+                        bool wasChanged = HasChanges;
+                        customSlots[slot] = null; HasChanges = true;
+                        try { ContentRemoval.ArchiveFile(DirectoryPath, key, Save); }
+                        catch { customSlots[slot] = key; HasChanges = wasChanged; throw; }
+                        changed(); RefreshCustomCards();
+                    }
+                    catch (Exception ex) { count.Text = ex.Message; }
+                }));
                 Grid.SetRow(actions, 2); body.Children.Add(actions);
             }
             AddCard(customCards, body, i, Bench ? "CustomBenchCard" : "SuperstarCard", file != null);

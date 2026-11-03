@@ -32,8 +32,19 @@ public sealed partial class CampaignWorkspace
                     goalieAgentsDirty = true; message.Text = "Unsaved goalie free-agent selection";
                 };
                 var edit = ActionButton("Edit goalie", () => { if (CanLeave(true)) open(Path.Combine(GoalieFreeAgents.DirectoryPath(directory), key)); });
-                var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 10 };
-                row.Children.Add(check); Grid.SetColumn(edit, 1); row.Children.Add(edit); list.Children.Add(row);
+                var remove = ActionButton("Remove…", async () =>
+                {
+                    try
+                    {
+                        if (!CanLeave(true) || !await ContentRemoval.Confirm(owner, doc.Get("Name", key), "Remove this goalie free-agent copy from this campaign?")) return;
+                        ContentRemoval.RemovePoolFile(GoalieFreeAgents.DirectoryPath(directory), key);
+                        selectedGoalieAgents.Remove(key); Refresh(); message.Text = "Removed “" + doc.Get("Name", key) + "”.";
+                    }
+                    catch (Exception ex) { message.Text = ex.Message; }
+                });
+                remove.Name = "RemoveCampaignGoalieFreeAgent"; remove.Tag = file;
+                var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"), ColumnSpacing = 10 };
+                row.Children.Add(check); Grid.SetColumn(edit, 1); row.Children.Add(edit); Grid.SetColumn(remove, 2); row.Children.Add(remove); list.Children.Add(row);
             }
             if (list.Children.Count == 0) list.Children.Add(new TextBlock { Text = "No goalie free agents yet.", TextWrapping = TextWrapping.Wrap });
         }

@@ -130,6 +130,7 @@ try
     restoreWindow.Close(); owner.Close();
     UploadUpdateChecks.Run(sandbox, Check);
     HelmetModeChecks.Run(sandbox, Check);
+    EntryRemovalChecks.Run(sandbox, Check);
     Console.WriteLine("PASS " + checks + " pool sharing checks");
 }
 catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
