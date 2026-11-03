@@ -2,11 +2,11 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 38](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r38-build-1793681526224) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 39](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r39-build-1793742083648) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
 **Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **public v1.0 release, build 26372689**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
 
-Beta 1.0 revision 38 adds confirmed removal for pool candidates, campaign player teams and recruitment lists. Removed entries leave the lists while original library items and other copies stay independent. See the [changelog](release/CHANGELOG.md) and [validation](docs/RELEASE-R38-VALIDATION.md).
+Beta 1.0 revision 39 adds three blank-head starter options, layered PSD files for external drawing apps, and an equipped-helmet preview toggle. See the [changelog](release/CHANGELOG.md) and [validation](docs/RELEASE-R39-VALIDATION.md).
 
 **This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. Reporting bugs on [Discord](https://discord.gg/hscxnYghb) or [GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues) helps immensely.
 
@@ -140,7 +140,11 @@ Opponent effects do not equip an ability. Select the supported ability separatel
 
 **Import** can copy from base-game content, the game's saved custom content, or campaign/library content. Team imports also offer the **Player team library**. Editing an imported copy does not edit its source.
 
-For custom heads, open **Head Editor**, name a project, and choose a native template or **From scratch**. **Save head and show previews** creates the project. Edit its directional PNGs and portrait, use the native outline guides, refresh edited PNGs, then choose **Add to player head options**. Reopen the player editor to pick the head and restart the game after changing its artwork.
+For custom heads, open **Head Editor → New head**, name a project, and choose a native template or **Blank template**. Blank templates offer **Plain head with guides**, **Fully transparent with guides**, and **Completely empty transparent artwork**. The standard head layout is selected automatically.
+
+**Save head and show previews** creates the project. **Open layered templates** opens its drawing folder; each view has a PSD with Base head, Face and Hair layers, plus a separate hidden Guides layer when chosen. Separate PNG layers are available in `drawing-layers/`. Edit these in your drawing app, hide Guides, then export a transparent 512 × 512 PNG over the filename shown on the matching card. **Refresh PNGs** updates Studio's preview without overwriting your PSDs.
+
+Choose a preview direction and toggle **Show helmet** to check the fitted artwork with the standard game helmet. The first use may ask to read the helmet from your installed game. This uses neutral reference colours; team colours and gameplay remain controlled by the game. Edit the separate **Artwork under helmets** views as well as the normal views and portrait. Choose **Add to player head options**, reopen the player editor to select the head, and restart the game after artwork changes.
 
 ### Maps and encounters
 

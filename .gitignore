@@ -310,3 +310,19 @@ tests/CustomRewardNativeChecks/*
 tests/ChargedReleaseChecks/*
 !tests/ChargedReleaseChecks/*.cs
 !tests/ChargedReleaseChecks/*.csproj
+
+# Blank head starters and portable layered drawing-file checks
+!tests/BlankHeadTemplateChecks/
+tests/BlankHeadTemplateChecks/*
+!tests/BlankHeadTemplateChecks/*.cs
+!tests/BlankHeadTemplateChecks/*.csproj
+!tests/LayeredHeadFileChecks/
+tests/LayeredHeadFileChecks/*
+!tests/LayeredHeadFileChecks/*.cs
+!tests/LayeredHeadFileChecks/*.csproj
+!tests/LayeredHeadFileChecks/*.py
+!tests/LayeredHeadFileChecks/*.md
+!tests/HeadPreviewChecks/
+tests/HeadPreviewChecks/*
+!tests/HeadPreviewChecks/*.cs
+!tests/HeadPreviewChecks/*.csproj

@@ -10,8 +10,12 @@ public sealed class HeadProjectStartWindow : Window
 {
     readonly string library;
     readonly bool goalie;
+    readonly bool basicAvailable;
     readonly TextBox name = new() { Name = "HeadSetupName", Watermark = "Name your head", MaxLength = 80 };
-    readonly RadioButton scratch = new() { Name = "HeadSetupScratch", GroupName = "HeadStartingArtwork", Content = "From scratch · blank PNGs" };
+    readonly RadioButton scratch = new() { Name = "HeadSetupScratch", GroupName = "HeadStartingArtwork", Content = "Blank template" };
+    readonly ComboBox blankStyle = new() { Name = "HeadBlankTemplateStyle", HorizontalAlignment = HorizontalAlignment.Stretch,
+        ItemsSource = new[] { "Plain head with guides", "Fully transparent with guides", "Completely empty transparent artwork" }, SelectedIndex = 0 };
+    readonly TextBlock blankLabel = Text("Blank template options", 16);
     readonly ComboBox template = new() { Name = "HeadSetupTemplate", PlaceholderText = "Choose a native head layout…", HorizontalAlignment = HorizontalAlignment.Stretch };
     readonly TextBlock layoutLabel = Text("Native template", 16);
     readonly TextBlock description = Text("");
@@ -23,12 +27,13 @@ public sealed class HeadProjectStartWindow : Window
     {
         this.goalie = goalie;
         library = Path.Combine(contentRoot, "custom-heads");
-        if (goalie) { name.Watermark = "Name your mask"; save.Content = "Save mask and show previews"; template.PlaceholderText = "Choose a native mask layout…"; }
+        if (goalie) { name.Watermark = "Name your mask"; save.Content = "Save mask and show previews"; template.PlaceholderText = "Choose a native mask layout…"; scratch.Content = "From scratch · blank PNGs"; }
         Name = "HeadProjectSetupDialog"; Title = goalie ? "Create or open a goalie mask" : "Create or open a head";
         StudioTheme.Primary(save);
         Width = 650; MaxHeight = 720; SizeToContent = SizeToContent.Height; CanResize = false;
         WindowStartupLocation = WindowStartupLocation.CenterOwner; Background = StudioTheme.Surface;
         var templates = NativeHeadTemplates.Read(goalie).Where(t => t.Available).ToArray();
+        basicAvailable = !goalie && templates.Any(t => t.Skin == HeadProject.BasicStarterSkin);
         template.ItemsSource = templates.Select(t => new LayoutChoice(t.Skin, t.Label)).ToArray();
         var native = new RadioButton { Name = "HeadSetupNative", GroupName = "HeadStartingArtwork", Content = "Use a native template", IsChecked = true };
         var modes = new WrapPanel { Orientation = Orientation.Horizontal };
@@ -47,7 +52,7 @@ public sealed class HeadProjectStartWindow : Window
             heading, instructions,
             Text(goalie ? "1. Name your mask" : "1. Name your head", 18), name,
             Text("2. Choose starting artwork", 18), modes,
-            layoutLabel, template, description,
+            blankLabel, blankStyle, layoutLabel, template, description,
             Text("3. Save and open the previews", 18),
             Text("The project is saved in your custom-heads folder under this name. Edit its PNGs in your image app, or import your own artwork after saving."),
             error, actions
@@ -60,6 +65,7 @@ public sealed class HeadProjectStartWindow : Window
         }
         native.IsCheckedChanged += (_, _) => Refresh(); scratch.IsCheckedChanged += (_, _) => Refresh();
         name.TextChanged += (_, _) => Refresh(); template.SelectionChanged += (_, _) => Refresh();
+        blankStyle.SelectionChanged += (_, _) => Refresh();
         save.Click += (_, _) => SaveAndOpen();
         cancel.Click += (_, _) => Close();
         open.Click += async (_, _) =>
@@ -82,6 +88,9 @@ public sealed class HeadProjectStartWindow : Window
     void Refresh()
     {
         bool blank = scratch.IsChecked == true;
+        bool starter = blank && !goalie;
+        blankLabel.IsVisible = blankStyle.IsVisible = starter;
+        layoutLabel.IsVisible = template.IsVisible = !starter;
         layoutLabel.Text = blank ? "Attachment layout · keeps the native size and placement" : "Native template";
         description.Text = blank
             ? "Starts with blank 512 × 512 PNGs, including every direction, extra layer and portrait. Your selected layout supplies native outlines, original sizes and collar guides."
@@ -89,6 +98,11 @@ public sealed class HeadProjectStartWindow : Window
         if (goalie) description.Text = blank
             ? "Starts with blank 512 × 512 PNGs for the mask views, extra layers and portrait. The native layout supplies outlines and placement guides."
             : "Starts with a native mask from your game. Includes front, back, four diagonal views, any extra layers and a portrait. Mirrored views share artwork where the game does.";
+        if (starter) description.Text = blankStyle.SelectedIndex switch {
+            0 => "Start with a featureless head shape. Layered PSDs include Base head, Face, Hair and separate hidden Guides layers. A standard game layout is selected automatically.",
+            1 => "Start with fully transparent artwork and separate head-outline and neck guides. Layered PSDs keep Face and Hair on their own editable layers. A standard game layout is selected automatically.",
+            _ => "Start with completely empty transparent artwork. Layered PSDs include Base head, Face and Hair layers without guides. A standard game layout is selected automatically."
+        };
         bool validName; error.IsVisible = false;
         try
         {
@@ -98,15 +112,20 @@ public sealed class HeadProjectStartWindow : Window
             validName = true;
         }
         catch (ArgumentException ex) { validName = false; if (!string.IsNullOrWhiteSpace(name.Text)) ShowError(ex.Message); }
-        save.IsEnabled = validName && template.SelectedItem is LayoutChoice;
+        save.IsEnabled = validName && (starter ? basicAvailable : template.SelectedItem is LayoutChoice);
+        if (starter && !basicAvailable) ShowError("Read game artwork on Home to load the standard blank-head layout.");
     }
 
     void SaveAndOpen()
     {
         try
         {
-            if (template.SelectedItem is not LayoutChoice choice) { ShowError("Choose a native template or attachment layout first."); return; }
-            Result = HeadProject.CreateFromTemplate(library, name.Text ?? "", choice.Skin, scratch.IsChecked == true, goalie);
+            if (scratch.IsChecked == true && !goalie) Result = HeadProject.CreateBlank(library, name.Text ?? "", (HeadBlankStyle)blankStyle.SelectedIndex);
+            else
+            {
+                if (template.SelectedItem is not LayoutChoice choice) { ShowError("Choose a native template or attachment layout first."); return; }
+                Result = HeadProject.CreateFromTemplate(library, name.Text ?? "", choice.Skin, scratch.IsChecked == true, goalie);
+            }
             Close(Result);
         }
         catch (Exception ex) { ShowError(ex.Message); }
@@ -125,9 +144,9 @@ public sealed class HeadProjectStartWindow : Window
         new("Save mask and show previews", "Save first, then edit each required PNG and portrait in your image app or import artwork. Cancel creates no files.", ["SaveHeadSetup"]),
         new("Open saved mask", "Open a mask project folder previously saved by Goalie Mask Editor.", ["OpenSavedHead"])
     ] : [
-        new("Name your head", "Enter a unique name for its project folder. Save is enabled after a valid name and a native layout are selected.", ["HeadSetupName"]),
+        new("Name your head", "Enter a unique name for its project folder. Choose a native template or a blank template option, then save.", ["HeadSetupName"]),
         new("Use a native template", "Start with head artwork extracted from your installed game, including its fitted variant when available. Choosing a mode does not create files.", ["HeadSetupNative"]),
-        new("From scratch", "Create blank 512 × 512 PNGs for every direction, extra layer and portrait. The selected native layout supplies the size, native outlines and collar guides.", ["HeadSetupScratch"]),
+        new("Blank template", "Choose a plain head with guides, transparent artwork with guides, or completely empty artwork. Studio selects the standard layout and creates layered PSD files for editing in an external image app.", ["HeadSetupScratch", "HeadBlankTemplateStyle"]),
         new("Native template or attachment layout", "Choose an extracted native skater head or fitted variant. Either variant keeps the family's native placement and matching bare/fitted artwork layouts.", ["HeadSetupTemplate"]),
         new("Save head and show previews", "Creates and saves the named project before opening its artwork previews. Duplicate names are rejected without overwriting the existing head. Draw or import your own PNGs after saving.", ["SaveHeadSetup"]),
         new("Open saved head", "Choose an existing folder containing head-project.json to open its saved artwork directly.", ["OpenSavedHead"]),

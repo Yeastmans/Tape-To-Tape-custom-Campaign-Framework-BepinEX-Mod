@@ -5,7 +5,7 @@ using CampaignCore;
 namespace CampaignCreator;
 
 // Authoring metadata only. Native attachment geometry stays in head-assets.json.
-public sealed class HeadProject
+public sealed partial class HeadProject
 {
     public int Version { get; set; } = 1;
     public bool IsGoalie { get; set; }
@@ -48,6 +48,7 @@ public sealed class HeadProject
         {
             // Copy only project assets, avoiding unrelated files in an opened folder.
             var files = Images.SelectMany(i => new[] { i.File, i.BoundsFile, i.SourceFile, OutlineFile(i) })
+                .Concat(DrawingFiles())
                 .Concat(new[] { "head-project.json", "README.txt" }).Where(p => p.Length > 0).Distinct();
             foreach (string relative in files)
             {
@@ -80,6 +81,7 @@ public sealed class HeadProject
             ?? throw new InvalidDataException("Invalid head project.");
         p.Folder = Path.GetFullPath(folder);
         if ((p.IsGoalie ? p.Version != 3 : p.Version != 1 && p.Version != 2) || p.Images.Count == 0) throw new InvalidDataException("Unsupported or empty head project.");
+        if (p.BlankStyle.HasValue && (p.IsGoalie || !Enum.IsDefined(p.BlankStyle.Value))) throw new InvalidDataException("Unsupported blank head option.");
         foreach (var image in p.Images)
         {
             p.FilePath(image.File); p.FilePath(image.BoundsFile);
@@ -117,8 +119,9 @@ public sealed class HeadProject
         finally { if (Directory.Exists(stage)) Directory.Delete(stage, true); }
     }
 
-    public static HeadProject CreateFromTemplate(string parent, string name, string nativeSkin, bool fromScratch = false, bool goalie = false)
+    public static HeadProject CreateFromTemplate(string parent, string name, string nativeSkin, bool fromScratch = false, bool goalie = false, HeadBlankStyle? blankStyle = null)
     {
+        if (blankStyle.HasValue && (goalie || !fromScratch || !Enum.IsDefined(blankStyle.Value))) throw new ArgumentException("Choose a supported blank skater-head option.");
         name = CreatorContent.ValidateName(name);
         string destination = Path.Combine(parent, name);
         if (Directory.Exists(destination) || File.Exists(destination)) throw new IOException("A head with that name already exists.");
@@ -146,6 +149,7 @@ public sealed class HeadProject
                 blank.Erase(SKColors.Transparent);
                 foreach (var item in p.Images) WritePng(blank, p.FilePath(item.File));
             }
+            if (blankStyle.HasValue) p.PrepareBlankStarter(blankStyle.Value);
             File.WriteAllText(p.FilePath("README.txt"), "Head artwork project: " + name + "\nNative template: " + bare.Label
                 + "\n\nEdit the 512 x 512 PNGs, preserving their canvas and transparency. Native artwork sizes are shown in Head Editor.\n"
                 + (fromScratch ? "Started from scratch: editable PNGs and the portrait are blank. Use native head outlines and collar references to draw or import your artwork.\n" : "Started with the selected native artwork. Replace or edit the PNGs to make your own head.\n")
@@ -159,6 +163,7 @@ public sealed class HeadProject
                 + "Front, front diagonals, back and back diagonals use the game's separate goalie skeletons. Some directions share mirrored artwork; extra top layers are required when shown.\n"
                 + "Original artwork, attachment data and six placement examples are in reference/Bare.\n"
                 + "Use Add to goalie mask options, return Home, select Goalie mask > Premade in the goalie or team look editor, then restart the game.\n");
+            if (blankStyle.HasValue) p.WriteDrawingInstructions();
             p.Save(); CustomHeadDefinition.Read(stage);
             MoveNewProject(stage, destination); p.Folder = destination; return p;
             void AddNative(NativeHeadTemplate template, bool helmet)
@@ -251,7 +256,7 @@ public sealed class HeadProject
     }
     public string ExportOutline(HeadImage item)
     {
-        using var outline = NativeOutline(item);
+        using var outline = BlankStyle != null ? DrawingGuide(item) : NativeOutline(item);
         string path = FilePath(OutlineFile(item)); WritePng(outline, path); return path;
     }
     public string ExportOutlineGuides()

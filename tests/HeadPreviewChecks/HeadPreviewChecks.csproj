@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup Condition="'$(StudioReferenceDirectory)' == ''">
+    <ProjectReference Include="../../src/CampaignCreator/CampaignCreator.csproj" />
+  </ItemGroup>
+  <!-- Optional isolated renderer build against an existing Studio binary. -->
+  <ItemGroup Condition="'$(StudioReferenceDirectory)' != ''">
+    <PackageReference Include="Avalonia" Version="11.3.22" />
+    <Reference Include="T2T Campaign Studio"><HintPath>$(StudioReferenceDirectory)/T2T Campaign Studio.dll</HintPath></Reference>
+    <Reference Include="CampaignCore"><HintPath>$(StudioReferenceDirectory)/CampaignCore.dll</HintPath></Reference>
+    <ProjectReference Include="../../src/GameArt/GameArt.csproj" />
+    <Compile Include="../../src/CampaignCreator/HeadProjectPreview.cs" Condition="Exists('../../src/CampaignCreator/HeadProjectPreview.cs')" Link="HeadProjectPreview.cs" />
+    <Compile Include="../../src/CampaignCreator/StudioArt.cs" Link="StudioArt.cs" />
+  </ItemGroup>
+</Project>

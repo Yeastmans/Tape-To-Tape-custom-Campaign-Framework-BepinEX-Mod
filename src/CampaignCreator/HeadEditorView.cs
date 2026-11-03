@@ -15,6 +15,10 @@ public sealed class HeadEditorView : UserControl
     readonly StackPanel body = new() { Spacing = StudioTheme.SpaceLg };
     readonly TextBlock feedback = Text("", 14);
     readonly List<Bitmap> bitmaps = [];
+    Bitmap? previewBitmap;
+    string previewDirection = "S";
+    bool previewHelmet;
+    int previewGeneration;
     HeadProject project;
     readonly IReadOnlyList<NativeHeadTemplate> templates;
     public HeadProject Project => project;
@@ -80,20 +84,32 @@ public sealed class HeadEditorView : UserControl
     }
     void Try(Action action) { try { action(); } catch (Exception ex) { feedback.Text = ex.Message; } }
     void OpenFile(string path) => Try(() => Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }));
-    void ClearImages() { foreach (var bitmap in bitmaps) bitmap.Dispose(); bitmaps.Clear(); }
+    void ClearImages()
+    {
+        previewGeneration++;
+        previewBitmap?.Dispose(); previewBitmap = null;
+        foreach (var bitmap in bitmaps) bitmap.Dispose(); bitmaps.Clear();
+    }
     public void Refresh()
     {
         body.Children.Clear(); ClearImages();
         var p = project;
         body.Children.Add(Text(p.Name, 26));
-        body.Children.Add(Text("Saved project · " + p.Folder));
-        body.Children.Add(Text("Native template: " + (templates.FirstOrDefault(t => t.Skin == p.TemplateSkin)?.Label ?? p.TemplateSkin)));
+        var location = Text("Saved project · " + p.Folder, 12);
+        location.TextWrapping = TextWrapping.NoWrap; location.TextTrimming = TextTrimming.CharacterEllipsis;
+        ToolTip.SetTip(location, p.Folder); body.Children.Add(location);
+        if (p.BlankStyle == null) body.Children.Add(Text("Native template: " + (templates.FirstOrDefault(t => t.Skin == p.TemplateSkin)?.Label ?? p.TemplateSkin)));
+        if (!p.IsGoalie) AddArtworkPreview(p);
         body.Children.Add(Text("1. Edit your artwork · 512 × 512 transparent PNGs", 20));
-        body.Children.Add(Text(p.StartedFromScratch
+        body.Children.Add(Text(p.BlankStyle != null
+            ? "Open the layered PSDs in your drawing app. Paint on Base head, Face and Hair; show the Guides layer while drawing, then hide it before exporting. Separate PNG layers are also available in drawing-layers/."
+            : p.StartedFromScratch
             ? p.IsGoalie ? "This mask started with blank PNGs. Use the native outlines to draw or import each view and layer, then edit the separate portrait. Expand the native examples to check placement." : "This project started with blank PNGs. Use each native head outline to draw the head and neck in the original position, or import your artwork. Edit every direction, extra layer and portrait. Expand the native examples below to see the collar placement."
             : "Open each PNG in your image app or use Replace PNG / Import PNGs to add your own artwork. Edit every direction, extra layer and portrait."));
-        body.Children.Add(Text("2. Check the previews · use Refresh PNGs after editing in another app. Imports and replacements save immediately and keep the previous PNG as a .bak file."));
-        body.Children.Add(new Border { Padding = new Thickness(12), CornerRadius = new CornerRadius(6), Background = Brush.Parse("#293749"), Child = Text(p.IsGoalie ? "3. Add to goalie mask options, return Home, then choose Goalie mask > Premade in a goalie or team look editor. Restart the game after installing or editing artwork. Check front, back and diagonal views in game." : "3. Add to player head options, then return Home and choose this head under Player > Head. Restart the game after installing or changing artwork. The outline follows the original head, including its neck edge. Check changed artwork and helmet fit in game.") });
+        body.Children.Add(Text(p.BlankStyle != null
+            ? "2. Export each finished view as a transparent PNG over the file shown on its card, then use Refresh PNGs. Keep the PSD as your editable source."
+            : "2. Check the previews · use Refresh PNGs after editing in another app. Imports and replacements save immediately and keep the previous PNG as a .bak file."));
+        body.Children.Add(new Border { Padding = new Thickness(12), CornerRadius = new CornerRadius(6), Background = Brush.Parse("#293749"), Child = Text(p.IsGoalie ? "3. Add to goalie mask options, return Home, then choose Goalie mask > Premade in a goalie or team look editor. Restart the game after installing or editing artwork. Check front, back and diagonal views in game." : "3. Add to player head options, then return Home and choose this head under Player > Head. Restart the game after installing or changing artwork. Check changed artwork and helmet fit in game.") });
         var actions = new WrapPanel();
         actions.Children.Add(ActionButton(p.IsGoalie ? "Add to goalie mask options" : "Add to player head options", () => Try(() =>
         {
@@ -104,11 +120,17 @@ public sealed class HeadEditorView : UserControl
             feedback.Text = "Installed " + p.Name + (p.IsGoalie ? ". Return Home and select Goalie mask > Premade. Restart the game. " : ". Return Home to select it under Player > Head. Restart the game. ") + installed;
         }), "InstallCustomHead"));
         actions.Children.Add(ActionButton("Open project folder", () => OpenFile(p.Folder)));
+        if (!p.IsGoalie) actions.Children.Add(ActionButton("Open layered templates", () => Try(() => OpenFile(p.EnsureDrawingTemplates())), "OpenHeadDrawingTemplates"));
         actions.Children.Add(ActionButton("Open outline guides", () => Try(() => OpenFile(p.ExportOutlineGuides()))));
-        actions.Children.Add(ActionButton("Open attachment data", () => OpenFile(p.FilePath(p.Version >= 2 ? "reference/Bare/head-assets.json" : "reference/head-assets.json"))));
+        if (p.BlankStyle == null) actions.Children.Add(ActionButton("Open attachment data", () => OpenFile(p.FilePath(p.Version >= 2 ? "reference/Bare/head-assets.json" : "reference/head-assets.json"))));
         body.Children.Add(actions);
         AddGroup("Head", p.IsGoalie ? "Mask views and layers · required" : "Head directions · required"); AddGroup("Portrait", "Player portrait · required");
-        if (p.SupportsHelmet && p.SeparateHelmetArtwork) AddGroup("Helmet", "Head under helmet · required when using separate artwork");
+        if (p.SupportsHelmet && p.SeparateHelmetArtwork)
+        {
+            body.Children.Add(Text("Artwork under helmets", 20));
+            body.Children.Add(Text("Edit these fitted face and hair views too. The game adds its equipped helmet separately, so leave the helmet itself out of these PNGs."));
+            AddGroup("Helmet", "Fitted head directions · required for helmet support");
+        }
         if (p.Version >= 2)
         {
             AddNativeExample(p.FilePath("reference/Bare/views"), p.Bindings.Count(b => !b.Helmet));
@@ -121,7 +143,7 @@ public sealed class HeadEditorView : UserControl
         helmet.IsCheckedChanged += (_, _) => Try(() => { p.SupportsHelmet = helmet.IsChecked == true; p.Save(); Refresh(); });
         separate.IsCheckedChanged += (_, _) => Try(() => { if (separate.IsChecked == true) p.EnsureHelmetImages(); p.SeparateHelmetArtwork = separate.IsChecked == true; p.Save(); Refresh(); });
         if (!p.IsGoalie) { body.Children.Add(helmet); body.Children.Add(separate); }
-        if (!p.IsGoalie) body.Children.Add(Text(!p.SupportsHelmet ? "Helmetless head: the project records that helmet selection should be disabled." : p.SeparateHelmetArtwork ? "Edit the fitted head artwork below. The game supplies the helmet itself." : "Both variants share these PNGs. The template has separate normal and helmet attachment layouts."));
+        if (!p.IsGoalie) body.Children.Add(Text(!p.SupportsHelmet ? "Helmetless head: the project records that helmet selection should be disabled." : p.SeparateHelmetArtwork ? "Edit the fitted head artwork above. The game supplies the helmet itself." : "Both variants share these PNGs. The template has separate normal and helmet attachment layouts."));
         if (p.Images.Any(i => i.Group == "Support"))
         {
             var support = new WrapPanel();
@@ -135,6 +157,63 @@ public sealed class HeadEditorView : UserControl
             foreach (var item in p.Images.Where(i => i.Group == group)) cards.Children.Add(Card(p, item));
             body.Children.Add(cards);
         }
+    }
+    void AddArtworkPreview(HeadProject p)
+    {
+        int generation = previewGeneration;
+        var row = new StackPanel { Spacing = StudioTheme.SpaceSm };
+        row.Children.Add(Text("Your head preview", 20));
+        var controls = new WrapPanel();
+        var direction = new ComboBox { Name = "HeadPreviewDirection", Width = 180, Margin = new Thickness(0, 0, 16, 8),
+            ItemsSource = HeadProjectPreview.Directions.Select(d => new ExampleDirection(d, HeadProject.DirectionLabel(d))).ToArray(),
+            SelectedIndex = Math.Max(0, HeadProjectPreview.Directions.ToList().IndexOf(previewDirection)) };
+        var helmet = new CheckBox { Name = "HeadPreviewHelmet", Content = "Show helmet", IsChecked = previewHelmet && p.SupportsHelmet,
+            IsEnabled = p.SupportsHelmet, Margin = new Thickness(0, 0, 16, 8) };
+        var status = Text("");
+        var picture = new Image { Name = "HeadArtworkPreview", Height = 260, Width = 260, Stretch = Stretch.Uniform };
+        var frame = new Border { Background = Brush.Parse("#354358"), CornerRadius = new CornerRadius(6),
+            HorizontalAlignment = HorizontalAlignment.Left, Child = picture };
+        bool loading = false;
+        var load = new Button { Name = "LoadHeadPreviewHelmet", Content = "Read helmet preview from game", IsVisible = false, Padding = StudioTheme.ButtonPadding };
+        void Show()
+        {
+            if (generation != previewGeneration) return;
+            previewDirection = direction.SelectedItem is ExampleDirection chosen ? chosen.Id : "S";
+            previewHelmet = helmet.IsChecked == true;
+            picture.Source = null; previewBitmap?.Dispose(); previewBitmap = null;
+            load.IsVisible = false;
+            try
+            {
+                if (HeadProjectPreview.Availability(p, previewHelmet) is { } reason)
+                {
+                    status.Text = reason;
+                    load.IsVisible = previewHelmet && !loading;
+                    return;
+                }
+                using var rendered = HeadProjectPreview.Render(p, previewDirection, previewHelmet);
+                using var image = SkiaSharp.SKImage.FromBitmap(rendered);
+                using var data = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100);
+                using var stream = data.AsStream();
+                previewBitmap = new Bitmap(stream); picture.Source = previewBitmap;
+                status.Text = previewHelmet ? HeadProjectPreview.HelmetDescription : "Bare head · preview only";
+            }
+            catch (Exception ex) { status.Text = ex.Message; }
+        }
+        load.Click += async (_, _) =>
+        {
+            if (loading) return;
+            loading = true; load.IsEnabled = false; status.Text = "Reading the standard helmet from your game…";
+            try { await Task.Run(() => HeadProjectPreview.EnsureAssets(p)); }
+            catch (Exception ex) { if (generation == previewGeneration) status.Text = ex.Message; return; }
+            finally { loading = false; load.IsEnabled = true; }
+            Show();
+        };
+        direction.SelectionChanged += (_, _) => Show();
+        helmet.IsCheckedChanged += (_, _) => Show();
+        controls.Children.Add(direction); controls.Children.Add(helmet);
+        row.Children.Add(controls); row.Children.Add(frame); row.Children.Add(status); row.Children.Add(load);
+        row.Children.Add(Text("The toggle shows the standard equipped helmet over your fitted artwork. It does not change this head’s equipment settings or export a helmet into the PNGs.", 13));
+        body.Children.Add(row); Show();
     }
     void AddNativeExample(string folder, int attachments, string kind = "head")
     {
@@ -160,7 +239,8 @@ public sealed class HeadEditorView : UserControl
         var panel = new StackPanel { Spacing = StudioTheme.SpaceSm };
         panel.Children.Add(Text(item.Label, 18));
         var picture = new Image { Height = 170, Stretch = Stretch.Uniform };
-        var outline = new Image { Name = "HeadNativeOutline", Height = 170, Stretch = Stretch.Uniform, IsVisible = true };
+        bool guided = p.BlankStyle == null || p.StarterHasGuides;
+        var outline = new Image { Name = "HeadNativeOutline", Height = 170, Stretch = Stretch.Uniform, IsVisible = guided };
         bool valid = true;
         try
         {
@@ -173,23 +253,24 @@ public sealed class HeadEditorView : UserControl
         {
             // Regenerate from the preserved original, so older projects also get
             // silhouettes without rewriting their artwork or rectangle files.
-            using var native = p.NativeOutline(item); using var image = SkiaSharp.SKImage.FromBitmap(native);
+            using var native = p.BlankStyle != null ? p.DrawingGuide(item) : p.NativeOutline(item); using var image = SkiaSharp.SKImage.FromBitmap(native);
             using var encoded = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100); using var stream = encoded.AsStream();
             var guideBitmap = new Bitmap(stream); bitmaps.Add(guideBitmap); outline.Source = guideBitmap;
         }
         catch (Exception ex) { outlineError = ex.Message; outline.IsVisible = false; }
         var images = new Grid { Background = Brush.Parse("#354358") }; images.Children.Add(picture); images.Children.Add(outline); panel.Children.Add(images);
         panel.Children.Add(Text(valid ? $"{item.Width} × {item.Height} · PNG" : "Missing or invalid image — replace PNG"));
-        panel.Children.Add(Text($"Original game artwork: {item.NativeWidth} × {item.NativeHeight} px", 12));
-        if (p.Version >= 2)
+        if (p.BlankStyle == null) panel.Children.Add(Text($"Original game artwork: {item.NativeWidth} × {item.NativeHeight} px", 12));
+        if (p.Version >= 2 && p.BlankStyle == null)
         {
             var binding = p.Bindings.FirstOrDefault(b => b.File == item.File);
             if (binding != null) panel.Children.Add(Text($"Native attachment: {binding.NativeWidth:0.#} × {binding.NativeHeight:0.#}", 12));
         }
         panel.Children.Add(Text(item.File, 12));
-        var showOutline = new CheckBox { Name = "ShowNativeOutline", Content = "Show native outline", IsChecked = outlineError == null, IsEnabled = outlineError == null };
+        var showOutline = new CheckBox { Name = "ShowNativeOutline", Content = p.BlankStyle != null ? "Show drawing guides" : "Show native outline", IsChecked = outlineError == null && guided, IsEnabled = outlineError == null };
         showOutline.IsCheckedChanged += (_, _) => outline.IsVisible = showOutline.IsChecked == true; panel.Children.Add(showOutline);
         if (outlineError != null) panel.Children.Add(Text("Native outline unavailable: " + outlineError, 12));
+        if (!p.IsGoalie) panel.Children.Add(ActionButton("Open layered PSD", () => Try(() => { p.EnsureDrawingTemplates(); OpenFile(p.DrawingTemplate(item)); }), "OpenHeadLayeredPsd"));
         panel.Children.Add(ActionButton("Replace PNG…", async () =>
         {
             try

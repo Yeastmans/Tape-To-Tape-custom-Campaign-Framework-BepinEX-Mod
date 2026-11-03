@@ -1,5 +1,12 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 39
+
+- New head > Blank template offers Plain head with guides, Fully transparent with guides, and Completely empty transparent artwork. Studio chooses the standard head layout automatically.
+- Each view includes a layered PSD with Base head, Face and Hair layers, plus separate hidden Guides when chosen. PNG-layer fallbacks are included. Existing PSD edits survive opening, refreshing and installing the head.
+- Head Editor previews your edited artwork in eight directions, with a Show helmet toggle using the standard equipped game helmet. Helmet artwork is read from the user's installation and stays outside the authored PNGs.
+- Clearer external-editor steps, fitted-head artwork labels and built-in help. Native head and goalie-mask editing remain available.
+
 ## Beta 1.0 revision 38
 
 - Added confirmed Remove controls to Base Game Pools, native candidate lists, campaign player teams and campaign/squad recruitment lists, including goalies.
