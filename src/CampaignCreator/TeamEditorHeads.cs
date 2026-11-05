@@ -29,7 +29,7 @@ internal sealed partial class TeamEditorView
         Track(key, () => saved);
         var choose = ActionButton("Choose squad icon", async () =>
         {
-            var heads = CampaignCore.HeadAppearance.Choices(data.Assets.Values("skater", "Face"))
+            var heads = data.HeadChoices(saved)
                 .Select(id => new PreviewGridPicker.Choice(id, FieldControls.Friendly(id)));
             var logos = (Directory.Exists(folder) ? Directory.GetFiles(folder, "*.png").OrderBy(Path.GetFileName).ToArray() : [])
                 .Select(path => new PreviewGridPicker.Choice("CustomLogos/" + Path.GetFileName(path), Path.GetFileNameWithoutExtension(path)));

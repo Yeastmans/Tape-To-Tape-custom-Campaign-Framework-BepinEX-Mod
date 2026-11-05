@@ -326,3 +326,7 @@ tests/LayeredHeadFileChecks/*
 tests/HeadPreviewChecks/*
 !tests/HeadPreviewChecks/*.cs
 !tests/HeadPreviewChecks/*.csproj
+!tests/HeadWorkflowChecks/
+tests/HeadWorkflowChecks/*
+!tests/HeadWorkflowChecks/*.cs
+!tests/HeadWorkflowChecks/*.csproj

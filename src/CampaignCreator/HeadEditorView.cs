@@ -43,7 +43,7 @@ public sealed class HeadEditorView : UserControl
         {
             try
             {
-                var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = project.IsGoalie ? "Import mask PNGs: Front, Back, Front left, Front right, Back left, Back right, Portrait" : "Import head PNGs (name them Front, Back, Side, Back diagonal, Front diagonal, Portrait)", AllowMultiple = true, FileTypeFilter = [new FilePickerFileType("PNG image") { Patterns = ["*.png"] }] });
+                var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = project.IsGoalie ? "Import mask PNGs: Front, Back, Front left, Front right, Back left, Back right, Portrait" : "Import head PNGs (PSD export names are supported)", AllowMultiple = true, FileTypeFilter = [new FilePickerFileType("PNG image") { Patterns = ["*.png"] }] });
                 var paths = files.Select(f => f.TryGetLocalPath()).OfType<string>().ToList(); if (paths.Count == 0) return;
                 ImportInto(paths);
             }
@@ -100,15 +100,16 @@ public sealed class HeadEditorView : UserControl
         ToolTip.SetTip(location, p.Folder); body.Children.Add(location);
         if (p.BlankStyle == null) body.Children.Add(Text("Native template: " + (templates.FirstOrDefault(t => t.Skin == p.TemplateSkin)?.Label ?? p.TemplateSkin)));
         if (!p.IsGoalie) AddArtworkPreview(p);
-        body.Children.Add(Text("1. Edit your artwork · 512 × 512 transparent PNGs", 20));
+        body.Children.Add(Text("1. Edit your artwork · transparent PNGs", 20));
         body.Children.Add(Text(p.BlankStyle != null
             ? "Open the layered PSDs in your drawing app. Paint on Base head, Face and Hair; show the Guides layer while drawing, then hide it before exporting. Separate PNG layers are also available in drawing-layers/."
             : p.StartedFromScratch
             ? p.IsGoalie ? "This mask started with blank PNGs. Use the native outlines to draw or import each view and layer, then edit the separate portrait. Expand the native examples to check placement." : "This project started with blank PNGs. Use each native head outline to draw the head and neck in the original position, or import your artwork. Edit every direction, extra layer and portrait. Expand the native examples below to see the collar placement."
             : "Open each PNG in your image app or use Replace PNG / Import PNGs to add your own artwork. Edit every direction, extra layer and portrait."));
         body.Children.Add(Text(p.BlankStyle != null
-            ? "2. Export each finished view as a transparent PNG over the file shown on its card, then use Refresh PNGs. Keep the PSD as your editable source."
+            ? "2. Quick-export your finished views as PNGs, then use Import PNGs or Replace PNG. Keep the PSD as your editable source."
             : "2. Check the previews · use Refresh PNGs after editing in another app. Imports and replacements save immediately and keep the previous PNG as a .bak file."));
+        body.Children.Add(Text("Keep the original canvas when saving PNGs from your drawing app. PSD names such as Front [S].png work directly; keep fitted exports in a Helmet folder. Full 512 × 512 canvases keep every pixel in place. Original-size game images use their own reference offset; cropped artwork is aligned to the saved view, so check the preview."));
         body.Children.Add(new Border { Padding = new Thickness(12), CornerRadius = new CornerRadius(6), Background = Brush.Parse("#293749"), Child = Text(p.IsGoalie ? "3. Add to goalie mask options, return Home, then choose Goalie mask > Premade in a goalie or team look editor. Restart the game after installing or editing artwork. Check front, back and diagonal views in game." : "3. Add to player head options, then return Home and choose this head under Player > Head. Restart the game after installing or changing artwork. Check changed artwork and helmet fit in game.") });
         var actions = new WrapPanel();
         actions.Children.Add(ActionButton(p.IsGoalie ? "Add to goalie mask options" : "Add to player head options", () => Try(() =>
@@ -117,8 +118,24 @@ public sealed class HeadEditorView : UserControl
             // Also register in a custom --content workspace when one is in use.
             string workspaceRoot = Path.GetDirectoryName(library)!;
             if (!Path.GetFullPath(workspaceRoot).Equals(Path.GetFullPath(CampaignCore.UserContentPaths.Root), StringComparison.OrdinalIgnoreCase)) p.Install(workspaceRoot);
+            Refresh();
             feedback.Text = "Installed " + p.Name + (p.IsGoalie ? ". Return Home and select Goalie mask > Premade. Restart the game. " : ". Return Home to select it under Player > Head. Restart the game. ") + installed;
         }), "InstallCustomHead"));
+        if (!p.IsGoalie)
+        {
+            string skin = "Faces/CustomHeads/" + p.Name;
+            var roots = new[] { Path.GetDirectoryName(library)!, CampaignCore.UserContentPaths.Root }.Distinct(StringComparer.OrdinalIgnoreCase)
+                .Where(root => File.Exists(Path.Combine(root, "custom-heads", CreatorContent.ValidateName(p.Name), "head-project.json"))).ToArray();
+            var remove = ActionButton("Remove from head options", () => Try(() =>
+            {
+                foreach (string root in roots) HeadOptionVisibility.SetVisible(root, skin, false);
+                Refresh();
+                feedback.Text = "Removed " + p.Name + " from head options. Your project and existing player assignments are kept. Use Add to player head options when it is ready.";
+            }), "RemoveCustomHead");
+            remove.IsEnabled = roots.Any(root => HeadOptionVisibility.IsVisible(root, skin));
+            ToolTip.SetTip(remove, "Hide this head from new selections. Keep editing this project and add it again whenever it is ready.");
+            actions.Children.Add(remove);
+        }
         actions.Children.Add(ActionButton("Open project folder", () => OpenFile(p.Folder)));
         if (!p.IsGoalie) actions.Children.Add(ActionButton("Open layered templates", () => Try(() => OpenFile(p.EnsureDrawingTemplates())), "OpenHeadDrawingTemplates"));
         actions.Children.Add(ActionButton("Open outline guides", () => Try(() => OpenFile(p.ExportOutlineGuides()))));

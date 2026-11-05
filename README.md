@@ -2,11 +2,11 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 39](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r39-build-1793742083648) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 40](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r40-build-1793838044980) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
 **Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **public v1.0 release, build 26372689**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
 
-Beta 1.0 revision 39 adds three blank-head starter options, layered PSD files for external drawing apps, and an equipped-helmet preview toggle. See the [changelog](release/CHANGELOG.md) and [validation](docs/RELEASE-R39-VALIDATION.md).
+Beta 1.0 revision 40 improves head PNG imports, adds reversible removal from head options, and gives blank starters more detailed directional shapes. See the [changelog](release/CHANGELOG.md) and [validation](docs/RELEASE-R40-VALIDATION.md).
 
 **This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. Reporting bugs on [Discord](https://discord.gg/hscxnYghb) or [GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues) helps immensely.
 

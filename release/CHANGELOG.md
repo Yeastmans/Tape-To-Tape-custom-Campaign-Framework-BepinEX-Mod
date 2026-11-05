@@ -1,5 +1,13 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 40
+
+- Head Editor batch import accepts PSD export names such as Front [S].png, including separate fitted-head and extra-layer views. Keep fitted exports in a Helmet folder.
+- Full 512 x 512 PNG canvases retain their exact placement. Original-size game images use each view's native offset; known trim-only exports restore their saved offsets. Save PNGs with the original document canvas for the most predictable alignment.
+- Remove from head options hides an unfinished custom head while keeping its editable project and existing player assignments. Add to player head options restores it. A hidden head disappears from new choices after switching away.
+- Plain blank starters have clearer ears, jaw and neck shading, plus distinct front, back, profile and diagonal views. Faces stay blank. Existing PSD edits are preserved; create a new blank head to use the updated starter.
+- Both batch import and Replace PNG keep the previous image as a backup. Legacy fitted-head filename aliases remain supported.
+
 ## Beta 1.0 revision 39
 
 - New head > Blank template offers Plain head with guides, Fully transparent with guides, and Completely empty transparent artwork. Studio chooses the standard head layout automatically.

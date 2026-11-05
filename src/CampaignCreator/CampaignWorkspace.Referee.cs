@@ -10,14 +10,17 @@ public sealed partial class CampaignWorkspace
     {
         string original = settings.Get(FieldSchema.RefereeHeadKey);
         string initial = HeadAppearance.Base(original);
-        var choices = HeadAppearance.Choices(data.Assets.Values("skater", "Face")).ToList();
-        // A missing custom project remains a visible saved choice until changed.
-        if (initial.Length > 0 && !choices.Contains(initial, StringComparer.OrdinalIgnoreCase)) choices.Add(initial);
-        var picker = PreviewGridPicker.Create("Choose referee head",
-            new[] { new PreviewGridPicker.Choice("", "Game default") }.Concat(choices.Select(id =>
-                new PreviewGridPicker.Choice(id, FieldControls.Friendly(id)))), initial,
+        IEnumerable<PreviewGridPicker.Choice> Choices(string current)
+        {
+            var choices = data.HeadChoices(current).ToList();
+            // A missing custom project remains a visible saved choice until changed.
+            if (current.Length > 0 && !choices.Contains(current, StringComparer.OrdinalIgnoreCase)) choices.Add(current);
+            return new[] { new PreviewGridPicker.Choice("", "Game default") }.Concat(choices.Select(id =>
+                new PreviewGridPicker.Choice(id, FieldControls.Friendly(id))));
+        }
+        var picker = PreviewGridPicker.Create("Choose referee head", Choices(initial), initial,
             id => PreviewGridPicker.FileImage(data.HeadPreview("skater", id)),
-            () => { if (HasUnsavedChanges) message.Text = "Unsaved campaign changes"; });
+            () => { if (HasUnsavedChanges) message.Text = "Unsaved campaign changes"; }, choicesForSelection: Choices);
         picker.control.Name = "CampaignRefereeHead";
         picker.control.Tag = FieldSchema.RefereeHeadKey;
         fields[FieldSchema.RefereeHeadKey] = () => picker.read() == initial ? original : picker.read();

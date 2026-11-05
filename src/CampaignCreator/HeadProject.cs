@@ -39,7 +39,11 @@ public sealed partial class HeadProject
         Save();
         var definition = CampaignCore.CustomHeadDefinition.Read(Folder);
         string target = Path.GetFullPath(Path.Combine(contentRoot, "custom-heads", CreatorContent.ValidateName(Name)));
-        if (target.Equals(Path.GetFullPath(Folder), StringComparison.OrdinalIgnoreCase)) return target;
+        if (target.Equals(Path.GetFullPath(Folder), StringComparison.OrdinalIgnoreCase))
+        {
+            if (!IsGoalie) HeadOptionVisibility.SetVisible(contentRoot, definition.Skin, true);
+            return target;
+        }
         string parent = Path.GetDirectoryName(target)!;
         Directory.CreateDirectory(parent);
         string stage = Path.Combine(parent, ".install-" + Guid.NewGuid().ToString("N"));
@@ -71,6 +75,7 @@ public sealed partial class HeadProject
             }
             try { MoveNewProject(stage, target); }
             catch { if (backup != null) Directory.Move(backup, target); throw; }
+            if (!IsGoalie) HeadOptionVisibility.SetVisible(contentRoot, definition.Skin, true);
             return target;
         }
         finally { if (Directory.Exists(stage)) Directory.Delete(stage, true); }
@@ -292,6 +297,18 @@ public sealed partial class HeadProject
     ];
     public HeadImage? SlotFor(string pngPath)
     {
+        string name = Path.GetFileNameWithoutExtension(pngPath);
+        string parent = Path.GetFileName(Path.GetDirectoryName(pngPath)) ?? "";
+        if (parent.Equals("frames", StringComparison.OrdinalIgnoreCase))
+            parent = Path.GetFileName(Path.GetDirectoryName(Path.GetDirectoryName(pngPath))) ?? "";
+        string group = parent.Equals("Helmet", StringComparison.OrdinalIgnoreCase) ? "Helmet"
+            : parent.Equals("Portrait", StringComparison.OrdinalIgnoreCase) ? "Portrait" : "Head";
+        // Photoshop uses the PSD filename for Quick Export. Match our complete
+        // name, including the attachment key and extra-layer label, before aliases.
+        // Head and Helmet PSDs share names, so retain their containing group.
+        var exported = Images.Where(i => DrawingName(i).Equals(name, StringComparison.OrdinalIgnoreCase)
+            && (i.Group == group || i.Group == "Portrait")).ToArray();
+        if (exported.Length == 1) return exported[0];
         string stem = new string(Path.GetFileNameWithoutExtension(pngPath).ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
         if (IsGoalie)
         {
@@ -310,16 +327,17 @@ public sealed partial class HeadProject
             if (direction.Length > 0)
             {
                 string placeholder = direction == "N2" ? "N-Helmet2" : direction + "-Helmet";
-                var binding = Bindings.FirstOrDefault(b => !b.Helmet && b.Slot == "Helmet" && b.Placeholder == placeholder);
+                var binding = Bindings.FirstOrDefault(b => b.Helmet == (group == "Helmet") && b.Slot == "Helmet" && b.Placeholder == placeholder);
                 return binding == null ? null : Images.First(i => i.File == binding.File);
             }
         }
         foreach (var (file, names) in SlotNames)
-            if (names.Contains(stem)) return Images.FirstOrDefault(i => i.File == file);
+            if (names.Contains(stem)) return Images.FirstOrDefault(i => i.Group == (file == "portrait.png" ? "Portrait" : group)
+                && Path.GetFileName(i.File).Equals(Path.GetFileName(file), StringComparison.OrdinalIgnoreCase));
         return null;
     }
-    // Imports PNGs of any size: trims transparent margins (or uses the whole image when opaque) and fits the artwork
-    // into the slot's template rectangle on the 512 canvas. Returns a human-readable summary.
+    // Keep full authoring canvases intact; fit cropped exports through the same
+    // replacement path used by the individual cards.
     public string Import(IEnumerable<string> files)
     {
         var done = new List<string>(); var skipped = new List<string>(); bool portraitDone = false; HeadImage? front = null;
@@ -327,7 +345,7 @@ public sealed partial class HeadProject
         {
             var slot = SlotFor(source);
             if (slot == null) { skipped.Add(Path.GetFileName(source)); continue; }
-            FitInto(slot, source); done.Add(slot.Label);
+            Replace(slot, source); done.Add(slot.Label);
             if (slot.File == "portrait.png") portraitDone = true; else if (slot.File == "frames/S.png") front = slot;
         }
         if (front != null && !portraitDone && Images.FirstOrDefault(i => i.File == "portrait.png") is { } portrait)
@@ -337,41 +355,88 @@ public sealed partial class HeadProject
         }
         Save();
         string text = done.Count == 0 ? "No PNGs imported." : "Imported " + string.Join(", ", done) + ".";
-        if (skipped.Count > 0) text += " Skipped " + string.Join(", ", skipped) + (IsGoalie ? " — name files Front, Back, Front left, Front right, Back left, Back right or Portrait. Replace extra layers using their individual cards." : " — name files Front, Back, Side, Back diagonal, Front diagonal or Portrait.");
+        if (skipped.Count > 0) text += " Skipped " + string.Join(", ", skipped) + " — keep the PSD export names (for example Front [S].png) or use Front, Back, Side, Back diagonal, Front diagonal or Portrait. Keep fitted exports in a Helmet folder.";
         return text;
     }
-    void FitInto(HeadImage item, string source)
+    void FitInto(HeadImage item, SKBitmap decoded, string source)
     {
-        using var decoded = SKBitmap.Decode(source) ?? throw new InvalidDataException(Path.GetFileName(source) + " is not a readable PNG.");
-        int x0 = decoded.Width, y0 = decoded.Height, x1 = -1, y1 = -1;
-        for (int y = 0; y < decoded.Height; y++) for (int x = 0; x < decoded.Width; x++)
-            if (decoded.GetPixel(x, y).Alpha > 32) { x0 = Math.Min(x0, x); y0 = Math.Min(y0, y); x1 = Math.Max(x1, x); y1 = Math.Max(y1, y); }
-        if (x1 < x0 || y1 < y0) throw new InvalidDataException(Path.GetFileName(source) + " has no visible artwork.");
-        int w = x1 - x0 + 1, h = y1 - y0 + 1;
-        float scale = Math.Min((item.ContentWidth - 16f) / w, (item.ContentHeight - 16f) / h);
-        float dw = w * scale, dh = h * scale;
         using var canvasImage = new SKBitmap(item.Width, item.Height, SKColorType.Rgba8888, SKAlphaType.Premul);
         using (var canvas = new SKCanvas(canvasImage))
         {
             canvas.Clear(SKColors.Transparent);
             using var paint = new SKPaint { FilterQuality = SKFilterQuality.High };
-            float left = item.Left + (item.ContentWidth - dw) / 2, top = item.Top + (item.ContentHeight - dh) / 2;
-            canvas.DrawBitmap(decoded, new SKRect(x0, y0, x1 + 1, y1 + 1), new SKRect(left, top, left + dw, top + dh), paint);
+            if (decoded.Width == item.NativeWidth && decoded.Height == item.NativeHeight)
+            {
+                // Original game canvases differ for every view. Reproduce the
+                // same native-to-authoring mapping used when creating this slot.
+                canvas.DrawBitmap(decoded, new SKRect(item.Left, item.Top, item.Left + item.ContentWidth, item.Top + item.ContentHeight), paint);
+            }
+            else
+            {
+                var visible = VisibleBounds(decoded);
+                if (visible.IsEmpty) throw new InvalidDataException(Path.GetFileName(source) + " has no visible artwork.");
+                using var current = SKBitmap.Decode(FilePath(item.File));
+                using var native = File.Exists(FilePath(item.SourceFile)) ? NativeCanvas(item) : null;
+                // A trim-only export retains pixel dimensions. Restore its exact
+                // offset from the existing project or original reference canvas.
+                var trimmed = new[] { current, native }.Where(b => b != null && b.Width == item.Width && b.Height == item.Height)
+                    .Select(b => VisibleBounds(b!)).FirstOrDefault(b => b.Width == decoded.Width && b.Height == decoded.Height);
+                if (!trimmed.IsEmpty) canvas.DrawBitmap(decoded, trimmed.Left, trimmed.Top);
+                else
+                {
+                    // Cropping loses position when the outline also changes. Use
+                    // this view's native size and collar anchor, exactly as the
+                    // runtime does; never center it in a generic square footprint.
+                    var placement = new CustomHeadImage { Width = decoded.Width, Height = decoded.Height,
+                        Left = item.Left, Top = item.Top, ContentWidth = item.ContentWidth, ContentHeight = item.ContentHeight,
+                        HasNativePlacement = item.HasNativePlacement, NativeVisibleLeft = item.NativeVisibleLeft, NativeVisibleTop = item.NativeVisibleTop,
+                        NativeVisibleWidth = item.NativeVisibleWidth, NativeVisibleHeight = item.NativeVisibleHeight };
+                    if (item.Group == "Portrait")
+                    {
+                        var reference = native == null ? new SKRectI(item.Left, item.Top, item.Left + item.ContentWidth, item.Top + item.ContentHeight) : VisibleBounds(native);
+                        if (reference.IsEmpty) reference = new SKRectI(item.Left, item.Top, item.Left + item.ContentWidth, item.Top + item.ContentHeight);
+                        float scale = Math.Min(reference.Width / (float)visible.Width, reference.Height / (float)visible.Height);
+                        float width = visible.Width * scale, height = visible.Height * scale;
+                        float left = reference.MidX - width / 2, top = reference.MidY - height / 2;
+                        canvas.DrawBitmap(decoded, visible, new SKRect(left, top, left + width, top + height), paint);
+                    }
+                    else
+                    {
+                        string direction = item.Direction.Length > 0 ? item.Direction : Path.GetFileNameWithoutExtension(item.File);
+                        var align = HeadArtworkPlacement.Align(placement, direction, visible.Left, visible.Top, visible.Right, visible.Bottom);
+                        canvas.Translate(align.MoveX, align.MoveY); canvas.Scale(align.Scale);
+                        canvas.DrawBitmap(decoded, 0, 0, paint);
+                    }
+                }
+            }
         }
-        string path = FilePath(item.File), temp = path + ".tmp";
-        WritePng(canvasImage, temp);
-        if (File.Exists(path)) File.Copy(path, path + ".bak", true);
-        File.Move(temp, path, true);
+        WriteReplacement(item, canvasImage);
+    }
+    static SKRectI VisibleBounds(SKBitmap image)
+    {
+        int left = image.Width, top = image.Height, right = 0, bottom = 0;
+        var pixels = image.Pixels;
+        for (int y = 0; y < image.Height; y++) for (int x = 0; x < image.Width; x++)
+            if (pixels[y * image.Width + x].Alpha > 0) { left = Math.Min(left, x); top = Math.Min(top, y); right = Math.Max(right, x + 1); bottom = Math.Max(bottom, y + 1); }
+        return right <= left || bottom <= top ? SKRectI.Empty : new SKRectI(left, top, right, bottom);
     }
     public void Replace(HeadImage item, string source)
     {
         if (!Images.Contains(item)) throw new ArgumentException("Unknown image slot.");
+        using var decoded = ReadPng(source);
+        if (decoded.Width != item.Width || decoded.Height != item.Height)
+            FitInto(item, decoded, source);
+        else WriteReplacement(item, decoded);
+    }
+    static SKBitmap ReadPng(string source)
+    {
         using var stream = File.OpenRead(source);
         using var codec = SKCodec.Create(stream) ?? throw new InvalidDataException("Choose a valid PNG image.");
         if (codec.EncodedFormat != SKEncodedImageFormat.Png) throw new InvalidDataException("Choose a PNG image.");
-        if (codec.Info.Width != item.Width || codec.Info.Height != item.Height)
-            throw new InvalidDataException($"Use a {item.Width} × {item.Height} PNG. Keep the supplied canvas size.");
-        using var decoded = SKBitmap.Decode(codec) ?? throw new InvalidDataException("Cannot decode this PNG.");
+        return SKBitmap.Decode(codec) ?? throw new InvalidDataException("Cannot decode this PNG.");
+    }
+    void WriteReplacement(HeadImage item, SKBitmap decoded)
+    {
         string path = FilePath(item.File), temp = path + ".tmp";
         WritePng(decoded, temp);
         if (File.Exists(path)) File.Copy(path, path + ".bak", true);

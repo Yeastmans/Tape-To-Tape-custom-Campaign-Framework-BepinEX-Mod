@@ -22,7 +22,8 @@ internal static class PreviewGridPicker
     }
 
     internal static (Control control, Func<string> read) Create(string title, IEnumerable<Choice> choices,
-        string value, Func<string, IImage?> load, Action changed, Action<string>? preview = null, bool ownsImages = true)
+        string value, Func<string, IImage?> load, Action changed, Action<string>? preview = null, bool ownsImages = true,
+        Func<string, IEnumerable<Choice>>? choicesForSelection = null)
     {
         var all = choices.ToArray();
         string saved = all.FirstOrDefault(c => c.Id.Equals(value, StringComparison.OrdinalIgnoreCase))?.Id ?? "";
@@ -31,6 +32,7 @@ internal static class PreviewGridPicker
         Refresh();
         button.Click += async (_, _) => {
             if (TopLevel.GetTopLevel(button) is not Window owner) return;
+            if (choicesForSelection != null) all = choicesForSelection(saved).ToArray();
             string? selected = await Show(owner, title, all, saved, load, ownsImages);
             if (selected == null || selected == saved) return;
             saved = selected; Refresh(); changed(); preview?.Invoke(saved);

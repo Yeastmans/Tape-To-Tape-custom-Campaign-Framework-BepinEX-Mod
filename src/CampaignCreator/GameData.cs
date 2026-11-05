@@ -13,6 +13,7 @@ internal sealed class GameData
     public Dictionary<string, CustomRewardDefinition> CustomRewards { get; } = new(StringComparer.OrdinalIgnoreCase);
     public List<string> Sizes { get; } = FieldSchema.Sizes.ToList();
     public string Root { get; }
+    public IEnumerable<string> HeadChoices(string selected = "") => HeadOptionVisibility.Choices(Root, Assets.Values("skater", "Face"), selected);
     public GameData(string root)
     {
         // The runtime dump only contains worn equipment. Merge the full packaged
