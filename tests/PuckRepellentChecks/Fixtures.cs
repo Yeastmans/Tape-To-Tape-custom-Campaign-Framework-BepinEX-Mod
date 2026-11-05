@@ -60,4 +60,11 @@ namespace CampaignCore {
   public static IEnumerable<string> ForwardConditionEffects=>new[]{ForbidStick,ExtraSticks,ForbidCheck,RepelPuck,HandPuck,ForceOffside};
  }
 }
-namespace EndlessMode {public static class CustomRewardRuntime {public static IEnumerable<CampaignCore.CustomRewardDefinition> ActiveConditions(Skaters.Skater s)=>s?.Rules??Enumerable.Empty<CampaignCore.CustomRewardDefinition>();}}
+namespace EndlessMode {
+ public static class CustomRewardRuntime {
+  public static IEnumerable<CampaignCore.CustomRewardDefinition> ActiveConditions(Skaters.Skater s, Func<string, bool> effects)
+      => s?.Rules.Where(rule => effects(rule.Effect)) ?? Enumerable.Empty<CampaignCore.CustomRewardDefinition>();
+  public static IEnumerable<CampaignCore.CustomRewardDefinition> ActiveConditions(Skaters.Skater s, string effect)
+      => ActiveConditions(s, value => value == effect);
+ }
+}

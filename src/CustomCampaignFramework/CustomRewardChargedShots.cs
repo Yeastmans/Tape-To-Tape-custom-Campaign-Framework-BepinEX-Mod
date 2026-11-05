@@ -21,14 +21,20 @@ internal static class CustomRewardChargedShots
         internal readonly List<CustomRewardDefinition> Rules = new();
     }
     private static readonly Dictionary<IntPtr, Released> released = new();
-    internal static CustomRewardDefinition Rule(Skater player) => player != null && player.ArePowerUpsEnabled()
-        ? CustomRewardRuntime.ActiveConditions(player).Where(d => CustomRewardEffects.IsCharge(d.Effect)).Concat(CapturedRules(player))
-            .OrderBy(d => d.Effect == CustomRewardEffects.ChargeCritical ? 0 : 1).ThenBy(d => d.Seconds).FirstOrDefault() : null;
+    internal static CustomRewardDefinition Rule(Skater player)
+    {
+        var rules = CustomRewardRuntime.ConditionRules(CustomRewardEffects.IsCharge);
+        if (player == null || (rules.Length == 0 && !released.ContainsKey(player.Pointer)) || !player.ArePowerUpsEnabled()) return null;
+        return CustomRewardRuntime.ActiveConditions(player, rules).Concat(CapturedRules(player))
+            .OrderBy(d => d.Effect == CustomRewardEffects.ChargeCritical ? 0 : 1).ThenBy(d => d.Seconds).FirstOrDefault();
+    }
     internal static void Release(Forward player, float held)
     {
         if (player == null || !CustomRewardRuntime.InMatch || !player.ArePowerUpsEnabled() || !float.IsFinite(held)) return;
+        var rules = CustomRewardRuntime.ConditionRules(CustomRewardEffects.IsCharge);
+        if (rules.Length == 0) { released.Remove(player.Pointer); return; }
         var state = new Released { Until = Time.time + .5f };
-        foreach (var rule in CustomRewardRuntime.ActiveConditions(player).Where(d => CustomRewardEffects.IsCharge(d.Effect))) {
+        foreach (var rule in CustomRewardRuntime.ActiveConditions(player, rules)) {
             state.Rules.Add(rule);
             if (rule.Effect != CustomRewardEffects.ChargeCritical)
                 state.Bonuses[rule.Id] = (rule.Effect == CustomRewardEffects.ChargePower ? "Shot Power" : "Accuracy", (int)(rule.Amount * Math.Clamp(held, 0, rule.Seconds)));
@@ -43,7 +49,7 @@ internal static class CustomRewardChargedShots
     }
     internal static int Bonus(Skater player, string stat)
     {
-        if (player == null || !player.ArePowerUpsEnabled() || !released.TryGetValue(player.Pointer, out var state)) return 0;
+        if (player == null || !released.TryGetValue(player.Pointer, out var state) || !player.ArePowerUpsEnabled()) return 0;
         if (Time.time >= state.Until) { released.Remove(player.Pointer); return 0; }
         long total = 0;
         foreach (var entry in state.Bonuses)

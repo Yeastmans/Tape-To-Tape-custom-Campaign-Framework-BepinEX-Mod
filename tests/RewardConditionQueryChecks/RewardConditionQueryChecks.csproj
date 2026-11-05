@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/CampaignCore/CampaignCore.csproj" />
+    <Compile Include="../../src/CustomCampaignFramework/CustomRewardAcquisitionOrder.cs" Link="CustomRewardAcquisitionOrder.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/CustomRewardScaling.cs" Link="CustomRewardScaling.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/CustomRewardRandomShots.cs" Link="CustomRewardRandomShots.cs" />
+    <Compile Include="$(IntermediateOutputPath)RewardQuery.g.cs" />
+  </ItemGroup>
+  <Target Name="ExtractRewardQueries" BeforeTargets="CoreCompile">
+    <Exec Command="python &quot;$(MSBuildProjectDirectory)/extract_runtime.py&quot; &quot;$(IntermediateOutputPath)RewardQuery.g.cs&quot;" />
+  </Target>
+</Project>

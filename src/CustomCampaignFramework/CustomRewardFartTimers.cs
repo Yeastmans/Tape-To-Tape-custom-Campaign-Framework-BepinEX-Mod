@@ -34,10 +34,12 @@ internal static class CustomRewardFartTimers
     }
     internal static void Refresh(Forward owner)
     {
-        var active = CustomRewardRuntime.Definitions.Values.Where(d => !d.NeedsRedesign && !d.IsRelic
-            && d.Trigger == "Random fart timer" && CustomRewardRuntime.InMatch && owner.ArePowerUpsEnabled() && !owner.IsBenched()
-            && CustomRewardRuntime.Has(owner._skaterData, d.Id)
-            && owner._skaterData.powerups.HasMatch(t => t != null && t.id == d.Id && !t.PayoffSuppressed)).ToArray();
+        var rules = CustomRewardRuntime.RulesForSignal("Random fart timer");
+        if (rules.Length == 0 && timers.Count == 0) return;
+        var active = rules.Length != 0 && CustomRewardRuntime.InMatch && owner.ArePowerUpsEnabled() && !owner.IsBenched()
+            ? rules.Where(d => !d.IsRelic && d.Trigger == "Random fart timer" && CustomRewardRuntime.Has(owner._skaterData, d.Id)
+                && owner._skaterData.powerups.HasMatch(t => t != null && t.id == d.Id && !t.PayoffSuppressed)).ToArray()
+            : Array.Empty<CustomRewardDefinition>();
         foreach (var pair in timers.Where(p => p.Value.Owner == owner && !active.Any(d => d.Id == p.Value.Rule.Id)).ToArray()) Remove(pair.Key);
         foreach (var d in active) {
             string key = owner.Pointer + "|" + d.Id;

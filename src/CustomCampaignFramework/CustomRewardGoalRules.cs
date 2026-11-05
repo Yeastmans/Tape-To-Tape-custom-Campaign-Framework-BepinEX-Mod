@@ -50,8 +50,8 @@ internal static class CustomRewardGoalRules
     internal static bool ShouldDeny(Skater scorer)
     {
         if (!CustomRewardRuntime.InMatch || scorer?.Team?.otherTeam == null) return false;
-        foreach (var rule in CustomRewardRuntime.Definitions.Values) {
-            if (rule.NeedsRedesign || rule.Trigger != "Goal verification" || rule.Effect != CustomRewardEffects.DenyGoal) continue;
+        foreach (var rule in CustomRewardRuntime.DefinitionsForEffect(CustomRewardEffects.DenyGoal)) {
+            if (rule.Trigger != "Goal verification") continue;
             bool Owned(Skater owner) => owner != null && owner.ArePowerUpsEnabled()
                 && CustomRewardRuntime.Has(owner._skaterData, rule.Id)
                 && owner._skaterData.powerups.HasMatch(t => t != null && t.id == rule.Id && !t.PayoffSuppressed);

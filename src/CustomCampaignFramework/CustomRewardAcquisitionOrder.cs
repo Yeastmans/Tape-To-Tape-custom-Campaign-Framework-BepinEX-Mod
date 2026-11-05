@@ -18,9 +18,9 @@ internal static class CustomRewardAcquisitionOrder
     private static TeamData Team(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase instance) =>
         instance.TryCast<RelicRewardMenu>()?.m_Team ?? instance.TryCast<SkaterPowerupRewardMenu>()?.m_Team ?? instance.TryCast<Skater>()?.Team?._teamData;
     [HarmonyPrefix] private static void Prefix(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase __instance) => CustomRewardRuntime.Safe(() => {
-        CustomRewardRuntime.EnsureRun(); CustomRewardRuntime.ObserveOwnership(Team(__instance));
+        CustomRewardRuntime.OwnershipChanged(); CustomRewardRuntime.EnsureRun(); CustomRewardRuntime.ObserveOwnership(Team(__instance));
     });
     [HarmonyPostfix] private static void Postfix(Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase __instance) => CustomRewardRuntime.Safe(() => {
-        CustomRewardRuntime.ObserveOwnership(Team(__instance)); CustomRewardRuntime.Save();
+        CustomRewardRuntime.OwnershipChanged(); CustomRewardRuntime.ObserveOwnership(Team(__instance)); CustomRewardRuntime.Save();
     });
 }

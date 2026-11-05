@@ -26,10 +26,11 @@ internal static class CustomRewardEquipmentEffects
     }
     private const string Source = "CCF_CustomReward_";
     private static readonly Dictionary<IntPtr, State> states = new();
+    private static bool EquipmentEffect(string effect) => effect is CustomRewardEffects.ForbidStick or CustomRewardEffects.HandPuck
+        or CustomRewardEffects.ForceOffside or CustomRewardEffects.ExtraSticks or CustomRewardEffects.RepelPuck;
     internal static void Refresh(Forward forward)
     {
-        var rules = CustomRewardRuntime.ActiveConditions(forward)
-            .Where(d => CustomRewardEffects.ForwardConditionEffects.Contains(d.Effect)).ToArray();
+        var rules = CustomRewardRuntime.ActiveConditions(forward, EquipmentEffect).ToArray();
         if (!states.TryGetValue(forward.Pointer, out var state)) {
             if (rules.Length == 0) return;
             states.Add(forward.Pointer, state = new State { Skater = forward });
@@ -105,6 +106,6 @@ internal static class CustomRewardNoBodycheck
 {
     [HarmonyPostfix] private static void Postfix(MovementManager __instance, ref bool __result)
     {
-        if (__result && CustomRewardRuntime.ActiveConditions(__instance?._skater).Any(d => d.Effect == CustomRewardEffects.ForbidCheck)) __result = false;
+        if (__result && CustomRewardRuntime.ActiveConditions(__instance?._skater, CustomRewardEffects.ForbidCheck).Any()) __result = false;
     }
 }

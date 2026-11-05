@@ -40,15 +40,20 @@ internal static class CustomRewardCapabilities
     [ThreadStatic] internal static bool ArmorInjuryQuery;
     [ThreadStatic] internal static bool PredictionQuery;
 
-    internal static bool Active(Skater player, string effect) => player != null && player.ArePowerUpsEnabled()
-        && CustomRewardRuntime.ActiveConditions(player).Any(d => d.Effect == effect);
+    internal static bool Active(Skater player, string effect)
+    {
+        var rules = CustomRewardRuntime.ConditionRules(effect);
+        return rules.Length != 0 && player != null && player.ArePowerUpsEnabled() && CustomRewardRuntime.ActiveConditions(player, rules).Any();
+    }
     private static CustomRewardDefinition Rule(Skater player, string effect, bool valueQuery = false)
     {
         if (effect == CustomRewardEffects.AiPrince && PredictionQuery) effect = CustomRewardEffects.PreventPredictivePoke;
         if (effect == CustomRewardEffects.AiKarlson || effect == CustomRewardEffects.AiPrince || effect == CustomRewardEffects.AiKnight) {
+            var choices = CustomRewardRuntime.ConditionRules(effect);
+            if (choices.Length == 0) return null;
             var forward = player?.TryCast<Forward>();
             return forward != null && forward.ArePowerUpsEnabled() && CustomRewardLiveRules.Behavior(forward) == effect
-                ? CustomRewardRuntime.ActiveConditions(player).Where(d => d.Effect == effect).OrderByDescending(d => CustomRewardRuntime.Acquired(player, d)).FirstOrDefault() : null;
+                ? CustomRewardRuntime.ActiveConditions(player, choices).OrderByDescending(d => CustomRewardRuntime.Acquired(player, d)).FirstOrDefault() : null;
         }
         if (effect == CustomRewardEffects.SpikedRetaliation && ArmorInjuryQuery) effect = CustomRewardEffects.SpikedInjury;
         if (effect == CustomRewardEffects.BatAim) return CustomRewardBatting.Rule(player, valueQuery);
@@ -58,7 +63,8 @@ internal static class CustomRewardCapabilities
         if (effect == CustomRewardEffects.ImpactKnockout) return CustomRewardNativeEffects.ImpactRule(player);
         if (effect == CustomRewardEffects.DeflectSticks && !ThrownStickQuery) return null;
         if (effect == CustomRewardEffects.AnchorProtection && OffensiveAnchorQuery) effect = CustomRewardEffects.ForbidKnockouts;
-        return player != null && player.ArePowerUpsEnabled() ? CustomRewardRuntime.ActiveConditions(player).FirstOrDefault(d => d.Effect == effect) : null;
+        var rules = CustomRewardRuntime.ConditionRules(effect);
+        return rules.Length != 0 && player != null && player.ArePowerUpsEnabled() ? CustomRewardRuntime.ActiveConditions(player, rules).FirstOrDefault() : null;
     }
     private static Talent Proxy(CustomRewardDefinition rule)
     {

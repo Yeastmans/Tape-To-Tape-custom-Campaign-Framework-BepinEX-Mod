@@ -58,8 +58,8 @@ internal static class CustomRewardGoalValues
                 && CustomRewardRuntime.Has(owner._skaterData, rule.Id)
                 && owner._skaterData.powerups.HasMatch(t => t != null && t.id == rule.Id && !t.PayoffSuppressed);
             long extra = 0;
-            foreach (var rule in CustomRewardRuntime.Definitions.Values) {
-                if (rule.NeedsRedesign || rule.Effect != CustomRewardEffects.ExtraGoal && rule.Effect != CustomRewardEffects.ExtraGoals || !Matches(rule.Trigger, goal)) continue;
+            foreach (var rule in CustomRewardRuntime.DefinitionsForEffects(CustomRewardEffects.ExtraGoal, CustomRewardEffects.ExtraGoals)) {
+                if (!Matches(rule.Trigger, goal)) continue;
                 // Team and Actor rules count the owner's goals; Opposing team
                 // rules count goals scored against the owner. An opponent that
                 // owns the item through its team relics counts the same way.

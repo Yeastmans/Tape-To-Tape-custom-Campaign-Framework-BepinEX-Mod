@@ -50,7 +50,7 @@ internal static class CustomRewardGoalieCatch
     {
         var goalie = __instance?.goaltender;
         if (goalie == null || !goalie.canPickupPuck || __0?.collider == null
-            || !CustomRewardRuntime.ActiveConditions(goalie).Any(d => d.Effect == CustomRewardEffects.CatchSaves)) return true;
+            || !CustomRewardRuntime.ActiveConditions(goalie, CustomRewardEffects.CatchSaves).Any()) return true;
         if (goalie.HaveTalentCached<AlwaysCatchPuck>()) return true;
         var type = __instance.CurrentSaveType;
         // GobbleStanding already catches via its normal animation callback.
@@ -76,8 +76,7 @@ internal static class CustomRewardGoalieFetch
     {
         // Matching native build: max(standing speed, 6) plus Falcon's +6.
         // The native result already contains any owned Falcon bonus.
-        __result += CustomRewardRuntime.ActiveConditions(__instance)
-            .Where(d => d.Effect == CustomRewardEffects.GoalieFetchSpeed).Sum(d => 6f * d.Amount / 100f);
+        __result += CustomRewardRuntime.ActiveConditions(__instance, CustomRewardEffects.GoalieFetchSpeed).Sum(d => 6f * d.Amount / 100f);
     }
 }
 
@@ -87,8 +86,9 @@ internal static class CustomRewardGoalieThrow
     [HarmonyPrefix] private static bool Prefix(FollowingPuckStanding __instance)
     {
         var goalie = __instance?.goaltender;
-        if (goalie == null || goalie.HaveTalentCached<GoalieThrowStick>()
-            || !CustomRewardRuntime.ActiveConditions(goalie).Any(d => d.Effect == CustomRewardEffects.GoalieThrow)) return true;
+        var rules = CustomRewardRuntime.ConditionRules(CustomRewardEffects.GoalieThrow);
+        if (rules.Length == 0 || goalie == null || goalie.HaveTalentCached<GoalieThrowStick>()
+            || !CustomRewardRuntime.ActiveConditions(goalie, rules).Any()) return true;
         // Native FixedUpdate performs this check first and returns after a
         // successful throw. Calling its decision method retains timing, chance,
         // range, equipment, facing and the animation state transition.

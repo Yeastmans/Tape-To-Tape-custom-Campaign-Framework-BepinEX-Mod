@@ -88,6 +88,7 @@ Check(Marshal.ReadByte(state,0x28)==1&&unchecked((ulong)Marshal.ReadInt64(state,
 var menu=new SlapshotState{ThrowOnRead=true};CustomRewardRuntime.InMatch=false;
 try{CustomRewardChargedRelease.Prefix(menu,1);Check(menu.Reads==0,"Inactive guard precedes native forward getter");}catch(InvalidOperationException){Check(false,"Inactive guard precedes native forward getter");}
 menu.ThrowOnRead=false;CustomRewardRuntime.InMatch=true;
+Check(CustomRewardChargedShots.Bonus(menu.Player,"Speed")==0 && menu.Player.PowerChecks==0,"No pending charge bypasses the native power check on stat getters");
 var rule=new CustomRewardDefinition{Id="charge",Effect=CustomRewardEffects.ChargePower,Amount=7,Seconds=2};
 CustomRewardRuntime.Conditions.Add(rule);menu.Player._skaterData.powerups.Add(new Rogue.Talent{id="charge"});UnityEngine.Time.time=10;
 CustomRewardChargedRelease.Prefix(menu,1.25f);CustomRewardRuntime.Conditions.Clear();

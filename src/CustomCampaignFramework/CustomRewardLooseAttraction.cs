@@ -18,8 +18,9 @@ internal static class CustomRewardLooseAttraction
     internal static void Tick(Forward player)
     {
         if (player == null) return;
-        var rule = CustomRewardRuntime.InMatch && player.ArePowerUpsEnabled() && !player.IsBenched() && !player.HaveTalentCached<LightningRod>()
-            ? CustomRewardRuntime.ActiveConditions(player).Where(d => d.Effect == CustomRewardEffects.LoosePuckAttraction).OrderByDescending(d => d.Radius).FirstOrDefault() : null;
+        var rules = CustomRewardRuntime.ConditionRules(CustomRewardEffects.LoosePuckAttraction);
+        var rule = rules.Length != 0 && player.ArePowerUpsEnabled() && !player.IsBenched() && !player.HaveTalentCached<LightningRod>()
+            ? CustomRewardRuntime.ActiveConditions(player, rules).OrderByDescending(d => d.Radius).FirstOrDefault() : null;
         if (rule == null) { Remove(player.Pointer); return; }
         if (magnets.TryGetValue(player.Pointer, out var current) && Math.Abs(current.Payload.MaxAttractionDistance - rule.Radius) > .001f) Remove(player.Pointer);
         if (!magnets.TryGetValue(player.Pointer, out var magnet)) {

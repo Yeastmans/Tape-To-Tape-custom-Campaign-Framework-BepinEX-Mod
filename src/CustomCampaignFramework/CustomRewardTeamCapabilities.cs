@@ -8,10 +8,40 @@ using System.Runtime.InteropServices;
 using BepInEx.Unity.IL2CPP.Hook;
 using CampaignCore;
 using Data;
+using Il2CppInterop.Runtime.Runtime;
 using Rogue;
 using Tape2Tape;
+using RelicList = Il2CppSystem.Collections.Generic.List<Rogue.Relic>;
 
 namespace EndlessMode;
+
+// Generated field getters use the interop object pool. A fresh wrapper simply
+// misses this weak cache. Replacing a native list, mutating even a single slot,
+// or publishing new reward definitions all invalidate the corresponding index.
+internal sealed class NativeRewardListIndex<T, TIndex> where TIndex : class
+{
+    private sealed class Entry
+    {
+        internal int Version;
+        internal long Generation;
+        internal TIndex Index;
+    }
+    private readonly ConditionalWeakTable<Il2CppSystem.Collections.Generic.List<T>, Entry> entries = new();
+    private readonly Func<Il2CppSystem.Collections.Generic.List<T>, TIndex> build;
+    internal NativeRewardListIndex(Func<Il2CppSystem.Collections.Generic.List<T>, TIndex> build) => this.build = build;
+    internal TIndex Get(Il2CppSystem.Collections.Generic.List<T> list)
+    {
+        var entry = entries.GetOrCreateValue(list);
+        int version = list._version;
+        long generation = CustomRewardRuntime.DefinitionQueryGeneration;
+        if (entry.Index == null || entry.Version != version || entry.Generation != generation) {
+            entry.Index = build(list);
+            entry.Version = version;
+            entry.Generation = generation;
+        }
+        return entry.Index;
+    }
+}
 
 // The live and saved-team queries are deliberately separate. Quantum Sextant
 // consults the former for live bonuses and the latter only in training code.
@@ -24,59 +54,100 @@ internal static class CustomRewardTeamCapabilities
     private static readonly Dictionary<IntPtr, string> liveEffects = new();
     private static IntPtr dataMethod, helmetMethod, trainingMethod, attributeRewardMethod, liveBenchMethod, dataBenchMethod, yipsMethod;
     [ThreadStatic] private static bool resolving;
-    private static byte Live(IntPtr team, IntPtr method) {
-        byte native = liveOriginal(team, method);
-        if (team != IntPtr.Zero && method == liveBenchMethod && !resolving && !Plugin.IsDefaultMode) return BenchReward(new Team(team)._teamData, native);
-        if (team != IntPtr.Zero && method == yipsMethod && !resolving && !Plugin.IsDefaultMode) {
-            var data = new Team(team)._teamData;
-            if (data?.relics != null) {
-                bool real = data.relics.HasMatch(r => r != null && r.TryCast<Rogue.Relics.ChaosRelics.YipsRelic>() != null && !CustomRewardRuntime.IsCustom(r.id));
-                return real || Owns(data, CustomRewardEffects.BreakawayShotPenalty) ? (byte)1 : (byte)0;
+    private static readonly NativeRewardListIndex<Relic, OwnedRelics> loadouts = new(list => new OwnedRelics(list));
+    private sealed class OwnedRelics
+    {
+        private readonly Dictionary<(string Effect, bool Opposing), List<Relic>> effects = new();
+        internal readonly List<Relic> NativeCushions = new(), NativeYips = new();
+        internal OwnedRelics(RelicList relics)
+        {
+            int count = relics.Count;
+            for (int i = 0; i < count; i++) {
+                var relic = relics[i];
+                if (relic == null) continue;
+                string id = relic.id;
+                bool custom = CustomRewardRuntime.Definitions.TryGetValue(id ?? "", out var rule);
+                if (custom && rule.IsRelic && !rule.NeedsRedesign) {
+                    var key = (rule.Effect, CustomRewardEffects.IsTeamLevel(rule.Effect) && rule.Target == CustomRewardEffects.OpposingTeam);
+                    if (!effects.TryGetValue(key, out var candidates)) effects[key] = candidates = new();
+                    candidates.Add(relic);
+                }
+                if (!custom && relic.TryCast<Rogue.Relics.ChaosRelics.YipsRelic>() != null) NativeYips.Add(relic);
+                if ((!custom || rule.NeedsRedesign || rule.Effect != CustomRewardEffects.BenchCapacity)
+                    && relic.TryCast<RandomTalentBenchBonus>() != null) NativeCushions.Add(relic);
             }
         }
-        if (native != 0 || team == IntPtr.Zero || !CustomRewardRuntime.InMatch || resolving || !liveEffects.TryGetValue(method, out var effect)) return native;
-        var live = new Team(team);
-        // An opposing team's relic aimed at Opposing team grants this whole-team rule here.
-        return Owns(live._teamData, effect) || live.otherTeam?._teamData != null && Owns(live.otherTeam._teamData, effect, opposing: true) ? (byte)1 : native;
+        internal bool Owns(string effect, bool opposing) => effects.TryGetValue((effect, opposing && CustomRewardEffects.IsTeamLevel(effect)), out var candidates) && AnyLive(candidates);
+        // A Unity asset can be destroyed while its slot remains in the list.
+        internal static bool AnyLive(List<Relic> candidates)
+        {
+            foreach (var relic in candidates) if (relic != null) return true;
+            return false;
+        }
     }
-    private static byte Data(IntPtr team, IntPtr method) {
+    private static byte Live(IntPtr team, IntPtr method)
+    {
+        byte native = liveOriginal(team, method);
+        if (team == IntPtr.Zero || resolving) return native;
+        try {
+            resolving = true;
+            if (method == liveBenchMethod && !Plugin.IsDefaultMode) return BenchReward(team, native, live: true);
+            if (method == yipsMethod && !Plugin.IsDefaultMode) {
+                bool penalty = CustomRewardRuntime.HasDefinedEffect(CustomRewardEffects.BreakawayShotPenalty);
+                var relics = Il2CppObjectPool.Get<Team>(team)._teamData?.relics;
+                if (relics == null) return native;
+                var index = loadouts.Get(relics);
+                return OwnedRelics.AnyLive(index.NativeYips) || penalty && index.Owns(CustomRewardEffects.BreakawayShotPenalty, false) ? (byte)1 : (byte)0;
+            }
+            if (native != 0 || !CustomRewardRuntime.InMatch || !liveEffects.TryGetValue(method, out var effect)
+                || !CustomRewardRuntime.HasDefinedEffect(effect)) return native;
+            var live = Il2CppObjectPool.Get<Team>(team);
+            // Read the current teams' actual loadouts, including a rotated opponent.
+            return Owns(live._teamData, effect) || Owns(live.otherTeam?._teamData, effect, opposing: true) ? (byte)1 : native;
+        } catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Native live team query: " + ex); return native; }
+        finally { resolving = false; }
+    }
+    private static byte Data(IntPtr team, IntPtr method)
+    {
         byte native = dataOriginal(team, method);
-        if (team != IntPtr.Zero && method == dataBenchMethod && !resolving && !Plugin.IsDefaultMode) return BenchReward(new TeamData(team), native);
-        if (team != IntPtr.Zero && method == trainingMethod && !resolving) CustomRewardTrainingGrowth.Query(new TeamData(team));
-        if (native != 0 || method != dataMethod || team == IntPtr.Zero || resolving) return native;
-        return Owns(new TeamData(team), CustomRewardEffects.ConvertSpeedTraining) ? (byte)1 : native;
+        if (team == IntPtr.Zero || resolving) return native;
+        if (method == trainingMethod && CustomRewardTrainingGrowth.Current is { Used: false } && !CustomRewardTrainingGrowth.Preview)
+            CustomRewardTrainingGrowth.Query(Il2CppObjectPool.Get<TeamData>(team));
+        try {
+            resolving = true;
+            if (method == dataBenchMethod && !Plugin.IsDefaultMode) return BenchReward(team, native, live: false);
+            if (native != 0 || method != dataMethod || !CustomRewardRuntime.HasDefinedEffect(CustomRewardEffects.ConvertSpeedTraining)) return native;
+            return Owns(Il2CppObjectPool.Get<TeamData>(team), CustomRewardEffects.ConvertSpeedTraining) ? (byte)1 : native;
+        } catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Native saved team query: " + ex); return native; }
+        finally { resolving = false; }
     }
     private static byte DataDirect(IntPtr team, IntPtr method)
     {
         byte native = dataDirectOriginal(team, method);
         if (native != 0 || (method != helmetMethod && method != attributeRewardMethod) || team == IntPtr.Zero || resolving) return native;
-        return Owns(new TeamData(team), method == helmetMethod ? CustomRewardEffects.SecondScorerHelmet : CustomRewardEffects.AttributeRewardChoice) ? (byte)1 : native;
+        try {
+            resolving = true;
+            string effect = method == helmetMethod ? CustomRewardEffects.SecondScorerHelmet : CustomRewardEffects.AttributeRewardChoice;
+            return CustomRewardRuntime.HasDefinedEffect(effect) && Owns(Il2CppObjectPool.Get<TeamData>(team), effect) ? (byte)1 : native;
+        } catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Native saved team query: " + ex); return native; }
+        finally { resolving = false; }
     }
-    private static byte BenchReward(TeamData team, byte native)
+    private static byte BenchReward(IntPtr team, byte native, bool live)
     {
-        if (Owns(team, CustomRewardEffects.BenchTalentSlot)) return 1;
-        if (native == 0 || team?.relics == null) return native;
-        // The custom capacity carrier uses the native OnPickup increment only.
-        // Preserve every real native Comfy Cushion; its reward is still active.
-        foreach (var relic in team.relics)
-            if (relic != null && relic.TryCast<RandomTalentBenchBonus>() != null
-                && !CustomRewardLifecycle.Rule(relic.id, CustomRewardEffects.BenchCapacity, out _)) return native;
-        return 0;
+        bool grant = CustomRewardRuntime.HasDefinedEffect(CustomRewardEffects.BenchTalentSlot);
+        if (!grant && native == 0) return native;
+        var data = live ? Il2CppObjectPool.Get<Team>(team)._teamData : Il2CppObjectPool.Get<TeamData>(team);
+        var relics = data?.relics;
+        if (relics == null) return native;
+        var index = loadouts.Get(relics);
+        if (grant && index.Owns(CustomRewardEffects.BenchTalentSlot, false)) return 1;
+        // The capacity-only carrier uses OnPickup. A genuine Comfy Cushion keeps its native reward.
+        return native != 0 && OwnedRelics.AnyLive(index.NativeCushions) ? native : (byte)0;
     }
     private static bool Owns(TeamData team, string effect, bool opposing = false)
     {
-        try {
-            resolving = true; CustomRewardRuntime.EnsureAssets();
-            var relics = team?.relics;
-            for (int i = 0; relics != null && i < relics.Count; i++) {
-                var relic = relics[i];
-                if (relic != null && CustomRewardRuntime.Definitions.TryGetValue(relic.id, out var d)
-                    && d.IsRelic && !d.NeedsRedesign && d.Effect == effect
-                    && (!CustomRewardEffects.IsTeamLevel(effect) || (d.Target == CustomRewardEffects.OpposingTeam) == opposing)) return true;
-            }
-            return false;
-        } catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Native team conversion query: " + ex); return false; }
-        finally { resolving = false; }
+        var relics = team?.relics;
+        return relics != null && loadouts.Get(relics).Owns(effect, opposing);
     }
     internal static void Install()
     {

@@ -29,7 +29,7 @@ internal static class CustomRewardCultists
     {
         if (forward?._forwardData == null) return;
         states.TryGetValue(forward.Pointer, out var state);
-        CustomRewardRuntime.ObserveOwnership(forward.Team?._teamData);
+        if (state == null && !CustomRewardRuntime.MayOwnEffect(forward, CustomRewardEffects.IsCultist)) return;
         var owned = forward._forwardData.powerups?.ToArray() ?? Array.Empty<Talent>();
         var rules = owned.Where(t => t != null && !t.PayoffSuppressed)
             .Select(t => CustomRewardRuntime.Definitions.TryGetValue(t.id, out var d) ? d : null)

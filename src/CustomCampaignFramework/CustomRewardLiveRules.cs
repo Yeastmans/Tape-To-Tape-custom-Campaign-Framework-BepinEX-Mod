@@ -19,6 +19,7 @@ internal static class CustomRewardLiveRules
     private sealed class SizeState { internal Forward Forward; internal Il2CppSystem.Object Source = new(); internal int Amount; }
     private static readonly Dictionary<IntPtr, SizeState> sizes = new();
     private static readonly Dictionary<IntPtr, string> ai = new();
+    private static readonly Func<string, bool> aiEffect = new HashSet<string>(CustomRewardEffects.AiEffects, StringComparer.Ordinal).Contains;
 
     internal static void Refresh(Forward f)
     {
@@ -39,12 +40,12 @@ internal static class CustomRewardLiveRules
     }
     internal static string Behavior(Forward f)
     {
-        if (!CustomRewardRuntime.InMatch || f?.Team == null || f.isControlled || f.IsBenched()) return "";
+        var rules = CustomRewardRuntime.ConditionRules(aiEffect);
+        if (rules.Length == 0 || f?.Team == null || f.isControlled || f.IsBenched()) return "";
         if (GameManager.GameState is not (GameState.TeamHasPuck or GameState.DuringShot or GameState.DuringPass or GameState.PuckForGrabs)) return "";
-        CustomRewardRuntime.ObserveOwnership(f.Team._teamData);
-        var choices = CustomRewardRuntime.ActiveConditions(f).Where(d => CustomRewardEffects.AiEffects.Contains(d.Effect))
+        return CustomRewardRuntime.ActiveConditions(f, rules)
             .OrderByDescending(d => CustomRewardRuntime.Acquired(f, d))
-            .Select(d => d.Effect).Distinct().Where(effect => effect switch {
+            .Select(d => d.Effect).Distinct().FirstOrDefault(effect => effect switch {
                 CustomRewardEffects.AiKarlson or CustomRewardEffects.AiPrince => f.HasPuck(),
                 _ when f.HasPuck() => false,
                 CustomRewardEffects.AiKnight => DifficultyManager.IsVeteranOrHigher() && PrinceCarrier(f),
@@ -53,8 +54,7 @@ internal static class CustomRewardLiveRules
                 CustomRewardEffects.AiHome or CustomRewardEffects.AiMaraud => f.Team.HasPossession() && GameManager.GameState != GameState.PuckForGrabs,
                 CustomRewardEffects.AiSafety => f.Team.HasPossession(),
                 _ => f.Team.otherTeam?.HasPossession() == true && GameManager.GameState != GameState.PuckForGrabs
-            }).Take(2).ToArray();
-        return choices.FirstOrDefault() ?? "";
+            }) ?? "";
     }
     private static bool PrinceCarrier(Forward supporter)
     {

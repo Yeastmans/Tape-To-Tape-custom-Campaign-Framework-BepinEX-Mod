@@ -21,10 +21,13 @@ internal static class CustomRewardAverageAttributes
         foreach (string method in new[] { "GetChecking", "GetAccuracy", "GetSpeed", "GetTotalShotPowerStats" }) yield return AccessTools.Method(typeof(ForwardStats), method);
     }
     [HarmonyPrefix] private static void Prefix(ForwardStats __instance, out bool __state) {
-        __state = __instance._isBalanced;
-        if (!__state && CustomRewardRuntime.ActiveConditions(__instance._forward).Any(d => d.Effect == CustomRewardEffects.BalanceAttributes)) __instance._isBalanced = true;
+        var rules = CustomRewardRuntime.ConditionRules(CustomRewardEffects.BalanceAttributes);
+        __state = rules.Length != 0 && !__instance._isBalanced && CustomRewardRuntime.ActiveConditions(__instance._forward, rules).Any();
+        if (__state) __instance._isBalanced = true;
     }
-    [HarmonyFinalizer] private static void Finalizer(ForwardStats __instance, bool __state) => __instance._isBalanced = __state;
+    [HarmonyFinalizer] private static void Finalizer(ForwardStats __instance, bool __state) {
+        if (__state) __instance._isBalanced = false;
+    }
 }
 
 [HarmonyPatch(typeof(ForwardData), "IncrementStats")]

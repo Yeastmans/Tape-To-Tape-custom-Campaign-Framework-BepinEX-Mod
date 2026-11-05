@@ -13,9 +13,8 @@ internal static class CustomRewardBossGrowth
 {
     [HarmonyPostfix] private static void Postfix(ForwardData __instance, int act) => CustomRewardRuntime.Safe(() => {
         if (Plugin.IsDefaultMode || __instance == null) return;
-        CustomRewardRuntime.EnsureAssets();
-        foreach (var d in CustomRewardRuntime.Definitions.Values.Where(d => !d.NeedsRedesign && !d.IsRelic
-            && (d.Effect == CustomRewardEffects.BossAttribute || d.Effect == CustomRewardEffects.BossSize)
+        var rules = CustomRewardRuntime.DefinitionsForEffects(CustomRewardEffects.BossAttribute, CustomRewardEffects.BossSize);
+        foreach (var d in rules.Where(d => !d.IsRelic
             && (d.Trigger == "Boss won" || d.Trigger == "Act 1 boss won" && act == 1 || d.Trigger == "Act 2 boss won" && act == 2)
             && CustomRewardRuntime.Has(__instance, d.Id)
             && __instance.powerups.HasMatch(t => t != null && t.id == d.Id && !t.PayoffSuppressed)).ToArray()) {

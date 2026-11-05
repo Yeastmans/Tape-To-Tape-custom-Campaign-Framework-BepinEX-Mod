@@ -30,22 +30,23 @@ internal static class CustomRewardInjuryRules
         double multiplier = 1;
         foreach (var team in new[] { defender.Team, defender.Team.otherTeam }) {
             if (team?._teamData == null) continue;
-            foreach (var d in CustomRewardCampaignRules.Owned(team._teamData, "Injury attempted"))
-                if (d.Effect == CustomRewardEffects.InjuryMultiplier && (d.Target == CustomRewardEffects.OpposingTeam ? team != defender.Team : team == defender.Team)) multiplier *= d.Amount / 100d;
+            foreach (var d in CustomRewardCampaignRules.Owned(team._teamData, "Injury attempted", CustomRewardEffects.InjuryMultiplier, observe: false))
+                if (d.Target == CustomRewardEffects.OpposingTeam ? team != defender.Team : team == defender.Team) multiplier *= d.Amount / 100d;
         }
         return (float)Math.Clamp(chance * multiplier, 0, 1);
     }
     internal static int HealingAdjustment(ForwardData player)
     {
         if (Plugin.IsDefaultMode || player == null) return 0;
-        CustomRewardRuntime.EnsureAssets();
+        var rules = CustomRewardRuntime.DefinitionsForEffect(CustomRewardEffects.InjuryHealing);
+        if (rules.Length == 0) return 0;
         var team = CampaignUtil.CampaignState?.runData?.teamData;
         if (CustomRewardRuntime.InMatch) foreach (var candidate in new[] { GameManager.HomeTeam?._teamData, GameManager.VisitorTeam?._teamData })
             if (candidate?.GetAllSkaters().HasMatch(s => s?.id == player.id) == true) { team = candidate; break; }
         bool inTeam = team?.GetAllSkaters().HasMatch(s => s?.id == player.id) == true;
         long adjustment = 0;
-        foreach (var d in CustomRewardRuntime.Definitions.Values) {
-            if (d.NeedsRedesign || d.Trigger != "New injury" || d.Effect != CustomRewardEffects.InjuryHealing) continue;
+        foreach (var d in rules) {
+            if (d.Trigger != "New injury") continue;
             if (d.Target == CustomRewardEffects.Actor) { if (Owns(player, d.Id)) adjustment += d.Amount; }
             else if (inTeam) foreach (var source in team.GetAllSkaters()) if (Owns(source, d.Id)) adjustment += d.Amount;
         }
@@ -56,9 +57,14 @@ internal static class CustomRewardInjuryRules
     internal static bool Prevents(ForwardData player, TeamData team, InjuryType? type)
     {
         if (player == null || Plugin.IsDefaultMode) return false;
-        CustomRewardRuntime.EnsureAssets();
-        foreach (var d in CustomRewardRuntime.Definitions.Values) {
-            if (d.NeedsRedesign || d.Trigger != "Injury attempted" || !Covers(d.Effect, type)) continue;
+        string specific = type switch {
+            InjuryType.Eye => CustomRewardEffects.PreventEye, InjuryType.Shoulder => CustomRewardEffects.PreventShoulder,
+            InjuryType.Leg => CustomRewardEffects.PreventLeg, InjuryType.Arm => CustomRewardEffects.PreventArm, _ => null
+        };
+        var rules = specific == null ? CustomRewardRuntime.DefinitionsForEffect(CustomRewardEffects.PreventInjury)
+            : CustomRewardRuntime.DefinitionsForEffects(CustomRewardEffects.PreventInjury, specific);
+        foreach (var d in rules) {
+            if (d.Trigger != "Injury attempted") continue;
             if (d.Target == CustomRewardEffects.OpposingTeam) {
                 // Only a live match has an opposing team; campaign events have none.
                 var opposing = Opposing(team);
@@ -79,10 +85,6 @@ internal static class CustomRewardInjuryRules
     }
     private static bool Owns(SkaterData player, string id) => CustomRewardRuntime.Has(player, id)
         && player.powerups.HasMatch(t => t != null && t.id == id && !t.PayoffSuppressed);
-    private static bool Covers(string effect, InjuryType? type) => effect == CustomRewardEffects.PreventInjury || type.HasValue && effect == (type.Value switch {
-        InjuryType.Eye => CustomRewardEffects.PreventEye, InjuryType.Shoulder => CustomRewardEffects.PreventShoulder,
-        InjuryType.Leg => CustomRewardEffects.PreventLeg, InjuryType.Arm => CustomRewardEffects.PreventArm, _ => ""
-    });
 }
 
 [HarmonyPatch(typeof(InjurySystem), "CalculateInjuryChance")]

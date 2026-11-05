@@ -16,6 +16,7 @@ internal static class CustomRewardBorrowing
     private static readonly Dictionary<IntPtr, Loan> loans = new();
     internal static void Refresh(IEnumerable<Forward> players)
     {
+        if (loans.Count == 0 && CustomRewardRuntime.ConditionRules(CustomRewardEffects.BorrowTalent).Length == 0) return;
         var all = players.Where(p => p != null).ToArray();
         foreach (var pair in loans.ToArray()) {
             var player = pair.Value.Player;

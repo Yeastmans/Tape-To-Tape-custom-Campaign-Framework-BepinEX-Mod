@@ -23,6 +23,8 @@ static partial class CustomRewardRuntime {
     internal static Dictionary<string, Carrier> NativeAssets => relics;
     private static bool loaded, creating, definitionSourcesReady;
     private static bool inPlayStale;
+    // This fixture opens custom campaigns. The base-game save has no reward snapshots.
+    internal static CustomRewardDefinition[] BaseGameRewardSnapshots() => Array.Empty<CustomRewardDefinition>();
     private static string definitionsScope;
     private static long definitionGeneration;
     private static void CreateNativeAssets() {

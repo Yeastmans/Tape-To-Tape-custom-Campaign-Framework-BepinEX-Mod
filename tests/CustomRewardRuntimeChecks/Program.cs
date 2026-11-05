@@ -551,6 +551,7 @@ CustomRewardRuntime.Definitions.Remove(customTalent.id);
 Check(Filtered(false)&&Filtered(true),"Custom asset identity remains blocked even before its definition is loaded");
 Plugin.IsDefaultMode=false;
 
+ConditionStateChecks.Run(Check);
 File.WriteAllText(output, JsonSerializer.Serialize(new
 {
     createdUtc = DateTime.UtcNow,

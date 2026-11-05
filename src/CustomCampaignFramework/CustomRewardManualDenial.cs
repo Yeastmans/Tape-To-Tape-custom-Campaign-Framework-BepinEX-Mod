@@ -17,10 +17,14 @@ internal static class CustomRewardManualDenial
 {
     private sealed class Source { internal Team Team; internal GoalDenier Payload; internal GoalDenierController Controller; internal GoalDenierComponent Component; }
     private static readonly Dictionary<IntPtr, Source> sources = new();
-    private static CustomRewardDefinition[] Rules(Team team) => CustomRewardCampaignRules.Owned(team?._teamData, "Opponent goal reversal window")
-        .Where(r => r.Effect == CustomRewardEffects.ManualGoalDenial).ToArray();
+    private static CustomRewardDefinition[] Rules(Team team) => CustomRewardCampaignRules.Owned(team?._teamData,
+        "Opponent goal reversal window", CustomRewardEffects.ManualGoalDenial, observe: false).ToArray();
     internal static void Refresh()
     {
+        if (CustomRewardRuntime.RulesForSignal("Opponent goal reversal window").Length == 0) {
+            if (sources.Count != 0) Clear();
+            return;
+        }
         foreach (var key in sources.Where(p => p.Value.Team == null).Select(p => p.Key).ToArray()) Remove(key);
         foreach (var team in new[] { GameManager.HomeTeam, GameManager.VisitorTeam }) {
             if (team?._teamData == null) continue;

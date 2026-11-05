@@ -11,11 +11,12 @@ internal static class CustomRewardBench
 {
     [HarmonyPostfix] private static void Postfix(BenchBonusController __instance, ForwardData __0, ref float __result)
     {
-        if (Plugin.IsDefaultMode || __0 == null || __instance.Team?._teamData == null) return;
-        CustomRewardRuntime.EnsureAssets();
+        if (Plugin.IsDefaultMode || __0 == null) return;
+        var rules = CustomRewardRuntime.DefinitionsForEffect(CustomRewardEffects.BenchMultiplier);
+        if (rules.Length == 0 || __instance.Team?._teamData == null) return;
         double multiplier = 1;
-        foreach (var d in CustomRewardRuntime.Definitions.Values) {
-            if (d.NeedsRedesign || d.Trigger != "Bench bonus" || d.Effect != CustomRewardEffects.BenchMultiplier) continue;
+        foreach (var d in rules) {
+            if (d.Trigger != "Bench bonus") continue;
             bool Owned(SkaterData data) => CustomRewardRuntime.Has(data, d.Id) && data.powerups.HasMatch(t => t != null && t.id == d.Id && !t.PayoffSuppressed);
             bool applies = d.IsRelic ? CustomRewardRuntime.Has(__instance.Team._teamData, d.Id)
                 : d.Target == CustomRewardEffects.Actor ? Owned(__0)

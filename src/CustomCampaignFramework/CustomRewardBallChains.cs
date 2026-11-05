@@ -17,7 +17,8 @@ internal static class CustomRewardBallChains
     internal static void Refresh(Forward player)
     {
         if (player == null) return;
-        bool active = !player.HaveTalentCached<BallAndChain>() && CustomRewardRuntime.ActiveConditions(player).Any(d => d.Effect == CustomRewardEffects.PhysicalBallChain);
+        var rules = CustomRewardRuntime.ConditionRules(CustomRewardEffects.PhysicalBallChain);
+        bool active = rules.Length != 0 && !player.HaveTalentCached<BallAndChain>() && CustomRewardRuntime.ActiveConditions(player, rules).Any();
         if (!active) { Remove(player.Pointer); return; }
         if (chains.ContainsKey(player.Pointer)) return;
         var original = Resources.FindObjectsOfTypeAll<BallAndChain>().FirstOrDefault(t => t.name != null && !t.name.StartsWith("CCF_Chain_", StringComparison.Ordinal));

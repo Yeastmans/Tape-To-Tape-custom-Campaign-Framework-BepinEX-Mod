@@ -8,9 +8,11 @@ using System.Runtime.InteropServices;
 using BepInEx.Unity.IL2CPP.Hook;
 using CampaignCore;
 using Data;
+using Il2CppInterop.Runtime.Runtime;
 using Rogue;
 using Rogue.Powerups.Chaos;
 using UnityEngine;
+using TalentList = Il2CppSystem.Collections.Generic.List<Rogue.Talent>;
 
 namespace EndlessMode;
 
@@ -31,42 +33,62 @@ internal static class CustomRewardDataCapabilities
     private static readonly Dictionary<IntPtr, string> markers = new();
     private static readonly Dictionary<IntPtr, string> listAttributes = new();
     private static readonly Dictionary<string, Talent> proxies = new();
+    private static readonly NativeRewardListIndex<Talent, OwnedTalents> loadouts = new(list => new OwnedTalents(list));
     [ThreadStatic] private static bool resolving;
+    [ThreadStatic] private static IntPtr fillingDataCache;
+
+    private sealed class OwnedTalents
+    {
+        private readonly Dictionary<(string Effect, string Stat), List<(Talent Talent, CustomRewardDefinition Rule)>> effects = new();
+        internal OwnedTalents(TalentList talents)
+        {
+            int count = talents.Count;
+            for (int i = 0; i < count; i++) {
+                var talent = talents[i];
+                if (talent == null || !CustomRewardRuntime.Definitions.TryGetValue(talent.id ?? "", out var rule) || rule.NeedsRedesign
+                    || (rule.Effect != CustomRewardEffects.LockAttribute && rule.Effect != CustomRewardEffects.GoldenHelmet)) continue;
+                var key = (rule.Effect, rule.Effect == CustomRewardEffects.LockAttribute ? rule.Stat : null);
+                if (!effects.TryGetValue(key, out var candidates)) effects[key] = candidates = new();
+                candidates.Add((talent, rule));
+            }
+        }
+        internal CustomRewardDefinition First(string effect, string stat)
+        {
+            if (effects.TryGetValue((effect, stat), out var candidates))
+                foreach (var candidate in candidates)
+                    if (candidate.Talent != null && !candidate.Talent.PayoffSuppressed) return candidate.Rule;
+            return null;
+        }
+    }
 
     private static Talent Resolve(IntPtr data, IntPtr method)
     {
         if (data == IntPtr.Zero || resolving) return null;
-        bool attribute = attributes.TryGetValue(method, out var stat);
-        if (!attribute && !markers.ContainsKey(method)) return null;
+        string effect = CustomRewardEffects.LockAttribute;
+        if (!attributes.TryGetValue(method, out var stat) && !markers.TryGetValue(method, out effect)) return null;
         try {
             resolving = true;
-            CustomRewardRuntime.EnsureAssets();
-            var player = new SkaterData(data);
-            var owned = player.powerups;
-            return ResolveOwned(owned, attribute, stat, attribute ? null : markers[method]);
+            return CustomRewardRuntime.HasDefinedEffect(effect)
+                ? ResolveOwned(Il2CppObjectPool.Get<SkaterData>(data).powerups, effect, stat) : null;
         } catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Attribute lock query: " + ex); }
         finally { resolving = false; }
         return null;
     }
-    private static Talent ResolveOwned(Il2CppSystem.Collections.Generic.List<Talent> owned, bool attribute, string stat, string marker)
+    private static Talent ResolveOwned(TalentList owned, string effect, string stat)
     {
         // Native loadout order supplies a deterministic value for duplicate
-        // custom locks. An actual native lock always wins in Has/Get below.
-        for (int i = 0; owned != null && i < owned.Count; i++) {
-            var talent = owned[i];
-            if (talent == null || talent.PayoffSuppressed || !CustomRewardRuntime.Definitions.TryGetValue(talent.id, out var rule)
-                || rule.NeedsRedesign || (attribute ? rule.Effect != CustomRewardEffects.LockAttribute || rule.Stat != stat : rule.Effect != marker)) continue;
-            if (!proxies.TryGetValue(rule.Id, out var proxy)) {
-                proxy = !attribute ? ScriptableObject.CreateInstance<GoldenHelmetTalent>() : stat == "Shot Power" ? ScriptableObject.CreateInstance<Railgun>()
-                    : stat == "Speed" ? ScriptableObject.CreateInstance<TopGear>() : ScriptableObject.CreateInstance<Bedrock>();
-                proxy.id = rule.Id; proxy.name = "CCF_DataCapability_" + rule.Id; proxy.level = 1;
-                if (attribute) proxy.Cast<StatLockTalent>().m_LockedValue = rule.Amount;
-                proxy.powerupName = rule.Name; proxy.description = rule.FullDescription;
-                proxy.hideFlags = HideFlags.DontUnloadUnusedAsset; proxies.Add(rule.Id, proxy);
-            }
-            return proxy;
+        // custom locks. Suppression can change without mutating the list.
+        var rule = owned == null ? null : loadouts.Get(owned).First(effect, stat);
+        if (rule == null) return null;
+        if (!proxies.TryGetValue(rule.Id, out var proxy)) {
+            proxy = effect != CustomRewardEffects.LockAttribute ? ScriptableObject.CreateInstance<GoldenHelmetTalent>() : stat == "Shot Power" ? ScriptableObject.CreateInstance<Railgun>()
+                : stat == "Speed" ? ScriptableObject.CreateInstance<TopGear>() : ScriptableObject.CreateInstance<Bedrock>();
+            proxy.id = rule.Id; proxy.name = "CCF_DataCapability_" + rule.Id; proxy.level = 1;
+            if (effect == CustomRewardEffects.LockAttribute) proxy.Cast<StatLockTalent>().m_LockedValue = rule.Amount;
+            proxy.powerupName = rule.Name; proxy.description = rule.FullDescription;
+            proxy.hideFlags = HideFlags.DontUnloadUnusedAsset; proxies.Add(rule.Id, proxy);
         }
-        return null;
+        return proxy;
     }
     // Attribute getter bodies are inlined into stat setters and previews in
     // 26085704. This static list query keeps their SAME saved-loadout semantics;
@@ -77,8 +99,8 @@ internal static class CustomRewardDataCapabilities
         if (native != IntPtr.Zero || owned == IntPtr.Zero || resolving || !listAttributes.TryGetValue(method, out var stat)) return native;
         try {
             resolving = true;
-            CustomRewardRuntime.EnsureAssets();
-            return ResolveOwned(new Il2CppSystem.Collections.Generic.List<Talent>(owned), true, stat, null)?.Pointer ?? IntPtr.Zero;
+            return CustomRewardRuntime.HasDefinedEffect(CustomRewardEffects.LockAttribute)
+                ? ResolveOwned(Il2CppObjectPool.Get<TalentList>(owned), CustomRewardEffects.LockAttribute, stat)?.Pointer ?? IntPtr.Zero : native;
         } catch (Exception ex) { Plugin.Log.LogError("[CustomRewards] Inlined attribute value: " + ex); return native; }
         finally { resolving = false; }
     }
@@ -86,14 +108,17 @@ internal static class CustomRewardDataCapabilities
         byte native;
         // HaveTalentCached populates its cache by calling HaveTalent. Never
         // write a temporary custom capability into that native cache.
+        IntPtr previous = fillingDataCache;
+        fillingDataCache = data;
         CustomRewardCapabilities.NativeQueryDepth++;
         try { native = cachedOriginal(data, method); }
-        finally { CustomRewardCapabilities.NativeQueryDepth--; }
+        finally { CustomRewardCapabilities.NativeQueryDepth--; fillingDataCache = previous; }
         native = CustomRewardCapabilities.FromData(native, data, method);
         return native != 0 || Resolve(data, method) == null ? native : (byte)1;
     }
     private static byte Direct(IntPtr data, IntPtr method) {
         byte native = directOriginal(data, method);
+        if (data == fillingDataCache) return native;
         native = CustomRewardCapabilities.FromData(native, data, method);
         return native != 0 || Resolve(data, method) == null ? native : (byte)1;
     }

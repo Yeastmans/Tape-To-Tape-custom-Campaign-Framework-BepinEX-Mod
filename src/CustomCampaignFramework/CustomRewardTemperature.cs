@@ -10,10 +10,12 @@ namespace EndlessMode;
 internal static class CustomRewardTemperature
 {
     private static readonly Dictionary<IntPtr, (IntPtr Hot, IntPtr Cold)> pairs = new();
+    private static readonly Dictionary<IntPtr, (CustomRewardDefinition[] Loadouts, long Hot, long Cold)> bonuses = new();
     internal static void Initialize(Team team)
     {
         if (!CustomRewardRuntime.InMatch || team?._teamData == null || pairs.ContainsKey(team.Pointer)) return;
-        var rules = CustomRewardRuntime.Definitions.Values.Where(d => !d.NeedsRedesign && CustomRewardEffects.IsTemperature(d.Effect) && CustomRewardRuntime.Has(team._teamData, d.Id)).ToArray();
+        var rules = CustomRewardRuntime.DefinitionsForEffects(CustomRewardEffects.HotAttribute, CustomRewardEffects.ColdAttribute)
+            .Where(d => CustomRewardRuntime.Has(team._teamData, d.Id)).ToArray();
         if (rules.Length == 0) return;
         var players = team.PlayingForwards?.ToArray().Where(f => f != null).ToList();
         if (players == null || players.Count == 0) return;
@@ -27,14 +29,19 @@ internal static class CustomRewardTemperature
     }
     internal static long Bonus(Skater player, string stat)
     {
-        if (!CustomRewardDefinition.IsOverallStat(stat) || player?.Team?._teamData == null || !pairs.TryGetValue(player.Team.Pointer, out var pair)) return 0;
-        long result = 0;
-        foreach (var rule in CustomRewardRuntime.InPlay) {
-            if (rule.NeedsRedesign || !CustomRewardEffects.IsTemperature(rule.Effect) || !CustomRewardRuntime.Has(player.Team._teamData, rule.Id)) continue;
-            if (rule.Effect == CustomRewardEffects.HotAttribute && player.Pointer == pair.Hot) result += rule.Amount;
-            if (rule.Effect == CustomRewardEffects.ColdAttribute && player.Pointer == pair.Cold) result -= rule.Amount;
+        if (pairs.Count == 0 || !CustomRewardDefinition.IsOverallStat(stat) || player?.Team is not { } team
+            || !pairs.TryGetValue(team.Pointer, out var pair) || player.Pointer != pair.Hot && player.Pointer != pair.Cold) return 0;
+        var equipped = CustomRewardRuntime.InPlay;
+        if (!bonuses.TryGetValue(team.Pointer, out var bonus) || !ReferenceEquals(bonus.Loadouts, equipped)) {
+            long hot = 0, cold = 0;
+            foreach (var rule in equipped) {
+                if (rule.NeedsRedesign || !CustomRewardEffects.IsTemperature(rule.Effect) || !CustomRewardRuntime.Has(team._teamData, rule.Id)) continue;
+                if (rule.Effect == CustomRewardEffects.HotAttribute) hot += rule.Amount;
+                else cold -= rule.Amount;
+            }
+            bonuses[team.Pointer] = bonus = (equipped, hot, cold);
         }
-        return result;
+        return player.Pointer == pair.Hot ? bonus.Hot : bonus.Cold;
     }
-    internal static void Clear() => pairs.Clear();
+    internal static void Clear() { pairs.Clear(); bonuses.Clear(); }
 }

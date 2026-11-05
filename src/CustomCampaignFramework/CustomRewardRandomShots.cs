@@ -17,10 +17,17 @@ internal static class CustomRewardRandomShots
 {
     [ThreadStatic] internal static string Stat;
     private static readonly Dictionary<IntPtr, GamblerController> controllers = new();
-    internal static CustomRewardDefinition Rule(Skater player) => CustomRewardRuntime.ActiveConditions(player)
-        .Where(d => d.Effect == CustomRewardEffects.RandomShotPower && (Stat == null || Stat == "Power")
-            || d.Effect == CustomRewardEffects.RandomShotAccuracy && (Stat == null || Stat == "Accuracy"))
-        .OrderByDescending(d => d.Amount).FirstOrDefault();
+    private static bool RandomEffect(string effect) => effect is CustomRewardEffects.RandomShotPower or CustomRewardEffects.RandomShotAccuracy;
+    internal static CustomRewardDefinition Rule(Skater player)
+    {
+        var rules = Stat switch {
+            "Power" => CustomRewardRuntime.ConditionRules(CustomRewardEffects.RandomShotPower),
+            "Accuracy" => CustomRewardRuntime.ConditionRules(CustomRewardEffects.RandomShotAccuracy),
+            null => CustomRewardRuntime.ConditionRules(RandomEffect),
+            _ => Array.Empty<CustomRewardDefinition>()
+        };
+        return rules.Length == 0 ? null : CustomRewardRuntime.ActiveConditions(player, rules).OrderByDescending(d => d.Amount).FirstOrDefault();
+    }
     internal static GamblerController Controller(Forward player)
     {
         if (!controllers.TryGetValue(player.Pointer, out var controller)) {
@@ -28,7 +35,7 @@ internal static class CustomRewardRandomShots
             controller = new GamblerController { skater = player, Talent = payload };
             controllers.Add(player.Pointer, controller);
         }
-        var effects = CustomRewardRuntime.ActiveConditions(player).ToArray();
+        var effects = CustomRewardRuntime.ActiveConditions(player, RandomEffect).ToArray();
         var asset = controller.Talent.Cast<Gambler>();
         asset.minShotPower = effects.Where(d => d.Effect == CustomRewardEffects.RandomShotPower).Select(d => d.Amount).DefaultIfEmpty(0).Max();
         asset.minAccuracy = effects.Where(d => d.Effect == CustomRewardEffects.RandomShotAccuracy).Select(d => d.Amount).DefaultIfEmpty(0).Max();

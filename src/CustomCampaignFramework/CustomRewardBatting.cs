@@ -28,7 +28,7 @@ internal static class CustomRewardBatting
             2 => CustomRewardEffects.BatKnockout,
             _ => null
         };
-        var rule = effect == null ? null : CustomRewardRuntime.ActiveConditions(player).Where(d => d.Effect == effect).OrderByDescending(d => d.Radius).FirstOrDefault();
+        var rule = effect == null ? null : CustomRewardRuntime.ActiveConditions(player, effect).OrderByDescending(d => d.Radius).FirstOrDefault();
         if (effect == CustomRewardEffects.BatKnockout) scope.Contact = rule;
         return rule;
     }

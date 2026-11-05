@@ -9,7 +9,7 @@ namespace Data {
     public class SkaterData { public TalentList powerups = new(); }
 }
 namespace Skaters {
-    public class Skater { public IntPtr Pointer=(IntPtr)1234; public Data.SkaterData _skaterData=new(); public bool ArePowerUpsEnabled()=>true; }
+    public class Skater { public IntPtr Pointer=(IntPtr)1234; public Data.SkaterData _skaterData=new(); public int PowerChecks; public bool ArePowerUpsEnabled(){PowerChecks++;return true;} }
     public class Forward : Skater {}
 }
 namespace UnityEngine { public static class Time { public static float time; } }
@@ -24,6 +24,8 @@ namespace EndlessMode {
     internal static class CustomRewardRuntime {
         internal static bool InMatch;
         internal static List<CustomRewardDefinition> Conditions=new();
-        internal static IEnumerable<CustomRewardDefinition> ActiveConditions(Skaters.Skater player)=>Conditions;
+        internal static CustomRewardDefinition[] ConditionRules(Func<string, bool> effects)
+            => Conditions.Where(rule => effects(rule.Effect)).ToArray();
+        internal static IEnumerable<CustomRewardDefinition> ActiveConditions(Skaters.Skater player, CustomRewardDefinition[] rules) => rules;
     }
 }

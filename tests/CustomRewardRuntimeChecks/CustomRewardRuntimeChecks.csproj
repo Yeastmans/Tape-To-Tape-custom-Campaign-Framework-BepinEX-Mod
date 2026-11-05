@@ -14,6 +14,7 @@
     <Compile Include="../../src/CustomCampaignFramework/SquadBehaviorRuntime.cs" Link="SquadBehaviorRuntime.cs" />
     <Compile Include="../../src/CustomCampaignFramework/RewardPoolPicks.cs" Link="RewardPoolPicks.cs" />
     <Compile Include="../../src/CustomCampaignFramework/CustomRewardGoalConfirmation.cs" Link="CustomRewardGoalConfirmation.cs" />
+    <Compile Include="../../src/CustomCampaignFramework/CustomRewardConditionCache.cs" Link="CustomRewardConditionCache.cs" />
     <EmbeddedResource Include="../../assets/reward-pools/normal_run_pool.tsv" LogicalName="NormalRewardPools.tsv" />
   </ItemGroup>
 </Project>

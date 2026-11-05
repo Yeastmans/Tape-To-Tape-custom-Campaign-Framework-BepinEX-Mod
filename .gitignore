@@ -202,6 +202,7 @@ tests/CustomCoachVisitChecks/*
 tests/CustomRewardRuntimeChecks/*
 !tests/CustomRewardRuntimeChecks/CustomRewardRuntimeChecks.csproj
 !tests/CustomRewardRuntimeChecks/Program.cs
+!tests/CustomRewardRuntimeChecks/ConditionStateChecks.cs
 !tests/SquadMapChecks/
 tests/SquadMapChecks/*
 !tests/SquadMapChecks/Program.cs
@@ -354,3 +355,16 @@ tests/PuckRepellentChecks/*
 tests/EmptySquadEditorChecks/*
 !tests/EmptySquadEditorChecks/*.cs
 !tests/EmptySquadEditorChecks/*.csproj
+!tests/NativeRewardLookupChecks/
+tests/NativeRewardLookupChecks/*
+!tests/NativeRewardLookupChecks/*.cs
+!tests/NativeRewardLookupChecks/*.csproj
+!tests/RewardConditionQueryChecks/
+tests/RewardConditionQueryChecks/*
+!tests/RewardConditionQueryChecks/*.cs
+!tests/RewardConditionQueryChecks/*.csproj
+!tests/RewardConditionQueryChecks/extract_runtime.py
+!tests/RewardStatRefreshChecks/
+tests/RewardStatRefreshChecks/*
+!tests/RewardStatRefreshChecks/*.cs
+!tests/RewardStatRefreshChecks/*.csproj

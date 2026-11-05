@@ -13,6 +13,7 @@ namespace EndlessMode {
     static partial class CustomRewardRuntime {
         private static bool loaded, creating;
         private static bool inPlayStale;
+        internal static CustomRewardDefinition[] BaseGameRewardSnapshots() => Array.Empty<CustomRewardDefinition>();
         private static void InvalidateCoachAsset(string id) { }
         private static string definitionsScope;
         private static bool definitionSourcesReady;
@@ -24,6 +25,8 @@ namespace EndlessMode {
         internal static void EnsureRun() { DuringOwnership?.Invoke(); }
         internal static void ObserveOwnership(Data.TeamData team) { if (CustomRewardCampaignRules.Fail) throw new InvalidOperationException("custom ownership unavailable"); }
         internal static bool Has(Data.TeamData team, string id) => team.RetentionOwnedIds.Contains(id);
+        internal static CustomRewardDefinition[] DefinitionsForTrigger(string trigger) { if (!loaded) EnsureAssets(); return Definitions.Values.Where(d => !d.NeedsRedesign && d.Trigger == trigger).ToArray(); }
+        internal static CustomRewardDefinition[] DefinitionsForEffect(string effect) { if (!loaded) EnsureAssets(); return Definitions.Values.Where(d => !d.NeedsRedesign && d.Effect == effect).ToArray(); }
         internal static bool Has(Data.RetentionPlayer player, string id) => player.powerups.Any(p => p.id == id);
         internal static bool HasMatch<T>(this List<T> list, Func<T, bool> predicate) => list.Any(predicate);
     }

@@ -16,14 +16,22 @@ internal static class CustomRewardClock
         internal double Rate;
     }
     private static readonly Dictionary<IntPtr, Scope> scopes = new();
+    private static CustomRewardDefinition[] previousRules;
+    private static long previousScoreOrPeriod;
+    private static double previousRate;
     internal static double Multiplier()
     {
-        if (!CustomRewardRuntime.InMatch) return 1;
+        var rules = CustomRewardRuntime.ConditionRules(CustomRewardEffects.ClockSpeed);
+        if (rules.Length == 0) return 1;
+        long revision = CustomRewardRuntime.ScoreOrPeriodRevision;
+        if (ReferenceEquals(rules, previousRules) && revision == previousScoreOrPeriod) return previousRate;
         double result = 1;
-        foreach (var team in new[] { GameManager.HomeTeam, GameManager.VisitorTeam }) {
+        var home = GameManager.HomeTeam;
+        var visitor = GameManager.VisitorTeam;
+        foreach (var team in new[] { home, visitor }) {
             if (team?._teamData == null) continue;
-            foreach (var rule in CustomRewardRuntime.InPlay) {
-                if (rule.NeedsRedesign || !rule.IsRelic || rule.Effect != CustomRewardEffects.ClockSpeed || !CustomRewardRuntime.Has(team._teamData, rule.Id)) continue;
+            foreach (var rule in rules) {
+                if (!rule.IsRelic || !CustomRewardRuntime.Has(team._teamData, rule.Id)) continue;
                 bool active = rule.Trigger switch {
                     "While owned" => true,
                     "While leading" => team.otherTeam != null && team.Score > team.otherTeam.Score,
@@ -37,14 +45,16 @@ internal static class CustomRewardClock
                 if (active) result *= rule.Amount / 100d;
             }
         }
+        if (home?._teamData != null && visitor?._teamData != null) {
+            previousRules = rules; previousScoreOrPeriod = revision; previousRate = result;
+        }
         return result;
     }
     internal static Scope Enter(TimeRemaining clock)
     {
-        if (clock == null || clock.increaseTime || clock.TimeModifier == null) return null;
-        if (scopes.TryGetValue(clock.Pointer, out var scope) && scope.Active) return null;
         double rate = Multiplier();
-        if (rate == 1) return null;
+        if (rate == 1 || clock == null || clock.increaseTime || clock.TimeModifier == null) return null;
+        if (scopes.TryGetValue(clock.Pointer, out var scope) && scope.Active) return null;
         if (scope == null || scope.Original.Pointer != clock.TimeModifier.Pointer) {
             scope = new Scope { Clock = clock, Original = clock.TimeModifier };
             // Original is immutable. A native modifier installed during this
@@ -62,7 +72,7 @@ internal static class CustomRewardClock
         scope.Active = false;
         if (scope.Clock != null && scope.Clock.TimeModifier?.Pointer == scope.Wrapped.Pointer) scope.Clock.TimeModifier = scope.Original;
     }
-    internal static void Clear() { foreach (var scope in scopes.Values) Exit(scope); scopes.Clear(); }
+    internal static void Clear() { foreach (var scope in scopes.Values) Exit(scope); scopes.Clear(); previousRules = null; }
 }
 
 // DecreaseTime is inlined in Update in the audited native binary. Supplying

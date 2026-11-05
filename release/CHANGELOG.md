@@ -1,5 +1,11 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 42
+
+- Reduced repeated custom reward checks during skating, stat calculations and ability updates. The runtime groups equipped rewards by trigger and effect and refreshes cached answers when the relevant match state changes.
+- Team and saved-player talent queries reuse roster data until a loadout or rule definition changes. Payoff suppression and opposing-team targeting are still evaluated for eligible rewards.
+- Goal, injury, bench and timed effect handlers skip unrelated rewards. This release targets the reward-lookup lag reported in Yeastman's Wacky Crazy Funtime, including Mystery Inc., Billionaires and YouTubers matchups.
+
 ## Beta 1.0 revision 41
 
 - No Effects squads may start with no skaters and recruit their roster. Empty and goalie-only recruit-first squads can also be saved in Studio; partial nonempty rosters retain validation. Removed players stay absent after saving and switching roster lines.

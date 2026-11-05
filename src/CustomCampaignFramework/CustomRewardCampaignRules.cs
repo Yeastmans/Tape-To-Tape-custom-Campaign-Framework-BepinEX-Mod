@@ -16,7 +16,7 @@ internal static class CustomRewardCampaignRules
     {
         CustomRewardDefinition result = null; long priority = long.MinValue;
         foreach (var team in new[] { GameManager.HomeTeam?._teamData, GameManager.VisitorTeam?._teamData }) if (team != null)
-            foreach (var rule in Owned(team, "Match setup").Where(d => d.Effect == effect)) {
+            foreach (var rule in Owned(team, "Match setup", effect)) {
                 long acquired = CustomRewardRuntime.Acquired(team, rule);
                 if (acquired >= priority) { result = rule; priority = acquired; }
             }
@@ -27,24 +27,27 @@ internal static class CustomRewardCampaignRules
     internal static IEnumerable<CustomRewardDefinition> Applying(Team team, string trigger, string effect)
     {
         if (team?._teamData == null) yield break;
-        foreach (var d in Owned(team._teamData, trigger)) if (d.Effect == effect && d.Target != CustomRewardEffects.OpposingTeam) yield return d;
+        foreach (var d in Owned(team._teamData, trigger, effect, observe: false)) if (d.Target != CustomRewardEffects.OpposingTeam) yield return d;
         if (team.otherTeam?._teamData != null)
-            foreach (var d in Owned(team.otherTeam._teamData, trigger)) if (d.Effect == effect && d.Target == CustomRewardEffects.OpposingTeam) yield return d;
+            foreach (var d in Owned(team.otherTeam._teamData, trigger, effect, observe: false)) if (d.Target == CustomRewardEffects.OpposingTeam) yield return d;
     }
-    internal static IEnumerable<CustomRewardDefinition> Owned(TeamData team, string trigger)
+    internal static IEnumerable<CustomRewardDefinition> Owned(TeamData team, string trigger, string effect = null, bool observe = true)
     {
         if (team == null) yield break;
-        CustomRewardRuntime.EnsureAssets();
-        CustomRewardRuntime.EnsureRun(); CustomRewardRuntime.ObserveOwnership(team);
-        foreach (var d in CustomRewardRuntime.Definitions.Values) {
-            if (d.NeedsRedesign || d.Trigger != trigger) continue;
+        var rules = effect == null ? CustomRewardRuntime.DefinitionsForTrigger(trigger) : CustomRewardRuntime.DefinitionsForEffect(effect);
+        // Contract expiry also certifies run/snapshot readiness through these
+        // ownership calls when no custom rule protects the team.
+        if (rules.Length == 0 && trigger != "Contract expiry") yield break;
+        if (observe) { CustomRewardRuntime.EnsureRun(); CustomRewardRuntime.ObserveOwnership(team); }
+        foreach (var d in rules) {
+            if (d.Trigger != trigger) continue;
             if (d.IsRelic) { if (CustomRewardRuntime.Has(team, d.Id)) yield return d; }
             else foreach (var player in team.GetAllSkaters()) if (CustomRewardRuntime.Has(player, d.Id) && player.powerups.HasMatch(t => t != null && t.id == d.Id && !t.PayoffSuppressed)) yield return d;
         }
     }
     // Unbounded authored counts are summed in long and saturated: native
     // counters add this to their own value, so stay well inside int.
-    internal static int Amount(TeamData team, string trigger, string effect) => (int)Math.Clamp(Owned(team, trigger).Where(d => d.Effect == effect).Sum(d => (long)d.Amount), 0, int.MaxValue / 4);
+    internal static int Amount(TeamData team, string trigger, string effect) => (int)Math.Clamp(Owned(team, trigger, effect).Sum(d => (long)d.Amount), 0, int.MaxValue / 4);
     internal static string Surface(TeamData home, TeamData away)
     {
         CustomRewardDefinition selected = null; long priority = long.MinValue;
