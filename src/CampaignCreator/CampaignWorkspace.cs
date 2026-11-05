@@ -21,6 +21,7 @@ public sealed partial class CampaignWorkspace : UserControl
     public bool IsNew => isNew;
     private const int OpponentsSection = 1, MapSection = 2, CustomSquadsSection = 3, FreeAgentsSection = 4, RewardPoolsSection = 5;
     public void SelectTeamSection(bool customSquad) => ShowSection(customSquad ? CustomSquadsSection : OpponentsSection);
+    internal void ShowOverview() => ShowSection(0);
     private readonly GameData data;
     private readonly Action<string> open;
     private readonly Action back;
@@ -36,7 +37,10 @@ public sealed partial class CampaignWorkspace : UserControl
     private HashSet<string> selectedBaseAgents = new(StringComparer.OrdinalIgnoreCase);
     private HashSet<string> selectedCustomAgents = new(StringComparer.OrdinalIgnoreCase);
     private readonly ContentControl navigation = new() { HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
-    private Control[] sections = [];
+    private readonly Control?[] sections = new Control?[6];
+    private readonly Func<Task> newTeam;
+    private readonly Dictionary<string, (bool Base, int Count)> savedRewardSummary;
+    private OverviewData? openingOverview;
     private int currentSection;
     internal int CurrentSection => currentSection;
     private MapEditorView? mapEditor;
@@ -83,15 +87,23 @@ public sealed partial class CampaignWorkspace : UserControl
         return false;
     }
     public CampaignWorkspace(Window owner, string root, string directory, Action back, Action<string> open, Func<Task> newTeam, bool isNew = false, Action<string>? created = null, string initialName = "")
+        : this(owner, root, directory, back, open, newTeam, new GameData(root), null, isNew, created, initialName) { }
+
+    internal CampaignWorkspace(Window owner, string root, string directory, Action back, Action<string> open, Func<Task> newTeam,
+        GameData gameData, OpeningData? prepared, bool isNew = false, Action<string>? created = null, string initialName = "")
     {
         this.owner = owner; this.root = root; this.directory = directory; this.open = open; this.back = back;
-        this.isNew = isNew; this.created = created;
-        data = new GameData(root);
+        this.isNew = isNew; this.created = created; this.newTeam = newTeam;
+        data = gameData;
         campaignName.Text = initialName;
-        settings = new CampaignDocument(isNew && !File.Exists(Path.Combine(directory,"campaign.txt")) ? "# Campaign Settings\nAct Sequence = 1,2,3\nMaps = Basic\n" : File.ReadAllText(Path.Combine(directory, "campaign.txt")));
+        settings = prepared?.Settings ?? new CampaignDocument(isNew && !File.Exists(Path.Combine(directory,"campaign.txt")) ? "# Campaign Settings\nAct Sequence = 1,2,3\nMaps = Basic\n" : File.ReadAllText(Path.Combine(directory, "campaign.txt")));
         if (isNew) { Directory.CreateDirectory(directory); settings.Save(Path.Combine(directory, "campaign.txt")); }
-        string rewardFile = Path.Combine(directory, "reward_pools.txt");
-        rewards = new CampaignDocument(File.Exists(rewardFile) ? File.ReadAllText(rewardFile) : "# Campaign reward pools\n");
+        rewards = prepared?.Rewards ?? ReadRewards(directory);
+        savedRewardSummary = prepared?.RewardSummary ?? ReadRewardSummary(root, directory, rewards, default);
+        openingOverview = prepared?.Overview;
+        // Older campaigns acquire these editor defaults on save, even before visiting their sections.
+        fields["Use Player Teams"] = () => UsePlayerTeamsValue(settings.Get("Use Player Teams"));
+        fields[GoalieFeatureOptions.RecruitmentKey] = () => GoalieFeatureOptions.Recruitment(settings) ? "On" : "Off";
         var shell = new Grid { Margin = new Thickness(32), RowDefinitions = new RowDefinitions("Auto,*,Auto"), RowSpacing = StudioTheme.SpaceXl };
         var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") }; StudioTheme.Header(header);
         header.Children.Add(new StackPanel { Spacing = 6, Children = {
@@ -102,21 +114,13 @@ public sealed partial class CampaignWorkspace : UserControl
         var backButton = ActionButton("Back", () =>
         {
             if (currentSection != 0) ShowSection(0);
-            else back();
+            else if (isNew || CanLeave()) back();
         });
         backButton.Name = "BackToCampaign";
         headerActions.Children.Add(backButton);
         headerActions.Children.Add(PageHelpButton.Create(owner));
 
         Grid.SetColumn(headerActions, 1); header.Children.Add(headerActions); shell.Children.Add(header);
-        sections = [
-            ScrollPage(OverviewPage()),
-            ScrollPage(RosterPage(false, newTeam)),
-            MapsPage(),
-            ScrollPage(CustomSquadsPage(newTeam)),
-            ScrollPage(FreeAgentsPage(), reserveScrollbar: true),
-            RewardsPage()
-        ];
         ShowSection(0);
         Grid.SetRow(navigation, 1); shell.Children.Add(navigation);
         var footer = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto"), ColumnSpacing = StudioTheme.SpaceLg }; StudioTheme.Footer(footer);
@@ -130,9 +134,47 @@ public sealed partial class CampaignWorkspace : UserControl
     }
     private void ShowSection(int index)
     {
+        if (sections[index] == null)
+        {
+            sections[index] = BuildSection(index);
+            foreach (var field in fields)
+                if (!savedFieldValues.ContainsKey(field.Key)) savedFieldValues[field.Key] = field.Value();
+        }
         navigation.Content = sections[index];
         currentSection = index;
         if (index == RewardPoolsSection) RefreshRewardCounts();
+    }
+    private Control BuildSection(int index)
+    {
+        var previousFields = fields.ToArray();
+        int previousRosterCallbacks = refreshRosters.Count;
+        try
+        {
+            return index switch {
+                0 => ScrollPage(OverviewPage()),
+                OpponentsSection => ScrollPage(RosterPage(false, newTeam)),
+                MapSection => MapsPage(),
+                CustomSquadsSection => ScrollPage(CustomSquadsPage(newTeam)),
+                FreeAgentsSection => ScrollPage(FreeAgentsPage(), reserveScrollbar: true),
+                RewardPoolsSection => RewardsPage(),
+                _ => throw new ArgumentOutOfRangeException(nameof(index))
+            };
+        }
+        catch
+        {
+            // An unreadable roster or catalog may fail halfway through a first visit.
+            // Only controls from successfully opened pages may participate in later saves or refreshes.
+            fields.Clear();
+            foreach (var field in previousFields) fields.Add(field.Key, field.Value);
+            refreshRosters.RemoveRange(previousRosterCallbacks, refreshRosters.Count - previousRosterCallbacks);
+            if (index == CustomSquadsSection) { benchPool = null; superstarPool = null; }
+            if (index == FreeAgentsSection) { nativeFreeAgents = null; freeAgentTalentWeights = null; }
+            if (index == RewardPoolsSection)
+            {
+                rewardPools.Clear(); refreshRewardCounts.Clear(); refreshRewardRows.Clear(); customRewardCreator = null;
+            }
+            throw;
+        }
     }
     private static ScrollViewer ScrollPage(Control body, bool reserveScrollbar = false) => new()
     {
@@ -140,6 +182,12 @@ public sealed partial class CampaignWorkspace : UserControl
         AllowAutoHide = !reserveScrollbar,
         Name = reserveScrollbar ? "FreeAgentsPageScroll" : null
     };
+    private static void RefreshOnReattach(Control page, Action refresh)
+    {
+        // The builder has already populated the first view. Later visits can reflect edits made elsewhere.
+        bool attached = false;
+        page.AttachedToVisualTree += (_, _) => { if (attached) refresh(); attached = true; };
+    }
     private static StackPanel Page(string title, string description) => new() { Spacing = StudioTheme.SpaceLg, Children = {
         new TextBlock { Text = title, FontSize = 24, FontWeight = FontWeight.SemiBold },
         new TextBlock { Text = description, FontSize = 14, Foreground = StudioTheme.Muted, TextWrapping = TextWrapping.Wrap }
@@ -166,9 +214,8 @@ public sealed partial class CampaignWorkspace : UserControl
     }
     private Control MapsPage()
     {
-        var host = new ContentControl { Margin = new Thickness(0, 12, 0, 0), HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
-        host.AttachedToVisualTree += (_, _) => host.Content = EnsureMapEditor();
-        return host;
+        return new ContentControl { Content = EnsureMapEditor(), Margin = new Thickness(0, 12, 0, 0),
+            HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
     }
     private Control RosterPage(bool custom, Func<Task> newTeam)
     {
@@ -177,10 +224,9 @@ public sealed partial class CampaignWorkspace : UserControl
         void Refresh()
         {
             list.Children.Clear();
-            var all = CampaignNavigation.Load(directory);
+            var teams = CampaignNavigation.Teams(directory, custom);
             var assignments = custom ? new Dictionary<string, List<string>>() : mapEditor?.AssignedOpponents ?? OpponentAssignments.Load(directory);
             var matchNodes = custom ? [] : CurrentMatchNodes();
-            var teams = custom ? all.FirstOrDefault(n => n.DisplayName == "Custom Squads")?.Children ?? [] : all.Where(n => n.Context.StartsWith("Opponent ")).ToList();
             if (teams.Count == 0) list.Children.Add(new Border { Padding = new Thickness(24), Background = StudioTheme.Surface, CornerRadius = new CornerRadius(8), Child = new TextBlock { Text = custom ? "No player teams yet. Add a player team to start editing." : "No opponents yet. Create your first opponent team to start building the campaign.", TextWrapping = TextWrapping.Wrap } });
             string TeamName(string folder) => teams.FirstOrDefault(t => t.FilePath != null && Path.GetFileName(Path.GetDirectoryName(t.FilePath)!).Equals(folder, StringComparison.OrdinalIgnoreCase))?.DisplayName ?? folder;
             foreach (var team in teams)
@@ -272,7 +318,8 @@ public sealed partial class CampaignWorkspace : UserControl
                     try
                     {
                         if (team.FilePath is not string file || !CanLeave(true)) return;
-                        if (teams.Count == 1 && fields["Custom Squads Only"]().Equals("yes", StringComparison.OrdinalIgnoreCase))
+                        string only = fields.TryGetValue("Custom Squads Only", out var readOnly) ? readOnly() : settings.Get("Custom Squads Only");
+                        if (teams.Count == 1 && only.Equals("yes", StringComparison.OrdinalIgnoreCase))
                             throw new InvalidOperationException("Turn off Custom teams only or add another player team before removing the last one.");
                         if (!await ContentRemoval.Confirm(owner, team.DisplayName, "Remove this player team and its roster, pools and team-specific maps from this campaign?")) return;
                         string parent = Path.Combine(directory, "player_teams"), teamDirectory = Path.GetDirectoryName(file)!;
@@ -315,7 +362,7 @@ public sealed partial class CampaignWorkspace : UserControl
             } catch (Exception ex) { message.Text = ex.Message; }
         }));
         refreshRosters.Add(Refresh);
-        page.AttachedToVisualTree += (_, _) => Refresh();
+        RefreshOnReattach(page, Refresh);
         Refresh(); if (!custom) page.Children.Add(list); return page;
     }
     private Control FreeAgentsPage()
@@ -417,10 +464,9 @@ public sealed partial class CampaignWorkspace : UserControl
         void Refresh()
         {
             list.Children.Clear();
-            var players = CampaignNavigation.Load(directory).FirstOrDefault(n => n.DisplayName == "Free Agents")?.Children ?? [];
+            var players = CampaignNavigation.PoolPlayers(directory, "free_agents");
             // Keep earlier bench selections accessible as authored players instead of hiding them.
-            players = players.Where(p => p.FilePath != null && !FreeAgentContent.BaseNames.Contains(
-                new CampaignDocument(File.ReadAllText(p.FilePath)).Get(FreeAgentContent.Marker), StringComparer.OrdinalIgnoreCase)).ToList();
+            players = players.Where(p => !FreeAgentContent.BaseNames.Contains(p.BaseFreeAgent, StringComparer.OrdinalIgnoreCase)).ToList();
             if (players.Count == 0) list.Children.Add(new TextBlock { Text = "No custom free agents yet.", TextWrapping = TextWrapping.Wrap });
             foreach (var player in players)
                 if (player.FilePath is string file)
@@ -514,7 +560,7 @@ public sealed partial class CampaignWorkspace : UserControl
         customSide.Children.Add(actions);
         customSide.Children.Add(InsetPoolPanel.List(list, 440, "CustomFreeAgentPoolScroll"));
         refreshRosters.Add(Refresh);
-        page.AttachedToVisualTree += (_, _) => Refresh();
+        RefreshOnReattach(page, Refresh);
         Refresh();
         return page;
     }
@@ -738,7 +784,6 @@ public sealed partial class CampaignWorkspace : UserControl
             message.Text = "Custom item saved. Choose which items to offer in each pool, then Save campaign.";
         });
         sectionTabs.Add(new TabItem { Header = "Creator", Content = customRewardCreator });
-        RefreshRewardCounts();
         sections.ItemsSource = sectionTabs; sections.SelectedIndex = 0;
         sections.SelectionChanged += (_, _) => { page.IsVisible = sections.SelectedIndex < RewardPoolDefinition.Kinds.Count; };
         var layout = new Grid { RowDefinitions = new RowDefinitions("Auto,*"), RowSpacing = StudioTheme.SpaceMd };
@@ -749,7 +794,8 @@ public sealed partial class CampaignWorkspace : UserControl
         if (customRewardCreator?.HasChanges == true) throw new InvalidOperationException("Save your item in the Creator tab, or discard its draft, before saving the campaign.");
         var goalieNodeErrors = GoalieFeatureOptions.ValidateNodes(GoalieRecruitmentDraft, mapEditor?.RewardLayouts ?? SavedLayouts()).ToArray();
         if (goalieNodeErrors.Length > 0) throw new InvalidOperationException(string.Join("\n", goalieNodeErrors));
-        freeAgentTalentWeights?.Validate();
+        if (freeAgentTalentWeights != null) freeAgentTalentWeights.Validate();
+        else FreeAgentTalentWeightsEditor.ValidateSaved(settings, settings.Get(FreeAgentTalentWeights.Key));
         var rewardErrors = RewardBudgets().SelectMany(b => b.Errors).ToArray();
         if (rewardErrors.Length > 0) throw new InvalidOperationException(string.Join("\n", rewardErrors));
         string configFile = Path.Combine(directory, "campaign.txt");

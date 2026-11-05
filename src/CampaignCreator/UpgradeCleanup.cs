@@ -41,7 +41,7 @@ public sealed class UpgradeCleanup
         fields["campaign"].UnionWith(new[] { RewardPoolDefinition.IncludeChaosTalentsKey, RewardPoolDefinition.IncludeRegularTalentsKey,
             RewardPoolDefinition.IncludeChaosRelicsKey, RewardPoolDefinition.IncludeRegularRelicsKey });
         // A missing release catalog is a packaging error, not evidence every saved choice is invalid.
-        if (RewardCatalog.ReadEntries(data.Root, "Talents").Count == 0 || data.Assets.Values("skater", "Body").Count == 0)
+        if (RewardCatalog.ReadEntries(data.Root, "Talents").Count == 0 || data.AssetChoices("skater", "Body").Count == 0)
             throw new InvalidOperationException("The upgrade catalog is missing. User content was not cleaned.");
     }
     public int CleanDirectory(string root)
@@ -227,7 +227,7 @@ public sealed class UpgradeCleanup
         if (FieldSchema.Kind(key) == FieldKind.Color) return Color(value) ? value : "";
         string assetKey = k is "squad head" or "zamboni head" or "bench head" or "referee head" ? "Face" : key;
         string assetRole = k is "squad head" or "zamboni head" or "bench head" or "referee head" ? "skater" : role;
-        var assets = data.Assets.Values(assetRole, assetKey);
+        var assets = data.AssetChoices(assetRole, assetKey);
         if (assets.Count > 0 || FieldSchema.SkaterAssets.Concat(FieldSchema.GoalieAssets).Contains(key, IgnoreCase))
         {
             if (In(value, "none")) return assetRole == "skater" && (assetKey is "Helmet" or "Helmet Away") ? "none" : "";
@@ -237,7 +237,7 @@ public sealed class UpgradeCleanup
                 return assets.Contains(fallback, IgnoreCase) ? fallback : "";
             }
             try {
-                string resolved = data.Assets.Resolve(assetRole, assetKey, value);
+                string resolved = data.ResolveAsset(assetRole, assetKey, value);
                 return resolved.EndsWith("_iso", StringComparison.OrdinalIgnoreCase) || resolved.EndsWith("_lso", StringComparison.OrdinalIgnoreCase) ? "" : resolved;
             } catch (ArgumentException) { return ""; }
         }

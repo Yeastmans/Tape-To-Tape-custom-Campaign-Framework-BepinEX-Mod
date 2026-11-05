@@ -18,8 +18,7 @@ public sealed partial class CampaignWorkspace
     private List<MatchNode> CurrentMatchNodes()
     {
         if (mapEditor != null) return mapEditor.MatchNodes();
-        try { return OpponentAssignments.MatchNodes(OpponentAssignments.LoadLayouts(root, directory, SelectedTemplate, ActSequence)); }
-        catch { return []; }
+        return SavedMatchNodes(root, directory, settings);
     }
     private void NewOpponent()
     {
@@ -39,7 +38,7 @@ public sealed partial class CampaignWorkspace
     private Control OverviewPage()
     {
         var page = new StackPanel { Spacing = StudioTheme.SpaceLg };
-        page.AttachedToVisualTree += (_, _) => BuildOverview(page);
+        RefreshOnReattach(page, () => BuildOverview(page));
         refreshRosters.Add(() => BuildOverview(page));
         BuildOverview(page);
         return page;
@@ -48,14 +47,15 @@ public sealed partial class CampaignWorkspace
     private void BuildOverview(StackPanel page)
     {
         page.Children.Clear();
-        var nav = CampaignNavigation.Load(directory);
-        var opponents = nav.Where(n => n.Context.StartsWith("Opponent ") && n.FilePath != null).ToList();
-        var squads = nav.FirstOrDefault(n => n.DisplayName == "Custom Squads")?.Children.Where(n => n.FilePath != null).ToList() ?? [];
+        var snapshot = openingOverview ?? ReadOverviewData(root, directory, settings, default, mapEditor);
+        openingOverview = null;
+        var opponents = snapshot.Opponents.Where(n => n.FilePath != null).ToList();
+        var squads = snapshot.Squads.Where(n => n.FilePath != null).ToList();
         static string Key(CampaignNode team) => Path.GetFileName(Path.GetDirectoryName(team.FilePath!)!);
         static bool NativeBound(CampaignNode team) => team.IsNativeOpponent;
         var teamKeys = opponents.Select(Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var assignments = mapEditor?.AssignedOpponents ?? OpponentAssignments.Load(directory);
-        var nodes = CurrentMatchNodes();
+        var assignments = snapshot.Assignments;
+        var nodes = snapshot.Nodes;
         var acts = ActSequence.Split(',').Select(s => int.TryParse(s.Trim(), out int n) ? Math.Clamp(n, 1, 3) : 1).ToArray();
         int mapCount = mapEditor?.MapCount ?? acts.Length;
 
@@ -105,7 +105,7 @@ public sealed partial class CampaignWorkspace
         // Custom teams
         var squadList = new StackPanel { Name = "CampaignListCustomTeams", Spacing = StudioTheme.SpaceSm };
         foreach (var squad in squads)
-            squadList.Children.Add(ItemButton(squad.DisplayName, Plural(squad.Children.Count, "player"), StudioTheme.Text, StudioTheme.Input, null,
+            squadList.Children.Add(ItemButton(squad.DisplayName, Plural(squad.RosterCount, "player"), StudioTheme.Text, StudioTheme.Input, null,
                 () => { try { if (CanLeave(true)) open(squad.FilePath!); } catch (Exception ex) { message.Text = ex.Message; } }));
         if (squads.Count == 0) squadList.Children.Add(Muted("No custom teams yet. Players will pick from the base-game squads."));
         var squadCard = OverviewCard(CustomSquadsSection, "Custom teams", Plural(squads.Count, "squad"),
@@ -133,10 +133,10 @@ public sealed partial class CampaignWorkspace
         var mapCard = OverviewCard(MapSection, "Maps", $"{nodes.Count(n => n.Team.Length > 0)} / {nodes.Count} match nodes set", mapList, "Open map editor");
 
         // Free agents
-        int customAgents = (nav.FirstOrDefault(n => n.DisplayName == "Free Agents")?.Children ?? []).Count(p => p.FilePath != null &&
-            !FreeAgentContent.BaseNames.Contains(new CampaignDocument(File.ReadAllText(p.FilePath)).Get(FreeAgentContent.Marker), StringComparer.OrdinalIgnoreCase));
+        int baseAgents = freeAgentsDirty ? selectedBaseAgents.Count : snapshot.SelectedBaseAgents;
+        int customAgents = snapshot.CustomAgents;
         var agentCard = OverviewCard(FreeAgentsSection, "Free agents",
-            selectedBaseAgents.Count == 0 && customAgents == 0 ? "Game default pool" : $"{selectedBaseAgents.Count} base game · {customAgents} custom",
+            baseAgents == 0 && customAgents == 0 ? "Game default pool" : $"{baseAgents} base game · {customAgents} custom",
             Muted("Players you can recruit during the campaign."), "Choose free agents");
 
         // Reward pools
@@ -144,11 +144,11 @@ public sealed partial class CampaignWorkspace
         int customTotal = 0, column = 0;
         foreach (var (kind, label) in new[] { ("Relics", "RELICS"), ("Talents", "REGULAR TALENTS"), ("Goalie Talents", "GOALIE TALENTS"), ("Abilities", "ABILITIES"), (RewardPoolDefinition.ChaosTalents, "CHAOS TALENTS"), (RewardPoolDefinition.ChaosRelics, "CHAOS RELICS") })
         {
-            var pool = rewardPools.TryGetValue(kind, out var edited) ? edited : RewardCatalog.ReadPool(root, rewards, kind);
-            if (!pool.UseBaseGame) customTotal++;
+            var (basePool, count) = rewardPools.TryGetValue(kind, out var edited) ? (edited.UseBaseGame, edited.Selected.Count) : savedRewardSummary[kind];
+            if (!basePool) customTotal++;
             var tile = new Border { Background = StudioTheme.Input, CornerRadius = StudioTheme.Radius, Padding = new Thickness(6, 7), Child = new StackPanel { Spacing = 2, Children = {
                 new TextBlock { Text = label, FontSize = 11, Foreground = StudioTheme.Muted, HorizontalAlignment = HorizontalAlignment.Center, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center },
-                new TextBlock { Text = pool.UseBaseGame ? "Base game" : pool.Selected.Count + " selected", Foreground = StudioTheme.Text, HorizontalAlignment = HorizontalAlignment.Center }
+                new TextBlock { Text = basePool ? "Base game" : count + " selected", Foreground = StudioTheme.Text, HorizontalAlignment = HorizontalAlignment.Center }
             } } };
             Grid.SetColumn(tile, column++); tiles.Children.Add(tile);
         }

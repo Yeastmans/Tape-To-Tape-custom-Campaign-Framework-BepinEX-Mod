@@ -9,11 +9,11 @@ namespace CampaignCreator;
 
 public sealed partial class MainWindow
 {
-    private Control BuildBaseGamePoolCard()
+    private Control BuildBaseGamePoolCard(bool hasSavedPools)
     {
         var edit = Button("Edit pools", async () => await ShowBaseGamePools()); edit.Name = "HomeBaseGamePools"; StudioTheme.Primary(edit);
         var upload = Button("Upload", async () => await ShowBaseGamePoolUpload()); upload.Name = "HomeUploadBaseGamePools";
-        upload.IsEnabled = File.Exists(Path.Combine(BaseGamePlayerPools.Folder(root), "settings.txt"));
+        upload.IsEnabled = hasSavedPools;
         ToolTip.SetTip(upload, "Share your saved bench/draft, free-agent and superstar pools with their custom talents, heads and logos. Save your pools first. To update an existing listing, use Manage uploads.");
         var download = Button("Download", async () => await ShowBaseGamePoolDownload()); download.Name = "HomeDownloadBaseGamePools";
         var restore = Button("Restore backup", async () => await new BaseGamePoolRestoreWindow(root, ShowHome).ShowDialog(this)); restore.Name = "HomeRestoreBaseGamePoolsBackup";

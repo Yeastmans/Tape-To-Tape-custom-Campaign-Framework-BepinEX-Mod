@@ -14,18 +14,27 @@ public sealed partial class MainWindow
     private sealed record ContentChoice(string Label, string Path) { public override string ToString() => Label; }
     public void ShowHome()
     {
+        var home = new HomeContent(root);
+        data = new GameData(root);
+        RenderHome(home);
+    }
+
+    private void RenderHome(HomeContent home)
+    {
         DiscardEditorChangesForNavigation();
         baseGamePoolsView = null; baseGamePoolPlayerFile = null;
-        data = new GameData(root);
         campaignWorkspace = null;
         var muted = StudioTheme.Muted;
         var shell = new Grid { Margin = StudioTheme.PagePadding, RowDefinitions = new RowDefinitions("Auto,*,Auto"), RowSpacing = StudioTheme.SpaceLg };
+        var lifetime = new CancellationTokenSource();
+        var token = lifetime.Token;
+        shell.DetachedFromVisualTree += (_, _) => { lifetime.Cancel(); lifetime.Dispose(); };
         var top = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), RowDefinitions = new RowDefinitions("Auto") }; StudioTheme.Header(top);
         top.Children.Add(new StackPanel { Spacing = 5, Children = {
             new TextBlock { Text = "TAPE TO TAPE", FontSize = 23, FontWeight = FontWeight.Bold, Foreground = StudioTheme.Accent },
             new TextBlock { Text = "Campaign Studio", FontSize = 21, Foreground = muted }
         }});
-        var campaignSelector = BuildHomeCampaignSelector(muted);
+        var campaignSelector = BuildHomeCampaignSelector(muted, home);
         campaignSelector.Width = 430;
         campaignSelector.VerticalAlignment = VerticalAlignment.Top;
         campaignSelector.Margin = new Thickness(24, 0, 0, 0);
@@ -50,8 +59,49 @@ public sealed partial class MainWindow
             string selectedKind = choices[0].Path;
             string Kind() => selectedKind;
             var edit = Button("Edit existing", async () => await ChooseContent(Kind(), false));
-            void RefreshEdit() => edit.IsVisible = Kind() == "squad" ? PlayerTeamChoices().Count > 0 : LibraryContent(Kind()).Count > 0 || CampaignChoices().Any(c => Kind() == "campaign" || ExistingItems(c, Kind()).Count > 0);
-            RefreshEdit();
+            bool? hasOpponents = null;
+            Task<bool>? goalieLookup = null;
+            var lookupStatus = new TextBlock { IsVisible = false, TextWrapping = TextWrapping.Wrap, Foreground = muted };
+            async Task RefreshEdit()
+            {
+                string kind = Kind();
+                lookupStatus.IsVisible = false;
+                try
+                {
+                    bool available;
+                    if (kind == "goalie")
+                    {
+                        goalieLookup ??= Task.Run(() => home.HasPlayer("goalie", token), token);
+                        if (!goalieLookup.IsCompleted)
+                        {
+                            edit.IsVisible = false;
+                            lookupStatus.Text = "Checking for saved goalies…";
+                            lookupStatus.IsVisible = true;
+                        }
+                        available = await goalieLookup;
+                    }
+                    else available = kind switch
+                    {
+                        "campaign" => home.SavedCampaigns.Length > 0,
+                        "skater" => home.HasSkaters,
+                        "squad" => home.HasPlayerTeams,
+                        _ => hasOpponents ??= home.HasOpponentTeams(token)
+                    };
+                    if (token.IsCancellationRequested || Kind() != kind) return;
+                    lookupStatus.IsVisible = false;
+                    edit.IsVisible = available;
+                }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+                catch (Exception ex)
+                {
+                    if (kind == "goalie") goalieLookup = null;
+                    if (token.IsCancellationRequested || Kind() != kind) return;
+                    edit.IsVisible = false;
+                    lookupStatus.Text = "Could not check saved content. " + ex.Message;
+                    lookupStatus.IsVisible = true;
+                }
+            }
+            _ = RefreshEdit();
             var type = new Grid { ColumnDefinitions = new ColumnDefinitions(choices.Length == 1 ? "*" : "*,*"), ColumnSpacing = StudioTheme.SpaceXs, MinHeight = 58 };
             var switches = new List<Avalonia.Controls.Primitives.ToggleButton>();
             foreach (var choice in choices)
@@ -72,7 +122,7 @@ public sealed partial class MainWindow
                         item.IsChecked = selected;
                     }
                 }
-                toggle.Click += (_, _) => { selectedKind = choice.Path; RefreshSwitches(); RefreshEdit(); };
+                toggle.Click += async (_, _) => { selectedKind = choice.Path; RefreshSwitches(); await RefreshEdit(); };
                 Grid.SetColumn(toggle, switches.Count); switches.Add(toggle); type.Children.Add(toggle); RefreshSwitches();
             }
             var stack = new StackPanel { Spacing = StudioTheme.SpaceMd };
@@ -86,7 +136,7 @@ public sealed partial class MainWindow
             edit.Name = "HomeEdit" + title;
             edit.HorizontalContentAlignment = HorizontalAlignment.Center; edit.VerticalContentAlignment = VerticalAlignment.Center; edit.FontSize = 18; edit.MinHeight = 44; edit.Padding = new Thickness(12, 8);
 
-            stack.Children.Add(create); stack.Children.Add(edit);
+            stack.Children.Add(create); stack.Children.Add(edit); stack.Children.Add(lookupStatus);
             if (i != 0)
             {
                 var importButton = Button("Import", async () =>
@@ -111,7 +161,7 @@ public sealed partial class MainWindow
                 var importCampaign = Button("Import", async () => await ShowCampaignImport());
                 importCampaign.Name = "HomeImportCampaigns";
                 var uploadCampaign = Button("Upload", async () => await ShowCampaignUpload());
-                uploadCampaign.Name = "HomeUploadCampaigns"; uploadCampaign.IsEnabled = CampaignChoices().Count > 0;
+                uploadCampaign.Name = "HomeUploadCampaigns"; uploadCampaign.IsEnabled = home.SavedCampaigns.Length > 0;
                 ToolTip.SetTip(uploadCampaign, "Share a campaign in the community folder");
                 foreach (var b in new[] { importCampaign, uploadCampaign }) b.HorizontalContentAlignment = HorizontalAlignment.Center;
                 stack.Children.Add(new Grid { ColumnDefinitions = new ColumnDefinitions("*,*"), ColumnSpacing = StudioTheme.SpaceSm, Children = { importCampaign, WithColumn(uploadCampaign, 1) } });
@@ -125,7 +175,7 @@ public sealed partial class MainWindow
             Grid.SetColumn(card, i); cards.Children.Add(card);
         }
         center.Children.Add(cards);
-        center.Children.Add(BuildBaseGamePoolCard());
+        center.Children.Add(BuildBaseGamePoolCard(home.HasSavedPools));
         var customRewards = Button("Open Creator & library", async () => {
             var dialog = new Window { Title = "Custom Talents & Relics", Width = 1240, Height = 820, MinWidth = 800, MinHeight = 560, WindowStartupLocation = WindowStartupLocation.CenterOwner };
             var creator = new CustomRewardCreator(dialog, root, () => "", () => { }, libraryOnly: true);
@@ -204,35 +254,15 @@ public sealed partial class MainWindow
     private List<ContentChoice> CampaignChoices() => Directory.Exists(Path.Combine(root, "campaigns"))
         ? Directory.GetDirectories(Path.Combine(root, "campaigns")).Where(d => File.Exists(Path.Combine(d, "campaign.txt"))).Order().Select(d => new ContentChoice(Path.GetFileName(d), d)).ToList() : [];
 
-    private Control BuildHomeCampaignSelector(IBrush muted)
+    private Control BuildHomeCampaignSelector(IBrush muted, HomeContent home)
     {
         var choices = new List<ContentChoice> { new("None (base game)", "default") };
         bool IsBaseGame(string value) => new[] { "default", "none", "off", "base game" }.Contains(value, StringComparer.OrdinalIgnoreCase);
-        choices.AddRange(CampaignChoices().Where(c => !IsBaseGame(c.Label)).Select(c => new ContentChoice(c.Label, c.Label)));
-        string activePath = Path.Combine(root, "active.txt");
+        choices.AddRange(home.SavedCampaigns.Select(Path.GetFileName).OfType<string>()
+            .Where(name => !IsBaseGame(name)).Select(name => new ContentChoice(name, name)));
         var message = new TextBlock { Foreground = muted, TextWrapping = TextWrapping.Wrap,
-            Text = "Used on the next game launch. Restart the game after changing campaigns." };
-        void SaveSelection(string value)
-        {
-            Directory.CreateDirectory(root);
-            string temporary = activePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
-            try
-            {
-                File.WriteAllText(temporary, "# Campaign to play; default uses the base game.\nActive Campaign = " + value + "\n");
-                File.Move(temporary, activePath, true);
-            }
-            finally { if (File.Exists(temporary)) File.Delete(temporary); }
-        }
-        string active = "default";
-        try
-        {
-            string? line = File.Exists(activePath) ? File.ReadLines(activePath).Select(l => l.Trim())
-                .FirstOrDefault(l => l.Length > 0 && !l.StartsWith('#')) : null;
-            if (line != null) active = line[(line.IndexOf('=') + 1)..].Trim();
-            if (string.IsNullOrWhiteSpace(active)) active = "default";
-            if (line == null) SaveSelection("default");
-        }
-        catch (Exception ex) { message.Text = "Could not read or save the campaign selection: " + ex.Message; }
+            Text = home.SelectionError ?? "Used on the next game launch. Restart the game after changing campaigns." };
+        string active = home.ActiveCampaign;
         if (IsBaseGame(active)) active = "default";
         var selected = choices.FirstOrDefault(c => c.Path.Equals(active, StringComparison.OrdinalIgnoreCase));
         if (selected == null)
@@ -249,7 +279,7 @@ public sealed partial class MainWindow
             if (restoring || picker.SelectedItem is not ContentChoice choice) return;
             try
             {
-                SaveSelection(choice.Path);
+                home.SaveSelection(choice.Path);
                 selected = choice;
                 message.Text = "Saved: " + choice.Label + ". Restart the game to use this selection.";
             }
@@ -308,9 +338,10 @@ public sealed partial class MainWindow
     private async Task ChooseContent(string kind, bool create, string? preferredTeam = null, bool import = false, string? draftSource = null)
     {
         if (kind == "squad") { await ChooseLibraryPlayerTeam(create, import, draftSource); return; }
-        if (kind == "campaign" && create)
+        if (kind == "campaign")
         {
-            OpenCampaignDraft(Path.Combine(root, ".studio-drafts", Guid.NewGuid().ToString("N")));
+            if (create) OpenCampaignDraft(Path.Combine(root, ".studio-drafts", Guid.NewGuid().ToString("N")));
+            else await ChooseSavedCampaign();
             return;
         }
         bool isPlayer = kind is "player" or "skater" or "goalie";
@@ -339,7 +370,6 @@ public sealed partial class MainWindow
         void Refresh()
         {
             if (campaignPicker.SelectedItem is not ContentChoice c) return;
-            if (kind == "campaign") return;
             if (!create)
             {
                 itemPicker.ItemsSource = c.Path == librarySource ? LibraryContent(kind)
@@ -375,8 +405,7 @@ public sealed partial class MainWindow
             {
                 if (campaignPicker.SelectedItem is not ContentChoice campaign) throw new ArgumentException("Choose a campaign first.");
                 string file;
-                if (kind == "campaign") file = Path.Combine(campaign.Path, "campaign.txt");
-                else file = create ? "" : (itemPicker.SelectedItem as ContentChoice)?.Path ?? throw new ArgumentException("Choose a " + kind + " first.");
+                file = create ? "" : (itemPicker.SelectedItem as ContentChoice)?.Path ?? throw new ArgumentException("Choose a " + kind + " first.");
                 if (campaign.Path == librarySource)
                 {
                     campaignWorkspace = null;
@@ -397,7 +426,6 @@ public sealed partial class MainWindow
                             (template.SelectedItem as SquadTemplateOption)?.Name ?? throw new ArgumentException("Choose this team's template preset."), root), "team.txt")
                         : CreatorContent.Create(root, isPlayer ? "player" : kind, name.Text ?? "", importSource == null ? "" : isPlayer ? importSource : Path.GetDirectoryName(importSource)!, campaign.Path, string.IsNullOrEmpty(teamPath) ? null : teamPath, initialPlayerPosition: kind == "goalie" ? "Goalie" : "Center");
                     if (isPlayer && importSource == null) { var doc = new CampaignCore.CampaignDocument(System.IO.File.ReadAllText(file)); doc.Set("Position", kind == "goalie" ? "Goalie" : ""); doc.Save(file); }
-                    if (kind == "campaign") campaignPath = Path.GetDirectoryName(file)!;
                 }
                 if (working != null && campaignPath == working.Path)
                 {
@@ -413,11 +441,69 @@ public sealed partial class MainWindow
                 campaigns.ItemsSource = CampaignChoices().Select(c => c.Label).ToArray();
                 campaigns.SelectedItem = Path.GetFileName(campaignPath); loading = false;
                 await LoadCampaign();
-                search.Text = ""; OpenFile(file); if (kind != "campaign") Content = editorShell; dialog.Close();
+                search.Text = ""; OpenFile(file); Content = editorShell; dialog.Close();
             }
             catch (Exception ex) { feedback.Text = ex.Message; }
         }));
         panel.Children.Add(actions); panel.Children.Add(feedback); dialog.Content = new ScrollViewer { Content = panel };
+        await dialog.ShowDialog(this);
+    }
+
+    private async Task ChooseSavedCampaign()
+    {
+        var origin = Content;
+        string contentRoot = root;
+        var choices = CampaignChoices();
+        var dialog = new Window { Title = "Edit campaign", Width = 560, Height = 340, MinWidth = 430, MinHeight = 300,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = Background };
+        var picker = new ComboBox { Name = "CampaignOpenPicker", ItemsSource = choices, SelectedIndex = 0, HorizontalAlignment = HorizontalAlignment.Stretch };
+        var open = new Button { Name = "CampaignOpenButton", Content = "Open campaign", Padding = StudioTheme.ButtonPadding, IsEnabled = choices.Count > 0 };
+        var error = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = Brush.Parse("#FFD18C") };
+        var body = new StackPanel { Margin = new Thickness(28), Spacing = StudioTheme.SpaceMd, Children = {
+            new TextBlock { Text = dialog.Title, FontSize = 26, FontWeight = FontWeight.Bold },
+            new TextBlock { Text = "Campaign" }, picker,
+            new StackPanel { Orientation = Orientation.Horizontal, Spacing = StudioTheme.SpaceMd,
+                Children = { Button("Cancel", () => dialog.Close()), open } }, error
+        } };
+        dialog.Content = body;
+        using var lifetime = new CancellationTokenSource();
+        var token = lifetime.Token;
+        dialog.Closed += (_, _) => lifetime.Cancel();
+        dialog.KeyDown += (_, e) => { if (e.Key == Avalonia.Input.Key.Escape) { e.Handled = true; dialog.Close(); } };
+        open.Click += async (_, _) =>
+        {
+            if (!open.IsEnabled || picker.SelectedItem is not ContentChoice campaign) return;
+            open.IsEnabled = picker.IsEnabled = false;
+            error.Text = "";
+            var progress = new StudioLoadingIndicator("Opening " + campaign.Label + "…") { Name = "CampaignOpenProgress" };
+            body.Children.Add(progress);
+            try
+            {
+                // Present the selected name and spinner before any directory I/O or editor construction.
+                await progress.PresentAsync(token);
+                var prepared = await Task.Run(() => CampaignWorkspace.ReadOpeningData(contentRoot, campaign.Path, token), token);
+                if (token.IsCancellationRequested) return;
+                if (Content != origin || root != contentRoot) { dialog.Close(); return; }
+                if (dirty || campaignWorkspace?.HasUnsavedChanges == true) throw new InvalidOperationException("Save your current edits before opening another campaign.");
+                OpenCampaignWorkspace(campaign.Path, prepared);
+                loading = true;
+                campaigns.ItemsSource = choices.Select(c => c.Label).ToArray();
+                campaigns.SelectedItem = campaign.Label;
+                loading = false;
+                deferredNavigationDirectory = campaign.Path;
+                campaignNavigationVersion++;
+                document = null; path = null; editors.Clear(); tabs.ItemsSource = null;
+                paths = []; search.Text = ""; FilterFiles();
+                heading.Text = campaign.Label;
+                dialog.Close();
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+            catch (Exception ex) { if (!token.IsCancellationRequested) error.Text = "Could not open " + campaign.Label + ". " + ex.Message; }
+            finally
+            {
+                if (!token.IsCancellationRequested) { body.Children.Remove(progress); open.IsEnabled = picker.IsEnabled = true; }
+            }
+        };
         await dialog.ShowDialog(this);
     }
 }

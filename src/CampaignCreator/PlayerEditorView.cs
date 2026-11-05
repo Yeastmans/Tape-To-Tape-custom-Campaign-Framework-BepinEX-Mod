@@ -42,6 +42,7 @@ internal sealed class PlayerEditorView : UserControl
         Action changed, Action<string, Func<string>> register, Action save, Action? back, Action home, Action export, TextBlock status, string? previewTeamFile = null)
     {
         this.owner = owner; this.doc = doc; this.data = data; this.role = role; this.changed = changed;
+        if (role == "skater") data.PrepareSkaterHead(doc.Get("Face"));
         campaign = CustomRewardCatalog.CampaignFor(file);
         string folder = Path.GetDirectoryName(file)!;
         superstar = Path.GetFileName(folder).Equals("superstars", StringComparison.OrdinalIgnoreCase);
@@ -332,23 +333,23 @@ internal sealed class PlayerEditorView : UserControl
             else if (skin==null) panel.Children.Add(new TextBlock { Text="Colors come from the team's " + (away ? "away" : "home") + " kit.", FontSize=11, Foreground=Muted, TextWrapping=TextWrapping.Wrap });
             else
             {
-                var catalog=data.Assets.Values(role,skin);
-                if (catalog.Count == 0 && skin.EndsWith(" Away")) catalog=data.Assets.Values(role,AppearanceContract.HomeKey(skin));
+                var catalog=data.AssetChoices(role,skin);
+                if (catalog.Count == 0 && skin.EndsWith(" Away")) catalog=data.AssetChoices(role,AppearanceContract.HomeKey(skin));
                 bool unsupportedHelmet = role == "skater" && (skin is "Helmet" or "Helmet Away") && !HeadAppearance.CanWearHelmet(values["Face"]);
                 style = ()=>unsupportedHelmet ? "none" : ownStyle ? (values[skin].Length > 0 ? values[skin] : Value(skin)) : SelectionValue(skin);
-                var picker = new EquipmentStylePicker(catalog,style,v=> { values[skin]=v; if(role=="skater" && skin is "Body" or "Body Away") { string sleeveKey=skin=="Body"?"Bicep":"Bicep Away"; string? sleeve=EquipmentStylePicker.MatchingSleeves(v,data.Assets.Values("skater",sleeveKey)); if(sleeve!=null) values[sleeveKey]=sleeve; } foreach(var other in stylePickers) other.Refresh(); RefreshLogo(); RefreshColors(); changed(); uniform.InvalidateVisual(); if(skin is "Helmet Skin" or "Helmet" or "Helmet Away") RefreshHead(); },colorButton, customLabel: scheme == null ? "Team colors" : "Custom", canSelect: !unsupportedHelmet, allowNoHelmet: role == "skater" && skin is "Helmet" or "Helmet Away", disabledReason: "This head has no helmet-compatible version.", inherited: !Independent && !ownStyle, teamPaletteOnly: teamPaletteOnly,
+                var picker = new EquipmentStylePicker(catalog,style,v=> { values[skin]=v; if(role=="skater" && skin is "Body" or "Body Away") { string sleeveKey=skin=="Body"?"Bicep":"Bicep Away"; string? sleeve=EquipmentStylePicker.MatchingSleeves(v,data.AssetChoices("skater",sleeveKey)); if(sleeve!=null) values[sleeveKey]=sleeve; } foreach(var other in stylePickers) other.Refresh(); RefreshLogo(); RefreshColors(); changed(); uniform.InvalidateVisual(); if(skin is "Helmet Skin" or "Helmet" or "Helmet Away") RefreshHead(); },colorButton, customLabel: scheme == null ? "Team colors" : "Custom", canSelect: !unsupportedHelmet, allowNoHelmet: role == "skater" && skin is "Helmet" or "Helmet Away", disabledReason: "This head has no helmet-compatible version.", inherited: !Independent && !ownStyle, teamPaletteOnly: teamPaletteOnly,
                     emptyLabel: skin is "Socks" or "Socks Away" ? "Same as jersey" : null, emptyHint: skin is "Socks" or "Socks Away" ? "Socks follow the jersey style." : null,
                     customColors: scheme == null ? null : CustomColors, selectCustomColors: scheme == null ? null : SelectCustomColors);
                 stylePickers.Add(picker); panel.Children.Add(picker);
                 if (role == "skater" && title == "Jersey")
                 {
                     string sleeveKey = skin == "Body" ? "Bicep" : "Bicep Away";
-                    var sleeves = data.Assets.Values(role, sleeveKey);
-                    if (sleeves.Count == 0) sleeves = data.Assets.Values(role, "Bicep");
+                    var sleeves = data.AssetChoices(role, sleeveKey);
+                    if (sleeves.Count == 0) sleeves = data.AssetChoices(role, "Bicep");
                     picker.AddSleeves(sleeves, () => {
                         string value = SelectionValue(sleeveKey);
                         if (value.Length == 0 && away) value = SelectionValue("Bicep");
-                        try { return data.Assets.Resolve(role, sleeveKey, value); } catch (ArgumentException) { return value; }
+                        try { return data.ResolveAsset(role, sleeveKey, value); } catch (ArgumentException) { return value; }
                     }, value => { values[sleeveKey] = value; changed(); uniform.InvalidateVisual(); });
                 }
                 if (unsupportedHelmet)

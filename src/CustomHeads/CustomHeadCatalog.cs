@@ -45,11 +45,14 @@ public sealed class CustomHeadDefinition
         string group = helmet && SeparateHelmetArtwork ? "Helmet" : "Head";
         return Images.Single(i => i.Group == group && Path.GetFileNameWithoutExtension(i.File) == file);
     }
-    public static CustomHeadDefinition Read(string folder)
+    public static CustomHeadDefinition Read(string folder) => ReadProject(folder, inspectImages: true);
+    public static CustomHeadDefinition ReadForCatalog(string folder) => ReadProject(folder, inspectImages: false);
+    private static CustomHeadDefinition ReadProject(string folder, bool inspectImages)
     {
         string manifest = Path.Combine(folder, "head-project.json");
         if (new FileInfo(manifest).Length > 256 * 1024) throw new InvalidDataException("Head manifest is too large.");
         var d = JsonSerializer.Deserialize<CustomHeadDefinition>(File.ReadAllText(manifest)) ?? throw new InvalidDataException("Invalid head project.");
+        var files = new HashSet<string>(StringComparer.Ordinal);
         d.Folder = Path.GetFullPath(folder);
         if ((d.IsGoalie ? d.Version != 3 : d.Version != 1 && d.Version != 2) || string.IsNullOrWhiteSpace(d.Name) || d.Name.Length > 80 || d.Name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0
             || d.Name.Contains('/') || d.Name.Contains('\\') || d.Name.EndsWith(".") || d.Name.EndsWith("_Helmet", StringComparison.OrdinalIgnoreCase))
@@ -94,7 +97,10 @@ public sealed class CustomHeadDefinition
                 || image.NativeVisibleWidth <= 0 || image.NativeVisibleHeight <= 0
                 || image.NativeVisibleLeft + image.NativeVisibleWidth > 512 || image.NativeVisibleTop + image.NativeVisibleHeight > 512))
                 throw new InvalidDataException("Invalid native visible artwork size.");
-            ValidatePng(d.Asset(image.File));
+            string file = d.Asset(image.File);
+            if (!files.Add(file)) return;
+            if (inspectImages) ValidatePng(file);
+            else if (!File.Exists(file)) throw new FileNotFoundException("Head artwork is missing.", file);
         }
     }
     public static void ValidatePng(string file)
@@ -205,9 +211,15 @@ public static class HeadArtworkPlacement
 }
 public static class CustomHeadCatalog
 {
-    public static List<CustomHeadDefinition> Load(string contentRoot, Action<string> warning = null)
+    public static List<CustomHeadDefinition> Load(string contentRoot, Action<string> warning = null) =>
+        Load(contentRoot, CustomHeadDefinition.Read, warning);
+    // Pickers need names and preview paths. Reading, exporting or installing a selected project validates its PNGs.
+    public static List<CustomHeadDefinition> ReadChoices(string contentRoot) =>
+        Load(contentRoot, CustomHeadDefinition.ReadForCatalog, null);
+    private static List<CustomHeadDefinition> Load(string contentRoot, Func<string, CustomHeadDefinition> read, Action<string> warning)
     {
         var result = new List<CustomHeadDefinition>();
+        var skins = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         string root = Path.Combine(contentRoot, "custom-heads");
         if (!Directory.Exists(root)) return result;
         foreach (string folder in Directory.GetDirectories(root))
@@ -215,8 +227,8 @@ public static class CustomHeadCatalog
             if (!File.Exists(Path.Combine(folder, "head-project.json"))) continue;
             try
             {
-                var head = CustomHeadDefinition.Read(folder);
-                if (result.Any(h => h.Skin.Equals(head.Skin, StringComparison.OrdinalIgnoreCase))) throw new InvalidDataException("Duplicate custom head name.");
+                var head = read(folder);
+                if (!skins.Add(head.Skin)) throw new InvalidDataException("Duplicate custom head name.");
                 result.Add(head); if (!head.IsGoalie) HeadAppearance.RegisterCustom(head.Skin, head.SupportsHelmet);
             }
             catch (Exception ex) { warning?.Invoke(Path.GetFileName(folder) + ": " + ex.Message); }

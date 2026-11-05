@@ -10,7 +10,10 @@ public sealed partial class MainWindow
 {
     private List<ContentChoice> PlayerTeamChoices() => ContentImport.Entries(root, "team", ContentImport.PlayerTeamLibrary)
         .Select(e => new ContentChoice(e.Name + " · Player team library", e.File))
-        .Concat(CampaignChoices().SelectMany(c => ExistingItems(c, "squad")))
+        .Concat(CampaignChoices().SelectMany(c => CampaignNavigation.TeamDirectories(c.Path, squads: true)
+            .Select(d => Path.Combine(d, "team.txt")).Where(File.Exists)
+            .Select(file => new ContentChoice(CampaignNavigation.Label(file, CampaignNavigation.ReadSummary(file), team: true)
+                + " · Custom squad · " + c.Label, file))))
         .DistinctBy(e => Path.GetFullPath(e.Path), StringComparer.OrdinalIgnoreCase)
         .OrderBy(e => e.Label, StringComparer.OrdinalIgnoreCase).ToList();
 

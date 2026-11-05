@@ -47,8 +47,27 @@ void Click(GoalieRosterMenu.Selection s, int slot) {
     menu.m_ActivePlayersList.m_SkaterCards[slot].Navigable.Click();
     Check(menu.ToggleCallbacks == callbacks + 1 && menu.NativeMutations == mutations, "InputToggleListChainSuppressesNativeLineupMutation");
 }
+void Approve(GoalieRosterMenu.Selection s, int slot) {
+    if (SigningDialogFixture.Current != null)
+        SigningDialogFixture.Current.CloseWithResult(PromptTemplateMenu.PromptTemplateResult.Yes);
+    else Click(s, slot);
+}
 var state = Fresh();
 var pair = Offer(state); var selection = Recruit(state, pair);
+Click(selection,0);
+var swapDialog = SigningDialogFixture.Current;
+Check(swapDialog?.Metadata.Yes == "Confirm swap" && swapDialog.Metadata.Description.Contains("active")
+    && swapDialog.Metadata.Description.Contains("candidate") && swapDialog.Metadata.DefaultSelection == PromptTemplateMenu.PromptTemplateResult.No,
+    "OccupiedGoalieRequiresSeparateNamedSwapWithCancelFocused");
+int signingSaves = state.Repository.Saves;
+Click(selection,0);
+Check(!pair.Offer.Taken && state.Repository.Saves == signingSaves && state.runData.teamData.goalie.id == "active",
+    "RepeatedGoalieCardActivationCannotApproveTheSwap");
+swapDialog.CloseWithResult(PromptTemplateMenu.PromptTemplateResult.Cancel);
+Check(ReferenceEquals(selection,GoalieRosterMenu.Current) && selection.Confirming == null && state.Repository.Saves == signingSaves
+    && pair.Gm.m_ChoicesMade == 0, "GoalieBackCancelsOnlyThePromptAndRetainsTheOffer");
+selection.Menu.TryLeaveMenu(false);
+state = Fresh(); pair = Offer(state); selection = Recruit(state,pair);
 var activeLabel = selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName;
 var emptyCard = selection.Menu.m_ActivePlayersList.m_SkaterCards[1];
 Check(selection.Menu.m_ActivePlayersList.m_SkaterCards.All(c => !c.m_FreeAgentDurationContainer.Active && c.m_FreeAgentDuration.text == ""), "ContractProseNeverUsesNarrowNativeBadge");
@@ -81,18 +100,18 @@ Check(!GoalieRecruitment.BeginSelection(pair.Offer), "DoubleClickCommitsOnce");
 state = Fresh(false); pair = Offer(state); selection = Recruit(state, pair);
 Check(selection.Menu.m_ActivePlayersList.m_SkaterCards.Count == 1, "ReserveDisabledShowsExactlyStarter");
 Click(selection, 0); Check(selection.Menu.m_Header.m_Title.text.Contains("Replace active") && state.runData.teamData.goalie.id == "active", "ChooseFilledSlotShowsReplacement");
-Click(selection, 0); Check(state.runData.teamData.goalie.id == "candidate" && GoaliePersistenceBridge.Roster.Selection.Reserve == null, "ReserveDisabledReplacesOnlyStarter");
+Approve(selection, 0); Check(state.runData.teamData.goalie.id == "candidate" && GoaliePersistenceBridge.Roster.Selection.Reserve == null, "ReserveDisabledReplacesOnlyStarter");
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); state.runData.currentMap = "{\"act\":1,\"path\":[{\"x\":0,\"y\":0}]}";
 Click(selection, 0); Check(!pair.Offer.Taken && state.runData.teamData.goalie.id == "active", "StaleVisitCannotRecruit");
 selection.Menu.TryLeaveMenu(false);
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); ES3.FailStore = true;
-Click(selection, 0); Click(selection, 0); ES3.FailStore = false;
+Click(selection, 0); Approve(selection, 0); ES3.FailStore = false;
 Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text.Contains("Save failed"), "SaveFailureVisibleInCardWithoutHeader");
 Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[1].EmptySeatLabel.text.Contains("select to hire"), "StarterFailureDoesNotMarkReserve");
 Check(!pair.Offer.Taken && state.runData.teamData.goalie.id == "active" && !selection.Unresolved && selection.Menu.m_Header.m_Title.text.Contains("previous goalies retained"), "ConfirmedNoWriteRestoresOfferAndBothOccupants");
-Click(selection, 0); Click(selection, 0); Check(pair.Offer.Taken, "ConfirmedNoWriteMayRetry");
+Click(selection, 0); Approve(selection, 0); Check(pair.Offer.Taken, "ConfirmedNoWriteMayRetry");
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); ES3.FailStore = true;
-Click(selection, 1); Click(selection, 1); ES3.FailStore = false;
+Click(selection, 1); Approve(selection, 1); ES3.FailStore = false;
 Check(selection.Confirming == null && selection.Menu.m_ActivePlayersList.m_SkaterCards[1].EmptySeatLabel.text.Contains("Save failed")
     && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text == "Active: active", "ReserveFailureKeepsAttemptedSlotAfterConfirmationCleared");
 Click(selection, 0);
@@ -101,17 +120,17 @@ Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text.Cont
 selection.Menu.TryLeaveMenu(false);
 foreach (string outcome in new[] { "false", "fault", "cancel" }) {
     state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); state.Repository.Outcome = outcome;
-    Click(selection, 0); Click(selection, 0);
+    Click(selection, 0); Approve(selection, 0);
     Check(pair.Offer.Taken && state.runData.teamData.goalie.id == "candidate" && pair.Gm.m_ChoicesMade == 1, "ConfirmedLocalPairConsumesDespiteNative_" + outcome);
 }
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); state.Repository.CompleteImmediately = false;
-Click(selection, 0); Click(selection, 0); int saves = state.Repository.Saves;
+Click(selection, 0); Approve(selection, 0); int saves = state.Repository.Saves;
 Click(selection, 0); selection.Menu.TryLeaveMenu(false);
 Check(selection.Saving && !selection.Menu.IsHiding && !pair.Offer.Taken && state.Repository.Saves == saves, "PendingSaveBlocksCancelAndDoubleClick");
 state.Repository.Complete(state.Repository.Pending[0]); GoaliePersistenceBridge.Tick();
 Check(pair.Offer.Taken && pair.Gm.Refreshes == 1 && GoalieRosterMenu.Current == null, "AsyncCompletionConsumesAndClosesExactlyOnce");
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); ES3.FailMarker = true;
-Click(selection, 0); Click(selection, 0); ES3.FailMarker = false;
+Click(selection, 0); Approve(selection, 0); ES3.FailMarker = false;
 Check(selection.Unresolved && pair.Offer.Unresolved && !pair.Offer.Taken && !GoaliePersistenceBridge.Roster.CanEdit(state)
     && selection.Menu.m_Header.m_Title.text.Contains("Continue"), "UnpairedNativeWriteLocksOfferAndExplainsRecovery");
 selection.Menu.TryLeaveMenu(false); Check(!GoalieRecruitment.BeginSelection(pair.Offer), "UnresolvedOfferCannotBeReusedAfterClose");
@@ -121,12 +140,12 @@ GoalieRosterMenu.Open(state); selection = GoalieRosterMenu.Current;
 Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[1].m_SkaterName.text == "Reserve: reserve", "ContractDurationDoesNotReplaceOrAppendToGoalieName");
 Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[1].m_FreeAgentDurationContainer.Active
     && selection.Menu.m_ActivePlayersList.m_SkaterCards[1].m_FreeAgentDuration.text == "2", "SignedGoalieUsesNativeSkaterRemainingMatchesBadge");
-Click(selection, 1); Click(selection, 1);
+Click(selection, 1); Approve(selection, 1);
 Check(GoalieRosterMenu.Current == null && state.runData.teamData.goalie.id == "reserve" && UnityEngine.Object.CurrentMenu.Team.m_G.id == "reserve"
     && !UnityEngine.Object.CurrentMenu.IsHiding && roster.Selection.Active.Contract.PlayedMatches == 2, "SwapRefreshesCanonicalParentWithoutClosingLineupOrResettingContract");
 var durableVisit = roster.Selection.RecruitmentVisit;
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair);
-Click(selection, 0); Click(selection, 0);
+Click(selection, 0); Approve(selection, 0);
 var saved = roster.Selection;
 Check(saved.RecruitmentVisit.ConsumedOfferIds.Length == 1 && saved.RecruitmentVisit.Generation == pair.Offer.Visit.Ledger.Generation, "SigningQuotaCommittedInSameGoalieCheckpoint");
 var model = state.Repository.LoadFromPersistentStorage().GetAwaiter().GetResult();
@@ -154,7 +173,7 @@ foreach (var file in Directory.GetFiles(pool)) File.WriteAllText(file, "Position
 var exposed = selectedOffer.Contract; exposed.Duration = 22;
 Check(selectedOffer.Contract.Duration == 6, "OfferContractCannotBeMutatedThroughExposedSnapshot");
 gm.m_Items.Add(new() { ChoiceData = gmNode.eventChoices[0] });
-GoalieRosterMenu.RecruitClick(gm, gm.m_Items[0].Navigable); selection = GoalieRosterMenu.Current; Click(selection, 0); Click(selection, 0);
+GoalieRosterMenu.RecruitClick(gm, gm.m_Items[0].Navigable); selection = GoalieRosterMenu.Current; Click(selection, 0); Approve(selection, 0);
 Check(roster.Selection.Active.Contract?.Duration == 6 && roster.Selection.Active.Contract.PlayedMatches == 0, "ConfirmedOfferSignsFrozenDurationDespiteAuthorEdits");
 string consumedId = selectedOffer.Id; string generation = roster.Selection.RecruitmentVisit.Generation;
 roster.TryRecruit(state, new GoaltenderData { id = "replacement-after-signing" }, GoalieSlot.Active, roster.Selection.Revision);
@@ -170,14 +189,14 @@ Check(!GoalieRecruitment.Choices(gmNode, 0) && GoalieRecruitment.Current.Hires =
     "MissingPoolDoesNotReplenishConsumedHires");
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair);
 ES3.AfterStore = () => ES3File.FailPhysicalRead = true;
-Click(selection, 0); Click(selection, 0); ES3.AfterStore = null; ES3File.FailPhysicalRead = false;
+Click(selection, 0); Approve(selection, 0); ES3.AfterStore = null; ES3File.FailPhysicalRead = false;
 Check(selection.Unresolved && !pair.Offer.Taken && state.runData.teamData.goalie.id == "candidate" && !roster.CanEdit(state), "ReadbackUnknownDoesNotRollbackOrRefundOffer");
 selection.Menu.TryLeaveMenu(false);
 state = Fresh(); pair = Offer(state); Tape2Tape.Customization.UI.T2TUIModule.FailOpening = true;
 GoalieRosterMenu.RecruitClick(pair.Gm, pair.Gm.m_Items[0].Navigable); Tape2Tape.Customization.UI.T2TUIModule.FailOpening = false;
 Check(GoalieRosterMenu.Current == null && !pair.Offer.Taken && pair.Offer.Visit.Pending == null && pair.Gm.Visible && !pair.Gm.m_IsTakenOver, "MenuPreparationFailureRestoresGMAndOffer");
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); state.Repository.CompleteImmediately = false;
-Click(selection, 0); Click(selection, 0);
+Click(selection, 0); Approve(selection, 0);
 var oldState = state; var oldPair = pair;
 selection.Menu.OnDestroy.Invoke(selection.Menu); state = Fresh();
 oldState.Repository.Complete(oldState.Repository.Pending[0]); GoaliePersistenceBridge.Tick();
@@ -204,7 +223,7 @@ foreach (string exit in new[] { "cancel", "swap", "preparation-failure", "refres
             Check(parent.ToggleCallbacks == callbacks && !parent.m_BenchPlayersList.gameObject.activeSelf
                 && parent.m_ActivePlayersList.m_SkaterCards.Count == 2, "NativeSubviewRefreshHidesBenchAndUnsubscribesOldCards");
         }
-        if (exit == "swap") { Click(selection, 1); Click(selection, 1); }
+        if (exit == "swap") { Click(selection, 1); Approve(selection, 1); }
         else parent.TryLeaveMenu(false);
     }
     Check(GoalieRosterMenu.Current == null && !parent.IsHiding && parent.m_HideBench == (exit == "initially-hidden")
@@ -244,7 +263,7 @@ foreach (string protection in new[] { "none", "native", "custom", "unknown-nativ
         selection.Menu.TryLeaveMenu(false);
     } else {
         Check(!pair.Offer.Taken && selection.Menu.m_Header.m_Title.text.Contains(protection == "none" ? "becomes active" : "remains active"), "DeferredReplacementResultShownBeforeConfirmation_" + protection);
-        Click(selection, 1);
+        Approve(selection, 1);
         var result = roster.Selection;
         Check(pair.Offer.Taken && result.Active != null && result.RecruitmentVisit.ConsumedOfferIds.Length == 1
             && (protection == "none" ? result.Active.PlayerId == "candidate" && result.Reserve == null && result.Active.Contract.Duration == 6 && result.Active.Contract.PlayedMatches == 0
@@ -255,7 +274,7 @@ foreach (string protection in new[] { "none", "native", "custom", "unknown-nativ
 state = Fresh();
 roster.Fresh(state.runData, Plugin.ModFolder, true, new() { Duration = 4, PlayedMatches = 4, AwaitingReplacement = true }); state.SaveRunData();
 pair = Offer(state); selection = Recruit(state, pair); Click(selection, 1);
-state.runData.teamData.NativeHandcuffs = true; Click(selection, 1);
+state.runData.teamData.NativeHandcuffs = true; Approve(selection, 1);
 Check(!pair.Offer.Taken && selection.Menu.m_Header.m_Title.text.Contains("remains active"), "ChangedProtectionRequiresNewConfirmationOfUpdatedResult");
 Click(selection, 1); Check(pair.Offer.Taken && roster.Selection.Active.PlayerId == "active" && roster.Selection.Reserve.PlayerId == "candidate", "UpdatedProtectedResultCanBeConfirmed");
 state = Fresh();
@@ -264,13 +283,13 @@ string brokenDefinitions = Path.Combine(Plugin.ModFolder, "broken.txt");
 File.WriteAllText(brokenDefinitions, "Export Custom Reward broken = not-base64");
 pair = Offer(state); selection = Recruit(state, pair); int beforeDefinitionFailure = state.Repository.Saves;
 var retainedActive = state.runData.teamData.goalie;
-Click(selection, 1); Click(selection, 1);
+Click(selection, 1); Approve(selection, 1);
 Check(!pair.Offer.Taken && state.Repository.Saves == beforeDefinitionFailure && state.runData.teamData.goalie.Pointer == retainedActive.Pointer
     && roster.Selection.Reserve == null && roster.Selection.RecruitmentVisit == null
     && selection.Menu.m_Header.m_Title.text.Contains("could not be verified"), "SwallowedLoaderFailureCannotConsumeSigningOrRemoveExpiredActive");
 File.Delete(brokenDefinitions);
 Click(selection, 1); Check(!pair.Offer.Taken && selection.Menu.m_Header.m_Title.text.Contains("becomes active"), "RecoveredRegistryRequiresOrdinaryReplacementConfirmation");
-Click(selection, 1); Check(pair.Offer.Taken && roster.Selection.Active.PlayerId == "candidate" && roster.Selection.RecruitmentVisit.ConsumedOfferIds.Length == 1, "RecoveredRegistryAllowsExactlyOneSigning");
+Approve(selection, 1); Check(pair.Offer.Taken && roster.Selection.Active.PlayerId == "candidate" && roster.Selection.RecruitmentVisit.ConsumedOfferIds.Length == 1, "RecoveredRegistryAllowsExactlyOneSigning");
 Console.WriteLine($"PASS {checks} source-linked goalie menu checks");
 
 // Native InitData precedes Show.Initialize and visibility; no SetCurrentNode.
@@ -308,6 +327,15 @@ var legacyPanel = new EventChoicePanel();
 typeof(GoalieRosterMenu).GetMethod("LegacyOpening", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, new object[] { legacyPanel, firstMap, contextEvent });
 GoalieRecruitment.BeginVisit(contextEvent);
 Check(GoalieRecruitment.Choices(contextEvent, 0) && GoalieRecruitment.Current.Legacy == legacyPanel, "LegacyEntryBindsBeforeNativeInitialize");
+legacyPanel.InitializeChoicesButtons(contextEvent.eventChoices);
+contextEvent.eventChoices[0].onSelection.Invoke(); legacyPanel.ClearChoicesButtons();
+typeof(GoalieRosterMenu).GetMethod("LegacyLeave", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null,new object[]{legacyPanel});
+var legacyGoalie=GoalieRosterMenu.Current; Click(legacyGoalie,0);
+SigningDialogFixture.Current.CloseWithResult(PromptTemplateMenu.PromptTemplateResult.Cancel);
+legacyGoalie.Menu.TryLeaveMenu(false);
+var legacyButtons=legacyPanel.choicesList.Where(button=>!button.Retired).ToArray();
+Check(legacyButtons.Length==contextEvent.eventChoices.Count && legacyButtons[0].Button.Focused && !legacyGoalie.Offer.Taken,
+    "CancelledLegacyGoalieSigningRestoresOriginalOfferButtonsAndControllerFocus");
 GoalieRecruitment.Closed(legacyPanel);
 Check(!GoalieRecruitment.IsGoalieNode, "LegacyClosureInvalidatesExactBinding");
 state = Fresh(); pair = Offer(state); pair.Offer.Candidate.id = new string('X', 100); selection = Recruit(state, pair);
@@ -323,13 +351,13 @@ foreach (bool missingName in new[] { true, false }) {
     if (missingName) info.Children.Remove("Name");
     else info.Children["Name"].Components = Array.Empty<object>();
     int warningCount = Plugin.Log.Warnings.Count;
-    Click(selection, 1); Click(selection, 1);
+    Click(selection, 1); Approve(selection, 1);
     Check(pair.Offer.Taken && Plugin.Log.Warnings.Count == warningCount + 1
         && slotCard.EmptySwapLabel.text == "Swap" && slotCard.EmptyStatNum.text == "20" && slotCard.EmptyStatLabel.text == "OVR",
         "MissingExactEmptyNamePreservesRecruitmentAndOtherLabels_" + missingName);
 }
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); state.Repository.CompleteImmediately = false;
-ES3.FailMarker = true; Click(selection, 1); Click(selection, 1);
+ES3.FailMarker = true; Click(selection, 1); Approve(selection, 1);
 Check(selection.Menu.m_ActivePlayersList.m_SkaterCards[1].EmptySeatLabel.text.Contains("Saving")
     && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text == "Active: active", "PendingStatusOnlyMarksAttemptedReserve");
 state.Repository.Complete(state.Repository.Pending[0]); GoaliePersistenceBridge.Tick(); ES3.FailMarker = false;
@@ -337,7 +365,7 @@ Check(!selection.Unresolved && selection.Menu.m_ActivePlayersList.m_SkaterCards[
     && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text == "Active: active", "DelayedReserveRollbackRetainsAttemptedSlot");
 selection.Menu.TryLeaveMenu(false);
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); ES3.FailMarker = true;
-Click(selection, 0); Click(selection, 0); ES3.FailMarker = false;
+Click(selection, 0); Approve(selection, 0); ES3.FailMarker = false;
 Check(selection.Unresolved && selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName.text.Contains("Save unresolved")
     && selection.Menu.m_ActivePlayersList.m_SkaterCards[1].EmptySeatLabel.text.Contains("select to hire"), "UnresolvedStatusOnlyMarksAttemptedStarter");
 selection.Menu.TryLeaveMenu(false);
@@ -348,7 +376,7 @@ Check(selection.Offer == null && selection.Menu.m_ActivePlayersList.m_SkaterCard
 selection.Menu.TryLeaveMenu(false);
 state = Fresh(); pair = Offer(state); selection = Recruit(state, pair); state.Repository.CompleteImmediately = false;
 ES3.FailMarker = true;
-Click(selection, 0); Click(selection, 0);
+Click(selection, 0); Approve(selection, 0);
 var closedLabel = selection.Menu.m_ActivePlayersList.m_SkaterCards[0].m_SkaterName;
 selection.Menu.OnDestroy.Invoke(selection.Menu);
 selection.Menu.m_Header.m_Title.text = "Reused native menu";

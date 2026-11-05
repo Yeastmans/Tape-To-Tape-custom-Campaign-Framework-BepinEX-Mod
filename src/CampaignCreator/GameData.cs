@@ -4,18 +4,61 @@ namespace CampaignCreator;
 
 internal sealed class GameData
 {
-    public AssetCatalog Assets { get; } = new();
-    public Dictionary<string, string> Previews { get; } = new(StringComparer.OrdinalIgnoreCase);
-    public List<string> Templates { get; } = new();
-    public Dictionary<string, string> Talents { get; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, string> Abilities { get; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, string> Relics { get; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, CustomRewardDefinition> CustomRewards { get; } = new(StringComparer.OrdinalIgnoreCase);
-    public List<string> Sizes { get; } = FieldSchema.Sizes.ToList();
+    private sealed class RewardIds
+    {
+        public readonly Dictionary<string, string> Talents = new(StringComparer.OrdinalIgnoreCase);
+        public readonly Dictionary<string, string> Abilities = new(StringComparer.OrdinalIgnoreCase);
+        public readonly Dictionary<string, string> Relics = new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private sealed record HeadImage(string Role, string Field, string Skin, string Path);
+    private readonly Lazy<AssetCatalog> equipment;
+    private readonly List<(string Role, string Field, string Skin)> dumpedHeads = [];
+    private readonly Lazy<Dictionary<string, HeadImage>> nativeHeadImages;
+    private readonly Lazy<List<CustomHeadDefinition>> heads;
+    private readonly Lazy<Dictionary<string, string>> previews;
+    private readonly Dictionary<string, CustomHeadDefinition?> describedHeads = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, CustomHeadDefinition> selectedHeads = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Lazy<List<string>> templates, sizes;
+    private readonly Lazy<RewardIds> nativeRewards;
+    private readonly Dictionary<string, CustomRewardDefinition> customRewards = new(StringComparer.OrdinalIgnoreCase);
+    private Lazy<Dictionary<string, CustomRewardDefinition>> scopedRewards;
     public string Root { get; }
-    public IEnumerable<string> HeadChoices(string selected = "") => HeadOptionVisibility.Choices(Root, Assets.Values("skater", "Face"), selected);
+    public List<string> Templates => templates.Value;
+    public List<string> Sizes => sizes.Value;
+    public Dictionary<string, string> Abilities => nativeRewards.Value.Abilities;
+    public Dictionary<string, CustomRewardDefinition> CustomRewards => scopedRewards.Value;
+    public Dictionary<string, string> Talents { get { _ = CustomRewards; return nativeRewards.Value.Talents; } }
+    public Dictionary<string, string> Relics { get { _ = CustomRewards; return nativeRewards.Value.Relics; } }
+    public Dictionary<string, string> Previews => previews.Value;
+    public AssetCatalog Assets { get { _ = Previews; return equipment.Value; } }
+
     public GameData(string root)
     {
+        Root = root;
+        equipment = new(() => ReadEquipment(root));
+        nativeHeadImages = new(ReadNativeHeadImages);
+        heads = new(() => CustomHeadCatalog.ReadChoices(root));
+        previews = new(ReadHeadChoices);
+        templates = new(() => ReadTemplates(root));
+        sizes = new(() => ReadSizes(root));
+        nativeRewards = new(() => ReadRewardIds(root));
+        scopedRewards = new(() => ReadCustomRewards(null));
+    }
+
+    private static bool IsHeadField(string role, string field) =>
+        role.Equals("skater", StringComparison.OrdinalIgnoreCase) && field.Equals("Face", StringComparison.OrdinalIgnoreCase)
+        || role.Equals("goalie", StringComparison.OrdinalIgnoreCase) && field.Equals("Helmet Skin", StringComparison.OrdinalIgnoreCase);
+
+    public IReadOnlyList<string> AssetChoices(string role, string field) =>
+        (IsHeadField(role, field) ? Assets : equipment.Value).Values(role, field);
+
+    public IEnumerable<string> HeadChoices(string selected = "") =>
+        HeadOptionVisibility.Choices(Root, AssetChoices("skater", "Face"), selected);
+
+    private AssetCatalog ReadEquipment(string root)
+    {
+        var catalog = new AssetCatalog();
         // The runtime dump only contains worn equipment. Merge the full packaged
         // skin inventory, retaining exact identities and home/away aliases.
         using (var stream = typeof(App).Assembly.GetManifestResourceStream("CampaignCreator.EquipmentCatalog.tsv"))
@@ -29,41 +72,18 @@ internal sealed class GameData
             if (p[0] == "goalie") field = field switch { "Helmet" => "Helmet Skin", "Glove" => "Glove Skin", "Blocker" => "Blocker Skin", "Pads" => "Pads Skin", "Stick" => "Stick Skin", _ => field };
             else field = field switch { "Number" => "Number Skin", "Logo" => "Logo Skin", _ => field };
             if (!EditorEquipmentPolicy.IsSelectable(p[2])) continue;
-            Assets.Add(p[0], field, p[2]);
+            catalog.Add(p[0], field, p[2]);
             string? away = field switch {
                 "Body" or "Helmet" or "Bicep" or "Gloves" or "Pants" or "Skates" or "Skin" => field + " Away",
                 "Glove Skin" => "Glove Away", "Blocker Skin" => "Blocker Away", "Pads Skin" => "Pads Away", "Stick Skin" => "Stick Away", _ => null
             };
-            if (away != null) Assets.Add(p[0], away, p[2]);
+            if (away != null) catalog.Add(p[0], away, p[2]);
         }
         // Keep known native goalie preset identities available without a runtime dump.
         // The Spine inventory alone omits some values retained by GoaltenderData.
         foreach (string field in FieldSchema.GoalieAssets)
             foreach (string value in GoalieEquipmentCatalog.Values(field))
-                Assets.Add("goalie", field, value);
-        Root = root;
-        foreach (var custom in CustomHeadCatalog.Load(root))
-        {
-            if (custom.IsGoalie)
-            {
-                Assets.Add("goalie", "Helmet Skin", custom.Skin);
-                Previews["goalie:Helmet Skin:" + custom.Skin] = custom.Asset(custom.Images.Single(i => i.Group == "Portrait").File);
-                continue;
-            }
-            Assets.Add("skater", "Face", custom.Skin);
-            Previews["skater:Face:" + custom.Skin] = custom.Asset(custom.Images.Single(i => i.Group == "Portrait").File);
-            if (custom.SupportsHelmet)
-            {
-                Assets.Add("skater", "Face", custom.Skin + "_Helmet");
-                Previews["skater:Face:" + custom.Skin + "_Helmet"] = custom.Asset(custom.Direction("S", true).File);
-            }
-        }
-        string optionsFile = Path.Combine(root, "_editor_options.tsv");
-        if (File.Exists(optionsFile))
-        {
-            var sizes = File.ReadLines(optionsFile).Select(l => l.Split('\t')).Where(p => p.Length == 3 && p[0] == "skater" && p[1] == "Size").Select(p => p[2]).ToList();
-            if (sizes.Count > 0) { Sizes.Clear(); Sizes.AddRange(sizes); }
-        }
+                catalog.Add("goalie", field, value);
         var skins = Path.Combine(root, "_game_skins.txt");
         if (File.Exists(skins))
         {
@@ -79,22 +99,31 @@ internal sealed class GameData
                     else if (field == "Number") field = "Number Skin";
                     else if (field == "Logo") field = "Logo Skin";
                 }
-                else if (!line.StartsWith("#") && line.Contains('/') && field.Length > 0 && !(role == "goalie" && field == "Face") && EditorEquipmentPolicy.IsSelectable(line.Trim())) Assets.Add(role, field, line.Trim());
+                else if (!line.StartsWith("#") && line.Contains('/') && field.Length > 0 && !(role == "goalie" && field == "Face") && EditorEquipmentPolicy.IsSelectable(line.Trim())) {
+                    if (IsHeadField(role, field)) dumpedHeads.Add((role, field, line.Trim()));
+                    else catalog.Add(role, field, line.Trim());
+                }
             }
         }
         // Goalie pants are authored separately from the jersey while retaining
         // the same native body-skin choices for each piece.
-        foreach (string skin in Assets.Values("goalie", "Skin"))
+        foreach (string skin in catalog.Values("goalie", "Skin"))
         {
-            Assets.Add("goalie", "Goalie Pants Skin", skin);
-            Assets.Add("goalie", "Goalie Pants Away", skin);
+            catalog.Add("goalie", "Goalie Pants Skin", skin);
+            catalog.Add("goalie", "Goalie Pants Away", skin);
         }
         // Skater socks likewise choose from the jersey skins; the plugin swaps in only their leg pieces.
-        foreach (string skin in Assets.Values("skater", "Body").ToArray())
+        foreach (string skin in catalog.Values("skater", "Body").ToArray())
         {
-            Assets.Add("skater", "Socks", skin);
-            Assets.Add("skater", "Socks Away", skin);
+            catalog.Add("skater", "Socks", skin);
+            catalog.Add("skater", "Socks Away", skin);
         }
+        return catalog;
+    }
+
+    private Dictionary<string, HeadImage> ReadNativeHeadImages()
+    {
+        var images = new Dictionary<string, HeadImage>(StringComparer.OrdinalIgnoreCase);
         // The full native head catalog, built from the player's install (StudioArt), so previews
         // work for every content folder.
         string headRoot = StudioArt.Path("head-preview") ?? "";
@@ -104,25 +133,76 @@ internal sealed class GameData
             var cells = line.Split('\t');
             if (cells.Length != 3 || cells[0] is not ("skater" or "goalie") || Path.GetFileName(cells[2]) != cells[2]) continue;
             string path = Path.Combine(headRoot, cells[2]);
-            if (!File.Exists(path)) continue;
             string field = cells[0] == "goalie" ? "Helmet Skin" : "Face";
             if (!EditorEquipmentPolicy.IsSelectable(cells[1])) continue;
-            Assets.Add(cells[0], field, cells[1]);
-            Previews[cells[0] + ":" + field + ":" + cells[1]] = path;
+            images[cells[0] + ":" + field + ":" + cells[1]] = new(cells[0], field, cells[1], path);
         }
+        return images;
+    }
+
+    private Dictionary<string, string> ReadHeadChoices()
+    {
+        var catalog = equipment.Value;
+        var images = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var custom in heads.Value)
+        {
+            if (custom.IsGoalie)
+            {
+                catalog.Add("goalie", "Helmet Skin", custom.Skin);
+                images["goalie:Helmet Skin:" + custom.Skin] = custom.Asset(custom.Images.Single(i => i.Group == "Portrait").File);
+                continue;
+            }
+            catalog.Add("skater", "Face", custom.Skin);
+            images["skater:Face:" + custom.Skin] = custom.Asset(custom.Images.Single(i => i.Group == "Portrait").File);
+            if (custom.SupportsHelmet)
+            {
+                catalog.Add("skater", "Face", custom.Skin + "_Helmet");
+                images["skater:Face:" + custom.Skin + "_Helmet"] = custom.Asset(custom.Direction("S", true).File);
+            }
+        }
+        foreach (var (role, field, skin) in dumpedHeads) catalog.Add(role, field, skin);
+        foreach (var (key, image) in nativeHeadImages.Value) {
+            if (!File.Exists(image.Path)) continue;
+            catalog.Add(image.Role, image.Field, image.Skin);
+            images[key] = image.Path;
+        }
+        return images;
+    }
+
+    private static List<string> ReadSizes(string root)
+    {
+        var sizes = FieldSchema.Sizes.ToList();
+        string optionsFile = Path.Combine(root, "_editor_options.tsv");
+        if (File.Exists(optionsFile))
+        {
+            var installed = File.ReadLines(optionsFile).Select(l => l.Split('\t')).Where(p => p.Length == 3 && p[0] == "skater" && p[1] == "Size").Select(p => p[2]).ToList();
+            if (installed.Count > 0) return installed;
+        }
+        return sizes;
+    }
+
+    private static List<string> ReadTemplates(string root)
+    {
+        var choices = new List<string>();
         string squadCatalog = Path.Combine(root, "_squad_templates.tsv");
         if (File.Exists(squadCatalog)) foreach (var line in File.ReadLines(squadCatalog))
         {
             var cells = line.Split('\t');
-            if (cells.Length == 4 && cells[0] != "id" && !cells[0].StartsWith("#")) Templates.Add(cells[1]);
+            if (cells.Length == 4 && cells[0] != "id" && !cells[0].StartsWith("#")) choices.Add(cells[1]);
         }
         string maps = Path.Combine(root, "_game_maps.txt");
-        if (Templates.Count == 0 && File.Exists(maps)) foreach (var line in File.ReadLines(maps))
+        if (choices.Count == 0 && File.Exists(maps)) foreach (var line in File.ReadLines(maps))
             if (line.StartsWith("SQUAD '") && line.IndexOf("' maps=", StringComparison.Ordinal) > 7)
             {
                 var name = line[7..line.IndexOf("' maps=", StringComparison.Ordinal)];
-                if (!Templates.Contains(name)) Templates.Add(name);
+                if (!choices.Contains(name)) choices.Add(name);
             }
+        return choices;
+    }
+
+    private static RewardIds ReadRewardIds(string root)
+    {
+        var idsByKind = new RewardIds();
         string ids = Path.GetFullPath(Path.Combine(root, "T2T_Dumps", "_gui_data", "_export_id_map.txt"));
         if (File.Exists(ids))
         {
@@ -130,13 +210,13 @@ internal sealed class GameData
             foreach (var raw in File.ReadLines(ids))
             {
                 string line = raw.Trim();
-                if (line.StartsWith("[")) target = line switch { "[talents]" => Talents, "[abilities]" => Abilities, "[relics]" => Relics, _ => null };
+                if (line.StartsWith("[")) target = line switch { "[talents]" => idsByKind.Talents, "[abilities]" => idsByKind.Abilities, "[relics]" => idsByKind.Relics, _ => null };
                 else if (target != null && line.Contains('|')) { var p = line.Split('|', 2); target[p[0].Trim()] = p[1].Trim(); }
             }
         }
         foreach (string kind in new[] { "Talents", "Goalie Talents", "Abilities", "Goalie Abilities", "Relics" })
         {
-            var target = kind == "Relics" ? Relics : kind.Contains("Abilities") ? Abilities : Talents;
+            var target = kind == "Relics" ? idsByKind.Relics : kind.Contains("Abilities") ? idsByKind.Abilities : idsByKind.Talents;
             foreach (var entry in RewardCatalog.ReadEntries(root, kind).Values.Where(e => e.Id.Length > 0))
             {
                 target[entry.Key] = entry.Id;
@@ -144,14 +224,21 @@ internal sealed class GameData
                 if (entry.Name.Length > 0) target.TryAdd(entry.Name, entry.Id);
             }
         }
-        LoadCustomRewards(null);
+        return idsByKind;
     }
+
     internal void LoadCustomRewards(string? sourceFile)
     {
-        foreach (var pair in Talents.Where(p => CustomRewards.ContainsKey(p.Value)).ToArray()) Talents.Remove(pair.Key);
-        foreach (var pair in Relics.Where(p => CustomRewards.ContainsKey(p.Value)).ToArray()) Relics.Remove(pair.Key);
-        CustomRewards.Clear();
-        foreach (var item in CustomRewardDefinition.LoadFolder(Path.Combine(Root, "library", "rewards"))) CustomRewards[item.Id] = item;
+        scopedRewards = new(() => ReadCustomRewards(sourceFile));
+    }
+
+    private Dictionary<string, CustomRewardDefinition> ReadCustomRewards(string? sourceFile)
+    {
+        var native = nativeRewards.Value;
+        foreach (var pair in native.Talents.Where(p => customRewards.ContainsKey(p.Value)).ToArray()) native.Talents.Remove(pair.Key);
+        foreach (var pair in native.Relics.Where(p => customRewards.ContainsKey(p.Value)).ToArray()) native.Relics.Remove(pair.Key);
+        customRewards.Clear();
+        foreach (var item in CustomRewardDefinition.LoadFolder(Path.Combine(Root, "library", "rewards"))) customRewards[item.Id] = item;
         var embedded = new Dictionary<string, CustomRewardDefinition>(StringComparer.OrdinalIgnoreCase);
         var authored = CustomRewardCatalog.CampaignFor(sourceFile) is { } campaign
             ? CustomRewardDefinition.LoadFolder(Path.Combine(campaign, CustomRewardDefinition.Folder)).ToDictionary(d => d.Id, StringComparer.OrdinalIgnoreCase)
@@ -169,18 +256,20 @@ internal sealed class GameData
                 foreach (string player in Directory.EnumerateFiles(players, "*.txt", SearchOption.AllDirectories)) Embedded(player);
             Embedded(sourceFile);
         }
-        foreach (var item in embedded.Values) CustomRewards[item.Id] = item;
+        foreach (var item in embedded.Values) customRewards[item.Id] = item;
         // Explicit campaign edits own that campaign's definitions. Portable
         // snapshots only fill gaps and override the unrelated global library.
-        foreach (var item in authored.Values) CustomRewards[item.Id] = item;
-        foreach (var item in CustomRewards.Values.Where(d => !d.NeedsRedesign)) {
-            var target = item.IsRelic ? Relics : Talents;
+        foreach (var item in authored.Values) customRewards[item.Id] = item;
+        foreach (var item in customRewards.Values.Where(d => !d.NeedsRedesign)) {
+            var target = item.IsRelic ? native.Relics : native.Talents;
             target[item.Id] = item.Id;
             // IDs are the authoritative selection; duplicate display names never
             // silently replace native or other custom identities.
             target.TryAdd(item.Name, item.Id);
         }
+        return customRewards;
     }
+
     internal void ValidateCustomLoadout(CampaignDocument document, bool? goalie = null)
         => CustomRewardAssignments.Validate(document, CustomRewards, (value, relics) => {
             var expected = relics ? Relics : Talents;
@@ -207,14 +296,96 @@ internal sealed class GameData
         var names = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(Name).ToArray();
         return names.Length == 0 ? "None" : string.Join(", ", names);
     }
+    private static string HeadPrefix(string role) => role == "goalie" ? "Helmet/CustomMasks/" : "Faces/CustomHeads/";
+
+    private CustomHeadDefinition? FindHead(string role, string skin)
+    {
+        string prefix = HeadPrefix(role);
+        if (!skin.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return null;
+        string name = skin[prefix.Length..];
+        if (role != "goalie" && name.EndsWith("_Helmet", StringComparison.OrdinalIgnoreCase)) name = name[..^7];
+        if (name.Length == 0 || name is "." or ".." || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0
+            || name.Contains('/') || name.Contains('\\')) return null;
+        string key = prefix + name;
+        if (describedHeads.TryGetValue(key, out var cached)) return cached;
+        string folder = Path.Combine(Root, "custom-heads", name);
+        CustomHeadDefinition? head = null;
+        if (!heads.IsValueCreated && File.Exists(Path.Combine(folder, "head-project.json"))) {
+            try {
+                var candidate = CustomHeadDefinition.ReadForCatalog(folder);
+                if (key.Equals(candidate.Skin, StringComparison.OrdinalIgnoreCase)) head = candidate;
+            }
+            catch (Exception ex) when (ex is not OutOfMemoryException) { }
+        }
+        // Imported older projects may have a folder name different from their declared skin.
+        head ??= heads.Value.FirstOrDefault(h => key.Equals(h.Skin, StringComparison.OrdinalIgnoreCase));
+        return describedHeads[key] = head;
+    }
+
+    private CustomHeadDefinition? SelectedHead(string role, string skin)
+    {
+        if (FindHead(role, skin) is not { } entry) return null;
+        if (selectedHeads.TryGetValue(entry.Skin, out var selected)) return selected;
+        try {
+            selected = CustomHeadDefinition.Read(entry.Folder);
+            if (!selected.IsGoalie) HeadAppearance.RegisterCustom(selected.Skin, selected.SupportsHelmet);
+            selectedHeads[entry.Skin] = selected;
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException) { return null; }
+        return selected;
+    }
+
+    internal bool CanSelectHead(string role, string value) =>
+        !value.StartsWith(HeadPrefix(role), StringComparison.OrdinalIgnoreCase) || SelectedHead(role, value) != null;
+
+    internal void PrepareSkaterHead(string? skin)
+    {
+        if (string.IsNullOrWhiteSpace(skin)) return;
+        if (!skin.Contains('/')) { _ = heads.Value; return; }
+        _ = SelectedHead("skater", skin);
+    }
+
+    public string ResolveAsset(string role, string field, string value)
+    {
+        if (!IsHeadField(role, field)) return equipment.Value.Resolve(role, field, value);
+        if (value.StartsWith(HeadPrefix(role), StringComparison.OrdinalIgnoreCase)) {
+            if (SelectedHead(role, value) is { } custom) {
+                if (value.Equals(custom.Skin, StringComparison.OrdinalIgnoreCase)) return custom.Skin;
+                if (custom.SupportsHelmet && value.Equals(custom.Skin + "_Helmet", StringComparison.OrdinalIgnoreCase)) return custom.Skin + "_Helmet";
+            }
+            throw new ArgumentException($"Unavailable custom head '{value}'.");
+        }
+        if (value.Contains('/') && nativeHeadImages.Value.TryGetValue(role + ":" + field + ":" + value, out var image)
+            && File.Exists(image.Path)) return image.Skin;
+        if (value.Contains('/')) {
+            var catalog = equipment.Value;
+            foreach (var head in dumpedHeads)
+                if (head.Role == role && head.Field == field && head.Skin.Equals(value, StringComparison.OrdinalIgnoreCase)) return head.Skin;
+            return catalog.Resolve(role, field, value);
+        }
+        string resolved = Assets.Resolve(role, field, value);
+        return resolved.StartsWith(HeadPrefix(role), StringComparison.OrdinalIgnoreCase) ? ResolveAsset(role, field, resolved) : resolved;
+    }
+
     public string? HeadPreview(string role, string value)
     {
         string field = role == "goalie" ? "Helmet Skin" : "Face";
+        if (role == "skater" && string.IsNullOrWhiteSpace(value)) return null;
         if (role == "skater") value = HeadAppearance.NativeSkin(value);
         if (role == "goalie" && (string.IsNullOrWhiteSpace(value) || value.Equals("standard", StringComparison.OrdinalIgnoreCase))) value = "Helmet/Helmet_Customization_colors";
+        if (FindHead(role, value) is { } custom) {
+            var picture = value.Equals(custom.Skin, StringComparison.OrdinalIgnoreCase) ? custom.Images.Single(i => i.Group == "Portrait")
+                : custom.SupportsHelmet ? custom.Direction("S", true) : null;
+            if (picture == null) return null;
+            string file = custom.Asset(picture.File);
+            try { CustomHeadDefinition.ValidatePng(file); return file; }
+            catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException) { return null; }
+        }
+        string key = role + ":" + field + ":";
+        if (nativeHeadImages.Value.TryGetValue(key + value, out var image) && File.Exists(image.Path)) return image.Path;
+        if (value.Contains('/')) return null;
         try { value = Assets.Resolve(role, field, value); }
         catch (ArgumentException) { return null; }
-        return Previews.TryGetValue(role + ":" + field + ":" + value, out var path) && File.Exists(path) ? path : null;
+        return Previews.TryGetValue(key + value, out var path) && File.Exists(path) ? path : null;
     }
 }
-

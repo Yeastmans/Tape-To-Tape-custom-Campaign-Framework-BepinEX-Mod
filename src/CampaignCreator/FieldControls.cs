@@ -128,16 +128,14 @@ internal static class FieldControls
 
         }
 
-        var options = data.Assets.Values(role, key).ToList();
+        List<string>? options = null;
 
         if (key.Equals("Size", StringComparison.OrdinalIgnoreCase)) options = data.Sizes.ToList();
 
-        if (key is "Squad Head" or "Zamboni Head" or "Bench Head") options = data.Assets.Values("skater", "Face").ToList();
-
         if ((role == "skater" && key == "Face") || key is "Squad Head" or "Zamboni Head" or "Bench Head")
         {
+            data.PrepareSkaterHead(value);
             value = HeadAppearance.Base(value);
-            options = data.HeadChoices(value).ToList();
         }
 
         if (key.Equals("Skin Color", StringComparison.OrdinalIgnoreCase)) options = ["light", "dark"];
@@ -343,12 +341,15 @@ internal static class FieldControls
         if (key is "Face" or "Squad Head" or "Zamboni Head" or "Bench Head")
         {
             IEnumerable<PreviewGridPicker.Choice> HeadChoices(string current) => new[] { new PreviewGridPicker.Choice("", "Nothing selected") }
-                .Concat((role == "skater" || key != "Face" ? data.HeadChoices(current) : options)
+                .Concat((role == "skater" || key != "Face" ? data.HeadChoices(current) : data.AssetChoices(role, key))
                     .Distinct(StringComparer.OrdinalIgnoreCase).Select(id => new PreviewGridPicker.Choice(id, Friendly(id))));
-            return PreviewGridPicker.Create("Choose head", HeadChoices(value), value,
-                id => PreviewGridPicker.FileImage(data.HeadPreview("skater", id)), changed, preview, choicesForSelection: HeadChoices);
+            var currentChoice = new PreviewGridPicker.Choice(value, value.Length == 0 ? "Nothing selected" : Friendly(value));
+            return PreviewGridPicker.Create("Choose head", [currentChoice], value,
+                id => PreviewGridPicker.FileImage(data.HeadPreview("skater", id)), changed, preview,
+                choicesForSelection: HeadChoices, canSelect: id => data.CanSelectHead("skater", id));
         }
 
+        options ??= data.AssetChoices(role, key).ToList();
         if (options.Count > 0 || kind == FieldKind.Choice) return Choices(options, key, value, changed, preview);
 
         var text = new TextBox { Text = value, Watermark = "Nothing selected" }; text.TextChanged += (_, _) => changed();

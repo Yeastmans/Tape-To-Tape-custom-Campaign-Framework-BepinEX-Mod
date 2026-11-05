@@ -33,20 +33,35 @@ public sealed partial class MainWindow : Window
     private bool dirty, loading;
     private Bitmap? bitmap;
     private List<CampaignNode> paths = [];
+    private int campaignNavigationVersion;
+    private string? deferredNavigationDirectory;
     private CampaignWorkspace? campaignWorkspace;
     private Control standardEditorShell = null!;
 
-    private void OpenCampaignWorkspace(string directory)
+    private void OpenCampaignWorkspace(string directory, CampaignWorkspace.OpeningData? prepared = null, bool? teamSection = null)
     {
-        if (campaignWorkspace is { IsNew: true } working && working.WorkingDirectory == directory) { Content = working; return; }
-        campaignWorkspace = new CampaignWorkspace(this, root, directory,
-            ShowHome,
-            file => { OpenFile(file); if (!Path.GetFileName(file).Equals("campaign.txt", StringComparison.OrdinalIgnoreCase)) Content = editorShell; },
-            async () => await ChooseContent("team", true));
-        Content = campaignWorkspace;
+        var workspace = campaignWorkspace;
+        if (prepared != null || workspace == null || !workspace.WorkingDirectory.Equals(directory, StringComparison.OrdinalIgnoreCase))
+            workspace = new CampaignWorkspace(this, root, directory, ShowHome,
+                file => { OpenFile(file); if (!Path.GetFileName(file).Equals("campaign.txt", StringComparison.OrdinalIgnoreCase)) Content = editorShell; },
+                async () => await ChooseContent("team", true), data, prepared);
+        if (teamSection.HasValue) workspace.SelectTeamSection(teamSection.Value);
+        else workspace.ShowOverview();
+        Content = campaignWorkspace = workspace;
     }
 
-    public MainWindow(string[] args)
+    internal sealed record Startup(GameData Data, HomeContent Home);
+
+    internal static Startup PrepareStartup(string[] args, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        string root = FindRoot(args);
+        return new Startup(new GameData(root), new HomeContent(root, token));
+    }
+
+    public MainWindow(string[] args) : this(PrepareStartup(args, CancellationToken.None)) { }
+
+    internal MainWindow(Startup startup)
     {
         Title = "T2T Campaign Studio · Beta 1.0"; Width = 1320; Height = 860; MinWidth = 960; MinHeight = 620;
         Icon = new WindowIcon(typeof(MainWindow).Assembly.GetManifestResourceStream("CampaignStudioIcon")!);
@@ -62,7 +77,7 @@ public sealed partial class MainWindow : Window
             MinWidth = Math.Min(MinWidth, availableWidth); MinHeight = Math.Min(MinHeight, availableHeight);
             Width = Math.Min(Width, availableWidth); Height = Math.Min(Height, availableHeight);
         };
-        root = FindRoot(args); data = new GameData(root);
+        root = startup.Home.Root; data = startup.Data;
         var shell = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto"), Margin = StudioTheme.PagePadding };
         var top = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(0, 0, 0, 24) }; StudioTheme.Header(top);
         top.Children.Add(new StackPanel { Spacing = StudioTheme.SpaceXs, Children = { new TextBlock { Text = "TAPE TO TAPE", Foreground = StudioTheme.Accent, FontWeight = FontWeight.Bold }, heading } });
@@ -117,8 +132,8 @@ public sealed partial class MainWindow : Window
         };
         UnsavedChangesGuard.Attach(this, () => dirty || baseGamePoolsView?.HasUnsavedChanges == true || campaignWorkspace?.HasUnsavedChanges == true || OwnedWindows.OfType<MapEditorWindow>().Any(w => w.HasUnsavedChanges));
         Closed += (_, _) => bitmap?.Dispose();
-        LoadCampaigns();
-        ShowHome();
+        LoadCampaigns(startup.Home.CampaignDirectories);
+        RenderHome(startup.Home);
         InitializePageHelp();
         Opened += async (_, _) => await StartStudio();
     }
@@ -132,13 +147,11 @@ public sealed partial class MainWindow : Window
         var b = new Button { Content = text, Padding = StudioTheme.ButtonPadding, HorizontalAlignment = HorizontalAlignment.Stretch };
         b.Click += (_, _) => { try { action(); } catch (Exception ex) { status.Text = ex.Message; } }; return b;
     }
-    private void LoadCampaigns()
+    private void LoadCampaigns(string[] directories)
     {
         loading = true;
-        string dir = Path.Combine(root, "campaigns");
-        campaigns.ItemsSource = Directory.Exists(dir) ? Directory.GetDirectories(dir).Select(Path.GetFileName).Order().ToArray() : [];
+        campaigns.ItemsSource = directories.Select(Path.GetFileName).ToArray();
         campaigns.SelectedIndex = 0; loading = false;
-        _ = LoadCampaign();
     }
     private async Task PickRoot()
     {
@@ -147,18 +160,27 @@ public sealed partial class MainWindow : Window
         string? local = selected.FirstOrDefault()?.TryGetLocalPath();
         if (local == null) return;
         if (!Directory.Exists(Path.Combine(local, "campaigns"))) { status.Text = "Choose the content folder containing campaigns/."; return; }
-        root = local; data = new GameData(root); LoadCampaigns();
+        root = local; data = new GameData(root);
+        LoadCampaigns(HomeContent.FindCampaignDirectories(root));
+        await LoadCampaign();
     }
     private async Task LoadCampaign()
     {
         if (dirty) { status.Text = "Save your changes before changing campaign."; return; }
         var name = campaigns.SelectedItem?.ToString(); if (name == null) return;
         string dir = Path.Combine(root, "campaigns", name);
+        deferredNavigationDirectory = null;
         document = null; path = null; editors.Clear(); tabs.ItemsSource = null;
         heading.Text = name;
+        await LoadCampaignFiles(dir);
+    }
+    private async Task LoadCampaignFiles(string dir)
+    {
+        int version = ++campaignNavigationVersion;
         var found = await Task.Run(() => CampaignNavigation.Load(dir));
-        if (campaigns.SelectedItem?.ToString() != name) return;
-        paths = found; FilterFiles(); status.Text = $"{name} · {paths.SelectMany(p => p.Descendants()).Count(p => p.FilePath != null)} items";
+        if (version != campaignNavigationVersion || campaigns.SelectedItem is not string name || Path.Combine(root, "campaigns", name) != dir) return;
+        paths = found; FilterFiles();
+        if (path == null && !dirty) status.Text = $"{name} · {paths.SelectMany(p => p.Descendants()).Count(p => p.FilePath != null)} items";
     }
     private void FilterFiles()
     {
@@ -214,8 +236,7 @@ public sealed partial class MainWindow : Window
         DiscardEditorChangesForNavigation();
         string? directory = Directory.GetParent(Path.GetDirectoryName(file)!)?.Parent?.FullName;
         if (directory == null || !File.Exists(Path.Combine(directory, "campaign.txt"))) { ShowHome(); return; }
-        OpenCampaignWorkspace(directory);
-        campaignWorkspace?.SelectTeamSection(TeamEditorView.IsCustomSquad(file));
+        OpenCampaignWorkspace(directory, teamSection: TeamEditorView.IsCustomSquad(file));
     }
     private string? playerReturnTeam;
     private string? latestPlayerTeam;
@@ -269,7 +290,7 @@ public sealed partial class MainWindow : Window
         foreach (var (key, value) in fields)
         {
             if (key.Equals("Glasses", StringComparison.OrdinalIgnoreCase)) continue;
-            string group = FieldSchema.Kind(key, value) == FieldKind.Color || data.Assets.Values(role, key).Count > 0 || key.Contains("Skin") ? "Appearance"
+            string group = FieldSchema.Kind(key, value) == FieldKind.Color || data.AssetChoices(role, key).Count > 0 || key.Contains("Skin") ? "Appearance"
                 : new[] { "Speed", "Accuracy", "Checking", "Shot Power", "Talents", "Ability" }.Contains(key) ? "Attributes" : "Details";
             var row = new StackPanel { Spacing = 5 }; row.Children.Add(new TextBlock { Text = EquipmentColorGuide.FieldLabel(key, role), Foreground = Brush.Parse("#BDCADB") });
             var editor = key == "Ability" && OpponentAbilityPolicy.IsOpponentPlayer(file)
@@ -282,6 +303,16 @@ public sealed partial class MainWindow : Window
         tabs.SelectedIndex = 0; loading = false; dirty = false; status.Text = heading.Text;
         Preview("Face", document.Get("Face"));
         Content = editorShell;
+        if (deferredNavigationDirectory is { } dir)
+        {
+            deferredNavigationDirectory = null;
+            _ = LoadDeferredFiles(dir);
+        }
+    }
+    private async Task LoadDeferredFiles(string dir)
+    {
+        try { await LoadCampaignFiles(dir); }
+        catch (Exception ex) { if (Content == standardEditorShell) status.Text = ex.Message; }
     }
     private async Task ImportTeam()
     {
@@ -417,8 +448,8 @@ public sealed partial class MainWindow : Window
     {
         preview.Source = null; bitmap?.Dispose(); bitmap = null;
         previewLabel.Text = field + " · " + FriendlyAsset(value);
-        try { value = data.Assets.Resolve(role, field, value); } catch { return; }
-        if (data.Previews.TryGetValue(role + ":" + field + ":" + value, out var image) && File.Exists(image))
+        if ((role == "skater" && field == "Face" || role == "goalie" && field == "Helmet Skin")
+            && data.HeadPreview(role, value) is { } image && File.Exists(image))
         { bitmap = new Bitmap(image); preview.Source = bitmap; }
     }
     private async void Export()

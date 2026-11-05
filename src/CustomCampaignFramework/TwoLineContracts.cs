@@ -48,11 +48,16 @@ internal static class TwoLineContracts
     internal static void Reconcile(TeamData team)
     {
         if (team?.lines?.Count != 2) return;
-        if (team.forwards == null) team.forwards = new Il2CppSystem.Collections.Generic.List<ForwardData>();
+        ApplyRoster(team, ProjectRoster(team));
+    }
+
+    internal static Il2CppSystem.Collections.Generic.List<ForwardData> ProjectRoster(TeamData team)
+    {
         var available = new Dictionary<string, ForwardData>(StringComparer.Ordinal);
         var order = new List<ForwardData>();
-        foreach (var player in team.forwards)
-            if (player != null && !string.IsNullOrEmpty(player.id) && available.TryAdd(player.id, player)) order.Add(player);
+        if (team.forwards != null)
+            foreach (var player in team.forwards)
+                if (player != null && !string.IsNullOrEmpty(player.id) && available.TryAdd(player.id, player)) order.Add(player);
         var assigned = new HashSet<string>(StringComparer.Ordinal);
         var slots = new ForwardData[10];
         // IDs, not the compacted native indices, preserve surviving positions.
@@ -68,10 +73,16 @@ internal static class TwoLineContracts
             slots[vacant] = player; assigned.Add(player.id);
         }
         var roster = new Il2CppSystem.Collections.Generic.List<ForwardData>();
-        for (int i = 0; i < 10; i++) { roster.Add(slots[i]); SetSlot(team, i, slots[i]?.id ?? ""); }
+        foreach (var player in slots) roster.Add(player);
         // Preserve unusual extra reserves from older saves; reconciliation must
         // not silently delete owned players, talents or authored data.
         foreach (var player in order) if (!assigned.Contains(player.id)) roster.Add(player);
+        return roster;
+    }
+
+    internal static void ApplyRoster(TeamData team, Il2CppSystem.Collections.Generic.List<ForwardData> roster)
+    {
+        for (int i = 0; i < 10; i++) SetSlot(team, i, roster[i]?.id ?? "");
         team.forwards = roster;
     }
 
@@ -106,7 +117,8 @@ internal static class TwoLineContracts
         internal TeamData Team;
         internal ForwardData Player;
         internal int Slot;
-        internal bool Applied;
+        internal Il2CppSystem.Collections.Generic.List<ForwardData> Roster;
+        internal bool Writing, Applied;
     }
 
     internal static Visit Current;
@@ -138,7 +150,7 @@ internal static class TwoLineContracts
         var squad = state.GetCurrentSquad();
         if (squad == null || state.freeAgents == null) return false;
         var unlocks = node._unlockSystem ?? state._unlockSystem;
-        var owned = visit.Team.GetForwards(false);
+        var owned = ProjectRoster(visit.Team);
         ForwardData candidate = null;
         foreach (var player in state.freeAgents)
         {
@@ -184,7 +196,6 @@ internal static class TwoLineContracts
                 card.onSelection = (Action)(() =>
                 {
                     if (!IsCurrent(visit) || visit.OfferRevision != revision || offer.Taken || visit.Pending != null) return;
-                    Reconcile(visit.Team);
                     visit.Pending = offer; visit.Revision++; visit.AdvancePending = true;
                 });
                 // Every hire needs an explicit destination, including vacancies.
@@ -201,19 +212,21 @@ internal static class TwoLineContracts
         visit.Pending = null; visit.AdvancePending = false; visit.Revision++;
     }
 
-    internal static void Commit(Visit visit, Offer offer, int slot)
+    internal static void Commit(Visit visit, Offer offer, int slot, IntPtr expectedOccupant)
     {
         if (!IsCurrent(visit) || visit.Pending != offer || offer.Taken || slot < 0 || slot >= 10) return;
         var team = visit.Team;
-        Reconcile(team);
-        foreach (var owned in team.forwards)
+        var roster = ProjectRoster(team);
+        var outgoing = roster[slot];
+        if ((outgoing?.Pointer ?? IntPtr.Zero) != expectedOccupant) return;
+        foreach (var owned in roster)
             if (owned != null && owned.id == offer.Player.id) return;
         var run = Tape2Tape.CampaignUtil.CampaignState.runData;
         var oldRoster = team.forwards;
-        var outgoing = oldRoster[slot];
-        string oldId = SlotId(team, slot);
+        var oldIds = new string[10];
+        for (int i = 0; i < oldIds.Length; i++) oldIds[i] = SlotId(team, i);
         var previous = Inserting;
-        var placement = new Placement { Team = team, Player = offer.Player, Slot = slot };
+        var placement = new Placement { Team = team, Player = offer.Player, Slot = slot, Roster = roster };
         try
         {
             // All native recruit stats, talents, contract conditions and their
@@ -225,7 +238,11 @@ internal static class TwoLineContracts
         }
         catch (Exception ex)
         {
-            team.forwards = oldRoster; SetSlot(team, slot, oldId);
+            if (placement.Writing)
+            {
+                team.forwards = oldRoster;
+                for (int i = 0; i < oldIds.Length; i++) SetSlot(team, i, oldIds[i]);
+            }
             RemoveContract(offer.Player.id);
             Plugin.Log.LogError("[TwoLineContracts] Recruitment rolled back: " + ex);
             return;
@@ -252,13 +269,14 @@ internal static class TwoLineContracts
         var placement = Inserting;
         if (placement == null || team?.Pointer != placement.Team.Pointer || player?.Pointer != placement.Player.Pointer) return false;
         if (placement.Applied) return true;
-        var roster = new Il2CppSystem.Collections.Generic.List<ForwardData>();
-        foreach (var existing in team.forwards) roster.Add(existing);
+        var roster = placement.Roster;
         // The outgoing jersey is available after replacement.
         roster[placement.Slot] = null;
         team.EnsureUniqueJerseyNumber(roster.Cast<Il2CppSystem.Collections.Generic.IReadOnlyList<ForwardData>>(), player);
         roster[placement.Slot] = player;
-        team.forwards = roster; SetSlot(team, placement.Slot, player.id); placement.Applied = true;
+        placement.Writing = true;
+        ApplyRoster(team, roster);
+        placement.Applied = true;
         return true;
     }
 
@@ -326,7 +344,6 @@ internal static class TwoLineContractChoices
         if (visit == null) return true;
         __state.Visit = visit;
         visit.AdvancePending = false;
-        TwoLineContracts.Reconcile(visit.Team);
         if (visit.Pending != null)
         {
             // A roster selector owns this choice until it commits or cancels.

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -8,7 +9,7 @@ namespace CampaignCreator;
 
 internal sealed class BetaNoticeWindow : Window
 {
-    internal event Action? ContinueRequested;
+    internal event Func<CancellationToken, Task>? ContinueRequested;
 
     internal BetaNoticeWindow()
     {
@@ -43,10 +44,38 @@ internal sealed class BetaNoticeWindow : Window
 
         var continueButton = new Button { Name = "BetaNoticeContinue", Content = "I understand · Open Studio", IsDefault = true };
         StudioTheme.Primary(continueButton);
-        continueButton.Click += (_, _) =>
+        var progressHost = new StackPanel { IsVisible = false };
+        var error = new TextBlock { Name = "StudioStartupError", IsVisible = false, TextWrapping = TextWrapping.Wrap };
+        AutomationProperties.SetLiveSetting(error, AutomationLiveSetting.Assertive);
+        var lifetime = new CancellationTokenSource();
+        var token = lifetime.Token;
+        Closed += (_, _) => { lifetime.Cancel(); lifetime.Dispose(); };
+        continueButton.Click += async (_, _) =>
         {
+            if (!continueButton.IsEnabled || token.IsCancellationRequested) return;
             continueButton.IsEnabled = false;
-            ContinueRequested?.Invoke();
+            continueButton.Content = "Opening Studio…";
+            error.IsVisible = false;
+            var progress = new StudioLoadingIndicator("Opening Campaign Studio…") { Name = "StudioStartupProgress" };
+            progressHost.IsVisible = true;
+            progressHost.Children.Add(progress);
+            try
+            {
+                await progress.PresentAsync(token);
+                if (ContinueRequested is { } open) await open(token);
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+            catch (Exception ex)
+            {
+                if (token.IsCancellationRequested) return;
+                progressHost.Children.Remove(progress);
+                progressHost.IsVisible = false;
+                error.Text = "Studio could not open. " + ex.Message;
+                error.IsVisible = true;
+                continueButton.Content = "Try opening Studio again";
+                continueButton.IsEnabled = true;
+                continueButton.Focus();
+            }
         };
         var exit = new Button { Name = "BetaNoticeExit", Content = "Exit", IsCancel = true };
         exit.Click += (_, _) => Close();
@@ -80,6 +109,8 @@ internal sealed class BetaNoticeWindow : Window
                 },
                 linkStatus,
                 new Separator(),
+                progressHost,
+                error,
                 new StackPanel
                 {
                     Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right,

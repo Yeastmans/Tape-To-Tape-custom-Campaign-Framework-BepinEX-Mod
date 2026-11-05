@@ -68,6 +68,10 @@ public sealed class FreeAgentTalentWeightsEditor : UserControl
     {
         var document = new CampaignDocument("");
         document.Set(FreeAgentTalentPool.ModeKey, PoolMode); document.Set(FreeAgentTalentPool.SelectedKey, SelectedValue);
+        ValidateSaved(document, value);
+    }
+    internal static void ValidateSaved(CampaignDocument document, string value)
+    {
         FreeAgentTalentPool.Read(document);
         if (!FreeAgentTalentWeights.TryParse(value, out _, out string problem))
             throw new InvalidOperationException("Free-agent talent weights: " + problem);

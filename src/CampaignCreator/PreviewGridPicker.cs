@@ -23,7 +23,7 @@ internal static class PreviewGridPicker
 
     internal static (Control control, Func<string> read) Create(string title, IEnumerable<Choice> choices,
         string value, Func<string, IImage?> load, Action changed, Action<string>? preview = null, bool ownsImages = true,
-        Func<string, IEnumerable<Choice>>? choicesForSelection = null)
+        Func<string, IEnumerable<Choice>>? choicesForSelection = null, Func<string, bool>? canSelect = null)
     {
         var all = choices.ToArray();
         string saved = all.FirstOrDefault(c => c.Id.Equals(value, StringComparison.OrdinalIgnoreCase))?.Id ?? "";
@@ -33,7 +33,7 @@ internal static class PreviewGridPicker
         button.Click += async (_, _) => {
             if (TopLevel.GetTopLevel(button) is not Window owner) return;
             if (choicesForSelection != null) all = choicesForSelection(saved).ToArray();
-            string? selected = await Show(owner, title, all, saved, load, ownsImages);
+            string? selected = await Show(owner, title, all, saved, load, ownsImages, canSelect);
             if (selected == null || selected == saved) return;
             saved = selected; Refresh(); changed(); preview?.Invoke(saved);
         };
@@ -41,29 +41,52 @@ internal static class PreviewGridPicker
     }
 
     internal static async Task<string?> Show(Window owner, string title, IEnumerable<Choice> choices,
-        string selected, Func<string, IImage?> load, bool ownsImages = true)
+        string selected, Func<string, IImage?> load, bool ownsImages = true, Func<string, bool>? canSelect = null)
     {
         var dialog = new Window { Title = title, Width = 800, Height = 620, MinWidth = 360, MinHeight = 320,
             WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = StudioTheme.Surface };
         var search = new TextBox { Watermark = "Search options…" };
         var grid = new WrapPanel { Orientation = Orientation.Horizontal };
-        var owned = new List<IDisposable>();
+        var feedback = new TextBlock { IsVisible = false, TextWrapping = TextWrapping.Wrap, Foreground = StudioTheme.Muted };
         var tiles = new List<(Choice choice, Button tile)>();
         foreach (var choice in choices)
         {
-            IImage? image = null;
-            try { image = load(choice.Id); } catch (Exception) { /* Keep unavailable choices identifiable. */ }
-            if (ownsImages && image is IDisposable disposable) owned.Add(disposable);
+            var unavailable = new TextBlock { Text = choice.Id.Length == 0 ? "—" : "Preview unavailable",
+                TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
+            var thumbnail = new ContentControl { Height = 104 };
             var tile = new Button { Width = 168, Height = 166, Margin = new Thickness(4),
                 BorderThickness = new Thickness(choice.Id == selected ? 3 : 1),
                 HorizontalContentAlignment = HorizontalAlignment.Stretch,
                 Content = new StackPanel { Spacing = 6, Children = {
-                    image == null ? (Control)new TextBlock { Text = choice.Id.Length == 0 ? "—" : "Preview unavailable", Height = 104, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center }
-                        : new Image { Source = image, Height = 104, Stretch = Stretch.Uniform },
+                    thumbnail,
                     new TextBlock { Text = choice.Label, TextWrapping = TextWrapping.Wrap, MaxLines = 2, TextTrimming = TextTrimming.CharacterEllipsis }
                 } } };
             ToolTip.SetTip(tile, choice.Label);
-            tile.Click += (_, _) => dialog.Close(choice.Id);
+            bool showing = false;
+            IImage? image = null;
+            void ShowThumbnail(bool visible)
+            {
+                if (visible == showing) return;
+                showing = visible;
+                if (visible) {
+                    try { image = load(choice.Id); } catch (Exception) { image = null; }
+                    thumbnail.Content = image == null ? (Control)unavailable : new Image { Source = image, Height = 104, Stretch = Stretch.Uniform };
+                } else {
+                    thumbnail.Content = null;
+                    if (ownsImages && image is IDisposable owned) owned.Dispose();
+                    image = null;
+                }
+            }
+            var viewport = new Rect();
+            void UpdateVisibility() => ShowThumbnail(tile.IsVisible && new Rect(tile.Bounds.Size).Intersects(viewport));
+            tile.EffectiveViewportChanged += (_, e) => { viewport = e.EffectiveViewport; UpdateVisibility(); };
+            tile.PropertyChanged += (_, e) => { if (e.Property == Visual.IsVisibleProperty) UpdateVisibility(); };
+            tile.DetachedFromVisualTree += (_, _) => ShowThumbnail(false);
+            tile.Click += (_, _) => {
+                if (canSelect == null || canSelect(choice.Id)) { dialog.Close(choice.Id); return; }
+                feedback.Text = $"The artwork for {choice.Label} could not be loaded. Choose another head or repair its project.";
+                feedback.IsVisible = true;
+            };
             tiles.Add((choice, tile)); grid.Children.Add(tile);
         }
         var empty = new TextBlock { Text = "No matching options.", IsVisible = tiles.Count == 0 };
@@ -76,12 +99,13 @@ internal static class PreviewGridPicker
         dialog.KeyDown += (_, e) => { if (e.Key == Key.Escape) { dialog.Close(); e.Handled = true; } };
         var body = new Grid { Margin = new Thickness(18), RowDefinitions = new RowDefinitions("Auto,*,Auto"), RowSpacing = 12 };
         body.Children.Add(search);
-        var scroll = new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+        var scroll = new ScrollViewer { Name = "PreviewGridScroll", HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
             Content = new StackPanel { Children = { grid, empty } } };
-        Grid.SetRow(scroll, 1); body.Children.Add(scroll); Grid.SetRow(cancel, 2); body.Children.Add(cancel);
+        var footer = new StackPanel { Spacing = 6, Children = { feedback, cancel } };
+        Grid.SetRow(scroll, 1); body.Children.Add(scroll); Grid.SetRow(footer, 2); body.Children.Add(footer);
         dialog.Content = body;
         dialog.Opened += (_, _) => search.Focus();
         try { return await dialog.ShowDialog<string?>(owner); }
-        finally { dialog.Content = null; foreach (var image in owned) image.Dispose(); }
+        finally { dialog.Content = null; }
     }
 }

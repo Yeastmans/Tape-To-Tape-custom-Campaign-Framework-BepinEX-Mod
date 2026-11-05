@@ -34,6 +34,7 @@ internal static partial class ExportTranslation
 
     internal static CampaignDocument Player(CampaignDocument player, CampaignDocument team, CampaignDocument? goalieDefaults, string role, GameData? game = null)
     {
+        if (role == "skater") game?.PrepareSkaterHead(player.Get("Face"));
         var result = AppearanceContract.Resolve(player, team, goalieDefaults ?? new CampaignDocument(""), role);
         bool personal = AppearanceFields.OverridesTeam(player) && player.Get("Logo From").Length > 0;
         foreach (bool away in new[] { false, true })

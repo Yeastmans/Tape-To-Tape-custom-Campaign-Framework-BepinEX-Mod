@@ -20,6 +20,7 @@ internal static class PlayerExport
     {
         d = ExportPlayerResolver.Resolve(d, role);
         game.ValidateCustomLoadout(d, role == "goalie");
+        if (role == "skater") game.PrepareSkaterHead(d.Get("Face"));
         d = AppearanceContract.Resolve(d, new CampaignDocument(""), new CampaignDocument(""), role);
         d = ExportSelections.Logo(d, game.Root, report);
         string name = d.Get("Name").Trim();
@@ -116,8 +117,10 @@ internal static class PlayerExport
     {
         d = ExportPlayerResolver.Resolve(d, role);
         d.Set(OwnEquipmentKey, EquipmentIntent(d));
+        game = new GameData(root);
+        if (role == "skater") game.PrepareSkaterHead(d.Get("Face"));
         d = ExportSelections.Logo(AppearanceContract.Resolve(d, new CampaignDocument(""), new CampaignDocument(""), role), root, report, CustomRewardCatalog.CampaignFor(sourceFile));
-        game = new GameData(root); game.LoadCustomRewards(sourceFile);
+        game.LoadCustomRewards(sourceFile);
         return Build(d, game, role, report);
     }
     internal static string WritePrepared((string Id, Dictionary<string, object> Model, CampaignDocument Sidecar) prepared, string root, string role)
@@ -163,6 +166,7 @@ internal static class PlayerExport
     internal static CampaignDocument TranslationSidecar(CampaignDocument d, GameData game, string role, Dictionary<string, object> model, ExportReport? report = null)
     {
         var original = d;
+        if (role == "skater") game.PrepareSkaterHead(d.Get("Face"));
         d = AppearanceContract.Resolve(d, new CampaignDocument(""), new CampaignDocument(""), role);
         var result = AppearanceSidecar(d, game, role, report);
         result.Set("Export Version", "3");

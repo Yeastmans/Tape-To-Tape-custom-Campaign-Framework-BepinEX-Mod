@@ -18,9 +18,11 @@ public sealed partial class CampaignWorkspace
             return new[] { new PreviewGridPicker.Choice("", "Game default") }.Concat(choices.Select(id =>
                 new PreviewGridPicker.Choice(id, FieldControls.Friendly(id))));
         }
-        var picker = PreviewGridPicker.Create("Choose referee head", Choices(initial), initial,
+        var currentChoice = new PreviewGridPicker.Choice(initial, initial.Length == 0 ? "Game default" : FieldControls.Friendly(initial));
+        var picker = PreviewGridPicker.Create("Choose referee head", [currentChoice], initial,
             id => PreviewGridPicker.FileImage(data.HeadPreview("skater", id)),
-            () => { if (HasUnsavedChanges) message.Text = "Unsaved campaign changes"; }, choicesForSelection: Choices);
+            () => { if (HasUnsavedChanges) message.Text = "Unsaved campaign changes"; },
+            choicesForSelection: Choices, canSelect: id => data.CanSelectHead("skater", id));
         picker.control.Name = "CampaignRefereeHead";
         picker.control.Tag = FieldSchema.RefereeHeadKey;
         fields[FieldSchema.RefereeHeadKey] = () => picker.read() == initial ? original : picker.read();

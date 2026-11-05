@@ -36,7 +36,8 @@ internal sealed partial class TeamEditorView
             var choices = new[] { new PreviewGridPicker.Choice("", "Nothing selected") }.Concat(heads).Concat(logos);
             string? selected = await PreviewGridPicker.Show(owner, "Choose squad icon", choices, saved,
                 id => PreviewGridPicker.FileImage(id.StartsWith("CustomLogos/", StringComparison.OrdinalIgnoreCase)
-                    ? Path.Combine(folder, Path.GetFileName(id)) : data.HeadPreview("skater", id)));
+                    ? Path.Combine(folder, Path.GetFileName(id)) : data.HeadPreview("skater", id)),
+                canSelect: id => data.CanSelectHead("skater", id));
             if (selected != null && selected != saved) { saved = selected; Preview(); changed(); }
 
         });

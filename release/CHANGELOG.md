@@ -1,5 +1,11 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 43
+
+- Home loads a summary of available content. After you choose a campaign, Studio opens its overview and reads the other editor sections when you visit them. Head pickers load artwork as choices scroll into view.
+- Opening Studio and opening a campaign now show an animated progress bar. You can leave while loading, or correct a failed read and retry.
+- Signing a skater or goalie into an occupied slot opens the game's **Confirm swap** dialog. It names both players and defaults to **Cancel**. Only choosing **Confirm swap** approves the replacement. Cancelling a legacy recruitment offer returns you to its choices.
+
 ## Beta 1.0 revision 42
 
 - Reduced repeated custom reward checks during skating, stat calculations and ability updates. The runtime groups equipped rewards by trigger and effect and refreshes cached answers when the relevant match state changes.

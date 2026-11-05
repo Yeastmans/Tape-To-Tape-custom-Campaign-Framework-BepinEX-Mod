@@ -326,8 +326,8 @@ internal sealed partial class TeamEditorView : UserControl
             else
             {
                 string role = goalie ? "goalie" : "skater";
-                var catalog = data.Assets.Values(role, skin);
-                if (catalog.Count == 0 && skin.EndsWith(" Away")) catalog = data.Assets.Values(role, HomeSkin(skin));
+                var catalog = data.AssetChoices(role, skin);
+                if (catalog.Count == 0 && skin.EndsWith(" Away")) catalog = data.AssetChoices(role, HomeSkin(skin));
                 if (!goalie && !equipment.ContainsKey(skin))
                 {
                     equipment[skin] = Value(skin);
@@ -336,7 +336,7 @@ internal sealed partial class TeamEditorView : UserControl
                 string ReadSkin()
                 {
                     string value = goalie ? goalieEquipment.Get(skin) : equipment[skin];
-                    try { return data.Assets.Resolve(role, skin, value); } catch { return value; }
+                    try { return data.ResolveAsset(role, skin, value); } catch { return value; }
                 }
                 void WriteSkin(string value)
                 {
@@ -347,7 +347,7 @@ internal sealed partial class TeamEditorView : UserControl
                         if (skin is "Body" or "Body Away")
                         {
                             string sleeveKey = skin == "Body" ? "Bicep" : "Bicep Away";
-                            string? sleeves = EquipmentStylePicker.MatchingSleeves(value, data.Assets.Values("skater", sleeveKey));
+                            string? sleeves = EquipmentStylePicker.MatchingSleeves(value, data.AssetChoices("skater", sleeveKey));
                             if (sleeves != null) { equipment[sleeveKey] = sleeves; Track(sleeveKey, () => equipment[sleeveKey]); }
                         }
                     }
@@ -366,12 +366,12 @@ internal sealed partial class TeamEditorView : UserControl
                     string sleeveKey = skin == "Body" ? "Bicep" : "Bicep Away";
                     if (!equipment.ContainsKey(sleeveKey)) equipment[sleeveKey] = Value(sleeveKey);
                     Track(sleeveKey, () => equipment[sleeveKey]);
-                    var sleeves = data.Assets.Values("skater", sleeveKey);
-                    if (sleeves.Count == 0) sleeves = data.Assets.Values("skater", "Bicep");
+                    var sleeves = data.AssetChoices("skater", sleeveKey);
+                    if (sleeves.Count == 0) sleeves = data.AssetChoices("skater", "Bicep");
                     picker.AddSleeves(sleeves, () => {
                         string value = equipment[sleeveKey];
                         if (value.Length == 0 && sleeveKey.EndsWith(" Away")) value = Value("Bicep");
-                        try { return data.Assets.Resolve("skater", sleeveKey, value); } catch (ArgumentException) { return value; }
+                        try { return data.ResolveAsset("skater", sleeveKey, value); } catch (ArgumentException) { return value; }
                     }, value => { equipment[sleeveKey] = value; changed(); RefreshUniform(); });
                 }
             }

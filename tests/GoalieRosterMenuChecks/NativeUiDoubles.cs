@@ -40,11 +40,7 @@ namespace UnityEngine {
     }
 }
 namespace BepInEx.Unity.IL2CPP.Utils.Collections { public static class Extensions { public static IEnumerator WrapToIl2Cpp(this IEnumerator value) => value; } }
-namespace Cysharp.Threading.Tasks { public class UniTask<T> {
-    public T Value; public Awaiter GetAwaiter() => new() { Value = Value };
-    public struct Awaiter { public T Value; public bool IsCompleted => true; public T GetResult() => Value; }
-} }
-namespace BishopGames.Catalogs { public class MenuDefinitionCatalogReference { public static MenuDefinitionCatalogReference Lineup = new(); } }
+namespace BishopGames.Catalogs { public partial class MenuDefinitionCatalogReference { public static MenuDefinitionCatalogReference Lineup = new(); } }
 namespace BishopGames.Module { public static class BishopModule { public static T Get<T>() where T : class => T2TUIModule.Instance as T; } }
 namespace BishopGames.UI {
     public class SingleEvent<T> {
@@ -125,7 +121,7 @@ namespace Tape2Tape.Customization.UI {
         public List<SkaterData> PendingForwards = new(), BenchPlayers = new();
         public bool HasChanged; public void UpdateTemporaryTeamData() { TemporaryTeamData.goalie = m_G; }
     }
-    public class T2TUIModule : UIModule {
+    public partial class T2TUIModule : UIModule {
         public static T2TUIModule Instance = new(); public static bool FailOpening;
         public Cysharp.Threading.Tasks.UniTask<T> ShowMenuAsync<T>(BishopGames.Catalogs.MenuDefinitionCatalogReference reference, LineupMenu.Metadata data) where T : class {
             if (FailOpening) throw new InvalidOperationException("native menu failed to open");
@@ -201,9 +197,10 @@ namespace Tape2Tape.Hockey.UI {
         public void Exit() => Exits++;
     }
 }
-public class EventChoicePanel : UnityEngine.MonoBehaviour {
+public partial class EventChoicePanel : UnityEngine.MonoBehaviour {
     public UnityEngine.CanvasGroup _canvasGroup = new();
-    public void ClearChoicesButtons() {} public void InitializeChoicesButtons(object choices) {} public void HideMenu() {}
+    public void InitializeChoicesButtons(List<STS.Map.EventChoice> choices) => AddVisibleButtons(choices);
+    public void HideMenu() {}
 }
 namespace STS.Map {
     public enum NodeType { GeneralManager }

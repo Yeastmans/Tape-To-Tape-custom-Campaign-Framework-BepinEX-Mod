@@ -84,6 +84,14 @@ namespace Data
         public bool isMultiLineup => lines.Count == 2;
         public void SetActiveLine(int number) => activeLineNumber = number;
         public int GetActiveLine() => activeLineNumber;
+        public Il2CppSystem.Collections.Generic.List<Lineup> CloneLines()
+        {
+            var copy = new Il2CppSystem.Collections.Generic.List<Lineup>();
+            foreach (var line in lines)
+                copy.Add(new() { leftWinger=line.leftWinger, rightWinger=line.rightWinger, center=line.center,
+                    leftDefensemen=line.leftDefensemen, rightDefensemen=line.rightDefensemen });
+            return copy;
+        }
         public Il2CppSystem.Collections.Generic.List<ForwardData> GetForwards(bool unused = false) => forwards;
         public Il2CppSystem.Collections.Generic.List<ForwardData> benchPlayers
         {
@@ -227,13 +235,12 @@ namespace Rogue.NPC.GeneralManagerNPC
         }
     }
 }
-public class EventChoicePanel : UnityEngine.MonoBehaviour
+public partial class EventChoicePanel : UnityEngine.MonoBehaviour
 {
     public int Refreshes;
     public int Hides;
     public UnityEngine.CanvasGroup _canvasGroup = new();
-    public void ClearChoicesButtons() { }
-    public void InitializeChoicesButtons(Il2CppSystem.Collections.Generic.List<EventChoice> cards) => Refreshes++;
+    public void InitializeChoicesButtons(Il2CppSystem.Collections.Generic.List<EventChoice> cards) { Refreshes++; AddVisibleButtons(cards); }
     public void HideMenu() { if (TwoLineContractLegacyAdvance.Prefix(this)) Hides++; }
 }
 namespace EndlessMode

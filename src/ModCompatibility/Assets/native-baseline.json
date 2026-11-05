@@ -1,8 +1,8 @@
 {
-  "Id": "DF35C6D648DCF90F22FD5587F668C2ED29A780C733723D214CBADAD0ABF8AC3B",
+  "Id": "9270A0E95B7DCEE1A1FD30EC3376DE7062483BFB7E9E0CD5E68D36591BD361D8",
   "Profile": {
     "RuntimeContract": "t2t-native-v3-20261024",
-    "BaselineId": "DF35C6D648DCF90F22FD5587F668C2ED29A780C733723D214CBADAD0ABF8AC3B",
+    "BaselineId": "9270A0E95B7DCEE1A1FD30EC3376DE7062483BFB7E9E0CD5E68D36591BD361D8",
     "Build": "26372689",
     "GameHash": "F756BCB8564C2D95C60A121C7A5EBB21DC1B0418421FAF03F4925139944E6142",
     "MetadataHash": "1AC5E68FBC382FDE344621BECC943371ED2EA43133C36ABAAEBB198C8CCB0875",
@@ -2895,6 +2895,11 @@
       "Name": "Data.TeamData$$Clone::Data.TeamData Clone()",
       "Signature": "Data.TeamData Clone()",
       "BodyHash": "0AC95BDE5A9ACB476C9C43A4E63F98267A3826B6D7B3D44D614398498A7FAD74"
+    },
+    {
+      "Name": "Data.TeamData$$CloneLines::System.Collections.Generic.List\u00601\u003CData.Lineup\u003E CloneLines()",
+      "Signature": "System.Collections.Generic.List\u00601\u003CData.Lineup\u003E CloneLines()",
+      "BodyHash": "4840E5A5E116D07EF010F33BECE9E4757E67D113FC8E888D76450F271B829E76"
     },
     {
       "Name": "Data.TeamData$$get_NumPlayingForwards::System.Int32 get_NumPlayingForwards()",
@@ -8402,6 +8407,16 @@
       "BodyHash": "87CAF67DA8372C4A6A4CCDBF18B511AC7BEC4469CAF54F4AA530272A571255E6"
     },
     {
+      "Name": "Tape2Tape.Customization.UI.CustomizableYesNoPrompt.Data$$.ctor::System.Void .ctor(System.String title, System.String desc, System.String yes, System.String no, System.Boolean showCloseButton = False, System.Nullable\u00601\u003CTape2Tape.Customization.UI.PromptTemplateMenu.PromptTemplateResult\u003E defaultSelection = null, System.Boolean translateFromKeys = False)",
+      "Signature": "System.Void .ctor(System.String title, System.String desc, System.String yes, System.String no, System.Boolean showCloseButton = False, System.Nullable\u00601\u003CTape2Tape.Customization.UI.PromptTemplateMenu.PromptTemplateResult\u003E defaultSelection = null, System.Boolean translateFromKeys = False)",
+      "BodyHash": "767DB4011824B29EE20477E31DF43B4F56F41805256F46E70CFC119311D4D05B"
+    },
+    {
+      "Name": "Tape2Tape.Customization.UI.CustomizableYesNoPrompt$$InitData::System.Void InitData(System.Object data)",
+      "Signature": "System.Void InitData(System.Object data)",
+      "BodyHash": "53DEFC12B4B9BC8A2643F0C89134BCA16D47C9624A46D915DF54B08B0FEC66CC"
+    },
+    {
       "Name": "Tape2Tape.Customization.UI.CustomizeForwardData$$.ctor::System.Void .ctor(Data.ForwardData data)",
       "Signature": "System.Void .ctor(Data.ForwardData data)",
       "BodyHash": "39CC5B3FF2611ADF6EC719459BF8FB596E4F57E6304CB16D6FA34B03A29D505F"
@@ -8710,6 +8725,56 @@
       "Name": "Tape2Tape.Customization.UI.GoalieCustomizationHandler$$LoadGoalie::System.Void LoadGoalie(Data.GoaltenderData pickedGoalie)",
       "Signature": "System.Void LoadGoalie(Data.GoaltenderData pickedGoalie)",
       "BodyHash": "643F04E3DAC5A4C9BA25FBA73C26134CADB8C5B1DAEAD37742E603AEDD7C9BE8"
+    },
+    {
+      "Name": "Tape2Tape.Customization.UI.PromptTemplateMenu.\u003CCloseWithResult\u003Ed__#$$MoveNext::System.Void MoveNext()",
+      "Signature": "System.Void MoveNext()",
+      "BodyHash": "81A23A7677A3CCEBFC4C52E616934438A33E333BE8C6A0683A08968DD9B6D981"
+    },
+    {
+      "Name": "Tape2Tape.Customization.UI.PromptTemplateMenu$$BehaviourDestroy::System.Void BehaviourDestroy()",
+      "Signature": "System.Void BehaviourDestroy()",
+      "BodyHash": "AC4DB71A3685012D55D8A21657C75CB5CFAD23391184DCA19B781B046C585AFF"
+    },
+    {
+      "Name": "Tape2Tape.Customization.UI.PromptTemplateMenu$$BehaviourEnable::System.Void BehaviourEnable()",
+      "Signature": "System.Void BehaviourEnable()",
+      "BodyHash": "4582D44DEF3EBBD2AA0A0FCC95438E8BFBE3DA6D4666A874D40A4EC0E185AF4C"
+    },
+    {
+      "Name": "Tape2Tape.Customization.UI.PromptTemplateMenu$$CloseWithResult::Cysharp.Threading.Tasks.UniTaskVoid CloseWithResult(Tape2Tape.Customization.UI.PromptTemplateMenu.PromptTemplateResult result)",
+      "Signature": "Cysharp.Threading.Tasks.UniTaskVoid CloseWithResult(Tape2Tape.Customization.UI.PromptTemplateMenu.PromptTemplateResult result)",
+      "BodyHash": "9D9347BCAE779A37F9425AAEF17AFAE37FA2A9127D1E171EB816A51204A8E843"
+    },
+    {
+      "Name": "Tape2Tape.Customization.UI.PromptTemplateMenu$$OnBackInput::BishopGames.UI.EBackResult OnBackInput()",
+      "Signature": "BishopGames.UI.EBackResult OnBackInput()",
+      "BodyHash": "E223C19D1AA21B1E8DA146BC904754BA6E780BDCC54FC254A6976384D760F8D7"
+    },
+    {
+      "Name": "Tape2Tape.Customization.UI.PromptTemplateMenu$$OnCancelClick::System.Void OnCancelClick(BishopGames.UI.AbstractNavigable _)",
+      "Signature": "System.Void OnCancelClick(BishopGames.UI.AbstractNavigable _)",
+      "BodyHash": "B5812A47B186ED6E43FDD4066586FB054D1B78C78C1F9CD11CEB1709CAF52DF0"
+    },
+    {
+      "Name": "Tape2Tape.Customization.UI.PromptTemplateMenu$$OnNoClick::System.Void OnNoClick(BishopGames.UI.AbstractNavigable _)",
+      "Signature": "System.Void OnNoClick(BishopGames.UI.AbstractNavigable _)",
+      "BodyHash": "2893E6A4A2185BD39B9FD5BCC0A314F5E9F9EC043F920E8065CC266E3B96E295"
+    },
+    {
+      "Name": "Tape2Tape.Customization.UI.PromptTemplateMenu$$OnYesClick::System.Void OnYesClick(BishopGames.UI.AbstractNavigable _)",
+      "Signature": "System.Void OnYesClick(BishopGames.UI.AbstractNavigable _)",
+      "BodyHash": "1278E7665BBAB8AA1BF587E0CC71F6F2DED0800B35AF11B5B58227234714369A"
+    },
+    {
+      "Name": "Tape2Tape.Customization.UI.PromptTemplateMenu$$SendResultOnce::System.Void SendResultOnce(Tape2Tape.Customization.UI.PromptTemplateMenu.PromptTemplateResult result)",
+      "Signature": "System.Void SendResultOnce(Tape2Tape.Customization.UI.PromptTemplateMenu.PromptTemplateResult result)",
+      "BodyHash": "42F9BB515E1FA8F87AE9C43F995A568CEA5F8A6B568B2B5EAA957B0729B193E5"
+    },
+    {
+      "Name": "Tape2Tape.Customization.UI.PromptTemplateMenu$$WaitForResult::Cysharp.Threading.Tasks.UniTask\u00601\u003CTape2Tape.Customization.UI.PromptTemplateMenu.PromptTemplateResult\u003E WaitForResult()",
+      "Signature": "Cysharp.Threading.Tasks.UniTask\u00601\u003CTape2Tape.Customization.UI.PromptTemplateMenu.PromptTemplateResult\u003E WaitForResult()",
+      "BodyHash": "6CF794EF91E90E47D3A89D8524E6A28E9F883C4D31BA7B876E17DE86A5E3A805"
     },
     {
       "Name": "Tape2Tape.Customization.UI.SkaterCard$$get_CurrentSkaterData::Tape2Tape.Customization.UI.SkaterDataForUI get_CurrentSkaterData()",

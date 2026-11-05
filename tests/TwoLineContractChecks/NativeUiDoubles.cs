@@ -32,16 +32,10 @@ namespace BepInEx.Unity.IL2CPP.Utils.Collections
 }
 namespace Cysharp.Threading.Tasks
 {
-    public class UniTask<T>
-    {
-        public T Value;
-        public Awaiter GetAwaiter() => new() { Value = Value };
-        public struct Awaiter { public T Value; public bool IsCompleted => true; public T GetResult() => Value; }
-    }
 }
 namespace BishopGames.Catalogs
 {
-    public class MenuDefinitionCatalogReference { public static MenuDefinitionCatalogReference Lineup = new(); }
+    public partial class MenuDefinitionCatalogReference { public static MenuDefinitionCatalogReference Lineup = new(); }
 }
 namespace BishopGames.Module
 {
@@ -93,7 +87,7 @@ namespace Tape2Tape.Customization.UI
         public Il2CppSystem.Collections.Generic.List<ForwardData> m_BenchForwards = new();
         public bool HasChanged;
     }
-    public class T2TUIModule : UIModule
+    public partial class T2TUIModule : UIModule
     {
         public static T2TUIModule Instance = new();
         public static bool FailOpening;

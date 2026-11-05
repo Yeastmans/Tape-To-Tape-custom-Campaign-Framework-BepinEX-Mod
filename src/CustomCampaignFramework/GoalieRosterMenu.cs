@@ -47,6 +47,7 @@ internal static class GoalieRosterMenu
         internal readonly Dictionary<IntPtr, TextPresentation> Labels = new();
         internal readonly Dictionary<IntPtr, BadgePresentation> Badges = new();
         internal GoalieSlot? Confirming, AttemptedSlot;
+        internal readonly SigningSwapPrompt Prompt = new();
         internal Il2CppSystem.Action<AbstractMenu> Closed, Destroying;
     }
     internal sealed class TextPresentation
@@ -398,6 +399,8 @@ internal static class GoalieRosterMenu
         var s = Current;
         if (s?.Menu?.Pointer != __instance?.Pointer) return !Entry(__instance, __0);
         if (!Valid(s) || !s.Ready || s.Saving || s.Unresolved || __instance.IsHiding || __0?.Toggle?.IsSelected != true) return false;
+        __0.Toggle.SetSelected(false, false);
+        if (s.Prompt.Pending) return false;
         int index = -1;
         for (int i = 0; i < __instance.m_ActivePlayersList.m_SkaterCards.Count; i++)
             if (__instance.m_ActivePlayersList.m_SkaterCards[i].Pointer == __0.Pointer) index = i;
@@ -405,25 +408,51 @@ internal static class GoalieRosterMenu
         if (s.Offer == null && (index != 1 || s.Reserve == null)) return false;
         var slot = index == 0 ? GoalieSlot.Active : GoalieSlot.Reserve;
         s.CardMessage = null; s.AttemptedSlot = null;
-        __0.Toggle.SetSelected(false, false);
+        ChooseSlot(s, slot, false);
+        return false;
+    }
+
+    private static void ChooseSlot(Selection s, GoalieSlot slot, bool approvedSwap)
+    {
         bool? prevention = null;
         if (s.Offer != null && slot == GoalieSlot.Reserve && GoalieContractPolicy.Expired(s.Snapshot.Active)) {
             if (!GoalieContractRuntime.TryDepartureProtection(s.Campaign, out bool prevented)) {
                 s.Confirming = null; s.DeparturePrevention = null;
                 Title(s, "Departure protection could not be verified. No signing made. Try again or go back.");
-                return false;
+                return;
             }
             prevention = prevented;
         }
-        if (s.Confirming != slot || s.DeparturePrevention != prevention) {
+        var target = slot == GoalieSlot.Active ? s.Active : s.Reserve;
+        string occupant = target == null ? null : SigningSwapPrompt.Name(target.FullName, target.id);
+        bool displaces = s.Offer != null && (target != null || prevention == false);
+        if (s.Confirming != slot || s.DeparturePrevention != prevention || displaces && !approvedSwap) {
             s.Confirming = slot;
             s.DeparturePrevention = prevention;
-            string occupant = index == 0 ? s.Active.FullName : s.Reserve?.FullName;
-            string result = prevention == false ? $" {s.Offer.Candidate.FullName} becomes active; expired {s.Active.FullName} leaves and Reserve is empty."
-                : prevention == true ? $" Departure prevention applies: {s.Active.FullName} remains active; {s.Offer.Candidate.FullName} stays in Reserve." : "";
-            Title(s, s.Offer == null ? $"Swap {s.Active.FullName} with {s.Reserve.FullName}? Select Reserve again to confirm; Back cancels."
-                : $"{(occupant == null ? "Fill empty reserve" : "Replace " + occupant)} with {s.Offer.Candidate.FullName} ({GoalieContractRuntime.OfferText(s.Offer.Contract)})?{result} Select {slot} again to confirm; Back cancels.");
-            return false;
+            string recruit = s.Offer == null ? null : SigningSwapPrompt.Name(s.Offer.Candidate.FullName, s.Offer.Candidate.id);
+            string starter = SigningSwapPrompt.Name(s.Active.FullName, s.Active.id);
+            string result = prevention == false ? $" {recruit} becomes active. Expired goalie {starter} leaves and Reserve is empty."
+                : prevention == true ? $" Departure protection applies. {starter} remains active and {recruit} stays in Reserve." : "";
+            string question = s.Offer == null ? $"Swap {s.Active.FullName} with {s.Reserve.FullName}?"
+                : $"{(occupant == null ? "Fill empty reserve" : "Replace " + occupant)} with {recruit} ({GoalieContractRuntime.OfferText(s.Offer.Contract)})?{result}";
+            Title(s, displaces ? question : $"{question} Select {(s.Offer == null ? "Reserve" : slot.ToString())} again to confirm; Back cancels.");
+            if (displaces) {
+                var candidate = s.Offer.Candidate;
+                string candidateId = candidate.id;
+                s.Prompt.Show(question, approved => {
+                    if (!Valid(s) || s.Menu.IsHiding || s.Gm?.m_IsExiting == true || s.Saving || s.Unresolved) return;
+                    if (approved && s.Confirming == slot && s.Offer.Candidate?.Pointer == candidate.Pointer
+                        && s.Offer.Candidate.id == candidateId && GoaliePersistenceBridge.Roster.Selection?.Revision == s.Revision) {
+                        // Re-read departure protection before honoring the displayed outcome.
+                        ChooseSlot(s, slot, true);
+                    } else {
+                        s.Confirming = null; s.DeparturePrevention = null;
+                        Title(s, approved ? "The roster or offer changed. Go back and choose again." : "Choose a slot for " + recruit);
+                        s.Menu.SelectFirstPlayer();
+                    }
+                });
+            }
+            return;
         }
         s.AttemptedSlot = slot; s.Saving = true; Title(s, "Saving goalie roster…");
         void Completed(GoalieRosterRuntime.ChangeResult result) {
@@ -444,7 +473,6 @@ internal static class GoalieRosterMenu
             ? GoaliePersistenceBridge.Roster.TryRecruit(s.Campaign, s.Offer.Candidate, slot, s.Revision, Completed, s.Offer.Contract, s.Offer.Visit.Ledger, s.Offer.Id, s.DeparturePrevention, s.Offer.Visit.Selection.Index, s.Offer.Visit.Selection.Layer)
             : GoaliePersistenceBridge.Roster.TrySwap(s.Campaign, s.Revision, Completed);
         if (!accepted) { s.Saving = false; s.Confirming = null; s.CardMessage = "Unavailable — reopen"; Title(s, "Goalie selection changed or could not be prepared. Go back and reopen."); }
-        return false;
     }
     internal static bool Leave(LineupMenu __instance)
     {
@@ -535,6 +563,7 @@ internal static class GoalieRosterMenu
     internal static void Finish(Selection s)
     {
         if (s == null || s.Finished) return; s.Finished = true;
+        s.Prompt.Close();
         RestoreLabels(s);
         if (s.Menu != null && s.Closed != null) { s.Menu.OnHidingCompleted.Unregister(s.Closed); s.Menu.OnDestroy.Unregister(s.Destroying); }
         if (ReferenceEquals(Current, s)) Current = null;
@@ -554,10 +583,8 @@ internal static class GoalieRosterMenu
         }
         if (s.Legacy != null && currentVisit) {
             SetLegacyVisible(s.Legacy, true);
-            if (s.Committed) {
-                if (s.Offer.Visit.Event.NextChoices(s.Offer.Visit.Hires)) { s.Legacy.ClearChoicesButtons(); s.Legacy.InitializeChoicesButtons(s.Offer.Visit.Event.eventChoices); }
-                else s.Legacy.HideMenu();
-            }
+            if (!s.Committed || s.Offer.Visit.Event.NextChoices(s.Offer.Visit.Hires)) LegacySigningOffers.Restore(s.Legacy, s.Offer.Visit.Event);
+            else s.Legacy.HideMenu();
         }
         if (!s.Destroyed && s.Parent != null && s.Campaign?.runData?.Pointer == s.Run && !s.Parent.IsHiding) {
             // Parent owns canonical TeamData; refreshing renders the committed

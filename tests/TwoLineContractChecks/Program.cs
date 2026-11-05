@@ -6,6 +6,7 @@ using Tape2Tape.Hockey.UI;
 using Tape2Tape.Customization.UI;
 using IlList = Il2CppSystem.Collections.Generic.List<Data.ForwardData>;
 
+try {
 int checks = 0;
 void Check(bool value, string message) { checks++; if (!value) throw new Exception(message); }
 (TeamData team, GeneralManagerEvent node, EventChoiceMenu gm) Setup(int hires = 2, bool empty = false, bool contracts = true)
@@ -33,7 +34,54 @@ LineupMenu Recruit(EventChoiceMenu gm,int index=0)
  Check(menu.FirstSelections==1,"Controller focus enters empty or full roster"); return menu;
 }
 SkaterCard Card(LineupMenu menu,int slot)=>menu.m_ActivePlayersList.m_SkaterCards.Concat(menu.m_BenchPlayersList.m_SkaterCards).Single(c=>TwoLineContractRoster.Slot(c.CurrentSkaterData)==slot);
-void Select(LineupMenu menu,int slot) { var card=Card(menu,slot); card.Toggle.IsSelected=true; Check(!TwoLineContractRosterPick.Prefix(menu,card),"Position selection bypasses lineup swaps"); }
+void Pick(LineupMenu menu,int slot) { var card=Card(menu,slot); card.Toggle.IsSelected=true; Check(!TwoLineContractRosterPick.Prefix(menu,card),"Position selection bypasses lineup swaps"); }
+void Select(LineupMenu menu,int slot) {
+    Pick(menu,slot);
+    SigningDialogFixture.Current?.CloseWithResult(PromptTemplateMenu.PromptTemplateResult.Yes);
+}
+
+{
+ var (team,node,gm)=Setup(1); var original=team.forwards; var outgoing=original[7];
+ var menu=Recruit(gm); Pick(menu,7);
+ Check(node.NativeCallbacks==0 && team.forwards[7]==outgoing && gm.Exits==0,
+     "An occupied destination must wait for a distinct Confirm swap action");
+ Check(ReferenceEquals(original,team.forwards),"Choosing a recruit or occupied slot cannot rewrite the roster");
+ var dialog=SigningDialogFixture.Current;
+ Check(dialog!=null && dialog.Metadata.Yes=="Confirm swap" && dialog.Metadata.No=="Cancel"
+     && dialog.Metadata.DefaultSelection==PromptTemplateMenu.PromptTemplateResult.No
+     && dialog.Metadata.Description.Contains("Player 7") && dialog.Metadata.Description.Contains("Recruit 1-0"),
+     "The native dialog identifies both players and defaults to Cancel");
+ Pick(menu,7); Pick(menu,1);
+ Check(ReferenceEquals(SigningDialogFixture.Current,dialog) && node.NativeCallbacks==0,"Repeated roster input cannot confirm or retarget the dialog");
+ dialog.CloseWithResult(PromptTemplateMenu.PromptTemplateResult.Cancel);
+ Check(!menu.IsHiding && ReferenceEquals(original,team.forwards) && gm.Exits==0 && node.Generations==1,"Back returns to the same offer and roster before any changes");
+ Check(menu.FirstSelections==2,"Controller focus is restored to the roster when Back dismisses the prompt");
+ Pick(menu,1); SigningDialogFixture.Current.CloseWithResult(PromptTemplateMenu.PromptTemplateResult.No);
+ Pick(menu,1); var changed=SigningDialogFixture.Current;
+ team.forwards[1]=new ForwardData {id="p1",FullName="Different player"};
+ changed.CloseWithResult(PromptTemplateMenu.PromptTemplateResult.Yes);
+ Check(node.NativeCallbacks==0 && gm.Exits==0 && team.forwards[1].FullName=="Different player","Same-ID replacement while the prompt is open invalidates approval");
+ menu.TryLeaveMenu(false);
+}
+{
+ var (team,node,gm)=Setup(1); var menu=Recruit(gm); var original=team.forwards; var offer=TwoLineContractRoster.Current.Offer;
+ T2TUIModule.FailOpening=true; Pick(menu,4); T2TUIModule.FailOpening=false;
+ Check(SigningDialogFixture.Current==null && node.NativeCallbacks==0 && ReferenceEquals(original,team.forwards),"Prompt load failure keeps the offer and roster available for retry");
+ Pick(menu,4); var pending=SigningDialogFixture.Current;
+ offer.Player=new ForwardData{id="other-offer",FullName="Different recruit"};
+ pending.CloseWithResult(PromptTemplateMenu.PromptTemplateResult.Yes);
+ Check(node.NativeCallbacks==0 && gm.Exits==0,"Replacing the incoming candidate invalidates the visible approval");
+ menu.TryLeaveMenu(false);
+}
+{
+ var (team,node,gm)=Setup(1); var menu=Recruit(gm); Pick(menu,0);
+ var late=SigningDialogFixture.Current; menu.TryLeaveMenu(false);
+ late.CloseWithResult(PromptTemplateMenu.PromptTemplateResult.Yes);
+ Check(node.NativeCallbacks==0 && gm.Exits==0 && gm.DefaultSelections==1,"A late Yes from a closed signing session cannot commit");
+ var next=Recruit(gm); Pick(next,3); var once=SigningDialogFixture.Current;
+ once.CloseWithResult(PromptTemplateMenu.PromptTemplateResult.Yes); once.CloseWithResult(PromptTemplateMenu.PromptTemplateResult.Yes);
+ Check(node.NativeCallbacks==1 && gm.Exits==1 && team.forwards[3].id=="recruit-1-0","One confirmed signing consumes the chosen offer exactly once");
+}
 
 // Every occupied and empty destination, including Line 2 with live Line 2 active.
 foreach(bool contracts in new[]{false,true}) foreach(bool empty in new[]{false,true}) for(int slot=0;slot<10;slot++)
@@ -45,7 +93,7 @@ foreach(bool contracts in new[]{false,true}) foreach(bool empty in new[]{false,t
  TwoLineContractRosterPick.Prefix(menu,Card(menu,slot)); Check(node.NativeCallbacks==0,"Toggle-off cannot hire");
  var goalie=menu.m_ActivePlayersList.m_SkaterCards.Last(); goalie.Toggle.IsSelected=true; TwoLineContractRosterPick.Prefix(menu,goalie); Check(node.NativeCallbacks==0,"Goalie callback cannot replace goalie");
  Select(menu,slot); Check(team.forwards[slot]==recruit && node.NativeCallbacks==1 && TwoLineContracts.Current.Hires==1,"One native hire at selected position");
- TwoLineContracts.Commit(selection.Visit,selection.Offer,slot); TwoLineContractRoster.Finish(selection); Check(node.NativeCallbacks==1 && gm.Exits==1,"Duplicate callbacks cannot hire or exit twice");
+ TwoLineContracts.Commit(selection.Visit,selection.Offer,slot,before[slot]?.Pointer ?? IntPtr.Zero); TwoLineContractRoster.Finish(selection); Check(node.NativeCallbacks==1 && gm.Exits==1,"Duplicate callbacks cannot hire or exit twice");
  Check(!gm.m_IsTakenOver && gm.m_MenuOverSelf==null && TwoLineContractRoster.Current==null,"Final signing releases both menus");
  Check(team.activeLineNumber==2,"Placement preserves active line"); for(int i=0;i<10;i++) if(i!=slot) Check(team.forwards[i]==before[i],"Unselected positions unchanged");
  var run=CampaignUtil.CampaignState.runData; if(!empty){Check(!run.freeAgents.Any(x=>x.id==before[slot].id),"Outgoing contract removed");Check(!run.forwardInjuries.ContainsKey(before[slot].id),"Outgoing injury removed");}
@@ -64,7 +112,7 @@ foreach(bool contracts in new[]{false,true}) foreach(bool empty in new[]{false,t
 {
  var(team,node,gm)=Setup(2,empty,contracts); var offers=node.eventChoices.Select(c=>c.Skater.id).ToArray(); var menu=Recruit(gm); var stale=TwoLineContractRoster.Current; menu.TryLeaveMenu(false);
  Check(gm.Visible && !gm.m_IsTakenOver && gm.Exits==0 && gm.Refreshes==0,"Back restores GM directly"); Check(node.Generations==1 && node.NativeCallbacks==0 && TwoLineContracts.Current.Hires==0,"Cancel never rerolls or spends signing");
- Check(node.eventChoices.Select(c=>c.Skater.id).SequenceEqual(offers),"Same offers retained"); var second=Recruit(gm,1); TwoLineContracts.Commit(stale.Visit,stale.Offer,0); Check(node.NativeCallbacks==0,"Cancelled offer cannot commit later");
+ Check(node.eventChoices.Select(c=>c.Skater.id).SequenceEqual(offers),"Same offers retained"); var second=Recruit(gm,1); TwoLineContracts.Commit(stale.Visit,stale.Offer,0,team.forwards[0]?.Pointer ?? IntPtr.Zero); Check(node.NativeCallbacks==0,"Cancelled offer cannot commit later");
  Select(second,7); Check(gm.Visible && gm.Refreshes==1 && gm.Exits==0,"Remaining signing returns to new offers"); Consistent(team);
 }
 // Compacted expiry preserves survivor positions and both vacancies can be selected.
@@ -87,9 +135,13 @@ foreach(bool skip in new[]{false,true})
 }
 // Both legacy and modern paths use the same ten-slot selector.
 {
- var(team,node,_)=Setup(1); var panel=new EventChoicePanel(); TwoLineContractLegacyPanel.Postfix(panel,node); node.eventChoices[0].onSelection.Invoke(); Check(!TwoLineContractLegacyAdvance.Prefix(panel),"Legacy GM opens selector");
+ var(team,node,_)=Setup(1); var panel=new EventChoicePanel(); TwoLineContractLegacyPanel.Postfix(panel,node);
+ panel.InitializeChoicesButtons(node.eventChoices); node.eventChoices[0].onSelection.Invoke(); panel.ClearChoicesButtons();
+ Check(!TwoLineContractLegacyAdvance.Prefix(panel),"Legacy GM opens selector");
  Check(panel._canvasGroup.alpha==0 && !panel._canvasGroup.interactable,"Legacy GM hides"); Check(!TwoLineContractLegacyAdvance.Prefix(panel),"Duplicate legacy hide suppressed");
  TwoLineContractRoster.Current.Menu.TryLeaveMenu(false); Check(panel.Hides==0 && panel._canvasGroup.alpha==1,"Legacy cancel restores same panel");
+ var restored = panel.choicesList.Where(button=>!button.Retired).ToArray();
+ Check(restored.Length==node.eventChoices.Count && restored[0].Button.Focused && node.NativeCallbacks==0 && node.Generations==1,"Returning to legacy GM restores the same offers and controller focus after native button cleanup");
  node.eventChoices[0].onSelection.Invoke(); TwoLineContractLegacyAdvance.Prefix(panel); Select(TwoLineContractRoster.Current.Menu,9); Check(panel.Hides==1 && node.NativeCallbacks==1,"Legacy final signing closes once"); Consistent(team);
 }
 // Orphan recovery, no-expiry, scopes and unrelated modes.
@@ -167,3 +219,4 @@ foreach (bool contracts in new[] { false, true })
  Check(TwoLineContractChoices.Prefix(node,ref count,ref result,out var scope),"Two eligible candidates keep the native random selection path");TwoLineContractChoices.Finalizer(scope);
 }
 Console.WriteLine($"PASS: {checks} source-linked roster/recruitment checks. Native UI/gameplay validation remains pending.");
+} catch (Exception ex) { Console.Error.WriteLine(ex); Environment.ExitCode = 1; }

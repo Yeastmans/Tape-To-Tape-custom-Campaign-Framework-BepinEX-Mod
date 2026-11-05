@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Themes.Fluent;
+using Avalonia.Threading;
 
 namespace CampaignCreator;
 
@@ -54,15 +55,21 @@ public sealed class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var notice = new BetaNoticeWindow();
-            notice.ContinueRequested += () =>
+            notice.ContinueRequested += async token =>
             {
-                PageHelpButton.Install();
-                MainWindow.BuildGameArtOnStart = true;
-                MainWindow.UpdateModCompatibilityOnStart = true;
-                var studio = new MainWindow(desktop.Args ?? Array.Empty<string>());
-                desktop.MainWindow = studio;
-                studio.Show();
-                notice.Close();
+                var args = desktop.Args ?? Array.Empty<string>();
+                var startup = await Task.Run(() => MainWindow.PrepareStartup(args, token), token).ConfigureAwait(false);
+                await Dispatcher.UIThread.InvokeAsync(() =>
+                {
+                    token.ThrowIfCancellationRequested();
+                    PageHelpButton.Install();
+                    MainWindow.BuildGameArtOnStart = true;
+                    MainWindow.UpdateModCompatibilityOnStart = true;
+                    var studio = new MainWindow(startup);
+                    studio.Show();
+                    desktop.MainWindow = studio;
+                    notice.Close();
+                }, DispatcherPriority.Background, token);
             };
             desktop.MainWindow = notice;
         }

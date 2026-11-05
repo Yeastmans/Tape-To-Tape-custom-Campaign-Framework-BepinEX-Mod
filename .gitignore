@@ -15,6 +15,18 @@ release/Nexus-Beta-1.0/
 # User data, game files and retired development output
 artifacts/
 tests/*
+!tests/CampaignOpenChecks/
+tests/CampaignOpenChecks/*
+!tests/CampaignOpenChecks/*.cs
+!tests/CampaignOpenChecks/*.csproj
+!tests/StudioStartupLoadingChecks/
+tests/StudioStartupLoadingChecks/*
+!tests/StudioStartupLoadingChecks/*.cs
+!tests/StudioStartupLoadingChecks/*.csproj
+!tests/StudioDataLoadingChecks/
+tests/StudioDataLoadingChecks/*
+!tests/StudioDataLoadingChecks/*.cs
+!tests/StudioDataLoadingChecks/*.csproj
 !tests/PlayNowUpdateChecks/
 !tests/PlayNowRosterChecks/
 !tests/OpponentEffectNativeScopeChecks/

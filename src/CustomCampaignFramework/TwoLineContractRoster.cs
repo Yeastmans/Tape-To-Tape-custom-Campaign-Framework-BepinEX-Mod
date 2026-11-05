@@ -27,6 +27,9 @@ internal static class TwoLineContractRoster
         internal EventChoiceMenu Gm;
         internal EventChoicePanel Legacy;
         internal bool Ready, Closing, Finished, Committed;
+        internal readonly SigningSwapPrompt Prompt = new();
+        internal readonly string[] SourceLineIds = new string[10];
+        internal readonly ForwardData[] SourcePlayers = new ForwardData[10];
         internal Il2CppSystem.Action<AbstractMenu> Closed;
     }
 
@@ -44,8 +47,15 @@ internal static class TwoLineContractRoster
         visit.AdvancePending = false;
         try
         {
-            TwoLineContracts.Reconcile(visit.Team);
             s.Preview = UnityEngine.Object.Instantiate(visit.Team);
+            s.Preview.lines = visit.Team.CloneLines();
+            var roster = TwoLineContracts.ProjectRoster(visit.Team);
+            for (int i = 0; i < 10; i++)
+            {
+                s.SourcePlayers[i] = roster[i];
+                s.SourceLineIds[i] = TwoLineContracts.SlotId(visit.Team, i);
+            }
+            TwoLineContracts.ApplyRoster(s.Preview, roster);
             s.Preview.SetActiveLine(1); // Display Line 1 above Line 2, regardless of the live active line.
             if (gm != null) { gm.m_IsTakenOver = true; gm.SetVisibility(false, true); }
             if (legacy != null) SetLegacyVisible(legacy, false);
@@ -139,27 +149,54 @@ internal static class TwoLineContractRoster
         var s = Current;
         if (s?.Menu?.Pointer != menu?.Pointer) return false;
         if (!Valid(s) || !s.Ready || s.Closing || card == null || menu.IsHiding || card.Toggle?.IsSelected != true) return true;
+        card.Toggle.SetSelected(false, false);
+        if (s.Prompt.Pending) return true;
         if (!menu.m_ActivePlayersList.ContainsSkaterCard(card) && !menu.m_BenchPlayersList.ContainsSkaterCard(card)) return true;
         int slot = Slot(card.CurrentSkaterData);
         if (slot < 0) return true;
         string shown = card.CurrentSkaterData.Skater?.id ?? "";
-        if (shown != (TwoLineContracts.SlotId(s.Visit.Team, slot) ?? "")) return true;
-        TwoLineContracts.Commit(s.Visit, s.Offer, slot);
+        var outgoing = s.SourcePlayers[slot];
+        var incoming = s.Offer.Player;
+        string incomingId = incoming.id;
+        bool CurrentTarget() => Valid(s) && !s.Closing && !menu.IsHiding && s.Gm?.m_IsExiting != true
+            && s.Offer.Player?.Pointer == incoming.Pointer && incoming.id == incomingId
+            && s.SourceLineIds[slot] == TwoLineContracts.SlotId(s.Visit.Team, slot)
+            && (outgoing?.id ?? "") == shown
+            && TwoLineContracts.ProjectRoster(s.Visit.Team)[slot]?.Pointer == outgoing?.Pointer;
+        if (!CurrentTarget()) return true;
+        if (outgoing == null) Sign(s, menu, slot);
+        else s.Prompt.Show($"Sign {SigningSwapPrompt.Name(incoming.FullName, incomingId)} to replace {SigningSwapPrompt.Name(outgoing.FullName, shown)} on line {slot / 5 + 1}?", approved =>
+        {
+            if (!Valid(s) || menu.IsHiding || s.Gm?.m_IsExiting == true) return;
+            if (approved && CurrentTarget()) Sign(s, menu, slot);
+            else
+            {
+                if (approved && menu.m_Header?.m_Title != null) menu.m_Header.m_Title.text = "The roster or offer changed. Go back and choose again.";
+                menu.SelectFirstPlayer();
+            }
+        });
+        return true;
+    }
+
+    private static void Sign(Selection s, LineupMenu menu, int slot)
+    {
+        s.Closing = true;
+        TwoLineContracts.Commit(s.Visit, s.Offer, slot, s.SourcePlayers[slot]?.Pointer ?? IntPtr.Zero);
         if (!s.Offer.Taken)
         {
-            card.Toggle.SetSelected(false, false);
+            s.Closing = false;
             if (menu.m_Header?.m_Title != null) menu.m_Header.m_Title.text = "Recruitment failed. Try again or go back.";
-            return true;
+            return;
         }
-        s.Committed = true; s.Closing = true;
+        s.Committed = true;
         menu.TryLeaveMenu(false);
-        return true;
     }
 
     internal static void Finish(Selection s)
     {
         if (s == null || s.Finished) return;
         s.Finished = true;
+        s.Prompt.Close();
         if (s.Menu != null && s.Closed != null)
         {
             s.Menu.OnHidingCompleted.Unregister(s.Closed);
@@ -187,13 +224,9 @@ internal static class TwoLineContractRoster
         if (s.Legacy != null && currentVisit)
         {
             SetLegacyVisible(s.Legacy, true);
-            if (s.Committed)
-            {
-                s.Visit.AdvancePending = false;
-                if (s.Visit.Node.NextChoices(s.Visit.Hires))
-                { s.Legacy.ClearChoicesButtons(); s.Legacy.InitializeChoicesButtons(s.Visit.Node.eventChoices); }
-                else s.Legacy.HideMenu();
-            }
+            s.Visit.AdvancePending = false;
+            if (!s.Committed || s.Visit.Node.NextChoices(s.Visit.Hires)) LegacySigningOffers.Restore(s.Legacy, s.Visit.Node);
+            else s.Legacy.HideMenu();
         }
         if (s.Preview != null) UnityEngine.Object.Destroy(s.Preview);
     }

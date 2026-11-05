@@ -365,6 +365,23 @@ public sealed class CompatibilityBaseline
             if (image.SharedMethodCount(method.Rva) != 1) throw new InvalidDataException("Shared empty-star continuation target: " + name);
             protectedMethods.Add(image.Identity(method));
         }
+        // A signing decision uses the native two-button prompt and its one-shot
+        // result after close. Both Back and destruction must still yield Cancel.
+        foreach (string name in new[] {
+            "Data.TeamData$$CloneLines",
+            "Tape2Tape.Customization.UI.CustomizableYesNoPrompt.Data$$.ctor",
+            "Tape2Tape.Customization.UI.CustomizableYesNoPrompt$$InitData",
+            "Tape2Tape.Customization.UI.PromptTemplateMenu$$BehaviourEnable",
+            "Tape2Tape.Customization.UI.PromptTemplateMenu$$BehaviourDestroy",
+            "Tape2Tape.Customization.UI.PromptTemplateMenu$$OnYesClick",
+            "Tape2Tape.Customization.UI.PromptTemplateMenu$$OnNoClick",
+            "Tape2Tape.Customization.UI.PromptTemplateMenu$$OnCancelClick",
+            "Tape2Tape.Customization.UI.PromptTemplateMenu$$OnBackInput",
+            "Tape2Tape.Customization.UI.PromptTemplateMenu$$WaitForResult",
+            "Tape2Tape.Customization.UI.PromptTemplateMenu$$CloseWithResult",
+            "Tape2Tape.Customization.UI.PromptTemplateMenu.<CloseWithResult>d__#$$MoveNext",
+            "Tape2Tape.Customization.UI.PromptTemplateMenu$$SendResultOnce" })
+            protectedMethods.Add(image.Identity(image.Resolve(name)));
         var features = ReviewedFeatureContracts.Read();
         p.RawHooks = features.RawHooks; p.NamedHooks = features.NamedHooks;
         features.Validate(image, p);

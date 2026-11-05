@@ -31,9 +31,9 @@ public static partial class ContentImport
     public sealed record Entry(string Name, string File, string Source) { public override string ToString() => Name; }
     public static bool IsGoalie(CampaignDocument doc, string file) => doc.Get("Export Role") == "goalie" || doc.Get("Position").Contains("Goalie", StringComparison.OrdinalIgnoreCase)
         || doc.Fields.ContainsKey("Catching") || doc.Fields.ContainsKey("Goalie Skill") || Path.GetFileName(file).Contains("goalie", StringComparison.OrdinalIgnoreCase);
-    public static bool Matches(string file, string kind)
+    public static bool Matches(string file, string kind) => Matches(new CampaignDocument(System.IO.File.ReadAllText(file)), file, kind);
+    internal static bool Matches(CampaignDocument doc, string file, string kind)
     {
-        var doc = new CampaignDocument(System.IO.File.ReadAllText(file));
         bool team = Path.GetFileName(file).Equals("team.txt", StringComparison.OrdinalIgnoreCase) || doc.Fields.ContainsKey("Team Name");
         return kind == "team" ? team : !team && (doc.Fields.ContainsKey("Name") || doc.Fields.ContainsKey("Import Player"))
             && (kind == "player" || IsGoalie(doc, file) == (kind == "goalie"));

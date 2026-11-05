@@ -20,6 +20,11 @@ p=Copy();p.Sites[0].Target++;Reject(()=>p.Validate(p.GameHash,baseline.Id),"Call
 p=Copy();p.FlowBytes="90909090909090";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Starting-flow ABI cannot be replaced by arbitrary bytes");
 p=Copy();p.SurfaceBytes="90";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Rink ABI remains guarded");
 var image=new NativeImage(game);
+foreach (string method in new[] { "CustomizableYesNoPrompt$$InitData", "PromptTemplateMenu$$OnYesClick",
+    "PromptTemplateMenu$$OnNoClick", "PromptTemplateMenu$$OnBackInput", "PromptTemplateMenu$$BehaviourDestroy",
+    "PromptTemplateMenu$$WaitForResult", "PromptTemplateMenu$$SendResultOnce", "PromptTemplateMenu.<CloseWithResult>d__#$$MoveNext" })
+    Check(baseline.Methods.Any(m => m.Name.StartsWith("Tape2Tape.Customization.UI." + method + "::", StringComparison.Ordinal)),
+        "Signing confirmation protects the native decision boundary: " + method);
 Check(baseline.Profile.Build == "26372689", "Current release targets reviewed Steam build 26372689");
 Check(baseline.Profile.FlowRva == 0x4436EA7 && baseline.Profile.FlowBytes == "400FB6C60A4758",
     "Fresh-run profile pins the reviewed SIL flag and native continuation");

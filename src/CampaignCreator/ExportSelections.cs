@@ -45,7 +45,7 @@ internal static class ExportSelections
             || value.Equals("standard", StringComparison.OrdinalIgnoreCase) || value.Equals("team colors", StringComparison.OrdinalIgnoreCase)) return value.ToLowerInvariant();
         if (field == "Number Skin" && System.Text.RegularExpressions.Regex.IsMatch(value, @"^Numbers/Number_\d+(LH)?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)) return value;
         if (role == "goalie" && GoalieEquipmentCatalog.Values(field).Contains(value, StringComparer.OrdinalIgnoreCase)) return value;
-        try { return game.Assets.Resolve(role, field, value); }
+        try { return game.ResolveAsset(role, field, value); }
         catch (ArgumentException) { report?.Skip(source, reportField ?? field, value); return null; }
     }
 
