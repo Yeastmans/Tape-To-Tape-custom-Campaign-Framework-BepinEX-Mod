@@ -45,7 +45,7 @@ public static class SquadBehaviors
         new SquadBehavior("four_skaters", "Four active skaters", "Limit the active roster to four skaters.", "eliminator"),
         new SquadBehavior("three_skaters", "Three active skaters", "Limit the active roster to three skaters.", "trio"),
         new SquadBehavior("trio_draft", "Trio draft requirement", "Require three active and at least three benched skaters when confirming the starting draft.", "trio"),
-        new SquadBehavior("two_lines", "Two-line roster flow", "Use two complete authored lines: ten skaters and a goalie are required before saving. Skips superstar and bench drafts, disables Oldschool's starting choice and intermission lineup changes. Both complete lines remain visible in read-only previews. Fill both lines in Team roster before enabling it.", "lines"),
+        new SquadBehavior("two_lines", "Two-line roster flow", "Use two lines. No Effects may start with no skaters and recruit both lines during the run; otherwise ten authored skaters and a goalie are required before saving. Skips superstar and bench drafts, disables Oldschool's starting choice and intermission lineup changes. Both lines remain visible in read-only previews.", "lines"),
         new SquadBehavior("line_stamina", "Line stamina", "Enable the native player-team stamina system.", "lines"),
         new SquadBehavior("no_bench_quests", "Disable bench quests", "Disable native bench quest tracking.", "lines"),
         new SquadBehavior("no_bench_snapshots", "Disable bench snapshots", "Disable native bench snapshot restoration.", "lines", "oldschool"),

@@ -12,6 +12,14 @@ namespace EndlessMode;
 
 internal static class TeamGoalSound
 {
+    // Campaign mode already installs these through Plugin.Load's PatchAll.
+    internal static void InstallForDefault()
+    {
+        var harmony = new Harmony("com.mods.customcampaign.goalaudio");
+        foreach (var type in new[] { typeof(TeamGoalSoundScope), typeof(MuteReplacedGoalEvent), typeof(ReleaseGoalAudio), typeof(GoalAudioVolume) })
+            harmony.CreateClassProcessor(type).Patch();
+    }
+
     private sealed class Sound { internal string Data; internal byte[] Bytes; internal FMOD.Sound Handle; internal bool Loaded; internal float Volume; }
     private static readonly Dictionary<string, Sound> Sounds = new();
     private static FMOD.Channel channel;

@@ -1764,6 +1764,7 @@ public class Plugin : BasePlugin
         {
             BaseGamePoolsRuntime.Install();
             CustomRewardPlayNow.InstallForDefault();
+            TeamGoalSound.InstallForDefault();
             CustomRewardGoalRules.Install();
             CustomRewardCapabilities.Install();
             CustomRewardDataCapabilities.Install();
@@ -3006,10 +3007,9 @@ public static void PostfixMenu(Tape2Tape.Hockey.UI.ChooseMetaMenu __instance)
             if (template == null) { Plugin.Log.LogError($"[CustomSquad] {key}: template '{wanted}' is unavailable"); continue; }
             bool freeBuild = CampaignCore.SquadTemplatePolicy.Identity(wanted) == "noeffects";
             if (freeBuild && !SquadStartingScreens.Enabled(cfg, "superstar_screen") &&
-                !(SlotIsConfigured(cfg.LW) && SlotIsConfigured(cfg.RW) && SlotIsConfigured(cfg.C)
-                  && SlotIsConfigured(cfg.LD) && SlotIsConfigured(cfg.RD)))
+                !CustomStartingRoster.CanStartWithoutSuperstars(cfg))
             {
-                Plugin.Log.LogWarning($"[CustomSquad] No Effects team '{key}' needs five authored skaters when starting superstars are off");
+                Plugin.Log.LogWarning($"[CustomSquad] No Effects team '{key}' needs a complete first line or no starting skaters when starting superstars are off");
                 continue;
             }
             // Each team's preset supplies its own assets and behavior defaults.

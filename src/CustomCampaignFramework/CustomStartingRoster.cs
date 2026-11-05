@@ -7,6 +7,23 @@ namespace EndlessMode;
 
 internal static class CustomStartingRoster
 {
+    // Recruit-first campaigns intentionally begin with no skaters. Keep the
+    // complete-first-line requirement for partial No Effects rosters, without
+    // mistaking authored second-line players for an entirely empty team.
+    internal static bool CanStartWithoutSuperstars(TeamConfig cfg)
+    {
+        if (cfg == null) return false;
+        var slots = new[] { cfg.LW, cfg.RW, cfg.C, cfg.LD, cfg.RD, cfg.L2_LW, cfg.L2_RW, cfg.L2_C, cfg.L2_LD, cfg.L2_RD };
+        bool any = false, firstLineComplete = true;
+        for (int i = 0; i < slots.Length; i++)
+        {
+            bool configured = PatchChooseMetaUI.SlotIsConfigured(slots[i]);
+            any |= configured;
+            if (i < 5 && !configured) firstLineComplete = false;
+        }
+        return firstLineComplete || !any;
+    }
+
     [ThreadStatic] private static TeamConfig creating;
     [ThreadStatic] private static int loadingSave;
     [ThreadStatic] private static string[] startingIds;

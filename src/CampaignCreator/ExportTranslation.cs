@@ -97,7 +97,7 @@ internal static partial class ExportTranslation
         string? campaign = CustomRewardCatalog.CampaignFor(teamFile);
         game.LoadCustomRewards(teamFile);
         game.ValidateCustomLoadout(team);
-        var custom = new CustomRewardExportBundle(game);
+        var custom = new CustomRewardExportBundle(game, report);
         team = ExportSelections.Logo(team, sourceRoot ?? game.Root, report, campaign);
         foreach (bool away in new[] { false, true }) team = ExportSelections.JerseyLogo(team, sourceRoot ?? game.Root, away, report, campaign);
         if (team.Get("Team Name").Length == 0) throw new ArgumentException("Name the team before exporting.");
@@ -194,7 +194,7 @@ internal static partial class ExportTranslation
         teamSidecar.Set("Team Relics", string.Join(",", (string[])model["relics"])); teamSidecar.Set("Relics", "");
         // Team talents have already been resolved onto each exported player.
         teamSidecar.Set("Team Talents", ""); teamSidecar.Set("Talents", "");
-        CustomRewardExport.Embed(teamSidecar, custom.Items);
+        CustomRewardExport.EmbedPlayNow(teamSidecar, custom.Items, report?.RewardPolicy ?? PlayNowRewardPolicy.Strict);
         if (statScale != 1) teamSidecar.Set("Stat Scale", "1"); // already baked into the player stats
         if (twoLines)
             PlayNowRosterCodec.Write(teamSidecar, new PlayNowRoster(
@@ -247,7 +247,6 @@ internal static partial class ExportTranslation
     {
         string sourceRoot = root;
         team = ExportSelections.Logo(team, root, report, CustomRewardCatalog.CampaignFor(file));
-        root = RuntimeRoot(root);
         game = new GameData(sourceRoot);
         var package = BuildTeam(team, file, game, sourceRoot, report);
         string save = Path.Combine(GameSavePaths.Root, "TeamDataModels");

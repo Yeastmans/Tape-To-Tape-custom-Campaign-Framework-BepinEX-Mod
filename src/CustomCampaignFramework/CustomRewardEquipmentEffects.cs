@@ -5,6 +5,7 @@ using CampaignCore;
 using HarmonyLib;
 using Movements;
 using Rogue;
+using Rogue.Powerups.Controllers.Talents;
 using Skaters;
 using Tape2Tape;
 using UnityEngine;
@@ -61,11 +62,12 @@ internal static class CustomRewardEquipmentEffects
         foreach (var pair in reserves) if (!state.Reserves.TryGetValue(pair.Key, out int count) || count != pair.Value) {
             forward.AddStickCountContributor(pair.Value, Source + pair.Key); state.Reserves[pair.Key] = pair.Value;
         }
-        bool repel = rules.Any(d => d.Effect == CustomRewardEffects.RepelPuck) && !forward.HaveTalentCached<PuckRepellent>();
-        if (repel && state.Repellent == null) state.Repellent = forward.gameObject.AddComponent<PuckRepellentComponent>();
-        else if (!repel && state.Repellent != null) {
-            state.Repellent.enabled = false; Object.Destroy(state.Repellent); state.Repellent = null;
-        }
+        bool repel = !forward.IsBenched() && forward._rigidbody != null
+            && rules.Any(d => d.Effect == CustomRewardEffects.RepelPuck) && !forward.HaveTalentCached<PuckRepellent>();
+        // Native PuckRepellentController uses the Rigidbody's object: Awake
+        // caches a same-object Rigidbody, which may be below the skater root.
+        if (repel && state.Repellent == null) state.Repellent = forward._rigidbody.gameObject.AddComponent<PuckRepellentComponent>();
+        else if (!repel && state.Repellent != null) ReleaseRepellent(state);
     }
     internal static void Clear()
     {
@@ -73,10 +75,23 @@ internal static class CustomRewardEquipmentEffects
             if (state.HandMode) RestoreHands(state);
             if (state.StickForbidden) state.Skater.RemoveForbidStickSource(Source + "NoStick");
             foreach (string id in state.Reserves.Keys) state.Skater.RemoveStickCountContributor(Source + id);
-            if (state.Repellent != null) { state.Repellent.enabled = false; Object.Destroy(state.Repellent); }
+            if (state.Repellent != null) ReleaseRepellent(state);
         }
         foreach (var state in states.Values) if (state.Offside) OffsideController.RemoveForceSource(state.OffsideSource);
         states.Clear();
+    }
+    private static void ReleaseRepellent(State state)
+    {
+        var component = state.Repellent;
+        var skater = state.Skater;
+        var native = skater != null && !skater.IsBenched() && skater.HaveTalentCached<PuckRepellent>()
+            ? skater.GetTalentController<PuckRepellentController>() : null;
+        // Native AddEffect skips an existing same-host component. Transfer its
+        // teardown reference too, so RemoveEffect can release the shared effect.
+        if (native != null && (native._component == null || native._component == component))
+            native._component = component;
+        else { component.enabled = false; Object.Destroy(component); }
+        state.Repellent = null;
     }
     private static void RestoreHands(State state)
     {

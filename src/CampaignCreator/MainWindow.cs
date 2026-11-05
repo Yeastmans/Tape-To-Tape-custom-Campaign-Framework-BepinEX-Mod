@@ -424,25 +424,28 @@ public sealed partial class MainWindow : Window
     private async void Export()
     {
         if (teamExportPending) return;
+        teamExportPending = true;
         try
         {
         var exportDocument = ReadEditor();
         if (!ValidateEditor(exportDocument)) return;
-        var report = new ExportReport();
+        var report = new ExportReport(PlayNowRewardPolicy.ExportAnyway);
         if (editorShell is TeamEditorView teamView)
         {
             if (teamView.HasEquipmentChanges) { status.Text = "Save the team's equipment changes before exporting its roster."; return; }
-            teamExportPending = true;
-            try
-            {
                 var choice = await ChoosePlayNowExport(exportDocument.Get("Team Name"));
                 if (choice == null) return;
+                var prepared = ExportTranslation.BuildTeam(exportDocument, path!, new GameData(root), root, report);
+                var rewardChoice = await PlayNowRewardExport.Choose(this, report);
+                if (rewardChoice == null) return;
+                var package = PlayNowRewardExport.ApplyTeam(prepared, rewardChoice.Value);
+                report.ApplyRewardChoice(rewardChoice.Value);
                 string teamResult;
                 if (choice.Target == null)
-                    teamResult = ExportTranslation.ExportTeam(exportDocument, path!, data, root, report);
+                    teamResult = ExportTranslation.Write(package, Path.Combine(GameSavePaths.Root, "TeamDataModels"),
+                        Path.Combine(ExportTranslation.RuntimeRoot(root), "play_now_overrides"), root);
                 else
                 {
-                    var package = ExportTranslation.BuildTeam(exportDocument, path!, new GameData(root), root, report);
                     teamResult = ExportTranslation.WriteUpdate(package, choice.Target,
                         Path.Combine(GameSavePaths.Root, "TeamDataModels"),
                         Path.Combine(ExportTranslation.RuntimeRoot(root), "play_now_overrides"), root);
@@ -451,16 +454,20 @@ public sealed partial class MainWindow : Window
                     : choice.Target.LineupChanged ? "Updated selected team and replaced saved in-game lineup edits with Studio's roster"
                     : "Updated selected team and roster") + " · restart the game to load " + Path.GetFileName(teamResult);
                 ShowExportReport(report);
-            }
-            finally { teamExportPending = false; }
             return;
         }
         if (editorShell is PlayerEditorView playerView) playerView.ApplyExportAppearance(exportDocument);
-        var result = PlayerExport.Export(exportDocument, data, root, role, path, report);
+        var player = PlayerExport.Prepare(exportDocument, data, root, role, path, report);
+        var playerChoice = await PlayNowRewardExport.Choose(this, report);
+        if (playerChoice == null) return;
+        PlayNowRewardExport.ApplyPlayer(player.Model, player.Sidecar, playerChoice.Value);
+        report.ApplyRewardChoice(playerChoice.Value);
+        var result = PlayerExport.WritePrepared(player, root, role);
         status.Text = "Exported " + Path.GetFileName(result) + " · restart the game to load it.";
         ShowExportReport(report);
         }
         catch (Exception ex) { status.Text = "Export failed: " + ex.Message; }
+        finally { teamExportPending = false; }
     }
     private async Task EditMap()
     {

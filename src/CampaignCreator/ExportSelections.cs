@@ -5,8 +5,28 @@ namespace CampaignCreator;
 // One report per export; no changes are made to authored campaign files.
 internal sealed class ExportReport
 {
+    internal ExportReport() : this(PlayNowRewardPolicy.Strict) { }
+    internal ExportReport(PlayNowRewardPolicy rewardPolicy)
+    {
+        if (!Enum.IsDefined(rewardPolicy)) throw new ArgumentOutOfRangeException(nameof(rewardPolicy));
+        RewardPolicy = rewardPolicy;
+    }
+    internal PlayNowRewardPolicy RewardPolicy { get; }
+    private readonly HashSet<string> unsupportedIds = new(StringComparer.OrdinalIgnoreCase);
+    internal List<string> Unsupported { get; } = new();
     private readonly HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
     internal List<string> Skipped { get; } = new();
+    internal void UnsupportedReward(CustomRewardDefinition item)
+    {
+        string label = item.Name + " (" + item.Kind + ")";
+        if (unsupportedIds.Add(item.Id)) Unsupported.Add(label);
+        if (RewardPolicy == PlayNowRewardPolicy.SkipUnsupported && seen.Add(label)) Skipped.Add(label);
+    }
+    internal void ApplyRewardChoice(PlayNowRewardPolicy policy)
+    {
+        if (policy == PlayNowRewardPolicy.SkipUnsupported)
+            foreach (string label in Unsupported) if (seen.Add(label)) Skipped.Add(label);
+    }
     internal void Skip(CampaignDocument source, string field, string value)
     {
         string owner = source.Get("Name", source.Get("Team Name", "Export"));

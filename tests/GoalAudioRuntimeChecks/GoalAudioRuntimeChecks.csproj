@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net6.0</TargetFramework><LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>disable</Nullable><NuGetAudit>false</NuGetAudit><CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/CustomCampaignFramework/TeamGoalSound.cs" Link="TeamGoalSound.cs" />
+    <Compile Include="../../src/CampaignCore/GoalSoundWave.cs" Link="GoalSoundWave.cs" />
+    <Reference Include="../../installer/bepinex/BepInEx/core/0Harmony.dll" />
+    <Reference Include="../../installer/bepinex/BepInEx/core/MonoMod.*.dll" />
+    <Reference Include="../../installer/bepinex/BepInEx/core/Mono.Cecil*.dll" />
+  </ItemGroup>
+</Project>

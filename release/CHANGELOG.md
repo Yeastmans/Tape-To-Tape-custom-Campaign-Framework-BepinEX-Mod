@@ -1,5 +1,13 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 41
+
+- No Effects squads may start with no skaters and recruit their roster. Empty and goalie-only recruit-first squads can also be saved in Studio; partial nonempty rosters retain validation. Removed players stay absent after saving and switching roster lines.
+- Goal-celebration audio hooks now load for Play Now with Base game selected, while campaign mode retains its existing installation route.
+- Fixed custom puck-repellent initialization on the wrong object, which caused repeated PuckRepellentComponent.FixedUpdate null-reference errors. Bench transitions, cleanup and native-talent ownership handoff are covered.
+- Play Now export offers Skip unsupported, Export anyway and Cancel for campaign-dependent custom reward rules. Choices apply to the prepared copy; skipped rules leave both model IDs and companion snapshots. Export anyway preserves valid rules under an explicit marker, without claiming their campaign effects work in Play Now.
+- Custom-team roster previews display authored regular, Chaos and goalie talent names using the correct campaign or embedded definitions. Native reward catalogs remain separate.
+
 ## Beta 1.0 revision 40
 
 - Head Editor batch import accepts PSD export names such as Front [S].png, including separate fitted-head and extra-layer views. Keep fitted exports in a Helmet folder.

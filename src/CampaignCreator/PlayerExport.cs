@@ -109,20 +109,26 @@ internal static class PlayerExport
         return obj;
     }
     internal static string Export(CampaignDocument d, GameData game, string root, string role, string? sourceFile = null, ExportReport? report = null)
+        => WritePrepared(Prepare(d, game, root, role, sourceFile, report), root, role);
+
+    internal static (string Id, Dictionary<string, object> Model, CampaignDocument Sidecar) Prepare(
+        CampaignDocument d, GameData game, string root, string role, string? sourceFile = null, ExportReport? report = null)
     {
-        string sourceRoot = root;
         d = ExportPlayerResolver.Resolve(d, role);
         d.Set(OwnEquipmentKey, EquipmentIntent(d));
         d = ExportSelections.Logo(AppearanceContract.Resolve(d, new CampaignDocument(""), new CampaignDocument(""), role), root, report, CustomRewardCatalog.CampaignFor(sourceFile));
-        root = ExportTranslation.RuntimeRoot(root);
-        game = new GameData(sourceRoot); game.LoadCustomRewards(sourceFile);
-        var (id, obj, sidecar) = Build(d, game, role, report);
+        game = new GameData(root); game.LoadCustomRewards(sourceFile);
+        return Build(d, game, role, report);
+    }
+    internal static string WritePrepared((string Id, Dictionary<string, object> Model, CampaignDocument Sidecar) prepared, string root, string role)
+    {
+        var (id, obj, sidecar) = prepared;
         string save = Path.Combine(GameSavePaths.Root, "TeamDataModels");
         if (!Directory.Exists(save)) throw new DirectoryNotFoundException("Game save folder not found. Launch the game once before exporting.");
         string target = Path.Combine(save, (role == "goalie" ? "CustomGoalie-" : "CustomForward-") + id + ".json");
         string overrides = Path.Combine(ExportTranslation.RuntimeRoot(root), "play_now_overrides"); Directory.CreateDirectory(overrides);
         string sidecarPath = Path.Combine(overrides, id + ".txt");
-        string snapshot = Path.Combine(sourceRoot, "library", "Exported Players", id + ".txt");
+        string snapshot = Path.Combine(root, "library", "Exported Players", id + ".txt");
         return Write(obj, sidecar, target, sidecarPath, snapshot);
     }
     internal static (string Id, Dictionary<string, object> Model, CampaignDocument Sidecar) Build(
@@ -133,7 +139,7 @@ internal static class PlayerExport
             throw new ArgumentException("Relics act on a team in Play Now. Export this player's team to carry its relics too.");
         string id = ExportFileNames.NewId(d.Get("Name"), role == "goalie" ? "Goalie" : "Player");
         var obj = Convert(d, game, role, id, report);
-        var custom = new CustomRewardExportBundle(game); custom.Player(obj);
+        var custom = new CustomRewardExportBundle(game, report); custom.Player(obj);
         var sidecar = TranslationSidecar(d, game, role, obj, report);
         custom.EmbedPlayer(sidecar, obj);
         return (id, obj, sidecar);

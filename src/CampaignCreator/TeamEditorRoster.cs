@@ -20,15 +20,20 @@ internal sealed partial class TeamEditorView
         var linePositions = RosterLines.Assign(directory);
         var inactive = Value("Starting Bench Positions").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.OrdinalIgnoreCase);
         bool TwoLines() => IsCustomSquad(file) && SquadBehaviors.Enabled(Value("Squad Template"), "two_lines", Value);
+        bool NoEffects() => SquadTemplatePolicy.Identity(Value("Squad Template")) == "noeffects";
+        bool Remaining(string playerFile) => !removedRosterPlayers.Contains(playerFile) && File.Exists(playerFile);
         IReadOnlyList<string> RosterProblems()
         {
             if (!TwoLines()) return [];
             string[] required = RosterLines.Skaters.Concat(RosterLines.Skaters.Select(p => "Line 2 " + p)).Append("Goalie").ToArray();
-            var available = entries.Where(e => !removedRosterPlayers.Contains(e.path) && File.Exists(e.path)).ToArray();
+            var available = entries.Where(e => Remaining(e.path)).ToArray();
             var errors = new List<string>();
+            // Only an absent skater roster may start by recruiting. Unnamed or
+            // malformed skaters and extra-goalie entries still need a valid roster.
+            bool emptyStart = NoEffects() && available.All(e => linePositions[e.path].Equals("Goalie", StringComparison.OrdinalIgnoreCase));
             var missing = required.Where(position => !available.Any(e => linePositions[e.path].Equals(position, StringComparison.OrdinalIgnoreCase)
                 && !string.IsNullOrWhiteSpace(e.player.Get("Name")))).ToArray();
-            if (missing.Length > 0) errors.Add("Two-line roster flow requires ten named skaters and a goalie. Fill these Team roster slots before saving: " + string.Join(", ", missing) + ".");
+            if (missing.Length > 0 && !emptyStart) errors.Add("Two-line roster flow requires ten named skaters and a goalie. Fill these Team roster slots before saving: " + string.Join(", ", missing) + ".");
             var assigned = available.Where(e => required.Contains(linePositions[e.path], StringComparer.OrdinalIgnoreCase)).ToArray();
             var repeatedSlots = assigned.GroupBy(e => linePositions[e.path], StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1).Select(g => g.Key).ToArray();
             if (repeatedSlots.Length > 0) errors.Add("Give each two-line roster slot exactly one player: " + string.Join(", ", repeatedSlots) + ".");
@@ -46,7 +51,7 @@ internal sealed partial class TeamEditorView
                 if (TwoLines()) return;
                 int limit = SquadBehaviors.Enabled(Value("Squad Template"), "three_skaters", Value) ? 3
                     : SquadBehaviors.Enabled(Value("Squad Template"), "four_skaters", Value) ? 4 : 5;
-                int active = entries.Count(e => !removedRosterPlayers.Contains(e.path) && linePositions[e.path] != "Goalie"
+                int active = entries.Count(e => Remaining(e.path) && linePositions[e.path] != "Goalie"
                     && !linePositions[e.path].StartsWith("Line 2 ") && !inactive.Contains(linePositions[e.path]));
                 if (active > limit) throw new InvalidOperationException($"This team has {active} authored active starters but allows {limit}. In Team roster, turn off Start active for the players you want on the bench.");
             };
@@ -59,7 +64,7 @@ internal sealed partial class TeamEditorView
         players.Children.Add(templateSummary);
         string teamPath = Path.GetFullPath(file);
         var prepareTwoLines = new CheckBox { Name = "PrepareTwoLineRoster", Content = "Prepare two-line roster", IsChecked = preparingTwoLineTeams.Contains(teamPath) };
-        ToolTip.SetTip(prepareTwoLines, "Open all ten skater slots for authoring without changing gameplay. Fill both lines and the goalie, then enable Two-line roster flow in Squad behaviors and save.");
+        ToolTip.SetTip(prepareTwoLines, "Open all ten skater slots for authoring without changing gameplay. Fill both lines and the goalie, or leave every skater slot empty with No Effects to recruit during the run. Then enable Two-line roster flow in Squad behaviors and save.");
         players.Children.Add(prepareTwoLines);
         var rosterProblems = new TextBlock { Name = "TwoLineRosterProblems", Foreground = Brushes.Orange, TextWrapping = TextWrapping.Wrap };
         players.Children.Add(rosterProblems);
@@ -83,7 +88,7 @@ internal sealed partial class TeamEditorView
             var available = RosterLines.Skaters.Where(p => !Locked(p));
             if (!IsCustomSquad(file) || AuthoringTwoLines())
                 available = available.Concat(RosterLines.Skaters.Select(p => "Line 2 " + p));
-            return available.Where(p => !entries.Any(e => !removedRosterPlayers.Contains(e.path)
+            return available.Where(p => !entries.Any(e => Remaining(e.path)
                 && linePositions[e.path].Equals(p, StringComparison.OrdinalIgnoreCase))).ToArray();
         }
         var bulkImport = ActionButton("Bulk import players", () => bulkImportPlayers?.Invoke(EmptySkaterSlots()));
@@ -94,7 +99,7 @@ internal sealed partial class TeamEditorView
         {
             string source = linePositions[playerFile];
             if (source.Equals(target, StringComparison.OrdinalIgnoreCase)) return;
-            var other = entries.FirstOrDefault(e => e.path != playerFile && !removedRosterPlayers.Contains(e.path)
+            var other = entries.FirstOrDefault(e => e.path != playerFile && Remaining(e.path)
                 && linePositions[e.path].Equals(target, StringComparison.OrdinalIgnoreCase));
             linePositions[playerFile] = target; rosterPositionChanges[playerFile] = target;
             if (other.path != null) { linePositions[other.path] = source; rosterPositionChanges[other.path] = source; }
@@ -115,7 +120,7 @@ internal sealed partial class TeamEditorView
             var entry = entries.Single(e => e.path == playerFile);
             var choices = RosterLines.Skaters.Select(position => {
                 string target = (line2 ? "Line 2 " : "") + position;
-                var other = entries.FirstOrDefault(e => !removedRosterPlayers.Contains(e.path)
+                var other = entries.FirstOrDefault(e => Remaining(e.path)
                     && linePositions[e.path].Equals(target, StringComparison.OrdinalIgnoreCase));
                 return new RosterPositionPicker.Choice(target, other.path == null ? null : other.player.Get("Name", Path.GetFileNameWithoutExtension(other.path)),
                     line2 || other.path != null || !Locked(position));
@@ -146,25 +151,28 @@ internal sealed partial class TeamEditorView
             bulkImport.IsEnabled = bulkImportPlayers != null && emptySlots > 0;
             bulkHint.Text = $"{emptySlots} empty skater slots across available lines. Original positions are matched where possible; other players fill the remaining openings. Import the goalie separately.";
             ToolTip.SetTip(bulkImport, emptySlots == 0 ? "Remove a player and save the team to make room." : "Fill empty skater slots across all available lines. Filled and squad-setup slots stay as they are.");
+            string twoLineRoster = NoEffects()
+                ? "Leave every skater slot empty to recruit during the run (goalie optional), or fill ten skaters and the goalie."
+                : "Fill ten skaters and the goalie before saving.";
             templateSummary.Text = twoLines
-                ? "Two-line roster flow · fill ten skaters and the goalie before saving. All ten skaters are active; starting superstar and bench drafts are skipped, and in-match lineup editing is locked."
+                ? "Two-line roster flow · " + twoLineRoster + " All authored skaters are active; starting superstar and bench drafts are skipped, and in-match lineup editing is locked."
                 : authoringTwoLines
-                ? "Preparing two lines only · fill all ten skaters and the goalie, then enable Two-line roster flow in Squad behaviors and save. This checkbox opens editor slots without changing the saved team or gameplay."
+                ? "Preparing two lines only · " + twoLineRoster + " Enable Two-line roster flow in Squad behaviors when ready. This checkbox opens editor slots without changing the saved team or gameplay."
                 : template == null ? "" : template.Id == "noeffects"
-                ? "No Effects · all five skaters and the goalie are editable. " +
+                ? "No Effects · all five skaters and the goalie are editable. Leave every skater slot empty to recruit during the run (goalie optional). " +
                   (SquadBehaviors.Enabled(Value("Squad Template"), "superstar_screen", Value)
                       ? "Leave a skater position open if you want the game's starting superstar choice."
-                      : "Fill all five skater positions before play when starting superstars are off.")
+                      : "An authored starting roster needs all five skater positions filled when starting superstars are off.")
                 : template.Name + " · editable starters: " + string.Join(", ", template.StartingPositions) + "\nRemaining positions follow the squad's setup steps.";
             prepareTwoLines.IsVisible = IsCustomSquad(file) && !twoLines;
-            bool hasSecondLine = entries.Any(e => !removedRosterPlayers.Contains(e.path) && linePositions[e.path].StartsWith("Line 2 ", StringComparison.OrdinalIgnoreCase));
+            bool hasSecondLine = entries.Any(e => Remaining(e.path) && linePositions[e.path].StartsWith("Line 2 ", StringComparison.OrdinalIgnoreCase));
             if (template != null && !authoringTwoLines && !hasSecondLine) line2 = false;
             if (IsCustomSquad(file)) second.IsVisible = authoringTwoLines || hasSecondLine;
             rosterProblems.Text = string.Join("\n", RosterProblems());
             rosterProblems.IsVisible = !string.IsNullOrEmpty(rosterProblems.Text);
             showingLineTwo = line2;
             lineTwoOverflow.IsVisible = line2;
-            foreach (var row in lineTwoOverflow.Children) row.IsVisible = row.Tag is not string path || !removedRosterPlayers.Contains(path);
+            foreach (var row in lineTwoOverflow.Children) row.IsVisible = row.Tag is not string path || Remaining(path);
             first.Background = line2 ? StudioTheme.Input : Mint; first.Foreground = line2 ? Muted : StudioTheme.Background;
             second.Background = line2 ? Mint : StudioTheme.Input; second.Foreground = line2 ? StudioTheme.Background : Muted;
             grid.Children.Clear(); int filled = 0;
@@ -173,7 +181,7 @@ internal sealed partial class TeamEditorView
                 string position = positions[index];
                 if (line2 && position == "Goalie") continue;
                 string key = (line2 ? "Line 2 " : "") + position;
-                var entry = entries.FirstOrDefault(e => !removedRosterPlayers.Contains(e.path) && Position(e.path, e.player).Equals(key, StringComparison.OrdinalIgnoreCase));
+                var entry = entries.FirstOrDefault(e => Remaining(e.path) && Position(e.path, e.player).Equals(key, StringComparison.OrdinalIgnoreCase));
                 bool goalie = position == "Goalie";
                 var slot = new StackPanel { Spacing = StudioTheme.SpaceSm, Tag = key };
                 if (IsCustomSquad(file) && !goalie && !line2 && entry.path != null)
@@ -222,7 +230,7 @@ internal sealed partial class TeamEditorView
                         var bitmap = new Bitmap(preview); images.Add(bitmap); portrait = new Image { Source = bitmap, Stretch = Stretch.Uniform };
                     }
                     details.Children.Add(RosterSelectionCard.Portrait(portrait));
-                    var attributes = new StackPanel { Spacing = StudioTheme.SpaceSm, Children = { Label(goalie ? "Skill · " + entry.player.Get("Skill", "50") : "Ability · " + RewardCatalog.DisplayNames(data.Root, "Abilities", entry.player.Get("Ability")), 12), Label("Talents · " + RewardCatalog.DisplayNames(data.Root, goalie ? "Goalie Talents" : "Talents", entry.player.Get(goalie ? "Goalie Talents" : "Talents")), 12) } };
+                    var attributes = new StackPanel { Spacing = StudioTheme.SpaceSm, Children = { Label(goalie ? "Skill · " + entry.player.Get("Skill", "50") : "Ability · " + RewardCatalog.DisplayNames(data.Root, "Abilities", entry.player.Get("Ability")), 12), Label("Talents · " + data.DisplayTalentNames(entry.player.Get(goalie ? "Goalie Talents" : "Talents"), goalie), 12) } };
                     Grid.SetColumn(attributes, 1); details.Children.Add(attributes); Grid.SetRow(details, 1); body.Children.Add(details);
                     var actions = new StackPanel { Spacing = 4 };
                     var edit = ActionButton(goalie ? "Edit goalie" : "Edit player", () => openPlayer(entry.path));
@@ -236,7 +244,7 @@ internal sealed partial class TeamEditorView
                         ToolTip.SetTip(positionButton, "Choose a position on this line. Occupied positions swap the two skaters. Save the team to apply.");
                         Grid.SetColumn(positionButton, 1); editRow.Children.Add(positionButton); actions.Children.Add(editRow);
                         string target = line2 ? position : "Line 2 " + position;
-                        var other = entries.FirstOrDefault(e => !removedRosterPlayers.Contains(e.path) && linePositions[e.path].Equals(target, StringComparison.OrdinalIgnoreCase));
+                        var other = entries.FirstOrDefault(e => Remaining(e.path) && linePositions[e.path].Equals(target, StringComparison.OrdinalIgnoreCase));
                         bool swap = other.path != null;
                         var move = ActionButton((swap ? "Swap with Line " : "Move to Line ") + (line2 ? "1" : "2"), () => MovePlayer(entry.path, target));
                         move.Name = "MoveRosterPlayer"; move.Tag = entry.path;
@@ -259,12 +267,12 @@ internal sealed partial class TeamEditorView
         if (file.Contains(Path.DirectorySeparatorChar + "player_teams" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
         {
             string campaignPath = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(file)))!;
-            second.IsVisible = template?.Lines == 2 || entries.Any(e => Position(e.path, e.player).StartsWith("Line 2 ", StringComparison.OrdinalIgnoreCase));
+            second.IsVisible = template?.Lines == 2 || entries.Any(e => Remaining(e.path) && Position(e.path, e.player).StartsWith("Line 2 ", StringComparison.OrdinalIgnoreCase));
         }
         lines.Children.Add(first); lines.Children.Add(second); header.Children.Add(lines); players.Children.Add(header); players.Children.Add(grid);
         // Keep unusual or duplicate authored positions reachable instead of hiding their files.
         var assigned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var extra = entries.Where(e => !positions.Contains(Position(e.path, e.player).Replace("Line 2 ", ""), StringComparer.OrdinalIgnoreCase)
+        var extra = entries.Where(e => Remaining(e.path)).Where(e => !positions.Contains(Position(e.path, e.player).Replace("Line 2 ", ""), StringComparer.OrdinalIgnoreCase)
             || Position(e.path, e.player).Equals("Line 2 Goalie", StringComparison.OrdinalIgnoreCase) || !assigned.Add(Position(e.path, e.player))).ToArray();
         if (extra.Length > 0)
         {

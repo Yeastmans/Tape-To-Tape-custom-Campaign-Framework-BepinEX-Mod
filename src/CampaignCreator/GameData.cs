@@ -193,6 +193,20 @@ internal sealed class GameData
             string id = Talents.TryGetValue(value.Trim(), out var resolved) ? resolved : value.Trim();
             return !CustomRewards.TryGetValue(id, out var item) || CustomRewardAssignments.FitsPlayer(item, goalie);
         }));
+
+    internal string DisplayTalentNames(string value, bool goalie)
+    {
+        string Name(string token)
+        {
+            // LoadCustomRewards already chose campaign definitions and portable
+            // snapshots over the library. Native catalogs must stay separate.
+            string id = Talents.TryGetValue(token, out var resolved) ? resolved : token;
+            if (CustomRewards.TryGetValue(id, out var item) && !item.IsRelic) return item.Name;
+            return RewardCatalog.DisplayNames(Root, goalie ? "Goalie Talents" : "Talents", token);
+        }
+        var names = value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(Name).ToArray();
+        return names.Length == 0 ? "None" : string.Join(", ", names);
+    }
     public string? HeadPreview(string role, string value)
     {
         string field = role == "goalie" ? "Helmet Skin" : "Face";

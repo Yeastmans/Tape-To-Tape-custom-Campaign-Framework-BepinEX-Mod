@@ -107,9 +107,8 @@ internal static partial class CustomRewardRuntime
     {
         // New exports can arrive while the game is already open. Resolve the
         // complete companion before native model references are reconstructed.
-        var items = CustomRewardExport.Read(document).ToArray();
+        var items = CustomRewardExport.ReadPlayNow(document);
         if (items.Length == 0) return;
-        foreach (var item in items) CustomRewardExport.ValidatePlayNow(item);
         EnsureAssets();
         foreach (var item in items)
             if (Definitions.TryGetValue(item.Id, out var existing) && existing.ToDocument().ToString() != item.ToDocument().ToString())
@@ -170,9 +169,8 @@ internal static partial class CustomRewardRuntime
                 string exports = Path.Combine(Plugin.ModContentRoot, "play_now_overrides");
                 if (Directory.Exists(exports)) foreach (string file in Directory.EnumerateFiles(exports, "*.txt")) {
                     try {
-                        var items = CustomRewardExport.Read(new CampaignDocument(File.ReadAllText(file))).ToArray();
+                        var items = CustomRewardExport.ReadPlayNow(new CampaignDocument(File.ReadAllText(file)));
                         foreach (var d in items) {
-                            CustomRewardExport.ValidatePlayNow(d);
                             if (snapshot.TryGetValue(d.Id, out var previous) && previous.ToDocument().ToString() != d.ToDocument().ToString())
                                 throw new ArgumentException("Conflicting custom reward identity in export: " + d.Name);
                         }
