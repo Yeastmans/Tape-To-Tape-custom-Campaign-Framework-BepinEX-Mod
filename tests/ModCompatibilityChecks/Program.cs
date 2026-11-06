@@ -20,6 +20,7 @@ p=Copy();p.Sites[0].Target++;Reject(()=>p.Validate(p.GameHash,baseline.Id),"Call
 p=Copy();p.FlowBytes="90909090909090";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Starting-flow ABI cannot be replaced by arbitrary bytes");
 p=Copy();p.SurfaceBytes="90";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Rink ABI remains guarded");
 var image=new NativeImage(game);
+CulturePortabilityChecks.Run(baseline,image,Check,Reject);
 foreach (string method in new[] { "CustomizableYesNoPrompt$$InitData", "PromptTemplateMenu$$OnYesClick",
     "PromptTemplateMenu$$OnNoClick", "PromptTemplateMenu$$OnBackInput", "PromptTemplateMenu$$BehaviourDestroy",
     "PromptTemplateMenu$$WaitForResult", "PromptTemplateMenu$$SendResultOnce", "PromptTemplateMenu.<CloseWithResult>d__#$$MoveNext" })

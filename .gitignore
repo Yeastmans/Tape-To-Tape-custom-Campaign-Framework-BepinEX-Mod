@@ -171,6 +171,7 @@ tests/GoalieActivationChecks/*
 tests/ModCompatibilityChecks/*
 !tests/ModCompatibilityChecks/ModCompatibilityChecks.csproj
 !tests/ModCompatibilityChecks/Program.cs
+!tests/ModCompatibilityChecks/CulturePortabilityChecks.cs
 !tests/GameArtPackageChecks/
 tests/GameArtPackageChecks/*
 !tests/GameArtPackageChecks/GameArtPackageChecks.csproj

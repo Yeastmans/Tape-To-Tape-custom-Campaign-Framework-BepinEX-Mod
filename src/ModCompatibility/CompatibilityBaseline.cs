@@ -390,7 +390,7 @@ public sealed class CompatibilityBaseline
             if (matches.Length == 0) throw new InvalidDataException("Missing reviewed feature dependency: " + name);
             foreach (var method in matches) protectedMethods.Add(image.Identity(method));
         }
-        foreach(var name in protectedMethods.Order())
+        foreach(var name in protectedMethods.Order(StringComparer.Ordinal))
         {
             var method=image.Resolve(name);
             baseline.Methods.Add(new(){Name=name,Signature=image.Signature(method),BodyHash=image.BodyHash(method)});
@@ -403,7 +403,8 @@ public sealed class CompatibilityBaseline
     public NativeCompatibilityProfile Verify(NativeImage image,string build,IProgress<string>? progress=null)
     {
         if(Profile.RuntimeContract!=NativeCompatibilityProfile.Contract || string.IsNullOrWhiteSpace(Id)) throw new InvalidDataException("Unsupported compatibility baseline.");
-        if(!SquadCalls.SequenceEqual(image.SquadCallInventory())) throw new InvalidDataException("The game's squad behavior checks changed. A mod repair is required.");
+        if(!SquadCalls.Order(StringComparer.Ordinal).SequenceEqual(image.SquadCallInventory().Order(StringComparer.Ordinal)))
+            throw new InvalidDataException("The game's squad behavior checks changed. A mod repair is required.");
         ReviewedFeatureContracts.Read().Validate(image, Profile);
         int done=0;
         foreach(var contract in Methods)

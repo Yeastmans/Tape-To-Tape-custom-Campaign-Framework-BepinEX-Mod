@@ -1,5 +1,10 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 44
+
+- Fixed a compatibility-check false failure on the supported game build when Windows uses different text sorting or regional number formatting. An unchanged squad-data query inventory is now compared consistently across those environments.
+- Rebuilt the native baseline and bundled runtime profile together. The verifier still rejects changed protected game code.
+
 ## Beta 1.0 revision 43
 
 - Home loads a summary of available content. After you choose a campaign, Studio opens its overview and reads the other editor sections when you visit them. Head pickers load artwork as choices scroll into view.

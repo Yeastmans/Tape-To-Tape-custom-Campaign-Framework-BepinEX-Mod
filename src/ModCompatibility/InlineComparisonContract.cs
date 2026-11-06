@@ -30,8 +30,8 @@ public static class InlineComparisonContract
         Require(S(6)=="mov eax,[rdx+10h]" && S(7)==$"cmp [{left}+10h],eax" && block[8].Mnemonic==Mnemonic.Jne);
         Require(block[3].NearBranchTarget==block[5].NearBranchTarget && block[3].NearBranchTarget==block[8].NearBranchTarget);
         Require(S(9)==$"movsxd r8,dword ptr [{left}+10h]" && S(13)=="xor r9d,r9d");
-        var setup=block.Skip(10).Take(3).Select(x=>x.ToString()).Order().ToArray();
-        Require(setup.SequenceEqual(new[]{"add r8,r8","add rdx,14h",left=="rcx"?"add rcx,14h":"lea rcx,[rbx+14h]"}.Order()));
+        var setup=block.Skip(10).Take(3).Select(x=>x.ToString()).Order(StringComparer.Ordinal).ToArray();
+        Require(setup.SequenceEqual(new[]{"add r8,r8","add rdx,14h",left=="rcx"?"add rcx,14h":"lea rcx,[rbx+14h]"}.Order(StringComparer.Ordinal)));
         Require(block[14].FlowControl==FlowControl.Call && block[14].Length==5 && block[14].NearBranchTarget==image.Resolve(SequenceEqual).Rva);
         ulong end=block[14].NextIP;
         Require(block[1].NearBranchTarget>=end && block[3].NearBranchTarget>=end);

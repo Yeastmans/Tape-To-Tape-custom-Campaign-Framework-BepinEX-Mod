@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Globalization;
 using System.Text;
 using System.Reflection.PortableExecutable;
 using System.Buffers.Binary;
@@ -160,8 +161,22 @@ public sealed class NativeImage
         return frameEnd;
     }
     public string? Literal(ulong rva) => LibCpp2IlMain.GetLiteralByAddress(ImageBase+rva);
-    public string Signature(Il2CppMethodDefinition method) => NativeSymbolNames.Stable(method.HumanReadableSignature);
-    public string BodyHash(Il2CppMethodDefinition method)
+    // LibCpp2IL formats default parameter values using the current culture.
+    // These strings are stored as identities and must match on every locale.
+    public string Signature(Il2CppMethodDefinition method) =>
+        WithInvariantFormatting(() => NativeSymbolNames.Stable(method.HumanReadableSignature));
+    public string BodyHash(Il2CppMethodDefinition method) =>
+        WithInvariantFormatting(() => BodyHashInvariant(method));
+    private static string WithInvariantFormatting(Func<string> read)
+    {
+        var previous = CultureInfo.CurrentCulture;
+        try {
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            return read();
+        }
+        finally { CultureInfo.CurrentCulture = previous; }
+    }
+    private string BodyHashInvariant(Il2CppMethodDefinition method)
     {
         var instructions=Instructions(method.Rva); ulong end=instructions[^1].NextIP;
         var text=new StringBuilder(Signature(method)+"\n");
@@ -176,7 +191,7 @@ public sealed class NativeImage
                 {
                     var target=ins.NearBranchTarget;
                     if(target>=method.Rva && target<end) text.Append("local:").Append(target-method.Rva);
-                    else if(methods.TryGetValue(target,out var targetMethods)) text.AppendJoin('|',targetMethods.Select(Name).Distinct().Order());
+                    else if(methods.TryGetValue(target,out var targetMethods)) text.AppendJoin('|',targetMethods.Select(Name).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal));
                     else text.Append("runtime:").Append(Convert.ToHexString(Bytes(target,12)));
                 }
                 else if(kind==OpKind.Memory)
@@ -194,7 +209,7 @@ public sealed class NativeImage
                 else text.Append(ins.ToString());
                 text.Append(';');
             }
-            text.AppendLine();
+            text.Append("\r\n");
         }
         if(tableStarts.TryGetValue(method.Rva,out var table))
         {
@@ -232,10 +247,10 @@ public sealed class NativeImage
             foreach(var ins in body.Skip(Math.Max(0,pos-10)).Take(Math.Min(10,pos)).Reverse())
                 if(ins.Mnemonic==Mnemonic.Mov && ins.Op0Kind==OpKind.Register && ins.Op0Register==Register.RDX && ins.IsIPRelativeMemoryOperand)
                 { literal=Literal(ins.IPRelativeMemoryAddress); if(literal!=null) break; }
-            rows.Add(string.Join('|',owner.Select(Name).Distinct().Order())+"|"+(literal??"dynamic"));
+            rows.Add(string.Join('|',owner.Select(Name).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal))+"|"+(literal??"dynamic"));
         }
         }
         if(rows.Count==0) throw new InvalidDataException("No native squad checks found; executable scan failed.");
-        return rows.Order().ToArray();
+        return rows.Order(StringComparer.Ordinal).ToArray();
     }
 }
