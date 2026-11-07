@@ -114,8 +114,9 @@ namespace State {
     public class RunDataRepository : IRunDataRepository { public RunDataRepositoryV2 _runDataRepositoryV2; }
     public class RunDataRepositoryV2 : Il2CppSystem.Object {
         public string _fileName = "RunDataV2.es3";
-        public object _talentRepository { get; } = new(); public object _relicRepository { get; } = new(); public object _abilityRepository { get; } = new();
-        public object _logoRepository { get; set; } = new();
+        public object _talentRepository { get; } = new();
+        public object _relicRepository { get; } = new();
+        public object _abilityRepository { get; set; } = new();
         internal int Saves, Loads; internal bool CompleteImmediately = true, NullLoad;
         internal string Outcome = "true";
         internal readonly List<Il2CppSystem.Runtime.CompilerServices.AsyncTaskMethodBuilder<bool>> Pending = new();

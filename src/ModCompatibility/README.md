@@ -12,7 +12,7 @@ A version mismatch alone does not block custom squad creation or selection. Cust
 
 ## Reviewed baseline
 
-`Assets/native-baseline.json` describes Steam build **26372689**, with **1,507 protected methods, 137 comparison sites and 109 native squad query calls**. The matching runtime profile is `../CustomCampaignFramework/Assets/native-compatibility.json`; both use runtime contract `t2t-native-v3-20261024`. The profile retains all **54 named hooks and 21 raw hooks**, including 40 goalie lifecycle hooks and the independent fresh-run hooks. Protected contracts also cover custom Coaches and squad maps, reward selection, authored periods, opponent consumers, map presentation, appearance integration and the custom check-event consumer/subscription lifecycle. The [26372689 audit](../../docs/NATIVE-26372689-REVIEW.md) records the relocated starting-flow site, native field and generated identity changes, preserved Base Game pool dependencies, and independent interop/ABI review. These checks are technical compatibility evidence, not a live gameplay pass.
+`Assets/native-baseline.json` covers Steam build **26471720**, with **1,521 protected methods, 137 comparison sites and 109 squad queries**. The matching runtime profile at `../CustomCampaignFramework/Assets/native-compatibility.json` uses ABI `t2t-native-v3-20261024`. Both files cover 54 named hooks and 21 raw jersey callbacks. The new baseline includes both injury-stat calculators, the current referee talent predicate and the three dependencies used to load saves. [Native review](../../docs/NATIVE-26471720-REVIEW.md)
 
 ## Build maintenance
 

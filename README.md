@@ -2,9 +2,9 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 44](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r44-build-1793926964328) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Published R44 for Steam 26372689](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r44-build-1793926964328) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
-**Beta 1.0 includes Campaign Studio and the in-game mod in one Windows installer.** It targets Steam's **public v1.0 release, build 26372689**. This is the new Studio release family; older v2.1.x releases contain the previous creator.
+**This checkout contains the Windows compatibility repair for Steam build 26471720.** Campaign Studio and the in-game mod ship together in the installer. The repair is based on published R44 and has been verified through the game's title screen. [Compatibility review](docs/NATIVE-26471720-REVIEW.md)
 
 Beta 1.0 revision 44 fixes a compatibility-check failure on unchanged supported game files caused by Windows text sorting and regional number formatting. See the [changelog](release/CHANGELOG.md) and [validation](docs/RELEASE-R44-VALIDATION.md).
 

@@ -26,8 +26,8 @@ foreach (string method in new[] { "CustomizableYesNoPrompt$$InitData", "PromptTe
     "PromptTemplateMenu$$WaitForResult", "PromptTemplateMenu$$SendResultOnce", "PromptTemplateMenu.<CloseWithResult>d__#$$MoveNext" })
     Check(baseline.Methods.Any(m => m.Name.StartsWith("Tape2Tape.Customization.UI." + method + "::", StringComparison.Ordinal)),
         "Signing confirmation protects the native decision boundary: " + method);
-Check(baseline.Profile.Build == "26372689", "Current release targets reviewed Steam build 26372689");
-Check(baseline.Profile.FlowRva == 0x4436EA7 && baseline.Profile.FlowBytes == "400FB6C60A4758",
+Check(baseline.Profile.Build == "26471720", "Current release targets reviewed Steam build 26471720");
+Check(baseline.Profile.FlowRva == 0x448DF57 && baseline.Profile.FlowBytes == "400FB6C60A4758",
     "Fresh-run profile pins the reviewed SIL flag and native continuation");
 foreach (string dependency in new[] { "OldSquadMenu$$InitData::", "OldSquadMenu$$InstantiateRelics::",
     "OldSquadMenu.<InstantiateRelics>d__#$$MoveNext::", "OldSquadMenu$$HideUnselectedSkaters::",
@@ -56,17 +56,17 @@ foreach (string feature in new[] { "jersey-logo", "goalie-checkpoint", "goalie-r
 var missingRaw = JsonSerializer.Deserialize<CompatibilityBaseline>(JsonSerializer.Serialize(baseline))!;
 missingRaw.Profile.RawHooks.RemoveAt(0);
 Reject(() => missingRaw.Verify(image, "missing-raw"), "Missing raw callback is rejected");
-Check(verified.Sites.Count==137 && baseline.Methods.Count>=200 && baseline.SquadCalls.Length==109,"Fresh metadata verifies every current hook and protected method");
+Check(verified.Sites.Count==137 && baseline.Methods.Count>=1521 && baseline.SquadCalls.Length==109,"Fresh metadata verifies every current hook and protected method");
 Check(verified.Sites.Count(s=>s.Kind=="inline_eq")==28 && verified.Sites.Count(s=>s.Kind=="query")==109,"Exact direct and inline site inventory is preserved");
 Check(verified.Sites.Count(s=>s.Inline?.LeftRegister=="rcx")==26 && verified.Sites.Count(s=>s.Inline?.LeftRegister=="rbx")==2,"Both reviewed inline register contracts are covered");
 foreach(string dependency in new[]{InlineComparisonContract.SequenceEqual,"Skaters.SkinHelper$$OverrideSkinsWithCustomTeamUniform","Rogue.Talent$$Get::T Get(System.Collections.Generic.List`1<Rogue.Talent> powerUps)"})
     Check(baseline.Methods.Any(m=>m.Name.StartsWith(dependency,StringComparison.Ordinal)),"New native dependency remains protected: "+dependency);
 foreach(string scope in new[]{"Movements.MovementManager$$CanBodycheck", "Goaltender.GoaltenderStates.SavingState$$OnPuckCollision",
     "Rogue.NoStickSoccerRelicController$$<AddEffect>b__3_0", "Rogue.Relics.Controllers.SpikeArmorRelicController$$AddEffect",
-    "Skaters.ForwardStats$$GetStatAfterInjuryCheck", "Skaters.SkaterAbility$$GetPowerupsInShots", "Skaters.SkaterAbility.<_Pass>d__#$$MoveNext",
+    "Skaters.ForwardStats$$GetStatAfterInjuryCheck", "Skaters.ForwardStats$$GetStatAfterBalancedInjuryCheck", "Skaters.SkaterAbility$$GetPowerupsInShots", "Skaters.SkaterAbility.<_Pass>d__#$$MoveNext",
     "Skaters.SkaterCollision$$IsGuaranteedKnockout", "Skaters.SkaterCollision$$HandleHitted", "Skaters.Injuries.InjurySystem$$TryInjuryAttempt",
-    "Tape2Tape.Team.<>c$$<HasRefBlockShotTalent>b__177_0", "AI.AIStates.AIState$$ResetToDefaultState", "AI.AIStates.AIState$$IsKnightOf"})
-    Check(baseline.Methods.Count(m=>m.Name.StartsWith(scope+"::",StringComparison.Ordinal))==1,"Inlined reward query live scope remains protected: "+scope);
+    "Tape2Tape.Team.<>c$$<HasRefBlockShotTalent>b__187_0", "AI.AIStates.AIState$$ResetToDefaultState", "AI.AIStates.AIState$$IsKnightOf"})
+    Check(baseline.Methods.Count(m=>m.Name.StartsWith(scope+"::",StringComparison.Ordinal))==1,"Native reward-query consumer remains protected: "+scope);
 foreach(string target in new[]{
     "State.CampaignState$$SetCurrentNode::System.Void SetCurrentNode(STS.Map.MapNode mapNode)",
     "Rogue.NPC.GeneralManagerNPC.GeneralManagerEvent$$Initialize::System.Void Initialize()",

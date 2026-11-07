@@ -5,7 +5,7 @@ using ModCompatibility;
 
 internal static class CulturePortabilityChecks
 {
-    // Reviewed metadata from Steam build 26372689. A decimal-comma locale must
+    // Both reviewed Steam builds declare this default. A decimal-comma locale must
     // still resolve the exact default, without accepting a different overload.
     private const string FloatMethod = "Animations.SkatingAnimationManager$$SetSlapShotWindupAnimationWithTurning";
     private const string FloatSignature = "Spine.TrackEntry SetSlapShotWindupAnimationWithTurning(System.Boolean isNorth, System.Single timeRemaining, System.Single maxTimeTurning = 0.12)";

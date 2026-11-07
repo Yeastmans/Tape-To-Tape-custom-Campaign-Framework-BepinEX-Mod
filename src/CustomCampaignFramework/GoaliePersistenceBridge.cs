@@ -89,11 +89,10 @@ internal static class GoaliePersistenceBridge
     private static void Warn(string error) => Plugin.Log.LogWarning("[GoalieCheckpoint] " + error);
     private static void BindDeserializer(RunDataRepositoryV2 repository)
     {
-        // Match native LoadRunData's four injected dependencies, including the
-        // owning repository's logo dependency on build 26289478.
         if (repository._talentRepository == null || repository._relicRepository == null || repository._abilityRepository == null)
         { GoalieNativeSnapshot.Deserializer = null; return; }
-        GoalieNativeSnapshot.Deserializer = new DeserializerV2(repository._talentRepository, repository._relicRepository, repository._abilityRepository, repository._logoRepository);
+        GoalieNativeSnapshot.Deserializer = new DeserializerV2(
+            repository._talentRepository, repository._relicRepository, repository._abilityRepository);
     }
     internal static void Tick() { if (Enabled) Queue.Tick(); }
 

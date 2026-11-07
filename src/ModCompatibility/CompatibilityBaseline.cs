@@ -76,19 +76,19 @@ public sealed class CompatibilityBaseline
         // now reach the generic Talent.Get body directly. The narrow reward
         // adapter pins its MethodInfo separately and preserves native results.
         protectedMethods.Add("Rogue.Talent$$Get::T Get(System.Collections.Generic.List`1<Rogue.Talent> powerUps)");
-        // Positive live-gameplay scopes surround the inlined data-level reward
-        // queries. A change to these consumers can alter scope or native
-        // precedence even when the generic data query ABI remains identical.
+        // Protect native reward-query consumers, including the live gameplay
+        // scopes around inlined data queries. Both injury consumers now call
+        // the fixed SadoMaso wrapper and still determine native stat precedence.
         foreach(string name in new[] { "Movements.MovementManager$$CanBodycheck",
             "Goaltender.GoaltenderStates.SavingState$$OnPuckCollision",
             "Rogue.NoStickSoccerRelicController$$<AddEffect>b__3_0",
             "Rogue.Relics.Controllers.SpikeArmorRelicController$$AddEffect",
-            "Skaters.ForwardStats$$GetStatAfterInjuryCheck",
+            "Skaters.ForwardStats$$GetStatAfterInjuryCheck", "Skaters.ForwardStats$$GetStatAfterBalancedInjuryCheck",
             "Skaters.SkaterAbility$$GetPowerupsInShots",
             "Skaters.SkaterAbility.<_Pass>d__#$$MoveNext",
             "Skaters.SkaterCollision$$IsGuaranteedKnockout", "Skaters.SkaterCollision$$HandleHitted",
             "Skaters.Injuries.InjurySystem$$TryInjuryAttempt",
-            "Tape2Tape.Team.<>c$$<HasRefBlockShotTalent>b__177_0",
+            "Tape2Tape.Team.<>c$$<HasRefBlockShotTalent>b__187_0",
             "AI.AIStates.AIState$$ResetToDefaultState", "AI.AIStates.AIState$$IsKnightOf" })
         {
             var method=image.Resolve(name);

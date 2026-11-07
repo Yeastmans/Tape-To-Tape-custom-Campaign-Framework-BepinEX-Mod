@@ -19,7 +19,7 @@ The old `_build_studio_installer.ps1` and `_sync_github.ps1` are not required.
 - [7-Zip](https://www.7-zip.org/) for the pinned FFmpeg archive. Put `7z.exe` on
   PATH, install it to the standard Program Files location, or use `-SevenZipPath`.
 - Your own Steam installation of **Tape to Tape, public v1.0 branch, build
-  26372689**, with **current BepInEx-generated IL2CPP interop assemblies** in
+  26471720**, with **current BepInEx-generated IL2CPP interop assemblies** in
   `BepInEx/interop`. Run your game once with the pinned BepInEx loader to
   generate them, then close it. The build wrapper does not install a loader
   into your game or generate interop by launching it.
@@ -40,9 +40,9 @@ when compiling `src/CustomCampaignFramework/CustomCampaignFramework.csproj`.
 The regular packaging wrapper still expects `BepInEx/interop` under its supplied
 game directory; isolated release assembly staging is a maintainer operation.
 
-The current reviewed pair uses runtime contract `t2t-native-v3-20261024`, with 1,507
+The current reviewed pair uses runtime contract `t2t-native-v3-20261024`, with 1,521
 protected methods, 137 comparison sites, 109 squad query calls, 54 named hooks and
-21 raw hooks. The [native review](docs/NATIVE-26372689-REVIEW.md) records the
+21 raw hooks. The [native review](docs/NATIVE-26471720-REVIEW.md) records the
 native adapter changes and diagnostics. For reproducible Release runtime
 builds, use `--disable-build-servers -p:UseSharedCompilation=false
 -p:DebugType=None -p:DebugSymbols=false` and set

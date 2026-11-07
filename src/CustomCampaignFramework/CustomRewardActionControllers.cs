@@ -49,8 +49,8 @@ internal static class CustomRewardActionControllers
         try {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8) throw new PlatformNotSupportedException("Action queries require the audited Windows x64 build.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().First(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-            if (NativeCompatibility.Load(module.FileName).GameHash != "F756BCB8564C2D95C60A121C7A5EBB21DC1B0418421FAF03F4925139944E6142") throw new InvalidOperationException("Action queries have not been audited for this game build.");
-            var get = module.BaseAddress + 0xe8fdd0;
+            if (NativeCompatibility.Load(module.FileName).GameHash != "0709D469AE6C47B695BBA71664BF5619982EE6C3E17EAEF6DC8B98FDA0A61CEC") throw new InvalidOperationException("Action queries have not been audited for this game build.");
+            var get = module.BaseAddress + 0xe985c0;
             Verify(get, "48897C242041564883EC2048837A38");
             passMethod = Method(typeof(PassPuncherController), get);
             randomMethod = Method(typeof(Rogue.Powerups.Controllers.Talents.GamblerController), get);

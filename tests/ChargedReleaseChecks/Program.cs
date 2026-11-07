@@ -11,9 +11,9 @@ void Reject(Action action,string name){try{action();Check(false,name);}catch(Inv
 string game=args.ElementAtOrDefault(0)??@"C:\Steam\steamapps\common\Tape to Tape\GameAssembly.dll";
 string dobby=args.ElementAtOrDefault(1)??@"C:\Steam\steamapps\common\Tape to Tape\BepInEx\core\dobby.dll";
 byte[] image=File.ReadAllBytes(game);
-Check(Convert.ToHexString(SHA256.HashData(image))=="F756BCB8564C2D95C60A121C7A5EBB21DC1B0418421FAF03F4925139944E6142","Exact audited native image");
+Check(Convert.ToHexString(SHA256.HashData(image))=="0709D469AE6C47B695BBA71664BF5619982EE6C3E17EAEF6DC8B98FDA0A61CEC","Exact audited native image");
 Check(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(dobby)))=="8015DE7D867245A1095D13947A63763878E4CF5FD3D3089B63CC39200B055DED","Actual pinned Dobby backend");
-using var pe=new PEReader(new MemoryStream(image,false));const int rva=0x3c05ac0;
+using var pe=new PEReader(new MemoryStream(image,false));const int rva=0x3c55450;
 var section=pe.PEHeaders.SectionHeaders.Single(s=>rva>=s.VirtualAddress&&rva<s.VirtualAddress+s.SizeOfRawData);
 var body=image.AsSpan(section.PointerToRawData+rva-section.VirtualAddress,96).ToArray();
 Check(Convert.ToHexString(SHA256.HashData(body))=="F8E630EED796F25F0827060FFAC0EAE87318755BD5A7612A349E47B267BEDD81","Exact ReleaseShot body");

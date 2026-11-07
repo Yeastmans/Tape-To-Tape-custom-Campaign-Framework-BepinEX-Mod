@@ -67,9 +67,9 @@ namespace State {
         public GoaltenderDataModelV2 SerializeToModel(Data.GoaltenderData g) => new() { id = g.id, skill = g.skill, colors = g.colorSchemes, powers = g.powerups };
     }
     public class DeserializerV2 : Il2CppSystem.Object {
-        public object Talents, Relics, Abilities, Logos;
+        public object Talents, Relics, Abilities;
         public DeserializerV2() {}
-        public DeserializerV2(object talents, object relics, object abilities, object logos) { Talents = talents; Relics = relics; Abilities = abilities; Logos = logos; }
+        public DeserializerV2(object talents, object relics, object abilities) { Talents = talents; Relics = relics; Abilities = abilities; }
         public Data.GoaltenderData ConvertGoaltenderDataModelToGoaltenderData(GoaltenderDataModelV2 m) => new() { id = m.id, skill = m.skill, colorSchemes = m.colors, powerups = m.powers };
     }
     public class TeamState : Il2CppSystem.Object { public SkaterState goaltenderState; public string[] forwardStates, relicStates; }

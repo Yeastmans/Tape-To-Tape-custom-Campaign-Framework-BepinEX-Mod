@@ -22,7 +22,7 @@ namespace EndlessMode;
 internal static class CustomRewardChargedReleaseRepair
 {
     private const string Owner = "com.mods.customcampaign.chargedrelease";
-    private const int ReleaseShotRva = 0x3c05ac0;
+    private const int ReleaseShotRva = 0x3c55450;
     private const string BodyHash = "F8E630EED796F25F0827060FFAC0EAE87318755BD5A7612A349E47B267BEDD81";
     private const string DobbyHash = "8015DE7D867245A1095D13947A63763878E4CF5FD3D3089B63CC39200B055DED";
     private static bool ready;
@@ -47,13 +47,13 @@ internal static class CustomRewardChargedReleaseRepair
                 CheckAssembly(typeof(IL2CPP).Assembly, "65AB051A681C2C1E52DF7596FF738BE401AAE72CFF882FF18241CF54A3EA38A4");
                 CheckAssembly(typeof(Il2CppInteropUtils).Assembly, "070E04F2276A8963A6D2A7EB52D43B644F3AE9AA3816C34541124D3862F1B37F");
                 if (GeneratedInteropIdentity.Hash(File.ReadAllBytes(typeof(SlapshotState).Assembly.Location))
-                    != "534E62A45DF8758B4DF3877FAA8DD8D74EFD1389E3585701ABAFD9A4829CA2F6")
+                    != "F46652CBC6BBFAB80D67D2ADE3F77A5FC926F1BAEAC80B95754C35D92B162B7E")
                     throw new InvalidDataException("Unreviewed generated charged-release wrapper.");
                 var patcherType = Type.GetType("Il2CppInterop.HarmonySupport.Il2CppDetourMethodPatcher, Il2CppInterop.HarmonySupport", true);
                 CheckAssembly(patcherType.Assembly, "F7612EA2E5A4D473B771F34EE3B20CF32DC0C4ECEA0185416474999A17FBCC07");
                 CheckFile(Path.Combine(Path.GetDirectoryName(typeof(INativeDetour).Assembly.Location), "dobby.dll"), DobbyHash);
                 var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().Single(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
-                if (NativeCompatibility.Load(module.FileName).GameHash != "F756BCB8564C2D95C60A121C7A5EBB21DC1B0418421FAF03F4925139944E6142")
+                if (NativeCompatibility.Load(module.FileName).GameHash != "0709D469AE6C47B695BBA71664BF5619982EE6C3E17EAEF6DC8B98FDA0A61CEC")
                     throw new InvalidDataException("Charged release has not been reviewed for this native build.");
                 entry = module.BaseAddress + ReleaseShotRva; original = Read(entry, 96);
                 if (Convert.ToHexString(SHA256.HashData(original)) != BodyHash || original[95] != 0xc3)

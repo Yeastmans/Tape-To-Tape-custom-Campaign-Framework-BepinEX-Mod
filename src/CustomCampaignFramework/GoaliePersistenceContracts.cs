@@ -54,12 +54,20 @@ internal static class GoaliePersistenceContracts
         Constructor(typeof(ES3Settings), typeof(bool)); Constructor(typeof(ES3Settings), typeof(string), typeof(ES3Settings));
         Method(typeof(CampaignState), "get__runDataRepository", false, typeof(IRunDataRepository));
         Method(typeof(RunDataRepository), "get__runDataRepositoryV2", false, typeof(RunDataRepositoryV2));
-        var repository = typeof(RunDataRepositoryV2);
-        var dependencies = new[] { "_talentRepository", "_relicRepository", "_abilityRepository", "_logoRepository" }.Select(name => repository.GetProperty(name)?.PropertyType
-            ?? throw new MissingMemberException("Native repository injection contract: " + name)).ToArray();
-        var constructors = typeof(DeserializerV2).GetConstructors().Where(c => c.GetParameters().Length == 4).ToArray();
-        if (constructors.Length != 1 || !constructors[0].GetParameters().Select(p => p.ParameterType).SequenceEqual(dependencies)
-            || constructors[0].GetParameters()[3].ParameterType.FullName != "Tape2Tape.Customization.ILogoRepository")
+        Type RepositoryDependency(string getter, string typeName)
+        {
+            var repository = typeof(RunDataRepositoryV2);
+            var type = repository.Assembly.GetType(typeName, throwOnError: true);
+            Method(repository, getter, false, type);
+            return type;
+        }
+        var dependencies = new[] {
+            RepositoryDependency("get__talentRepository", "Rogue.Powerups.Repository.ITalentRepository"),
+            RepositoryDependency("get__relicRepository", "Rogue.Relics.Repository.IRelicRepository"),
+            RepositoryDependency("get__abilityRepository", "Rogue.Powerups.Repository.IAbilityRepository")
+        };
+        var constructors = typeof(DeserializerV2).GetConstructors().Where(c => c.GetParameters().Length == dependencies.Length).ToArray();
+        if (constructors.Length != 1 || !constructors[0].GetParameters().Select(p => p.ParameterType).SequenceEqual(dependencies))
             throw new MissingMethodException("Native injected deserializer constructor contract changed.");
     }
     internal static NativeCompatibilityProfile Preflight()
@@ -68,9 +76,9 @@ internal static class GoaliePersistenceContracts
             if (!OperatingSystem.IsWindows() || IntPtr.Size != 8) throw new PlatformNotSupportedException("Audited Windows x64 required.");
             var module = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().Single(m => m.ModuleName.Equals("GameAssembly.dll", StringComparison.OrdinalIgnoreCase));
             var profile = NativeCompatibility.Load(module.FileName);
-            if (profile.GameHash != "F756BCB8564C2D95C60A121C7A5EBB21DC1B0418421FAF03F4925139944E6142"
-                || profile.MetadataHash != "1AC5E68FBC382FDE344621BECC943371ED2EA43133C36ABAAEBB198C8CCB0875")
-                throw new InvalidDataException("Goalie checkpoint adapter requires pinned build 26372689.");
+            if (profile.GameHash != "0709D469AE6C47B695BBA71664BF5619982EE6C3E17EAEF6DC8B98FDA0A61CEC"
+                || profile.MetadataHash != "50ABD75E31FBBD6DD3AB098507B40B9F01EA100B564F593A62EFEE8FD5AD44FC")
+                throw new InvalidDataException("Goalie checkpoint adapter requires pinned build 26471720.");
             NamedManagedHookContract.RequireExactSet(Required, profile.NamedHooks, Feature);
             ValidateWrapperApi();
             foreach (var dependency in new[] {

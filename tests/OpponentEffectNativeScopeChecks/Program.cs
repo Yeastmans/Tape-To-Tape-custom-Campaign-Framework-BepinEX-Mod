@@ -81,10 +81,11 @@ Check("Rollback retains ownership only for detours whose removal failed", () => 
     }
 });
 Check("Stable compiler ordinal mapping retains original consumer route", () => {
+    const string historical = "Movements.MovementStates.KnockoutState/<ReapplySkin>d__105.MoveNext";
     var item = shared.Single(x => x.Consumer.Contains("ReapplySkin"));
-    Assert(item.Consumer.Contains("105") && item.Method.DeclaringType.Name.Contains("115"));
-    var registry = Registry(); Assert(registry.Register(item.Consumer, item.Method, Address, out _) == OpponentScopeRoute.Raw);
-    Assert(registry.Consumer("7-move") == item.Consumer);
+    Assert(Key(historical) == Key(item.Consumer) && item.Method.DeclaringType.Name.Contains("115"));
+    var registry = Registry(); Assert(registry.Register(historical, item.Method, Address, out _) == OpponentScopeRoute.Raw);
+    Assert(registry.Consumer("7-move") == historical);
 });
 Check("Unknown native addresses block instead of falling through to Harmony", () => {
     var registry = Registry(); var item = methods[0];

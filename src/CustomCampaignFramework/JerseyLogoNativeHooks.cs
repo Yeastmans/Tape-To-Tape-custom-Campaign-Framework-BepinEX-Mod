@@ -403,15 +403,15 @@ internal static class JerseyLogoNativeHooks
             var profile = NativeCompatibility.Load(module.FileName);
             var contracts = Contracts();
             opponentScopes = new NativeOpponentScopes(contracts) { Module = module.BaseAddress };
-            if (profile.GameHash != "F756BCB8564C2D95C60A121C7A5EBB21DC1B0418421FAF03F4925139944E6142" || profile.MetadataHash != "1AC5E68FBC382FDE344621BECC943371ED2EA43133C36ABAAEBB198C8CCB0875")
-                throw new InvalidDataException("Jersey adapters require pinned build 26372689.");
+            if (profile.GameHash != "0709D469AE6C47B695BBA71664BF5619982EE6C3E17EAEF6DC8B98FDA0A61CEC" || profile.MetadataHash != "50ABD75E31FBBD6DD3AB098507B40B9F01EA100B564F593A62EFEE8FD5AD44FC")
+                throw new InvalidDataException("Jersey adapters require pinned build 26471720.");
             JerseyLogoManagedTargets.ValidateBeforeInstall(contracts, profile.RawHooks, profile.NamedHooks);
             // Resolve the complete named plan (including patch callbacks) before any
             // native mutation. Installation consumes these same resolved targets.
             var managed = ResolveManaged();
             foreach (var dependency in new[] {
-                ("MainScriptsAssembly", "534E62A45DF8758B4DF3877FAA8DD8D74EFD1389E3585701ABAFD9A4829CA2F6", true),
-                ("spine-csharp", "EBAB8BDBF5E3E3673DE25221D84C0900E1B91C8D8250B24D1A987379B89B4E81", true),
+                ("MainScriptsAssembly", "F46652CBC6BBFAB80D67D2ADE3F77A5FC926F1BAEAC80B95754C35D92B162B7E", true),
+                ("spine-csharp", "FE1AE612186B9863CF8009385E6751C6A431D1445DF865A40DFBAA360C2842EC", true),
                 ("Il2CppInterop.HarmonySupport", "F7612EA2E5A4D473B771F34EE3B20CF32DC0C4ECEA0185416474999A17FBCC07", false),
                 ("Il2CppInterop.Runtime", "65AB051A681C2C1E52DF7596FF738BE401AAE72CFF882FF18241CF54A3EA38A4", false) })
             {

@@ -62,13 +62,12 @@ static class BridgeChecks
         GoaliePersistenceBridge.SaveCompleted += receipts.Add;
         var saved = repository.SaveToPersistentStorage(Model());
         check(GoalieNativeSnapshot.Deserializer.Talents == repository._talentRepository && GoalieNativeSnapshot.Deserializer.Relics == repository._relicRepository
-            && GoalieNativeSnapshot.Deserializer.Abilities == repository._abilityRepository && GoalieNativeSnapshot.Deserializer.Logos == repository._logoRepository,
-            "FreshRunRestorerUsesAllFourNativeRepositoryBindings");
+            && GoalieNativeSnapshot.Deserializer.Abilities == repository._abilityRepository,
+            "FreshRunRestorerUsesAllThreeNativeRepositoryBindings");
         var bind = typeof(GoaliePersistenceBridge).GetMethod("BindDeserializer", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var withoutLogo = new RunDataRepositoryV2 { _logoRepository = null };
-        bind.Invoke(null, new object[] { withoutLogo });
-        check(GoalieNativeSnapshot.Deserializer != null && GoalieNativeSnapshot.Deserializer.Talents == withoutLogo._talentRepository
-            && GoalieNativeSnapshot.Deserializer.Logos == null, "NativeNullLogoDependencyRemainsAllowed");
+        var missingAbilities = new RunDataRepositoryV2 { _abilityRepository = null };
+        bind.Invoke(null, new object[] { missingAbilities });
+        check(GoalieNativeSnapshot.Deserializer == null, "MissingRequiredRepositoryClearsThePreviousRestorer");
         bind.Invoke(null, new object[] { repository });
         check(saved.IsCompleted && saved.GetAwaiter().GetResult() && receipts.Last().Durable && repository.Saves == 1,
             "BridgePreparesInjectsStoresReconcilesAndForwardsNativeTrue");
