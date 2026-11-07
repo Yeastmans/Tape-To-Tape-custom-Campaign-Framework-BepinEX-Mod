@@ -1,5 +1,11 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 45
+
+- Fixed the startup failure on Windows Steam build 26471720. The campaign mod loads and registers custom squads at the title screen again.
+- Updated the save loader and the native hooks for goalies, jersey logos and custom rewards, including the game's new injury stat calculation.
+- Verified two launches through Steam, including one that regenerated all 221 interop assemblies. The active campaign save matched its backup byte for byte. [Compatibility and launch checks](../docs/NATIVE-26471720-REVIEW.md)
+
 ## Beta 1.0 revision 44
 
 - Fixed a compatibility-check false failure on the supported game build when Windows uses different text sorting or regional number formatting. An unchanged squad-data query inventory is now compared consistently across those environments.

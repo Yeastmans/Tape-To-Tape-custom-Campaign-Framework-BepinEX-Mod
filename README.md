@@ -2,11 +2,11 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Published R44 for Steam 26372689](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r44-build-1793926964328) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 45](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r45-build-1794083660740) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
-**This checkout contains the Windows compatibility repair for Steam build 26471720.** Campaign Studio and the in-game mod ship together in the installer. The repair is based on published R44 and has been verified through the game's title screen. [Compatibility review](docs/NATIVE-26471720-REVIEW.md)
+**Beta 1.0 revision 45 supports Tape to Tape public Steam build 26471720 on Windows.** The installer includes Campaign Studio and the in-game mod.
 
-Beta 1.0 revision 44 fixes a compatibility-check failure on unchanged supported game files caused by Windows text sorting and regional number formatting. See the [changelog](release/CHANGELOG.md) and [validation](docs/RELEASE-R44-VALIDATION.md).
+The game update renamed a referee talent check, which stopped R44 from loading the mod. R45 restores startup and updates the native hooks for saves, goalies, jerseys and custom rewards. Two launches through Steam registered custom squads at the title screen. [Changelog](release/CHANGELOG.md) · [Compatibility and startup checks](docs/NATIVE-26471720-REVIEW.md)
 
 **This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. Reporting bugs on [Discord](https://discord.gg/hscxnYghb) or [GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues) helps immensely.
 

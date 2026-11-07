@@ -63,3 +63,9 @@ Launching published R44 on build 26471720 regenerated 221 interop assemblies. Ha
 The repaired runtime has SHA-256 `2FC501B573A066845C15893CE1E23C9C1161A74CD1C5EADC838A530C6B4E72B1`. The paired Studio updated the game plugin and reported `Current` on a second check. Steam then launched the game twice, first with existing wrappers and again with the interop and cache folders removed from their active paths. The second launch regenerated all 221 assemblies. Both sessions logged custom squad registration in `TitleScreen.RefreshCampaignData`, all 40 goalie targets, and successful chainloader startup. Both game windows responded and both normal shutdowns returned exit code 0. The BepInEx logs contain zero error or fatal entries. Harmony's Unity type-enumeration warnings also appear in the previous supported build.
 
 The active native run remained byte-identical. Tape to Tape migrated its statistics from version 1 to version 2 and preserved all 1,562 entity records and their values. Match play and loading a saved run through the Continue button remain untested.
+
+## Revision 45 Windows installer
+
+Revision 45 ships the runtime used in both Steam launches. The Windows package passed 107 checks. Extraction found 483 entries. Both copies of the runtime, all 244 Studio files and the loader payload matched the staged files. In a disposable copy of the current game files, Studio upgraded the R44 plugin, backed up the original DLL and reported `Current` on the second compatibility check.
+
+The installer SHA-256 is `6CE9AF4E3E753B4D96A74767786C956BF1C51E8E7F912A3D9E9EE6C61F0CBDE7`. [GitHub release](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r45-build-1794083660740)
