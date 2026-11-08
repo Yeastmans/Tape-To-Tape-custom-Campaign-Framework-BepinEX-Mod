@@ -40,7 +40,7 @@ when compiling `src/CustomCampaignFramework/CustomCampaignFramework.csproj`.
 The regular packaging wrapper still expects `BepInEx/interop` under its supplied
 game directory; isolated release assembly staging is a maintainer operation.
 
-The current reviewed pair uses runtime contract `t2t-native-v3-20261024`, with 1,521
+The current reviewed pair uses runtime contract `t2t-native-v3-20261024`, with 1,528
 protected methods, 137 comparison sites, 109 squad query calls, 54 named hooks and
 21 raw hooks. The [native review](docs/NATIVE-26471720-REVIEW.md) records the
 native adapter changes and diagnostics. For reproducible Release runtime

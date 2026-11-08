@@ -382,6 +382,23 @@ public sealed class CompatibilityBaseline
             "Tape2Tape.Customization.UI.PromptTemplateMenu.<CloseWithResult>d__#$$MoveNext",
             "Tape2Tape.Customization.UI.PromptTemplateMenu$$SendResultOnce" })
             protectedMethods.Add(image.Identity(image.Resolve(name)));
+        // Live results and saved history share the act summary renderer. Its
+        // one boss slot per group is part of the custom campaign display contract.
+        foreach (string name in new[] {
+            "Tape2Tape.Hockey.UI.RunEndMenu$$Show",
+            "Tape2Tape.Hockey.UI.RunEndMenu$$ShowHistoryEntry",
+            "Tape2Tape.Hockey.UI.RunEndMenu$$RefreshSkaterAndMatchData",
+            "Tape2Tape.Hockey.UI.RunTeamStats$$RefreshActSummaries",
+            "Tape2Tape.Hockey.UI.RunEndActSummary$$Refresh",
+            "Tape2Tape.Hockey.UI.RunMatchDetailsUI$$Refresh" })
+        {
+            var method = image.Resolve(name);
+            if (image.SharedMethodCount(method.Rva) != 1) throw new InvalidDataException("Shared run results method: " + name);
+            protectedMethods.Add(image.Identity(method));
+        }
+        // IL2CPP shares this two-field constructor with other data types.
+        // The summary calls it to make display rows and never detours it.
+        protectedMethods.Add(image.Identity(image.Resolve("Tape2Tape.Hockey.UI.RunMatchData$$.ctor")));
         var features = ReviewedFeatureContracts.Read();
         p.RawHooks = features.RawHooks; p.NamedHooks = features.NamedHooks;
         features.Validate(image, p);

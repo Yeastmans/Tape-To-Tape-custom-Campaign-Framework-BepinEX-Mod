@@ -172,8 +172,10 @@ internal static partial class BaseGamePoolsRuntime
         __state = null;
         var state = __instance?.m_CampaignState;
         var squad = state?.GetCurrentSquad();
+        // All Angus owns its native Angus-variant candidates. The shared bench
+        // profile must not replace that squad-specific selection.
         // Keep native no-bench teams, screens and capacity untouched.
-        if (squad == null || squad.m_MaxBenchwarmersOnBench <= 0) return;
+        if (squad == null || squad.id == "allangus" || squad.m_MaxBenchwarmersOnBench <= 0) return;
         var selection = Selection(); if (selection == null) return;
         var pool = TryCandidates(state, "draft_pool", selection); if (pool == null) return;
         __state = Begin();

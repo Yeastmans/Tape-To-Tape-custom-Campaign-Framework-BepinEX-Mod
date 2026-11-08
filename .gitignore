@@ -381,3 +381,7 @@ tests/RewardConditionQueryChecks/*
 tests/RewardStatRefreshChecks/*
 !tests/RewardStatRefreshChecks/*.cs
 !tests/RewardStatRefreshChecks/*.csproj
+!tests/CustomRunActSummaryChecks/
+tests/CustomRunActSummaryChecks/*
+!tests/CustomRunActSummaryChecks/*.cs
+!tests/CustomRunActSummaryChecks/*.csproj

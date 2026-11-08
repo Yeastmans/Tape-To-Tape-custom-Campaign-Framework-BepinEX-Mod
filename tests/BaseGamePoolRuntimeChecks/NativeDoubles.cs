@@ -135,7 +135,7 @@ namespace Data
 namespace State
 {
     public class DeserializerV2 { }
-    public class RunSquadScriptableObject { public int m_MaxBenchwarmersOnBench = 3; public Pool m_CustomSwapPool = new(); }
+    public class RunSquadScriptableObject { public string id = "vanilla"; public int m_MaxBenchwarmersOnBench = 3; public Pool m_CustomSwapPool = new(); }
     public class CampaignState
     {
         public RunSquadScriptableObject Squad = new(); public Pool freeAgents = new();

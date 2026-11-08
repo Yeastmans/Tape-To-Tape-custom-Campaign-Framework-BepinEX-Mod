@@ -12,7 +12,7 @@ A version mismatch alone does not block custom squad creation or selection. Cust
 
 ## Reviewed baseline
 
-`Assets/native-baseline.json` covers Steam build **26471720**, with **1,521 protected methods, 137 comparison sites and 109 squad queries**. The matching runtime profile at `../CustomCampaignFramework/Assets/native-compatibility.json` uses ABI `t2t-native-v3-20261024`. Both files cover 54 named hooks and 21 raw jersey callbacks. The new baseline includes both injury-stat calculators, the current referee talent predicate and the three dependencies used to load saves. [Native review](../../docs/NATIVE-26471720-REVIEW.md)
+`Assets/native-baseline.json` covers Steam build **26471720**, with **1,528 protected methods, 137 comparison sites and 109 squad queries**. The matching runtime profile at `../CustomCampaignFramework/Assets/native-compatibility.json` uses ABI `t2t-native-v3-20261024`. Both files cover 54 named hooks and 21 raw jersey callbacks. The baseline also protects the live and archived results screens, act panels, match rows and their constructor. [Native review](../../docs/NATIVE-26471720-REVIEW.md)
 
 ## Build maintenance
 

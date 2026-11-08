@@ -1,8 +1,8 @@
 {
-  "Id": "465ABA3E9CD0DF0CA18462346A23FC90CB580F5332B492DACC9936074856D577",
+  "Id": "E5465E630C04C45B8B2172FFB7F3100360106DA4B8E5F72A8C5FE27CB1CC2349",
   "Profile": {
     "RuntimeContract": "t2t-native-v3-20261024",
-    "BaselineId": "465ABA3E9CD0DF0CA18462346A23FC90CB580F5332B492DACC9936074856D577",
+    "BaselineId": "E5465E630C04C45B8B2172FFB7F3100360106DA4B8E5F72A8C5FE27CB1CC2349",
     "Build": "26471720",
     "GameHash": "0709D469AE6C47B695BBA71664BF5619982EE6C3E17EAEF6DC8B98FDA0A61CEC",
     "MetadataHash": "50ABD75E31FBBD6DD3AB098507B40B9F01EA100B564F593A62EFEE8FD5AD44FC",
@@ -9397,6 +9397,11 @@
       "BodyHash": "4A1D9DB218AFB062A2D112F5DBB1B485E8CC8FB3B86FF28F6EA0B49ACBAB57E9"
     },
     {
+      "Name": "Tape2Tape.Hockey.UI.RunEndActSummary$$Refresh::System.Void Refresh(Data.TeamData team, System.Int32 act, System.Collections.Generic.IReadOnlyList\u00601\u003CTape2Tape.Hockey.UI.RunMatchData\u003E allMatches)",
+      "Signature": "System.Void Refresh(Data.TeamData team, System.Int32 act, System.Collections.Generic.IReadOnlyList\u00601\u003CTape2Tape.Hockey.UI.RunMatchData\u003E allMatches)",
+      "BodyHash": "DC3D993E94E7F5C5B301F1E8C4E1B112F8F01F325BC9E9A600E9908D77CAC06F"
+    },
+    {
       "Name": "Tape2Tape.Hockey.UI.RunEndHandler$$OnRunFinished::System.Void OnRunFinished()",
       "Signature": "System.Void OnRunFinished()",
       "BodyHash": "63C924A1737AE7FD268D9CF4081ABE830C2FCF17DFC16EB582DC113E35298E63"
@@ -9410,6 +9415,36 @@
       "Name": "Tape2Tape.Hockey.UI.RunEndMenu$$FindTeam::Data.TeamData FindTeam(System.String teamId, System.Collections.Generic.IReadOnlyList\u00601\u003CData.TeamData\u003E campaignTeams, System.Collections.Generic.IReadOnlyList\u00601\u003CData.TeamData\u003E allTeams)",
       "Signature": "Data.TeamData FindTeam(System.String teamId, System.Collections.Generic.IReadOnlyList\u00601\u003CData.TeamData\u003E campaignTeams, System.Collections.Generic.IReadOnlyList\u00601\u003CData.TeamData\u003E allTeams)",
       "BodyHash": "7763DD8100754C438B403DA3CA517257E43EC17D99FA46DFAA2AEA3615B85B22"
+    },
+    {
+      "Name": "Tape2Tape.Hockey.UI.RunEndMenu$$RefreshSkaterAndMatchData::System.Void RefreshSkaterAndMatchData(System.Collections.Generic.IReadOnlyList\u00601\u003CData.TeamData\u003E allTeams)",
+      "Signature": "System.Void RefreshSkaterAndMatchData(System.Collections.Generic.IReadOnlyList\u00601\u003CData.TeamData\u003E allTeams)",
+      "BodyHash": "49F04A0C5460ED3ACBE32BEF0947D47E380E4CC2B030FC87E337B7736C4B7DC1"
+    },
+    {
+      "Name": "Tape2Tape.Hockey.UI.RunEndMenu$$Show::Cysharp.Threading.Tasks.UniTask Show()",
+      "Signature": "Cysharp.Threading.Tasks.UniTask Show()",
+      "BodyHash": "3313AE8A86742AFE7EB141CBF93427604BF6A591817C35E45625050A94665FD2"
+    },
+    {
+      "Name": "Tape2Tape.Hockey.UI.RunEndMenu$$ShowHistoryEntry::System.Void ShowHistoryEntry()",
+      "Signature": "System.Void ShowHistoryEntry()",
+      "BodyHash": "F2B830FB569C7AC3ED68AD5C7B44B47C782CBD2D9C37C3D10F58A04B99A91F6E"
+    },
+    {
+      "Name": "Tape2Tape.Hockey.UI.RunMatchData$$.ctor::System.Void .ctor(Data.TeamData opponentTeam, MatchScore score)",
+      "Signature": "System.Void .ctor(Data.TeamData opponentTeam, MatchScore score)",
+      "BodyHash": "0742CC9F1BD3545E06368391BE946C4A6D832D9FA2EDEB763FD8847C77B6AFCA"
+    },
+    {
+      "Name": "Tape2Tape.Hockey.UI.RunMatchDetailsUI$$Refresh::System.Void Refresh(Data.TeamData self, Tape2Tape.Hockey.UI.RunMatchData match)",
+      "Signature": "System.Void Refresh(Data.TeamData self, Tape2Tape.Hockey.UI.RunMatchData match)",
+      "BodyHash": "DCCE7300867B004B55EA620B0D27A6AC3A1970BAC9FEE29214C10F693B2FF3D0"
+    },
+    {
+      "Name": "Tape2Tape.Hockey.UI.RunTeamStats$$RefreshActSummaries::System.Void RefreshActSummaries(Data.TeamData team, System.Collections.Generic.IReadOnlyList\u00601\u003CSystem.Int32\u003E playedActs, System.Collections.Generic.IReadOnlyList\u00601\u003CTape2Tape.Hockey.UI.RunMatchData\u003E matches)",
+      "Signature": "System.Void RefreshActSummaries(Data.TeamData team, System.Collections.Generic.IReadOnlyList\u00601\u003CSystem.Int32\u003E playedActs, System.Collections.Generic.IReadOnlyList\u00601\u003CTape2Tape.Hockey.UI.RunMatchData\u003E matches)",
+      "BodyHash": "A665B61EFE1E583ECFCFE540089CC138B2A88228B53AF4656730371AA0567CDA"
     },
     {
       "Name": "Tape2Tape.Hockey.UI.SkaterAndSkin.\u003CApplySkinAsync\u003Ed__#$$MoveNext::System.Void MoveNext()",

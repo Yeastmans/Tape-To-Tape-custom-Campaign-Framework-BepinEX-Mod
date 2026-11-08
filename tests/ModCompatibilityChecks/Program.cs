@@ -20,6 +20,18 @@ p=Copy();p.Sites[0].Target++;Reject(()=>p.Validate(p.GameHash,baseline.Id),"Call
 p=Copy();p.FlowBytes="90909090909090";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Starting-flow ABI cannot be replaced by arbitrary bytes");
 p=Copy();p.SurfaceBytes="90";Reject(()=>p.Validate(p.GameHash,baseline.Id),"Rink ABI remains guarded");
 var image=new NativeImage(game);
+foreach (string target in new[] {
+    "Tape2Tape.Hockey.UI.RunEndMenu$$Show",
+    "Tape2Tape.Hockey.UI.RunEndMenu$$ShowHistoryEntry",
+    "Tape2Tape.Hockey.UI.RunEndMenu$$RefreshSkaterAndMatchData",
+    "Tape2Tape.Hockey.UI.RunTeamStats$$RefreshActSummaries",
+    "Tape2Tape.Hockey.UI.RunEndActSummary$$Refresh",
+    "Tape2Tape.Hockey.UI.RunMatchData$$.ctor",
+    "Tape2Tape.Hockey.UI.RunMatchDetailsUI$$Refresh" }) {
+    var method = image.Resolve(target);
+    Check(baseline.Methods.Any(contract => contract.Name == image.Identity(method)
+        && contract.BodyHash == image.BodyHash(method)), "Protect the native result display: " + target);
+}
 CulturePortabilityChecks.Run(baseline,image,Check,Reject);
 foreach (string method in new[] { "CustomizableYesNoPrompt$$InitData", "PromptTemplateMenu$$OnYesClick",
     "PromptTemplateMenu$$OnNoClick", "PromptTemplateMenu$$OnBackInput", "PromptTemplateMenu$$BehaviourDestroy",

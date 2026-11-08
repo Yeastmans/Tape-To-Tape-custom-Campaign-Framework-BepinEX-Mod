@@ -57,16 +57,36 @@ try
         selected.Pools[kind] = new[] { "one.txt" };
     }
     BaseGamePlayerPools.Save(root, selected);
+    var allAngus = new CampaignState();
+    allAngus.Squad.id = "allangus";
+    allAngus.Squad.m_MaxBenchwarmersOnBench = 1;
+    var nativeAngusBench = new Pool
+    {
+        new ForwardData { id = "native-mcdefense", firstName = "Angus McDefense" },
+        new ForwardData { id = "native-mcnineties", firstName = "Angus McNineties" }
+    };
+    allAngus.Squad.m_CustomSwapPool = nativeAngusBench;
+    BaseGamePoolsRuntime.BenchPrefix(new BenchwarmerMenu { m_CampaignState = allAngus }, out var angusScope);
+    try
+    {
+        Check(angusScope == null && ReferenceEquals(allAngus.Squad.m_CustomSwapPool, nativeAngusBench)
+            && nativeAngusBench.Select(p => p.firstName).SequenceEqual(new[] { "Angus McDefense", "Angus McNineties" }),
+            "Enabled Base Game pools must preserve All Angus's native Angus bench candidates");
+        Check(allAngus.Squad.m_MaxBenchwarmersOnBench == 1,
+            "All Angus retains its native one-player bench capacity");
+    }
+    finally { BaseGamePoolsRuntime.Restore(angusScope, null); }
     var state = new CampaignState(); Tape2Tape.CampaignUtil.CampaignState = state;
     var stateOriginal = state.freeAgents;
     var squadOriginal = state.Squad.m_CustomSwapPool;
+    squadOriginal.Add(new ForwardData { id = "ordinary-native-bench", firstName = "Ordinary native candidate" });
     var menu = new BenchwarmerMenu { m_CampaignState = state };
     state.Squad.m_MaxBenchwarmersOnBench = 0;
     BaseGamePoolsRuntime.BenchPrefix(menu, out var scope);
     Check(scope == null && ReferenceEquals(state.Squad.m_CustomSwapPool, squadOriginal), "No-bench squad remains unchanged");
     state.Squad.m_MaxBenchwarmersOnBench = 3;
     BaseGamePoolsRuntime.BenchPrefix(menu, out scope);
-    Check(state.Squad.m_CustomSwapPool[0].firstName == "draft_pool One", "Bench receives shared selected pool");
+    Check(state.Squad.m_CustomSwapPool[0].firstName == "draft_pool One", "Ordinary squad still receives shared selected pool over its existing native source");
     Check(state.Squad.m_CustomSwapPool[0].skaterCategory == SkaterCategory.Benchwarmer,
         "Added benchwarmer must qualify for native Benchwarmer Boost when its prototype is a free agent");
     Check(UnityEngine.Resources.Players[0].skaterCategory == SkaterCategory.FreeAgents,
