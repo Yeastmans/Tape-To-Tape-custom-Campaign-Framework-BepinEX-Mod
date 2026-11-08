@@ -2,11 +2,11 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 45](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r45-build-1794083660740) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 46](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r46-build-1794167904497) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
 
-**Beta 1.0 revision 45 supports Tape to Tape public Steam build 26471720 on Windows.** The installer includes Campaign Studio and the in-game mod.
+**Beta 1.0 revision 46 supports Tape to Tape public Steam build 26471720 on Windows.** The installer includes Campaign Studio and the in-game mod.
 
-The game update renamed a referee talent check, which stopped R44 from loading the mod. R45 restores startup and updates the native hooks for saves, goalies, jerseys and custom rewards. Two launches through Steam registered custom squads at the title screen. [Changelog](release/CHANGELOG.md) · [Compatibility and startup checks](docs/NATIVE-26471720-REVIEW.md)
+All Angus keeps its own bench when Base Game Pools is enabled. Custom campaigns that reuse the same terrain now show each played act and its recorded boss score separately on the end-run screen and in run history. [Changelog](release/CHANGELOG.md)
 
 **This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. Reporting bugs on [Discord](https://discord.gg/hscxnYghb) or [GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues) helps immensely.
 

@@ -87,7 +87,8 @@ For offline restore, place the exact pinned archives, using their filenames
 from the manifest, in `build/dependencies` before running the script. NuGet
 packages also need to be available locally. Preserve upstream licenses and
 notices when distributing their binaries. The BepInEx manifest records all
-228 payload files; FFmpeg records its executable and two accompanying notices.
+228 payload files. The checkout supplies the separately verified BepInEx license.
+The FFmpeg manifest records its executable and two accompanying notices.
 
 ## Build
 

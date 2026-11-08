@@ -2,7 +2,8 @@
 **/bin/
 **/obj/
 build/
-installer/bepinex/
+installer/bepinex/*
+!installer/bepinex/BepInEx_LICENSE.txt
 installer/Output*/
 tools/ffmpeg/ffmpeg.exe
 *.pdb

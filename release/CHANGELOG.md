@@ -1,5 +1,10 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 46
+
+- The All Angus squad now draws from its 17 native Angus bench candidates when playing the base game with Base Game Pools enabled.
+- The end-run screen and saved run history now group matches by played act in custom campaigns that reuse terrain. In a two-act campaign using the same terrain twice, each boss keeps its own score.
+
 ## Beta 1.0 revision 45
 
 - Fixed the startup failure on Windows Steam build 26471720. The campaign mod loads and registers custom squads at the title screen again.

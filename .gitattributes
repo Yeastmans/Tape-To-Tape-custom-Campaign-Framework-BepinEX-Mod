@@ -1,0 +1,2 @@
+# Keep the upstream license bytes and whitespace verbatim.
+installer/bepinex/BepInEx_LICENSE.txt -text -whitespace

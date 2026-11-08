@@ -49,6 +49,9 @@ function Find-SevenZip {
     throw 'Install 7-Zip, add 7z.exe to PATH, or pass -SevenZipPath. No dependencies were deleted.'
 }
 
+# The pinned loader ZIP omits the license shipped alongside it in the installer.
+Require-Hash (Repository-Path 'installer/bepinex/BepInEx_LICENSE.txt') '3C873C01755E8458E597719F664334DBA236E0C4D173942187A70947800E2F05'
+
 # Inspect all destinations before downloading or writing anything. A different existing
 # dependency is an explicit conflict, never permission to overwrite a developer's files.
 $pending = @()
