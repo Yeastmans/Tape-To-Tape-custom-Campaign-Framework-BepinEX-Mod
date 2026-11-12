@@ -46,6 +46,7 @@ internal static class CustomSquadMenu
     private static Vector3 nativeScale;
     private static RectTransform customPage;
     private static GridLayoutGroup customGrid;
+    private static CustomSquadScroll pageScroll;
     private static Transform cardParent;
     private static BishopGames.UI.AbstractNavigable nativeDefaultNavigable;
     private static readonly List<GameObject> gatewayHidden = new();
@@ -122,7 +123,14 @@ internal static class CustomSquadMenu
         RestoreSquadDetails();
         SetGatewayArt(false);
         if (cardParent != null) foreach (var item in custom) if (item != null) item.transform.SetParent(cardParent, false);
-        if (customPage != null) UnityEngine.Object.Destroy(customPage.gameObject);
+        pageScroll?.SetOpen(false);
+        pageScroll = null;
+        if (customPage != null)
+        {
+            customPage.gameObject.SetActive(false);
+            UnityEngine.Object.Destroy(customPage.gameObject);
+            customPage = null;
+        }
         if (menu != null && menu.m_MetaTeamsLayout != null) menu.m_MetaTeamsLayout.enabled = gridWasEnabled;
         RestoreDefaultBeforeBuild(instance);
         gatewayGraphics.Clear(); gatewayAnimators.Clear();
@@ -195,7 +203,9 @@ internal static class CustomSquadMenu
         customPage.anchorMin = Vector2.zero; customPage.anchorMax = Vector2.one;
         customPage.pivot = originalRoot.pivot; customPage.sizeDelta = Vector2.zero;
         customPage.anchoredPosition = Vector2.zero; customPage.localScale = Vector3.one;
-        customGrid = pageObject.AddComponent<GridLayoutGroup>();
+        pageObject.SetActive(false);
+        pageScroll = nativeGrid != null ? new CustomSquadScroll(customPage, nativeGrid) : null;
+        customGrid = pageScroll?.Grid ?? pageObject.AddComponent<GridLayoutGroup>();
         if (nativeGrid != null)
         {
             customGrid.cellSize = nativeGrid.cellSize;
@@ -214,7 +224,8 @@ internal static class CustomSquadMenu
                 if (item.transform.parent == cardParent && item != menu.m_MetaFinalTeamItem)
                     columns.Add(Mathf.RoundToInt(item.transform.localPosition.x));
             customGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            customGrid.constraintCount = Math.Max(1, columns.Count);
+            customGrid.constraintCount = nativeGrid.constraint == GridLayoutGroup.Constraint.FixedColumnCount
+                ? nativeGrid.constraintCount : Math.Max(1, columns.Count);
             customGrid.startCorner = GridLayoutGroup.Corner.UpperLeft;
             customGrid.startAxis = GridLayoutGroup.Axis.Horizontal;
             customGrid.childAlignment = TextAnchor.UpperLeft;
@@ -225,7 +236,6 @@ internal static class CustomSquadMenu
         var pageGroup = pageObject.AddComponent<CanvasGroup>();
         pageGroup.alpha = 1; pageGroup.interactable = true; pageGroup.blocksRaycasts = true;
         pageGroup.ignoreParentGroups = true;
-        pageObject.SetActive(false);
         foreach (var graphic in custom[0].GetComponentsInChildren<Graphic>(true))
             if (graphic.enabled) gatewayGraphics.Add(graphic);
         foreach (var animator in custom[0].GetComponentsInChildren<Animator>(true))
@@ -334,9 +344,17 @@ internal static class CustomSquadMenu
             // reactivation so the existing Custom_* unlock postfix restores
             // the portrait instead of leaving the native locked silhouette.
             RefreshPageTiles();
+            Canvas.ForceUpdateCanvases();
             SelectTile(custom.Contains(menu.CurrentMeta) ? menu.CurrentMeta : custom[0]);
         }
     }
+    internal static void UpdateViewport()
+    {
+        if (!open || pageScroll == null || customPage == null || !customPage.gameObject.activeInHierarchy) return;
+        if (pageScroll.FitViewport() && menu != null && menu.m_HighlightedMeta != null)
+            pageScroll.Reveal(menu.m_HighlightedMeta.GetComponent<RectTransform>());
+    }
+
     private static void RefreshPageTiles()
     {
         foreach (var item in custom)
@@ -350,7 +368,10 @@ internal static class CustomSquadMenu
         // Native SetupMetas has already queued its previous/default tile; our
         // page must choose an active child after registration and layout.
         if (open && menu.m_MetaTeamsParent != null)
+        {
             menu.m_MetaTeamsParent.m_DefaultNavigable = item.Navigable;
+            pageScroll?.Reveal(item.GetComponent<RectTransform>());
+        }
         BishopGames.UI.AbstractNavigableUtils.SelectOnNextFrame(item.Navigable);
     }
     private static void RestoreDefaultBeforeBuild(ChooseMetaMenu instance)
@@ -366,6 +387,7 @@ internal static class CustomSquadMenu
         if (__instance != menu || custom.Count == 0 || __0 == null) return;
         if (open)
         {
+            pageScroll?.Reveal(__0.GetComponent<RectTransform>());
             string id = __0.CurrentSquad?.id ?? "";
             if (!Plugin.CustomSquadText.TryGetValue(id, out var squad)) return;
             if (menu.m_MetaName != null) menu.m_MetaName.text = squad.name;
@@ -426,6 +448,7 @@ internal static class CustomSquadMenu
     {
         RestoreSquadDetails();
         open = showCustom;
+        pageScroll?.SetOpen(open);
         if (!open && menu.m_MetaTeamsParent != null)
             menu.m_MetaTeamsParent.m_DefaultNavigable = nativeDefaultNavigable;
         if (customPage != null) customPage.gameObject.SetActive(open);
@@ -433,7 +456,7 @@ internal static class CustomSquadMenu
         for (int i = 0; i < custom.Count; i++)
         {
             var item = custom[i];
-            item.transform.SetParent(open ? customPage : cardParent, false);
+            item.transform.SetParent(open ? (pageScroll?.Content ?? customPage) : cardParent, false);
             item.transform.SetSiblingIndex(i);
             var itemLayout = item.GetComponent<LayoutElement>();
             if (itemLayout != null) itemLayout.ignoreLayout = !open && i == 0;
@@ -473,7 +496,7 @@ internal static class CustomSquadMenu
                 }
                 LayoutRebuilder.ForceRebuildLayoutImmediate(customPage);
             }
-            LayoutRebuilder.ForceRebuildLayoutImmediate(grid.GetComponent<RectTransform>());
+            LayoutRebuilder.ForceRebuildLayoutImmediate(grid.transform.parent.GetComponent<RectTransform>());
             if (!open)
             {
                 // Measure native cells after layout; place below the leftmost

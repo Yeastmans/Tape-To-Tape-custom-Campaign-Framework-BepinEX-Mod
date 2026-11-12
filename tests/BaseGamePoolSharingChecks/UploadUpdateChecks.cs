@@ -7,6 +7,7 @@ using System.Text.Json;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using CampaignCore;
 using CampaignCreator;
@@ -69,7 +70,7 @@ internal static class UploadUpdateChecks
                 Pump(() => list.Items.Count == 1 && Find<Button>(dialog, "ReplaceCommunityCampaign").IsEnabled);
                 if (kind == "campaign")
                 {
-                    check(!dialog.GetLogicalDescendants().OfType<Button>().Any(b => b.Name == "UpdateCommunityPoolsFromSaved" && b.IsVisible), "campaign management retains Replace ZIP without a pool update action");
+                    ExerciseCampaign(dialog, root, handler, check);
                     dialog.Close(); Finish(shown); return;
                 }
                 var update = Find<Button>(dialog, "UpdateCommunityPoolsFromSaved");
@@ -131,6 +132,138 @@ internal static class UploadUpdateChecks
             finally { foreach (var window in owner.OwnedWindows.ToArray()) window.Close(); owner.Close(); }
         }
         Exercise("base-game-pools"); Exercise("campaign");
+    }
+
+    private static void ExerciseCampaign(Window dialog, string root, Service handler, Action<bool, string> check)
+    {
+        var update = Find<Button>(dialog, "ReplaceCommunityCampaign");
+        check(update.Content?.ToString() == "Update ZIP…" && !dialog.GetLogicalDescendants().OfType<Button>().Any(b => b.Name == "UpdateCommunityPoolsFromSaved"),
+            "campaign management offers one Update ZIP action");
+        var listings = Find<ListBox>(dialog, "OwnedCommunityCampaigns");
+        var owned = listings.SelectedItem;
+        listings.SelectedItem = null;
+        check(!update.IsEnabled, "updating a campaign requires a verified selected listing");
+        listings.SelectedItem = owned;
+        Window ChooseSource()
+        {
+            Click(dialog, update.Name!);
+            Pump(() => dialog.OwnedWindows.Any());
+            return dialog.OwnedWindows.Single();
+        }
+        var chooser = ChooseSource();
+        check(chooser.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text?.Contains("Weekend pools") == true),
+            "the source chooser identifies the public listing that will be replaced");
+        check(!update.IsEnabled && !Find<Button>(chooser, "UpdateFromSavedCampaign").IsEnabled && Find<Button>(chooser, "UpdateFromCampaignZip").IsEnabled,
+            "with no saved campaigns the ZIP picker remains available");
+        Click(chooser, "CancelCampaignUpdate"); Pump(() => update.IsEnabled);
+        check(handler.UploadStarts == 0, "cancel leaves the owned listing alone");
+
+        var filePicker = DispatchProxy.Create<IStorageProvider, PickerResponse>();
+        var pickerReply = (PickerResponse)(object)filePicker;
+        typeof(TopLevel).GetField("_storageProvider", Members)!.SetValue(dialog, filePicker);
+        void ChooseFile(string? file)
+        {
+            pickerReply.Respond = (method, args) =>
+            {
+                if (method.Name != nameof(IStorageProvider.OpenFilePickerAsync)) throw new NotSupportedException(method.Name);
+                var options = (FilePickerOpenOptions)args![0]!;
+                check(options.FileTypeFilter!.Single().Patterns!.SequenceEqual(["*.zip", "*.t2tcampaign"]), "existing ZIP picker accepts both campaign package extensions");
+                IStorageFile[] files = [];
+                if (file != null)
+                {
+                    var selected = DispatchProxy.Create<IStorageFile, PickerResponse>();
+                    ((PickerResponse)(object)selected).Respond = (member, _) => member.Name == "get_Path" ? new Uri(file) : throw new NotSupportedException(member.Name);
+                    files = [selected];
+                }
+                return Task.FromResult<IReadOnlyList<IStorageFile>>(files);
+            };
+            Click(ChooseSource(), "UpdateFromCampaignZip"); Pump(() => update.IsEnabled);
+        }
+        ChooseFile(null);
+        check(handler.UploadStarts == 0, "closing the native picker sends no upload");
+        string prepared = Path.Combine(root, "prepared.t2tcampaign");
+        using (var archive = ZipFile.Open(prepared, ZipArchiveMode.Create))
+        using (var writer = new StreamWriter(archive.CreateEntry("Prepared/other.txt").Open())) writer.Write("existing package");
+        ChooseFile(prepared);
+        check(handler.UploadStarts == 0 && dialog.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text?.Contains("campaign.txt is missing") == true),
+            "a ZIP missing its campaign manifest reports the validation error before upload");
+        using (var archive = ZipFile.Open(prepared, ZipArchiveMode.Update))
+        using (var writer = new StreamWriter(archive.CreateEntry("Prepared/campaign.txt").Open())) writer.Write("Name = Prepared");
+        byte[] original = File.ReadAllBytes(prepared);
+        ChooseFile(prepared);
+        check(handler.Finishes == 1 && handler.Uploaded.ToArray().SequenceEqual(original) && File.ReadAllBytes(prepared).SequenceEqual(original),
+            "an existing campaign ZIP replaces the posted download byte for byte and is kept on disk");
+        CheckReplacement("old-revision");
+
+        string campaigns = Path.Combine(root, "campaigns");
+        Directory.CreateDirectory(Path.Combine(campaigns, "Incomplete"));
+        foreach (string name in new[] { "Other", "Saved season" })
+        {
+            Directory.CreateDirectory(Path.Combine(campaigns, name));
+            File.WriteAllText(Path.Combine(campaigns, name, "campaign.txt"), "Name = " + name);
+        }
+        string saved = Path.Combine(campaigns, "Saved season");
+        string logo = Path.Combine(root, "fixture-logo.png");
+        using (var bitmap = new SkiaSharp.SKBitmap(8, 8))
+        {
+            bitmap.Erase(SkiaSharp.SKColors.Gold);
+            using var png = bitmap.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100);
+            File.WriteAllBytes(logo, png.ToArray());
+        }
+        string teamText = "Name = Recent edits\nLogo From = " + logo;
+        string team = Path.Combine(saved, "team.txt");
+        File.WriteAllText(team, teamText);
+        File.WriteAllText(Path.Combine(saved, "save.txt"), "private local progress");
+        string[] Packages() => Directory.GetFiles(Path.GetTempPath(), "t2t-campaign-update-*.zip").Order(StringComparer.Ordinal).ToArray();
+        var before = Packages();
+        void ChooseSaved(Action? beforeConfirm = null)
+        {
+            var choice = ChooseSource();
+            var campaignsList = Find<ComboBox>(choice, "CampaignUpdatePicker");
+            check(campaignsList.Items.Select(x => x!.ToString()).SequenceEqual(["Other", "Saved season"]), "the saved picker lists all and only valid campaign folders");
+            campaignsList.SelectedIndex = 1;
+            beforeConfirm?.Invoke();
+            Click(choice, "UpdateFromSavedCampaign"); Pump(() => update.IsEnabled);
+        }
+        ChooseSaved();
+        check(handler.Finishes == 2 && handler.UploadStarts == 2, "the chosen saved campaign replaces the same listing");
+        CheckReplacement("new-revision");
+        using (var zip = new ZipArchive(new MemoryStream(handler.Uploaded.ToArray()), ZipArchiveMode.Read))
+        {
+            check(zip.Entries.All(e => e.FullName.StartsWith("Saved season/", StringComparison.Ordinal)) && zip.GetEntry("Saved season/campaign.txt") != null && zip.GetEntry("Saved season/save.txt") == null,
+                "saved update packages the chosen campaign and excludes local progress");
+            using var doc = new StreamReader(zip.GetEntry("Saved season/team.txt")!.Open());
+            var exported = new CampaignDocument(doc.ReadToEnd());
+            var asset = zip.GetEntry("Saved season/_logos/" + exported.Get("Logo From"));
+            using var bytes = new MemoryStream();
+            using (var stream = asset!.Open()) stream.CopyTo(bytes);
+            check(exported.Get("Name") == "Recent edits" && bytes.ToArray().SequenceEqual(File.ReadAllBytes(logo)), "the campaign exporter bundles the latest team and its portable logo");
+        }
+        check(Packages().SequenceEqual(before) && File.ReadAllText(team) == teamText, "a completed saved update removes its temporary ZIP and preserves the local team");
+        handler.RejectStart = true;
+        ChooseSaved();
+        check(handler.UploadStarts == 3 && handler.Finishes == 2 && Packages().SequenceEqual(before) && dialog.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text?.Contains("stale revision") == true),
+            "a rejected saved update reports the error, restores controls and removes its temporary ZIP");
+        using (var locked = File.Open(Path.Combine(saved, "locked.bin"), FileMode.Create, FileAccess.Write, FileShare.None))
+            ChooseSaved();
+        check(handler.UploadStarts == 3 && Packages().SequenceEqual(before) && File.ReadAllText(team) == teamText,
+            "partial campaign packaging failure deletes the temporary ZIP before any upload");
+        ChooseSaved(() => File.Delete(Path.Combine(saved, "campaign.txt")));
+        check(handler.UploadStarts == 3 && Packages().SequenceEqual(before), "a saved campaign removed since selection cannot replace a listing with an invalid ZIP");
+
+        void CheckReplacement(string revision)
+        {
+            using var start = JsonDocument.Parse(handler.StartBody);
+            check(handler.Prepares == 0 && handler.StartCode == "private-owner-code" && handler.FinishBody == "" &&
+                start.RootElement.GetProperty("operation").GetString() == "replace" && start.RootElement.GetProperty("rev").GetString() == revision &&
+                start.RootElement.GetProperty("name").GetString() == "Weekend pools", "campaign replacement uses the saved code, listing name and revision without overwriting metadata");
+        }
+    }
+
+    public class PickerResponse : DispatchProxy
+    {
+        internal Func<MethodInfo, object?[]?, object?> Respond = null!;
+        protected override object? Invoke(MethodInfo? method, object?[]? args) => Respond(method!, args);
     }
 
     private sealed class Service(string kind) : HttpMessageHandler

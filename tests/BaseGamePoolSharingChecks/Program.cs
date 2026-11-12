@@ -34,6 +34,13 @@ void AddEntry(string zip, string name, string content)
 }
 try
 {
+    if (args.SequenceEqual(["--upload-updates"]))
+    {
+        AppBuilder.Configure<App>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).SetupWithoutStarting();
+        UploadUpdateChecks.Run(sandbox, Check);
+        Console.WriteLine("PASS " + checks + " upload update checks");
+        return 0;
+    }
     string source = Fixture("Charlotte", false), destination = Fixture("Original", false);
     string native = Path.Combine(BaseGamePlayerPools.PoolDirectory(source, "draft_pool"), "native-one.txt");
     File.WriteAllText(native, "Name = Boring Dude\nPosition = Center\nStudio Native Player Id = boring-native\nStudio Native Player Asset = boring-asset\n");

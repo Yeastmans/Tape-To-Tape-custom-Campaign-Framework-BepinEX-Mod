@@ -43,7 +43,7 @@ public sealed partial class MainWindow
             if (showMessage) feedback.Text = owned.Count == 0
                 ? "No saved uploads yet. Upload a " + kind + " to save access automatically, or add access for an older post."
                 : pools ? "Select an upload to update from your saved pools, replace its ZIP or delete its public copy."
-                : "Select one of your uploads to replace its ZIP or delete its Dropbox copy.";
+                : "Select one of your uploads to update its ZIP or delete its Dropbox copy.";
         }
         async Task Run(Func<Task> action)
         {
@@ -55,23 +55,42 @@ public sealed partial class MainWindow
         }
         refresh = Button("Refresh", async () => await Run(async () => { feedback.Text = "Checking your saved upload codes…"; await Refresh(); }));
         refresh.Name = "RefreshManagedCampaigns";
-        replace = Button("Replace ZIP…", async () =>
+        replace = Button(pools ? "Replace ZIP…" : "Update ZIP…", async () =>
         {
             if (busy || list.SelectedItem is not ManagedCampaign { Post: not null } selected) return;
             await Run(async () =>
             {
+                async Task ReplaceZip(string file)
+                {
+                    if (pools) await Task.Run(() => BaseGamePoolPackages.Inspect(file));
+                    else await Task.Run(() => CampaignSharing.TopFolder(file));
+                    var progress = new Progress<double>(value => { if (busy) feedback.Text = $"Replacing {selected.Post.Name}: {value:0}%…"; });
+                    var posted = await client.UploadAsync(file, selected.Ownership.Name, progress, selected);
+                    await Refresh(false);
+                    feedback.Text = "Updated the posted " + kind + ". The new ZIP is now available from its community list." +
+                        (posted.MetadataWarning.Length > 0 ? " " + posted.MetadataWarning : "");
+                    feedback.Foreground = posted.MetadataWarning.Length > 0 ? SharingWarn : Brush.Parse("#70DEA2");
+                }
+                if (!pools)
+                {
+                    var source = await ChooseCampaignUpdateSource(dialog, selected.Post.Name);
+                    if (source.Saved is { } saved)
+                    {
+                        string zip = Path.Combine(Path.GetTempPath(), "t2t-campaign-update-" + Guid.NewGuid().ToString("N") + ".zip");
+                        try
+                        {
+                            feedback.Text = "Packaging " + saved.Label + "…";
+                            await Task.Run(() => CampaignSharing.Zip(saved.Path, zip, root));
+                            await ReplaceZip(zip);
+                        }
+                        finally { File.Delete(zip); }
+                        return;
+                    }
+                    if (!source.ChooseFile) return;
+                }
                 var files = await dialog.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Choose the replacement " + kind + " ZIP", AllowMultiple = false,
                     FileTypeFilter = [new FilePickerFileType(pools ? "Base Game Pools ZIP" : "Campaign ZIP") { Patterns = pools ? ["*.zip", "*.t2tpools"] : ["*.zip", "*.t2tcampaign"] }] });
-                string? file = files.FirstOrDefault()?.TryGetLocalPath();
-                if (file == null) return;
-                if (pools) await Task.Run(() => BaseGamePoolPackages.Inspect(file));
-                else CampaignSharing.TopFolder(file);
-                var progress = new Progress<double>(value => feedback.Text = $"Replacing {selected.Post.Name}: {value:0}%…");
-                var posted = await client.UploadAsync(file, selected.Ownership.Name, progress, selected);
-                await Refresh(false);
-                feedback.Text = "Updated the posted " + kind + ". The new ZIP is now available from its community list." +
-                    (posted.MetadataWarning.Length > 0 ? " " + posted.MetadataWarning : "");
-                feedback.Foreground = posted.MetadataWarning.Length > 0 ? SharingWarn : Brush.Parse("#70DEA2");
+                if (files.FirstOrDefault()?.TryGetLocalPath() is { } file) await ReplaceZip(file);
             });
         });
         replace.Name = "ReplaceCommunityCampaign"; StudioTheme.Primary(replace);
@@ -149,6 +168,31 @@ public sealed partial class MainWindow
         dialog.Opened += async (_, _) => await Run(async () => { feedback.Text = "Checking your saved upload codes…"; await Refresh(); });
         Controls();
         return dialog;
+    }
+
+    private async Task<(bool ChooseFile, ContentChoice? Saved)> ChooseCampaignUpdateSource(Window owner, string listing)
+    {
+        var choices = CampaignChoices();
+        var dialog = new Window { Title = "Update campaign ZIP", Width = 560, Height = 380, MinWidth = 440, MinHeight = 320,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner, Background = Background };
+        var picker = new ComboBox { Name = "CampaignUpdatePicker", ItemsSource = choices, IsEnabled = choices.Count > 0,
+            PlaceholderText = choices.Count == 0 ? "No saved campaigns" : "Choose a campaign", HorizontalAlignment = HorizontalAlignment.Stretch };
+        var file = Button("Choose ZIP file…", () => dialog.Close((true, (ContentChoice?)null)));
+        file.Name = "UpdateFromCampaignZip"; file.HorizontalAlignment = HorizontalAlignment.Left;
+        var saved = Button("Zip and replace", () => { if (picker.SelectedItem is ContentChoice campaign) dialog.Close((false, campaign)); });
+        saved.Name = "UpdateFromSavedCampaign"; saved.IsEnabled = false; StudioTheme.Primary(saved);
+        picker.SelectionChanged += (_, _) => saved.IsEnabled = picker.SelectedItem is ContentChoice;
+        var cancel = Button("Cancel", () => dialog.Close()); cancel.Name = "CancelCampaignUpdate";
+        dialog.Content = new Grid { Margin = new Thickness(24), RowDefinitions = new("*,Auto"), RowSpacing = StudioTheme.SpaceMd, Children = {
+            new ScrollViewer { Content = new StackPanel { Spacing = StudioTheme.SpaceMd, Children = {
+                new TextBlock { Text = "Update ZIP for " + listing, FontSize = 22, FontWeight = FontWeight.SemiBold, TextWrapping = TextWrapping.Wrap },
+                new TextBlock { Text = "Choose a ZIP to replace the public download, or let Studio package a saved campaign with its custom assets.", Foreground = StudioTheme.Muted, TextWrapping = TextWrapping.Wrap },
+                file,
+                new TextBlock { Text = "Saved campaign" }, picker
+            } } },
+            WithRow(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, HorizontalAlignment = HorizontalAlignment.Right, Children = { cancel, saved } }, 1)
+        } };
+        return await dialog.ShowDialog<(bool, ContentChoice?)>(owner);
     }
 
     private async Task<bool> ConfirmSavedBaseGamePoolUpdate(Window owner, string name, BaseGamePoolInfo pools)

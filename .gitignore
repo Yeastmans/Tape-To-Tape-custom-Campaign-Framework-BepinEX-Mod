@@ -386,3 +386,7 @@ tests/RewardStatRefreshChecks/*
 tests/CustomRunActSummaryChecks/*
 !tests/CustomRunActSummaryChecks/*.cs
 !tests/CustomRunActSummaryChecks/*.csproj
+!tests/CustomSquadScrollChecks/
+tests/CustomSquadScrollChecks/*
+!tests/CustomSquadScrollChecks/*.cs
+!tests/CustomSquadScrollChecks/*.csproj
