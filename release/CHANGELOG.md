@@ -1,5 +1,10 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 47
+
+- **Campaigns → Manage uploads → Update ZIP…** now lets you choose an existing ZIP or select a saved campaign and click **Zip and replace**. Studio includes the campaign's referenced custom heads, logos and rewards when it builds the replacement ZIP.
+- On the in-game **Custom Squads** page, moving the highlight below or above the visible rows scrolls the selected card into view. You can also browse long lists with the mouse wheel or by dragging.
+
 ## Beta 1.0 revision 46
 
 - The All Angus squad now draws from its 17 native Angus bench candidates when playing the base game with Base Game Pools enabled.
