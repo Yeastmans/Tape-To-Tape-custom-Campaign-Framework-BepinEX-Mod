@@ -2,16 +2,16 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 47](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r47-build-1794446712201) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join Discord for help](https://discord.gg/hscxnYghb)
+[Download Beta 1.0 revision 47](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r47-build-1794446712201) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Report an issue](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues)
 
 **Beta 1.0 revision 47 supports Tape to Tape public Steam build 26471720 on Windows.** The installer includes Campaign Studio and the in-game mod.
 
 Update a posted campaign from an existing ZIP or let Studio package one of your saved campaigns. In the game, the Custom Squads page scrolls to keep the highlighted team visible as you move through a long list. [Changelog](release/CHANGELOG.md)
 
-**This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. Reporting bugs on [Discord](https://discord.gg/hscxnYghb) or [GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues) helps immensely.
+**This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. If you find a bug, [report it on GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues).
 
 > [!WARNING]
-> **Game updates will likely break this mod.** Compatibility with future Tape to Tape updates is not guaranteed, and you may need to wait for a mod update before it works again. Studio's compatibility checker cannot fix every game change. Check the release notes or [join Discord for updates and help](https://discord.gg/hscxnYghb).
+> **Game updates will likely break this mod.** Compatibility with future Tape to Tape updates is not guaranteed, and you may need to wait for a mod update before it works again. Studio's compatibility checker cannot fix every game change. The [release notes](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases) list the supported game build.
 
 ![Campaign Studio Home with its built-in Help pointing to Create new. The three cards lead to campaigns, players and teams.](release/docs/readme-images/studio-home-help.png "Press F1 or click Help for explanations that point to controls on the current page.")
 
@@ -77,7 +77,7 @@ Pick the result you want from Home:
 
 **For a first project, copy a vanilla campaign and change one thing.** This gives you players, opponents, candidate pools and an editable map for each act. You can learn the save-and-play flow before building a whole season.
 
-At any point, **Help** or **F1** explains the current page and points to its controls. **Continue** and **Previous** move between explanations; **Point again** locates the control. Help does not fill in fields or save content for you. **Studio guide** on Home is the searchable reference. Home also has **Join Discord for help** and **GitHub** buttons to open the community invite and project repository in your browser.
+At any point, **Help** or **F1** explains the current page and points to its controls. **Continue** and **Previous** move between explanations; **Point again** locates the control. Help does not fill in fields or save content for you. **Studio guide** on Home is the searchable reference. The **GitHub** button on Home opens the project repository in your browser.
 
 ## Create your first campaign
 
@@ -244,7 +244,7 @@ Older Studio uninstallers leave BepInEx installed. Run the updated Studio instal
 
 ## Troubleshooting
 
-**Need help? [Join the Discord](https://discord.gg/hscxnYghb)** for help installing the mod, using Campaign Studio, or troubleshooting your creations.
+For help installing the mod, using Studio, or getting a Discord invite, [visit GitHub Issues](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues). Members of **T2T Modding suite by Yeastman** can also ask in [#support on Discord](https://discord.com/channels/1559632629094154361/1559707927806484651).
 
 | Problem | What to check |
 | --- | --- |
