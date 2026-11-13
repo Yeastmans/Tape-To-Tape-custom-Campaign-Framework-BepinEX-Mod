@@ -4,7 +4,7 @@ Build your own hockey roguelite. Campaign Studio is a visual editor for Tape to 
 
 [b]Beta 1.0 includes Studio and the mod in one Windows installer.[/b] It starts the new Studio release family; older v2.1.x releases contain the previous creator.
 
-[url=https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod#readme]Illustrated guide[/url] | [url=https://discord.gg/hscxnYghb]Discord help[/url] | [url=https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues]Report a bug[/url]
+[url=https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod#readme]Illustrated guide[/url] | [url=https://discord.gg/Vc2wVMJ2Xf]Discord help[/url] | [url=https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues]Report a bug[/url]
 
 [size=4][b]Requirements[/b][/size]
 
@@ -83,6 +83,6 @@ This beta's source/data audit checks shared mappings and native prerequisites. I
 
 Back up the whole %LOCALAPPDATA%\T2T Campaign Studio folder to preserve projects and supporting content together. The Studio uninstaller retains AppData content and the shared BepInEx runtime. None (base game) switches campaign selection; it is not a complete mod uninstall.
 
-If something goes wrong, use [b]Report a bug[/b] on Home, [url=https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues]GitHub Issues[/url] or [url=https://discord.gg/hscxnYghb]Discord[/url]. Include the Studio version, game build/branch, reproduction steps, expected/actual results and relevant BepInEx\LogOutput.log lines or screenshots. Review attachments for personal paths before sharing.
+If something goes wrong, use [b]Report a bug[/b] on Home, [url=https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues]GitHub Issues[/url] or [url=https://discord.gg/Vc2wVMJ2Xf]Discord[/url]. Include the Studio version, game build/branch, reproduction steps, expected/actual results and relevant BepInEx\LogOutput.log lines or screenshots. Review attachments for personal paths before sharing.
 
 Tape to Tape is by Excellent Rectangle. Campaign Studio / Custom Campaign Framework is a community modding project built with BepInEx, HarmonyX and Avalonia. Game artwork and native catalogs are read from your own installed copy of Tape to Tape.

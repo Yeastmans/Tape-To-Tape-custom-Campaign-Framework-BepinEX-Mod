@@ -2,11 +2,11 @@
 
 **Build your own hockey roguelite.** Create campaigns, edit players and teams, design branching maps, choose rewards, and make custom squads for **Tape to Tape**. Campaign Studio is the visual editor; the Custom Campaign Framework mod loads your creations into the game. No coding required.
 
-[Download Beta 1.0 revision 47](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r47-build-1794446712201) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Report an issue](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues)
+[Download Beta 1.0 revision 48](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/releases/tag/beta-1.0-r48-build-1794537721060) · [Install Studio](#install-studio) · [Start here](#start-here) · [Create your first campaign](#create-your-first-campaign) · [Editor guide](#editor-guide) · [Troubleshooting](#troubleshooting) · [Join the mod Discord](https://discord.gg/Vc2wVMJ2Xf) · [Report an issue](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues)
 
-**Beta 1.0 revision 47 supports Tape to Tape public Steam build 26471720 on Windows.** The installer includes Campaign Studio and the in-game mod.
+**Beta 1.0 revision 48 supports Tape to Tape public Steam build 26471720 on Windows.** The installer includes Campaign Studio and the in-game mod.
 
-Update a posted campaign from an existing ZIP or let Studio package one of your saved campaigns. In the game, the Custom Squads page scrolls to keep the highlighted team visible as you move through a long list. [Changelog](release/CHANGELOG.md)
+The Discord buttons on Home and the beta notice now open the permanent Campaign Studio server invite. [Changelog](release/CHANGELOG.md)
 
 **This is a beta test.** Some features may not work as described or may be broken. Studio shows this notice before its main window on every launch. If you find a bug, [report it on GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues).
 
@@ -77,7 +77,7 @@ Pick the result you want from Home:
 
 **For a first project, copy a vanilla campaign and change one thing.** This gives you players, opponents, candidate pools and an editable map for each act. You can learn the save-and-play flow before building a whole season.
 
-At any point, **Help** or **F1** explains the current page and points to its controls. **Continue** and **Previous** move between explanations; **Point again** locates the control. Help does not fill in fields or save content for you. **Studio guide** on Home is the searchable reference. The **GitHub** button on Home opens the project repository in your browser.
+At any point, **Help** or **F1** explains the current page and points to its controls. **Continue** and **Previous** move between explanations; **Point again** locates the control. Help does not fill in fields or save content for you. **Studio guide** on Home is the searchable reference. On Home, **Join Discord for help** opens the server invite, and **GitHub** opens the project repository.
 
 ## Create your first campaign
 
@@ -244,7 +244,7 @@ Older Studio uninstallers leave BepInEx installed. Run the updated Studio instal
 
 ## Troubleshooting
 
-For help installing the mod, using Studio, or getting a Discord invite, [visit GitHub Issues](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues). Members of **T2T Modding suite by Yeastman** can also ask in [#support on Discord](https://discord.com/channels/1559632629094154361/1559707927806484651).
+For help installing the mod or using Campaign Studio, [join the mod Discord](https://discord.gg/Vc2wVMJ2Xf) and ask in [#support](https://discord.com/channels/1559632629094154361/1559707927806484651). You can also [report an issue on GitHub](https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod/issues).
 
 | Problem | What to check |
 | --- | --- |

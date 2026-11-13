@@ -13,7 +13,7 @@ namespace CampaignCreator;
 internal static class BugReport
 {
     internal const string Repository = "https://github.com/Yeastmans/Tape-To-Tape-custom-Campaign-Framework-BepinEX-Mod";
-    internal const string Discord = "https://discord.gg/hscxnYghb";
+    internal const string Discord = "https://discord.gg/Vc2wVMJ2Xf";
     // GitHub rejects very long new-issue URLs; the log excerpt is trimmed to stay well below that.
     private const int MaxEncodedBody = 6000;
 

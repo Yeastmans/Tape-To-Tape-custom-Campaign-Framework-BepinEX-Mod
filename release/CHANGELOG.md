@@ -1,5 +1,9 @@
 # Changelog — Tape to Tape Custom Campaign Framework
 
+## Beta 1.0 revision 48
+
+- **Join Discord for help** on Home and **Report on Discord** on the beta notice now open the [permanent mod server invite](https://discord.gg/Vc2wVMJ2Xf).
+
 ## Beta 1.0 revision 47
 
 - **Campaigns → Manage uploads → Update ZIP…** now lets you choose an existing ZIP or select a saved campaign and click **Zip and replace**. Studio includes the campaign's referenced custom heads, logos and rewards when it builds the replacement ZIP.
